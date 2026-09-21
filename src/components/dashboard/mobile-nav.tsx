@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Store, X } from "lucide-react";
+import { Banknote, Menu, X } from "lucide-react";
 import { navSections } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,7 @@ export function MobileNav({ orgName }: { orgName: string }) {
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <span className="flex items-center gap-2 font-semibold text-foreground">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Store className="h-4 w-4" />
+                  <Banknote className="h-4 w-4" />
                 </span>
                 {orgName}
               </span>

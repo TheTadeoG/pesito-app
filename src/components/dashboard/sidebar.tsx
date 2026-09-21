@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Store } from "lucide-react";
+import { Banknote } from "lucide-react";
 import { navSections } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { CajaWidget } from "@/components/dashboard/caja-widget";
@@ -24,7 +24,7 @@ export function Sidebar({ orgName, memberLabel, cashRegister }: SidebarProps) {
     <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
       <div className="flex h-16 items-center gap-2 border-b border-border px-5">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Store className="h-5 w-5" />
+          <Banknote className="h-5 w-5" />
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">{orgName}</p>

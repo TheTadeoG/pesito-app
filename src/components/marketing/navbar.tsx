@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Store } from "lucide-react";
+import { Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const links = [
@@ -15,7 +15,7 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Store className="h-5 w-5" />
+            <Banknote className="h-5 w-5" />
           </span>
           <span className="text-lg">Pesito</span>
         </Link>
