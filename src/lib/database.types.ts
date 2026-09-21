@@ -25,6 +25,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["organizations"]["Insert"]>;
+        Relationships: [];
       };
       memberships: {
         Row: {
@@ -42,6 +43,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["memberships"]["Insert"]>;
+        Relationships: [];
       };
       categories: {
         Row: {
@@ -57,6 +59,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
+        Relationships: [];
       };
       products: {
         Row: {
@@ -94,6 +97,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
+        Relationships: [];
       };
       customers: {
         Row: {
@@ -119,6 +123,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;
+        Relationships: [];
       };
       cash_registers: {
         Row: {
@@ -146,6 +151,7 @@ export interface Database {
           notes?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["cash_registers"]["Insert"]>;
+        Relationships: [];
       };
       sales: {
         Row: {
@@ -175,6 +181,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["sales"]["Insert"]>;
+        Relationships: [];
       };
       sale_items: {
         Row: {
@@ -196,6 +203,7 @@ export interface Database {
           subtotal: number;
         };
         Update: Partial<Database["public"]["Tables"]["sale_items"]["Insert"]>;
+        Relationships: [];
       };
       stock_movements: {
         Row: {
@@ -219,6 +227,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["stock_movements"]["Insert"]>;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
@@ -244,5 +253,6 @@ export interface Database {
       };
     };
     Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
