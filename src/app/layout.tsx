@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { siteUrl } from "@/lib/utils";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,7 +13,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://pesito.app";
 const title = "Pesito | Sistema de punto de venta para kioscos y almacenes";
 const description =
   "Pesito es el sistema de punto de venta, inventario, clientes y caja pensado para kiosqueros y almaceneros de Argentina: simple, rápido y sin vueltas. Empezá gratis.";

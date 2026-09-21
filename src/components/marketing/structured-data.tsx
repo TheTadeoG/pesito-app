@@ -1,6 +1,5 @@
 import { faqs } from "@/components/marketing/faq";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://pesito.app";
+import { siteUrl } from "@/lib/utils";
 
 export function StructuredData() {
   const data = [
