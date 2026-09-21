@@ -9,6 +9,7 @@ create table if not exists organizations (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   slug text unique not null,
+  business_type text not null default 'kiosco',
   currency text not null default 'ARS',
   created_at timestamptz not null default now()
 );
@@ -162,7 +163,11 @@ create trigger products_set_updated_at
 -- RPCs
 -- ---------------------------------------------------------------------------
 
-create or replace function public.create_organization(p_name text, p_slug text)
+create or replace function public.create_organization(
+  p_name text,
+  p_slug text,
+  p_business_type text default 'kiosco'
+)
 returns uuid
 language plpgsql
 security definer
@@ -175,7 +180,8 @@ begin
     raise exception 'not authenticated';
   end if;
 
-  insert into organizations (name, slug) values (p_name, p_slug)
+  insert into organizations (name, slug, business_type)
+  values (p_name, p_slug, coalesce(nullif(p_business_type, ''), 'kiosco'))
   returning id into v_org_id;
 
   insert into memberships (org_id, user_id, role) values (v_org_id, auth.uid(), 'owner');
@@ -231,6 +237,20 @@ begin
 
   for v_item in select * from jsonb_array_elements(p_items) loop
     v_quantity := (v_item ->> 'quantity')::numeric;
+
+    -- Una línea sin product_id es un "monto libre" (cargo manual sin stock asociado).
+    if nullif(v_item ->> 'product_id', '') is null then
+      insert into sale_items (sale_id, product_id, product_name, quantity, unit_price, subtotal)
+      values (
+        v_sale_id,
+        null,
+        coalesce(nullif(v_item ->> 'product_name', ''), 'Monto libre'),
+        v_quantity,
+        (v_item ->> 'unit_price')::numeric,
+        v_quantity * (v_item ->> 'unit_price')::numeric
+      );
+      continue;
+    end if;
 
     select * into v_product from products
       where id = (v_item ->> 'product_id')::uuid and org_id = p_org_id

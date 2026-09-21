@@ -26,11 +26,11 @@ export default async function OnboardingPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Creá tu kiosco</CardTitle>
+          <CardTitle>Creá tu cuenta</CardTitle>
           <CardDescription>
-            Último paso: contanos cómo se llama tu negocio para configurar tu cuenta.
+            Último paso: contanos sobre tu negocio para configurar tu cuenta.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -9,13 +9,13 @@ export interface OnboardingState {
 }
 
 export async function createKiosco(
-  _prevState: OnboardingState,
-  formData: FormData
+  name: string,
+  businessType: string
 ): Promise<OnboardingState> {
-  const name = String(formData.get("name") ?? "").trim();
+  const trimmedName = name.trim();
 
-  if (!name) {
-    return { error: "Ponele un nombre a tu kiosco." };
+  if (!trimmedName) {
+    return { error: "Ponele un nombre a tu negocio." };
   }
 
   const supabase = await createClient();
@@ -27,16 +27,17 @@ export async function createKiosco(
     redirect("/login");
   }
 
-  const baseSlug = slugify(name) || "kiosco";
+  const baseSlug = slugify(trimmedName) || "negocio";
   const slug = `${baseSlug}-${user.id.slice(0, 6)}`;
 
   const { error } = await supabase.rpc("create_organization", {
-    p_name: name,
+    p_name: trimmedName,
     p_slug: slug,
+    p_business_type: businessType || "otro",
   });
 
   if (error) {
-    return { error: "No pudimos crear tu kiosco. Intentá de nuevo." };
+    return { error: "No pudimos crear tu cuenta. Intentá de nuevo." };
   }
 
   redirect("/pos");

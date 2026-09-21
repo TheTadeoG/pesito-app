@@ -14,6 +14,7 @@ export interface Database {
           id: string;
           name: string;
           slug: string;
+          business_type: string;
           currency: string;
           created_at: string;
         };
@@ -21,6 +22,7 @@ export interface Database {
           id?: string;
           name: string;
           slug: string;
+          business_type?: string;
           currency?: string;
           created_at?: string;
         };
@@ -237,7 +239,7 @@ export interface Database {
         Returns: boolean;
       };
       create_organization: {
-        Args: { p_name: string; p_slug: string };
+        Args: { p_name: string; p_slug: string; p_business_type?: string };
         Returns: string;
       };
       checkout_sale: {
