@@ -6,7 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 
 // `||` on purpose: an env var set to an empty string (e.g. left blank in a
 // hosting provider's dashboard) must also fall back, not just `undefined`.
-export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pesito.app";
+// Trailing slash stripped so callers can safely do `${siteUrl}/path` without
+// risking a double slash if someone pastes the URL with one.
+export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://pesito.app").replace(
+  /\/+$/,
+  ""
+);
 
 const currencyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
