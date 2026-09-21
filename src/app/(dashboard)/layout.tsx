@@ -1,5 +1,6 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
+import { computeCashOnHand } from "@/lib/caja";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 
@@ -23,19 +24,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   let cashRegister = null;
   if (openRegister) {
-    const { data: sales } = await supabase
-      .from("sales")
-      .select("total")
-      .eq("cash_register_id", openRegister.id)
-      .eq("payment_method", "efectivo")
-      .eq("status", "completada");
-
-    const cashSales = (sales ?? []).reduce((acc, sale) => acc + Number(sale.total), 0);
-
+    const openingAmount = Number(openRegister.opening_amount);
     cashRegister = {
       openedAt: openRegister.opened_at,
-      openingAmount: Number(openRegister.opening_amount),
-      cashTotal: Number(openRegister.opening_amount) + cashSales,
+      openingAmount,
+      cashTotal: await computeCashOnHand(supabase, openRegister.id, openingAmount),
     };
   }
 

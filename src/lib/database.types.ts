@@ -155,6 +155,30 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["cash_registers"]["Insert"]>;
         Relationships: [];
       };
+      cash_movements: {
+        Row: {
+          id: string;
+          org_id: string;
+          cash_register_id: string;
+          type: "ingreso" | "retiro";
+          amount: number;
+          reason: string | null;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          cash_register_id: string;
+          type: "ingreso" | "retiro";
+          amount: number;
+          reason?: string | null;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["cash_movements"]["Insert"]>;
+        Relationships: [];
+      };
       sales: {
         Row: {
           id: string;

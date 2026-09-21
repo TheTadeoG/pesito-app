@@ -84,6 +84,19 @@ create unique index if not exists cash_registers_one_open_per_user
   on cash_registers (org_id, user_id)
   where status = 'abierta';
 
+create table if not exists cash_movements (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references organizations (id) on delete cascade,
+  cash_register_id uuid not null references cash_registers (id) on delete cascade,
+  type text not null check (type in ('ingreso', 'retiro')),
+  amount numeric(12, 2) not null check (amount > 0),
+  reason text,
+  user_id uuid not null references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists cash_movements_register_id_idx on cash_movements (cash_register_id);
+
 create table if not exists sales (
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references organizations (id) on delete cascade,
@@ -294,6 +307,7 @@ alter table categories enable row level security;
 alter table products enable row level security;
 alter table customers enable row level security;
 alter table cash_registers enable row level security;
+alter table cash_movements enable row level security;
 alter table sales enable row level security;
 alter table sale_items enable row level security;
 alter table stock_movements enable row level security;
@@ -323,6 +337,11 @@ create policy "members can manage customers"
 
 create policy "members can manage cash registers"
   on cash_registers for all
+  using (public.is_org_member(org_id))
+  with check (public.is_org_member(org_id));
+
+create policy "members can manage cash movements"
+  on cash_movements for all
   using (public.is_org_member(org_id))
   with check (public.is_org_member(org_id));
 

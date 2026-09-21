@@ -6,6 +6,7 @@ export type Category = Database["public"]["Tables"]["categories"]["Row"];
 export type Product = Database["public"]["Tables"]["products"]["Row"];
 export type Customer = Database["public"]["Tables"]["customers"]["Row"];
 export type CashRegister = Database["public"]["Tables"]["cash_registers"]["Row"];
+export type CashMovement = Database["public"]["Tables"]["cash_movements"]["Row"];
 export type Sale = Database["public"]["Tables"]["sales"]["Row"];
 export type SaleItem = Database["public"]["Tables"]["sale_items"]["Row"];
 export type StockMovement = Database["public"]["Tables"]["stock_movements"]["Row"];
