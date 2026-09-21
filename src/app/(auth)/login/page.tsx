@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LoginForm } from "@/app/(auth)/login/login-form";
+
+export const metadata: Metadata = {
+  title: "Ingresar",
+  description: "Ingresá a tu cuenta de Pesito para gestionar tu kiosco o almacén.",
+  alternates: { canonical: "/login" },
+};
 
 export default async function LoginPage({
   searchParams,

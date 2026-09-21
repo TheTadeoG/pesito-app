@@ -12,10 +12,44 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://pesito.app";
+const title = "Pesito | Sistema de punto de venta para kioscos y almacenes";
+const description =
+  "Pesito es el sistema de punto de venta, inventario, clientes y caja pensado para kiosqueros y almaceneros de Argentina: simple, rápido y sin vueltas. Empezá gratis.";
+
 export const metadata: Metadata = {
-  title: "Pesito | Sistema de gestión para kioscos y almacenes",
-  description:
-    "Pesito es el sistema de punto de venta, inventario y caja pensado para kiosqueros y almaceneros: simple, rápido y sin vueltas.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: title,
+    template: "%s | Pesito",
+  },
+  description,
+  keywords: [
+    "sistema para kiosco",
+    "punto de venta kiosco",
+    "software para almacén",
+    "caja registradora digital",
+    "sistema POS Argentina",
+    "control de stock kiosco",
+    "software para kiosqueros",
+  ],
+  applicationName: "Pesito",
+  authors: [{ name: "Pesito" }],
+  robots: { index: true, follow: true },
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "es_AR",
+    url: siteUrl,
+    siteName: "Pesito",
+    title,
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

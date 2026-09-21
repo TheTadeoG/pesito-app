@@ -8,6 +8,9 @@ export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
+    // Reads the theme the anti-flash inline script already applied to <html>
+    // before hydration, so this one-time sync from the DOM is intentional.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDark(document.documentElement.dataset.theme === "dark");
   }, []);
 

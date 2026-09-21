@@ -1,7 +1,7 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "secondary" | "ghost" | "outline" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "outline" | "danger" | "onColor";
 type Size = "sm" | "md" | "lg" | "icon";
 
 const variantClasses: Record<Variant, string> = {
@@ -11,6 +11,10 @@ const variantClasses: Record<Variant, string> = {
   ghost: "text-foreground hover:bg-muted",
   outline: "border border-border bg-card text-foreground hover:bg-muted",
   danger: "bg-danger text-white hover:opacity-90",
+  // For use on a solid-color (e.g. bg-primary) section: a white pill with
+  // colored text, since overriding primary's bg/text via className is not
+  // reliable (Tailwind's cascade order isn't guaranteed to favor it).
+  onColor: "bg-white text-primary hover:bg-white/90",
 };
 
 const sizeClasses: Record<Size, string> = {

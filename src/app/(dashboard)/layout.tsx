@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { computeCashOnHand } from "@/lib/caja";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 const roleLabels: Record<string, string> = {
   owner: "Dueño",

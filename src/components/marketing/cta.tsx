@@ -14,10 +14,7 @@ export function Cta() {
           el primer día.
         </p>
         <Link href="/registro">
-          <Button
-            size="lg"
-            className="bg-white text-primary hover:bg-white/90"
-          >
+          <Button size="lg" variant="onColor">
             Crear mi cuenta
             <ArrowRight className="h-4 w-4" />
           </Button>
