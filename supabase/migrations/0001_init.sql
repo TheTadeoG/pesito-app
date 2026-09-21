@@ -293,6 +293,12 @@ begin
     values (p_org_id, v_product.id, 'venta', -1 * v_quantity, v_sale_id::text, auth.uid());
   end loop;
 
+  if p_payment_method = 'fiado' and p_customer_id is not null then
+    update customers
+      set balance = balance + (v_subtotal - coalesce(p_discount, 0))
+      where id = p_customer_id and org_id = p_org_id;
+  end if;
+
   return v_sale_id;
 end;
 $$;

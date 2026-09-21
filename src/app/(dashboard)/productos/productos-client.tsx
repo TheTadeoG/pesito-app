@@ -142,7 +142,12 @@ export function ProductosClient({ products }: { products: Product[] }) {
         </CardContent>
       </Card>
 
-      <ProductForm open={formOpen} onClose={() => setFormOpen(false)} product={editing} />
+      <ProductForm
+        key={editing?.id ?? "new"}
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        product={editing}
+      />
     </div>
   );
 }
