@@ -44,6 +44,14 @@ sumarlos sin romper nada.
 2. Crear un proyecto en [supabase.com](https://supabase.com) y copiar sus
    credenciales (Project Settings → API).
 
+   Si desplegás en Vercel, la
+   [integración oficial de Supabase](https://vercel.com/integrations/supabase)
+   puede cargar estas variables por vos automáticamente (junto con otras que
+   la app no usa, como `POSTGRES_URL` o `SUPABASE_SERVICE_ROLE_KEY` — no
+   hacen falta, pero tampoco molestan). De cualquier forma, cada vez que
+   agregues o cambies una variable de entorno en Vercel hay que disparar un
+   **Redeploy** a mano: los deploys existentes no las recogen solos.
+
 3. Crear `.env.local` en la raíz con:
 
    ```bash
