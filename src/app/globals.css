@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f6fb;
-  --foreground: #12141f;
+  --background: #fafafa;
+  --foreground: #14181a;
 
   --color-card: #ffffff;
-  --color-card-foreground: #12141f;
-  --color-border: #e6e8f0;
+  --color-card-foreground: #14181a;
+  --color-border: #e6e8e6;
 
-  --color-primary: #4756f0;
-  --color-primary-hover: #3a47d6;
+  --color-primary: #059669;
+  --color-primary-hover: #047857;
   --color-primary-foreground: #ffffff;
 
-  --color-secondary: #eef0fb;
-  --color-secondary-foreground: #34386b;
+  --color-secondary: #eef1ef;
+  --color-secondary-foreground: #374151;
 
-  --color-muted: #f1f2f8;
-  --color-muted-foreground: #6b7086;
+  --color-muted: #f2f3f1;
+  --color-muted-foreground: #6b7280;
 
-  --color-accent: #eef4ff;
-  --color-accent-foreground: #1d3f9e;
+  --color-accent: #d6f3e3;
+  --color-accent-foreground: #047857;
 
   --color-success: #16a34a;
   --color-success-bg: #dcfce7;
@@ -29,9 +29,9 @@
   --color-danger-bg: #fee2e2;
 
   --color-sidebar: #ffffff;
-  --color-sidebar-foreground: #4b4f66;
-  --color-sidebar-active-bg: #eef1ff;
-  --color-sidebar-active-foreground: #4756f0;
+  --color-sidebar-foreground: #52585a;
+  --color-sidebar-active-bg: #d6f3e3;
+  --color-sidebar-active-foreground: #047857;
 }
 
 @theme inline {
@@ -66,25 +66,25 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --background: #0d0e16;
-    --foreground: #edeef7;
+    --background: #0d1210;
+    --foreground: #eef3f0;
 
-    --color-card: #151725;
-    --color-card-foreground: #edeef7;
-    --color-border: #262838;
+    --color-card: #161c19;
+    --color-card-foreground: #eef3f0;
+    --color-border: #263029;
 
-    --color-primary: #6672ff;
-    --color-primary-hover: #7a85ff;
-    --color-primary-foreground: #0d0e16;
+    --color-primary: #34d399;
+    --color-primary-hover: #4ade80;
+    --color-primary-foreground: #0d1210;
 
-    --color-secondary: #1c1e30;
-    --color-secondary-foreground: #c7c9e6;
+    --color-secondary: #1b231f;
+    --color-secondary-foreground: #cfe0d6;
 
-    --color-muted: #191b2a;
-    --color-muted-foreground: #8b8fac;
+    --color-muted: #171e1a;
+    --color-muted-foreground: #93a69b;
 
-    --color-accent: #171c33;
-    --color-accent-foreground: #9db3ff;
+    --color-accent: #163427;
+    --color-accent-foreground: #6ee7b7;
 
     --color-success: #4ade80;
     --color-success-bg: #0f2a1a;
@@ -93,33 +93,33 @@
     --color-danger: #f87171;
     --color-danger-bg: #2c1414;
 
-    --color-sidebar: #12131f;
-    --color-sidebar-foreground: #9599b8;
-    --color-sidebar-active-bg: #1d2040;
-    --color-sidebar-active-foreground: #8f9aff;
+    --color-sidebar: #10140f;
+    --color-sidebar-foreground: #93a69b;
+    --color-sidebar-active-bg: #163427;
+    --color-sidebar-active-foreground: #6ee7b7;
   }
 }
 
 :root[data-theme="dark"] {
-  --background: #0d0e16;
-  --foreground: #edeef7;
+  --background: #0d1210;
+  --foreground: #eef3f0;
 
-  --color-card: #151725;
-  --color-card-foreground: #edeef7;
-  --color-border: #262838;
+  --color-card: #161c19;
+  --color-card-foreground: #eef3f0;
+  --color-border: #263029;
 
-  --color-primary: #6672ff;
-  --color-primary-hover: #7a85ff;
-  --color-primary-foreground: #0d0e16;
+  --color-primary: #34d399;
+  --color-primary-hover: #4ade80;
+  --color-primary-foreground: #0d1210;
 
-  --color-secondary: #1c1e30;
-  --color-secondary-foreground: #c7c9e6;
+  --color-secondary: #1b231f;
+  --color-secondary-foreground: #cfe0d6;
 
-  --color-muted: #191b2a;
-  --color-muted-foreground: #8b8fac;
+  --color-muted: #171e1a;
+  --color-muted-foreground: #93a69b;
 
-  --color-accent: #171c33;
-  --color-accent-foreground: #9db3ff;
+  --color-accent: #163427;
+  --color-accent-foreground: #6ee7b7;
 
   --color-success: #4ade80;
   --color-success-bg: #0f2a1a;
@@ -128,10 +128,10 @@
   --color-danger: #f87171;
   --color-danger-bg: #2c1414;
 
-  --color-sidebar: #12131f;
-  --color-sidebar-foreground: #9599b8;
-  --color-sidebar-active-bg: #1d2040;
-  --color-sidebar-active-foreground: #8f9aff;
+  --color-sidebar: #10140f;
+  --color-sidebar-foreground: #93a69b;
+  --color-sidebar-active-bg: #163427;
+  --color-sidebar-active-foreground: #6ee7b7;
 }
 
 body {
