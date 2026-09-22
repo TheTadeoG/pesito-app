@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ban } from "lucide-react";
+import { Ban, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -114,18 +114,33 @@ export function VentasList({
               </p>
             </div>
             <span className="font-semibold text-foreground">{formatCurrency(sale.total)}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVoid(sale);
-              }}
-              disabled={busyId === sale.id}
-              aria-label="Anular venta"
-            >
-              <Ban className="h-4 w-4 text-danger" />
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openDetail(sale.id);
+                }}
+                aria-label="Ver detalle"
+                title="Ver detalle"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleVoid(sale);
+                }}
+                disabled={busyId === sale.id}
+                aria-label="Anular venta"
+                title="Anular venta"
+              >
+                <Ban className="h-4 w-4 text-danger" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>

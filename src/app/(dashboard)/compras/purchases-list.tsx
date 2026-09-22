@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ban } from "lucide-react";
+import { Ban, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -109,18 +109,35 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
               )}
             </div>
             <span className="font-semibold text-foreground">{formatCurrency(purchase.total)}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVoid(purchase);
-              }}
-              disabled={busyId === purchase.id || purchase.status === "anulada"}
-              aria-label="Anular compra"
-            >
-              <Ban className="h-4 w-4 text-danger" />
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openDetail(purchase.id);
+                }}
+                aria-label="Ver detalle"
+                title="Ver detalle"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              {purchase.status !== "anulada" && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleVoid(purchase);
+                  }}
+                  disabled={busyId === purchase.id}
+                  aria-label="Anular compra"
+                  title="Anular compra"
+                >
+                  <Ban className="h-4 w-4 text-danger" />
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </div>
