@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const plans = [
   {
     name: "Plan Esencial",
-    price: "$9.900",
+    price: "$20.000",
     period: "por mes · IVA incl.",
     badge: null,
     features: [
@@ -24,7 +24,7 @@ const plans = [
   },
   {
     name: "Plan Pro",
-    price: "$16.900",
+    price: "$35.000",
     period: "por mes · IVA incl.",
     badge: "Más elegido",
     features: [
@@ -41,7 +41,7 @@ const plans = [
   },
   {
     name: "Plan IA",
-    price: "$19.900",
+    price: "$40.000",
     period: "por mes · IVA incl.",
     badge: "Nuevo",
     features: [
