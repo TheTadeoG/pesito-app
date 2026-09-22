@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ImageIcon, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ImageIcon, Pencil, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Brand, Product } from "@/lib/types";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 import { deleteProduct, toggleProductActive } from "@/app/(dashboard)/productos/actions";
+import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 
 export function ProductosClient({
   products,
@@ -21,6 +22,7 @@ export function ProductosClient({
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [adjusting, setAdjusting] = useState<Product | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [localBrands, setLocalBrands] = useState(brands);
 
@@ -30,6 +32,7 @@ export function ProductosClient({
     return products.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
+        p.brand?.toLowerCase().includes(q) ||
         p.barcode?.toLowerCase().includes(q) ||
         p.sku?.toLowerCase().includes(q)
     );
@@ -66,7 +69,7 @@ export function ProductosClient({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar producto…"
+            placeholder="Buscar por nombre, marca, SKU o código…"
             className="pl-10"
           />
         </div>
@@ -76,7 +79,7 @@ export function ProductosClient({
         </Button>
       </div>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
             <p className="px-5 py-14 text-center text-sm text-muted-foreground">
@@ -85,80 +88,124 @@ export function ProductosClient({
                 : "No encontramos productos con esa búsqueda."}
             </p>
           ) : (
-            <div className="divide-y divide-border">
-              {filtered.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground">
-                      {product.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={product.image_url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <ImageIcon className="h-4 w-4" />
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[960px] text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th className="px-4 py-2.5 font-semibold">Producto</th>
+                    <th className="px-3 py-2.5 font-semibold">Marca</th>
+                    <th className="px-3 py-2.5 font-semibold">SKU</th>
+                    <th className="px-3 py-2.5 font-semibold">Código de barras</th>
+                    <th className="px-3 py-2.5 text-right font-semibold" title="Lo que pagás vos al proveedor">
+                      Costo
+                    </th>
+                    <th className="px-3 py-2.5 text-right font-semibold" title="Lo que le cobrás al cliente">
+                      Precio de venta
+                    </th>
+                    <th className="px-3 py-2.5 text-right font-semibold">Stock</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">Mínimo</th>
+                    <th className="px-4 py-2.5 text-right font-semibold">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filtered.map((product) => (
+                    <tr
+                      key={product.id}
+                      className={cn(
+                        "align-middle hover:bg-muted/30",
+                        !product.active && "opacity-60"
                       )}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate font-medium text-foreground">{product.name}</p>
-                        {!product.active && <Badge>Inactivo</Badge>}
-                        {product.stock <= product.min_stock && (
-                          <Badge tone="danger">Stock: {product.stock}{product.unit}</Badge>
-                        )}
-                      </div>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {[product.brand, product.barcode, product.sku]
-                          .filter(Boolean)
-                          .join(" · ") || "Sin código"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-foreground">
-                      {formatCurrency(product.price)}
-                    </span>
-                    <span className="hidden text-sm text-muted-foreground sm:inline">
-                      Stock: {product.stock}{product.unit}
-                    </span>
-
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => openEdit(product)}
-                        aria-label="Editar"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDelete(product)}
-                        disabled={busyId === product.id}
-                        aria-label="Borrar"
-                      >
-                        <Trash2 className="h-4 w-4 text-danger" />
-                      </Button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleToggleActive(product)}
-                      disabled={busyId === product.id}
-                      className="text-xs font-medium text-muted-foreground hover:text-foreground"
                     >
-                      {product.active ? "Desactivar" : "Activar"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      <td className="px-4 py-2.5">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground">
+                            {product.image_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={product.image_url}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <ImageIcon className="h-4 w-4" />
+                            )}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="truncate font-medium text-foreground">{product.name}</p>
+                              {!product.active && <Badge>Inactivo</Badge>}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{product.brand || "—"}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{product.sku || "—"}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{product.barcode || "—"}</td>
+                      <td className="px-3 py-2.5 text-right text-muted-foreground">
+                        {product.cost ? formatCurrency(product.cost) : "—"}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-semibold text-foreground">
+                        {formatCurrency(product.price)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span
+                          className={cn(
+                            "font-medium",
+                            product.stock <= product.min_stock ? "text-danger" : "text-foreground"
+                          )}
+                        >
+                          {product.stock}
+                          {product.unit}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-muted-foreground">
+                        {product.min_stock}
+                        {product.unit}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setAdjusting(product)}
+                            aria-label="Ajustar stock"
+                            title="Ajustar stock"
+                          >
+                            <SlidersHorizontal className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => openEdit(product)}
+                            aria-label="Editar"
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDelete(product)}
+                            disabled={busyId === product.id}
+                            aria-label="Borrar"
+                            title="Borrar"
+                          >
+                            <Trash2 className="h-4 w-4 text-danger" />
+                          </Button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleActive(product)}
+                            disabled={busyId === product.id}
+                            className="ml-1 shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground"
+                          >
+                            {product.active ? "Desactivar" : "Activar"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </CardContent>
@@ -172,6 +219,8 @@ export function ProductosClient({
         brands={localBrands}
         onBrandCreated={(brand) => setLocalBrands((current) => [...current, brand])}
       />
+
+      <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
     </div>
   );
 }

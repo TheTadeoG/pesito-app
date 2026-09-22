@@ -75,7 +75,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/pos": { title: "Punto de Venta", description: "Cobrá tus ventas y armá el carrito." },
   "/compras": { title: "Compras", description: "Registrá el ingreso de mercadería." },
   "/productos": { title: "Productos", description: "Tu catálogo completo." },
-  "/inventario": { title: "Inventario", description: "Stock y movimientos de productos." },
+  "/inventario": { title: "Inventario", description: "Alertas de stock bajo y movimientos." },
   "/marcas": { title: "Marcas", description: "Catálogo de marcas de tus productos." },
   "/clientes": { title: "Clientes", description: "Tus clientes y sus cuentas." },
   "/proveedores": { title: "Proveedores", description: "Tus proveedores para compras." },

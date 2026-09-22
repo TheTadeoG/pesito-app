@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Search, SlidersHorizontal } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { getPeriodRange, type ReportPeriod } from "@/lib/report-periods";
 import type { Product } from "@/lib/types";
-import { AdjustDialog } from "@/app/(dashboard)/inventario/adjust-dialog";
+import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 
 interface MovementRow {
   id: string;
@@ -51,19 +52,7 @@ export function InventarioClient({
   const [period, setPeriod] = useState<MovementPeriod>("30d");
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [movementQuery, setMovementQuery] = useState("");
-  const [productQuery, setProductQuery] = useState("");
   const lowStock = products.filter((p) => p.stock <= p.min_stock);
-
-  const filteredProducts = useMemo(() => {
-    const q = productQuery.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.sku?.toLowerCase().includes(q) ||
-        p.barcode?.toLowerCase().includes(q)
-    );
-  }, [products, productQuery]);
 
   const filteredMovements = useMemo(() => {
     const start = period === "all" ? null : getPeriodRange(period).start;
@@ -85,72 +74,50 @@ export function InventarioClient({
 
   return (
     <div className="space-y-6">
-      {lowStock.length > 0 && (
-        <Card className="border-danger/30 bg-danger-bg/40">
-          <CardContent className="flex flex-wrap items-center justify-between gap-2 py-4">
-            <p className="text-sm font-medium text-danger">
-              {lowStock.length} producto{lowStock.length > 1 ? "s" : ""} por debajo del stock
-              mínimo
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+        <p className="text-sm text-muted-foreground">
+          El stock, costo y precio de cada producto se manejan desde Productos. Acá ves el stock
+          bajo y el historial de movimientos.
+        </p>
+        <Link href="/productos">
+          <Button variant="outline" size="sm">
+            Ir a Productos
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </Link>
+      </div>
 
-      <Card>
+      <Card className={lowStock.length > 0 ? "border-danger/30 bg-danger-bg/40" : undefined}>
         <CardHeader>
-          <CardTitle className="text-base">Stock por producto</CardTitle>
-          <div className="relative mt-3">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={productQuery}
-              onChange={(e) => setProductQuery(e.target.value)}
-              placeholder="Buscar por nombre, SKU o código de barras…"
-              className="pl-10"
-            />
-          </div>
+          <CardTitle className="text-base">
+            {lowStock.length > 0
+              ? `${lowStock.length} producto${lowStock.length > 1 ? "s" : ""} por debajo del stock mínimo`
+              : "Stock mínimo"}
+          </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          {products.length === 0 ? (
-            <p className="px-5 py-14 text-center text-sm text-muted-foreground">
-              Cargá productos para empezar a controlar tu inventario.
-            </p>
-          ) : filteredProducts.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-              No encontramos productos con esa búsqueda.
+        <CardContent className={lowStock.length > 0 ? "p-0" : undefined}>
+          {lowStock.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Ningún producto está por debajo de su stock mínimo.
             </p>
           ) : (
             <div className="divide-y divide-border">
-              {filteredProducts.map((product) => (
+              {lowStock.map((product) => (
                 <div
                   key={product.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{product.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {product.sku ? `SKU ${product.sku}` : "Sin SKU"}
-                      {" · "}
-                      {product.barcode ? `Cód. ${product.barcode}` : "Sin código de barras"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Costo: {product.cost ? formatCurrency(product.cost) : "—"} · Mínimo:{" "}
-                      {product.min_stock}{product.unit}
+                      Stock: <span className="font-medium text-danger">{product.stock}{product.unit}</span>
+                      {" · "}Mínimo: {product.min_stock}{product.unit}
                     </p>
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    <Badge tone={product.stock <= product.min_stock ? "danger" : "default"}>
-                      {product.stock}{product.unit}
-                    </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAdjusting(product)}
-                    >
-                      <SlidersHorizontal className="h-3.5 w-3.5" />
-                      Ajustar
-                    </Button>
-                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setAdjusting(product)}>
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    Ajustar
+                  </Button>
                 </div>
               ))}
             </div>
