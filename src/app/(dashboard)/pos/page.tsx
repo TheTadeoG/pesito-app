@@ -27,7 +27,7 @@ export default async function PosPage() {
   const [{ data: products }, { data: customers }, { data: salesRaw }] = await Promise.all([
     supabase
       .from("products")
-      .select("id, name, barcode, sku, price, stock, unit")
+      .select("id, name, barcode, sku, price, stock, unit, image_url")
       .eq("org_id", organization.id)
       .eq("active", true)
       .order("name")

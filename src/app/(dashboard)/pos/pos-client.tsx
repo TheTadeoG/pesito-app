@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Banknote,
   CreditCard,
+  ImageIcon,
   Landmark,
   Minus,
   Plus,
@@ -39,6 +40,7 @@ interface ProductLite {
   price: number;
   stock: number;
   unit: string;
+  image_url: string | null;
 }
 
 interface CustomerLite {
@@ -73,6 +75,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>("");
   const [customerQuery, setCustomerQuery] = useState("");
@@ -455,11 +458,32 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                         onClick={() => addProduct(product)}
                         onMouseEnter={() => setHighlightedIndex(index)}
                         className={cn(
-                          "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm",
+                          "flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-sm",
                           index === highlightedIndex ? "bg-accent" : "hover:bg-muted"
                         )}
                       >
-                        <span className="min-w-0">
+                        <span
+                          role="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            if (!product.image_url) return;
+                            e.stopPropagation();
+                            setPreviewImage(product.image_url);
+                          }}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground"
+                        >
+                          {product.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={product.image_url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="h-4 w-4" />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">
                           <span className="block truncate font-medium text-foreground">
                             {product.name}
                           </span>
@@ -540,21 +564,42 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                     key={item.kind === "product" ? item.product.id : item.id}
                     className="flex items-center justify-between gap-3 rounded-xl border border-border px-3.5 py-2.5"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {item.kind === "product" ? item.product.name : item.label}
-                      </p>
-                      <div className="mt-0.5 flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">
-                          {formatCurrency(
-                            item.kind === "product" ? item.product.price : item.amount
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      {item.kind === "product" && (
+                        <button
+                          type="button"
+                          onClick={() => item.product.image_url && setPreviewImage(item.product.image_url)}
+                          disabled={!item.product.image_url}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground"
+                        >
+                          {item.product.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={item.product.image_url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="h-4 w-4" />
                           )}
-                        </span>
-                        {item.kind === "product" && item.product.stock <= 5 && (
-                          <Badge tone="danger" className="px-1.5 py-0 text-[10px]">
-                            Stock: {item.product.stock}{item.product.unit}
-                          </Badge>
-                        )}
+                        </button>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {item.kind === "product" ? item.product.name : item.label}
+                        </p>
+                        <div className="mt-0.5 flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">
+                            {formatCurrency(
+                              item.kind === "product" ? item.product.price : item.amount
+                            )}
+                          </span>
+                          {item.kind === "product" && item.product.stock <= 5 && (
+                            <Badge tone="danger" className="px-1.5 py-0 text-[10px]">
+                              Stock: {item.product.stock}{item.product.unit}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1002,6 +1047,21 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
             </Button>
           </div>
         </div>
+      </Dialog>
+
+      <Dialog
+        open={previewImage !== null}
+        onClose={() => setPreviewImage(null)}
+        title="Imagen del producto"
+      >
+        {previewImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewImage}
+            alt=""
+            className="mx-auto max-h-[60vh] w-full rounded-xl object-contain"
+          />
+        )}
       </Dialog>
     </div>
   );
