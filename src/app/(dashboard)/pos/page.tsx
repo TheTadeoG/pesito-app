@@ -1,12 +1,10 @@
-import Link from "next/link";
-import { Lock } from "lucide-react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { paymentLabels } from "@/lib/payment-labels";
 import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 import { PosClient } from "@/app/(dashboard)/pos/pos-client";
+import { OpenCajaPrompt } from "@/app/(dashboard)/pos/open-caja-prompt";
 
 const RECENT_SALES_LIMIT = 8;
 
@@ -23,24 +21,7 @@ export default async function PosPage() {
     .maybeSingle();
 
   if (!openRegister) {
-    return (
-      <Card className="mx-auto max-w-md">
-        <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-            <Lock className="h-7 w-7" />
-          </span>
-          <h2 className="text-lg font-semibold text-foreground">
-            Abrí tu caja para empezar a vender
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Necesitás abrir la caja del día antes de poder cobrar ventas.
-          </p>
-          <Link href="/caja">
-            <Button className="mt-2">Abrir Mi Caja</Button>
-          </Link>
-        </CardContent>
-      </Card>
-    );
+    return <OpenCajaPrompt />;
   }
 
   const [{ data: products }, { data: customers }, { data: salesRaw }] = await Promise.all([
@@ -59,7 +40,7 @@ export default async function PosPage() {
       .limit(300),
     supabase
       .from("sales")
-      .select("id, total, payment_method, created_at, customer_id")
+      .select("id, total, payment_method, invoice_type, created_at, customer_id")
       .eq("cash_register_id", openRegister.id)
       .eq("status", "completada")
       .order("created_at", { ascending: false })
@@ -100,6 +81,7 @@ export default async function PosPage() {
     created_at: sale.created_at,
     total: sale.total,
     payment_method: sale.payment_method,
+    invoice_type: sale.invoice_type,
     customerName: sale.customer_id
       ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
       : "Consumidor Final",

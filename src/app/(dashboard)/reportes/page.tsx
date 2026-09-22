@@ -33,7 +33,7 @@ export default async function ReportesPage({
 
   const { data: salesRaw } = await supabase
     .from("sales")
-    .select("id, total, payment_method, created_at, customer_id")
+    .select("id, total, payment_method, invoice_type, created_at, customer_id")
     .eq("org_id", organization.id)
     .eq("status", "completada")
     .gte("created_at", start.toISOString())
@@ -168,6 +168,7 @@ export default async function ReportesPage({
     created_at: sale.created_at,
     total: sale.total,
     payment_method: sale.payment_method,
+    invoice_type: sale.invoice_type,
     customerName: sale.customer_id
       ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
       : "Consumidor Final",

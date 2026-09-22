@@ -191,6 +191,7 @@ export interface Database {
           surcharge: number;
           total: number;
           payment_method: "efectivo" | "tarjeta" | "transferencia" | "qr" | "mixto" | "fiado";
+          invoice_type: "consumidor_final" | "factura_a" | "factura_b" | "factura_c";
           status: "completada" | "anulada";
           created_at: string;
         };
@@ -205,6 +206,7 @@ export interface Database {
           surcharge?: number;
           total?: number;
           payment_method?: "efectivo" | "tarjeta" | "transferencia" | "qr" | "mixto" | "fiado";
+          invoice_type?: "consumidor_final" | "factura_a" | "factura_b" | "factura_c";
           status?: "completada" | "anulada";
           created_at?: string;
         };
@@ -277,6 +279,7 @@ export interface Database {
           p_discount: number;
           p_items: Json;
           p_surcharge?: number;
+          p_invoice_type?: string;
         };
         Returns: string;
       };

@@ -21,8 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils";
-import { checkoutSale, type CheckoutItemInput } from "@/app/(dashboard)/pos/actions";
+import { cn, formatCurrency } from "@/lib/utils";
+import { defaultInvoiceTypeByPayment, invoiceTypes, type InvoiceType } from "@/lib/invoice-labels";
+import {
+  checkoutSale,
+  createCustomerQuick,
+  type CheckoutItemInput,
+} from "@/app/(dashboard)/pos/actions";
 
 interface ProductLite {
   id: string;
@@ -67,11 +72,18 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>("");
   const [customerQuery, setCustomerQuery] = useState("");
+  const [localCustomers, setLocalCustomers] = useState<CustomerLite[]>(customers);
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const [customerError, setCustomerError] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
   const [surcharge, setSurcharge] = useState(0);
   const [showExtras, setShowExtras] = useState(false);
   const [showManualAmount, setShowManualAmount] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
+  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+  const [invoiceType, setInvoiceType] = useState<InvoiceType>("consumidor_final");
   const [manualLabel, setManualLabel] = useState("");
   const [manualAmount, setManualAmount] = useState("");
   const [pending, setPending] = useState(false);
@@ -93,15 +105,15 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   }, [products, query]);
 
   const selectedCustomer = useMemo(
-    () => customers.find((c) => c.id === customerId) ?? null,
-    [customers, customerId]
+    () => localCustomers.find((c) => c.id === customerId) ?? null,
+    [localCustomers, customerId]
   );
 
   const customerResults = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
     if (!q) return [];
-    return customers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [customers, customerQuery]);
+    return localCustomers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [localCustomers, customerQuery]);
 
   const subtotal = cart.reduce((acc, item) => {
     if (item.kind === "product") return acc + item.product.price * item.quantity;
@@ -166,7 +178,39 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   function openPaymentPicker() {
     if (cart.length === 0 || pending) return;
     setError(null);
+    setPendingMethod(null);
     setShowPaymentPicker(true);
+  }
+
+  function closePaymentPicker() {
+    setShowPaymentPicker(false);
+    setPendingMethod(null);
+  }
+
+  function pickMethod(method: PaymentMethod) {
+    setPendingMethod(method);
+    setInvoiceType(defaultInvoiceTypeByPayment[method] ?? "consumidor_final");
+  }
+
+  async function handleCreateCustomer() {
+    const name = newCustomerName.trim();
+    if (!name) {
+      setCustomerError("Ingresá un nombre.");
+      return;
+    }
+    setCreatingCustomer(true);
+    setCustomerError(null);
+    const result = await createCustomerQuick(name);
+    setCreatingCustomer(false);
+    if (result.error || !result.id) {
+      setCustomerError(result.error ?? "No pudimos crear el cliente.");
+      return;
+    }
+    setLocalCustomers((current) => [...current, { id: result.id!, name }]);
+    setCustomerId(result.id);
+    setCustomerQuery("");
+    setNewCustomerName("");
+    setShowNewCustomer(false);
   }
 
   // Triggered by a real Enter keypress anywhere on the page (not while
@@ -259,12 +303,12 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
   async function processSale(method: PaymentMethod) {
     if (method === "fiado" && !customerId) {
-      setShowPaymentPicker(false);
+      closePaymentPicker();
       setError("Para vender fiado primero elegí un cliente.");
       return;
     }
 
-    setShowPaymentPicker(false);
+    closePaymentPicker();
     setPending(true);
     setError(null);
 
@@ -290,6 +334,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       paymentMethod: method,
       discount,
       surcharge,
+      invoiceType,
       items,
     });
 
@@ -305,6 +350,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     setSurcharge(0);
     setCustomerId("");
     setCustomerQuery("");
+    setInvoiceType("consumidor_final");
     router.refresh();
   }
 
@@ -512,31 +558,46 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                 </button>
               </div>
             ) : (
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={customerQuery}
-                  onChange={(e) => setCustomerQuery(e.target.value)}
-                  placeholder="Buscar cliente… (vacío = Consumidor Final)"
-                  className="pl-10"
-                />
-                {customerResults.length > 0 && (
-                  <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-                    {customerResults.map((customer) => (
-                      <button
-                        key={customer.id}
-                        type="button"
-                        onClick={() => {
-                          setCustomerId(customer.id);
-                          setCustomerQuery("");
-                        }}
-                        className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
-                      >
-                        {customer.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={customerQuery}
+                    onChange={(e) => setCustomerQuery(e.target.value)}
+                    placeholder="Buscar cliente… (vacío = Consumidor Final)"
+                    className="pl-10"
+                  />
+                  {customerResults.length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                      {customerResults.map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          onClick={() => {
+                            setCustomerId(customer.id);
+                            setCustomerQuery("");
+                          }}
+                          className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
+                        >
+                          {customer.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="Cargar cliente nuevo"
+                  onClick={() => {
+                    setNewCustomerName(customerQuery);
+                    setCustomerError(null);
+                    setShowNewCustomer(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             )}
           </CardContent>
@@ -627,27 +688,119 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
       <Dialog
         open={showPaymentPicker}
-        onClose={() => setShowPaymentPicker(false)}
-        title="¿Cómo paga?"
-        description={`Total a cobrar: ${formatCurrency(total)}`}
+        onClose={closePaymentPicker}
+        title={pendingMethod ? "Comprobante" : "¿Cómo paga?"}
+        description={
+          pendingMethod
+            ? `${paymentMethods.find((m) => m.value === pendingMethod)?.label} · Total: ${formatCurrency(total)}`
+            : `Total a cobrar: ${formatCurrency(total)}`
+        }
       >
-        <div className="grid grid-cols-2 gap-2">
-          {paymentMethods.map((method) => {
-            const disabled = method.value === "fiado" && !customerId;
-            return (
-              <button
-                key={method.value}
+        {pendingMethod ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              {invoiceTypes.map((type) => (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => setInvoiceType(type.value)}
+                  className={cn(
+                    "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
+                    invoiceType === type.value
+                      ? "border-primary bg-accent text-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  )}
+                >
+                  {type.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setPendingMethod(null)}>
+                Atrás
+              </Button>
+              <Button
                 type="button"
-                disabled={disabled || pending}
-                onClick={() => void processSale(method.value)}
-                className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
-                title={disabled ? "Elegí un cliente para vender fiado" : undefined}
+                disabled={pending}
+                onClick={() => void processSale(pendingMethod)}
               >
-                <method.icon className="h-5 w-5 text-accent-foreground" />
-                {method.label}
-              </button>
-            );
-          })}
+                {pending ? "Procesando…" : "Confirmar venta"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {paymentMethods.map((method) => {
+              const disabled = method.value === "fiado" && !customerId;
+              return (
+                <button
+                  key={method.value}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => pickMethod(method.value)}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
+                  title={disabled ? "Elegí un cliente para vender fiado" : undefined}
+                >
+                  <method.icon className="h-5 w-5 text-accent-foreground" />
+                  {method.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={showNewCustomer}
+        onClose={() => {
+          setShowNewCustomer(false);
+          setCustomerError(null);
+        }}
+        title="Nuevo cliente"
+        description="Cargá un cliente rápido para esta venta."
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Nombre</label>
+            <Input
+              autoFocus
+              value={newCustomerName}
+              onChange={(e) => setNewCustomerName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !creatingCustomer) {
+                  e.preventDefault();
+                  handleCreateCustomer();
+                }
+              }}
+              placeholder="Nombre y apellido"
+            />
+          </div>
+
+          {customerError && (
+            <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">
+              {customerError}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowNewCustomer(false);
+                setCustomerError(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={creatingCustomer || !newCustomerName.trim()}
+              onClick={handleCreateCustomer}
+            >
+              {creatingCustomer ? "Guardando…" : "Crear y seleccionar"}
+            </Button>
+          </div>
         </div>
       </Dialog>
     </div>

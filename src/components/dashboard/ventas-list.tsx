@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { voidSale } from "@/lib/actions/sales";
+import { invoiceLabels } from "@/lib/invoice-labels";
 
 export interface SaleRow {
   id: string;
   created_at: string;
   total: number;
   payment_method: string;
+  invoice_type: string;
   customerName: string;
   itemsSummary: string;
 }
@@ -67,6 +69,11 @@ export function VentasList({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-foreground">{sale.customerName}</span>
                 <Badge>{paymentLabels[sale.payment_method] ?? sale.payment_method}</Badge>
+                {sale.invoice_type && sale.invoice_type !== "consumidor_final" && (
+                  <Badge tone="accent">
+                    {invoiceLabels[sale.invoice_type] ?? sale.invoice_type}
+                  </Badge>
+                )}
               </div>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {formatDateTime(sale.created_at)} · {sale.itemsSummary}

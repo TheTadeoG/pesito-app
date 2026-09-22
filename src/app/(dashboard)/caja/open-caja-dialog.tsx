@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DollarSign, Lock } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
@@ -16,8 +16,7 @@ export function OpenCajaDialog() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submitOpen() {
     setPending(true);
     setError(null);
     const result = await openCaja(Number(amount) || 0);
@@ -30,6 +29,23 @@ export function OpenCajaDialog() {
     setAmount("");
     router.refresh();
   }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (pending) return;
+    await submitOpen();
+  }
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Enter" || open) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      setOpen(true);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
 
   return (
     <>
@@ -44,7 +60,7 @@ export function OpenCajaDialog() {
           </p>
           <Button className="mt-2" onClick={() => setOpen(true)}>
             <DollarSign className="h-4 w-4" />
-            Abrir Mi Caja
+            Abrir Mi Caja (Enter)
           </Button>
         </CardContent>
       </Card>
@@ -68,6 +84,12 @@ export function OpenCajaDialog() {
               autoFocus
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !pending) {
+                  e.preventDefault();
+                  submitOpen();
+                }
+              }}
               placeholder="0.00"
             />
             <p className="mt-1.5 text-xs text-muted-foreground">

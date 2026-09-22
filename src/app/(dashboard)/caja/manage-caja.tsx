@@ -9,6 +9,7 @@ import {
   Calculator,
   DollarSign,
   LockOpen,
+  ShoppingCart,
   SlidersHorizontal,
 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
@@ -97,10 +98,16 @@ export function ManageCaja({
           <p className="text-xs text-muted-foreground">
             Abierta el {formatDateTime(openedAt)} · {openedByLabel}
           </p>
-          <Button className="mt-2" onClick={() => setView("gestionar")}>
-            <SlidersHorizontal className="h-4 w-4" />
-            Gestionar Caja
-          </Button>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            <Button onClick={() => router.push("/pos")}>
+              <ShoppingCart className="h-4 w-4" />
+              Vender
+            </Button>
+            <Button variant="outline" onClick={() => setView("gestionar")}>
+              <SlidersHorizontal className="h-4 w-4" />
+              Gestionar Caja
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
