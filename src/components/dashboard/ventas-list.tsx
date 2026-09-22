@@ -9,6 +9,7 @@ import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { voidSale, getSaleDetail, type SaleDetail } from "@/lib/actions/sales";
 import { invoiceLabels } from "@/lib/invoice-labels";
 import { SaleDetailDialog } from "@/components/dashboard/sale-detail-dialog";
+import { useToast } from "@/components/toast/toast-provider";
 
 export interface SaleRow {
   id: string;
@@ -30,6 +31,7 @@ export function VentasList({
   emptyLabel?: string;
 }) {
   const router = useRouter();
+  const { showSuccess } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -61,6 +63,7 @@ export function VentasList({
       setError(result.error);
       return;
     }
+    showSuccess("Venta anulada", "Se repuso el stock vendido.");
     router.refresh();
   }
 

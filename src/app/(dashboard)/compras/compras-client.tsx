@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useToast } from "@/components/toast/toast-provider";
 import {
   registerPurchase,
   createSupplierQuick,
@@ -45,6 +46,7 @@ interface ComprasClientProps {
 
 export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps) {
   const router = useRouter();
+  const { showSuccess } = useToast();
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -336,6 +338,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       return;
     }
 
+    showSuccess("¡Compra registrada!", `${formatCurrency(total)} · ${itemCount} unidades`);
     setCart([]);
     setSupplierId("");
     setSupplierQuery("");

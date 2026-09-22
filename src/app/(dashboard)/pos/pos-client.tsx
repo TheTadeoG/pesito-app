@@ -26,6 +26,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import { resolveInvoiceType } from "@/lib/invoice-labels";
 import { suggestBilletes } from "@/lib/billetes";
+import { useToast } from "@/components/toast/toast-provider";
 import {
   checkoutSale,
   createCustomerQuick,
@@ -98,6 +99,7 @@ export function PosClient({
   autoInvoiceByPayment,
 }: PosClientProps) {
   const router = useRouter();
+  const { showSuccess } = useToast();
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -321,6 +323,7 @@ export function PosClient({
       return;
     }
 
+    showSuccess("¡Venta cobrada!", `${formatCurrency(total)} · ${itemCount} items`);
     setCart([]);
     setDiscountInput("");
     setSurchargeInput("");

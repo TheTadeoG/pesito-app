@@ -23,6 +23,7 @@ import { paymentLabels } from "@/lib/payment-labels";
 import type { PaymentBreakdownRow } from "@/lib/caja";
 import { addCashMovement, closeCaja, getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
 import { CajaDetailDialog } from "@/app/(dashboard)/caja/caja-detail-dialog";
+import { useToast } from "@/components/toast/toast-provider";
 
 type View = "closed" | "gestionar" | "ingreso" | "retiro" | "cerrar";
 
@@ -44,6 +45,7 @@ export function ManageCaja({
   paymentBreakdown,
 }: ManageCajaProps) {
   const router = useRouter();
+  const { showSuccess } = useToast();
   const [view, setView] = useState<View>("closed");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
@@ -96,6 +98,10 @@ export function ManageCaja({
       setError(result.error);
       return;
     }
+    showSuccess(
+      type === "ingreso" ? "Ingreso registrado" : "Retiro registrado",
+      formatCurrency(Number(amount) || 0)
+    );
     closeAndReset();
     router.refresh();
   }
@@ -109,6 +115,7 @@ export function ManageCaja({
       setError(result.error);
       return;
     }
+    showSuccess("¡Caja cerrada!", `Contado: ${formatCurrency(Number(countedAmount) || 0)}`);
     closeAndReset();
     router.refresh();
   }

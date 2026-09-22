@@ -8,11 +8,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { openCaja } from "@/app/(dashboard)/caja/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { formatCurrency } from "@/lib/utils";
 
 const ENTER_GUARD_MS = 1000;
 
 export function OpenCajaDialog() {
   const router = useRouter();
+  const { showSuccess } = useToast();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [pending, setPending] = useState(false);
@@ -34,6 +37,7 @@ export function OpenCajaDialog() {
       setError(result.error);
       return;
     }
+    showSuccess("¡Caja abierta!", `Monto inicial: ${formatCurrency(Number(amount) || 0)}`);
     setOpen(false);
     setAmount("");
     router.refresh();

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { computeCashOnHand } from "@/lib/caja";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
+import { ToastProvider } from "@/components/toast/toast-provider";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -40,12 +41,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const memberLabel = `${roleLabels[membership.role] ?? membership.role} · #${organization.id.slice(0, 5)}`;
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar orgName={organization.name} memberLabel={memberLabel} cashRegister={cashRegister} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar orgName={organization.name} userLabel={email ?? ""} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+    <ToastProvider>
+      <div className="flex min-h-screen bg-background">
+        <Sidebar orgName={organization.name} memberLabel={memberLabel} cashRegister={cashRegister} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar orgName={organization.name} userLabel={email ?? ""} />
+          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

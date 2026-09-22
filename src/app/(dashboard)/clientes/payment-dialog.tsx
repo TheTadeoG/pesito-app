@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
 import { registerPayment } from "@/app/(dashboard)/clientes/actions";
+import { useToast } from "@/components/toast/toast-provider";
 import type { Customer } from "@/lib/types";
 
 type PaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "qr";
@@ -25,6 +26,7 @@ export function PaymentDialog({
   customer: Customer | null;
   onClose: () => void;
 }) {
+  const { showSuccess } = useToast();
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("efectivo");
   const [pending, setPending] = useState(false);
@@ -41,6 +43,7 @@ export function PaymentDialog({
       setError(result.error);
       return;
     }
+    showSuccess("¡Pago registrado!", `${customer.name} · ${formatCurrency(Number(amount) || 0)}`);
     setAmount("");
     setMethod("efectivo");
     onClose();

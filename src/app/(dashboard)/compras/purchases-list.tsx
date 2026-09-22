@@ -12,6 +12,7 @@ import {
   type PurchaseDetail,
 } from "@/app/(dashboard)/compras/actions";
 import { PurchaseDetailDialog } from "@/app/(dashboard)/compras/purchase-detail-dialog";
+import { useToast } from "@/components/toast/toast-provider";
 
 export interface PurchaseRow {
   id: string;
@@ -25,6 +26,7 @@ export interface PurchaseRow {
 
 export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
   const router = useRouter();
+  const { showSuccess } = useToast();
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailPurchase, setDetailPurchase] = useState<PurchaseDetail | null>(null);
@@ -56,6 +58,7 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
       setError(result.error);
       return;
     }
+    showSuccess("Compra anulada", "Se revirtió el stock sumado.");
     router.refresh();
   }
 
