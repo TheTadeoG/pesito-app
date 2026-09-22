@@ -1,14 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
-  Boxes,
   LayoutGrid,
   LifeBuoy,
   Settings,
   ShoppingBag,
   ShoppingCart,
   Sparkles,
-  Tag,
   Truck,
   TrendingDown,
   Users,
@@ -41,8 +39,6 @@ export const navSections: NavSection[] = [
     title: "Catálogo",
     items: [
       { href: "/productos", label: "Productos", icon: LayoutGrid },
-      { href: "/inventario", label: "Inventario", icon: Boxes },
-      { href: "/marcas", label: "Marcas", icon: Tag },
     ],
   },
   {
@@ -76,9 +72,7 @@ export const navSections: NavSection[] = [
 export const pageTitles: Record<string, { title: string; description: string }> = {
   "/pos": { title: "Punto de Venta", description: "Cobrá tus ventas y armá el carrito." },
   "/compras": { title: "Compras", description: "Registrá el ingreso de mercadería." },
-  "/productos": { title: "Productos", description: "Tu catálogo completo." },
-  "/inventario": { title: "Inventario", description: "Alertas de stock bajo y movimientos." },
-  "/marcas": { title: "Marcas", description: "Catálogo de marcas de tus productos." },
+  "/productos": { title: "Productos", description: "Tu catálogo, el stock y las marcas." },
   "/clientes": { title: "Clientes", description: "Tus clientes y sus cuentas." },
   "/proveedores": { title: "Proveedores", description: "Tus proveedores y sus cuentas." },
   "/usuarios": { title: "Usuarios", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },

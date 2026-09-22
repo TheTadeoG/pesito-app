@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
+  History,
   ImageIcon,
   MoreVertical,
   Pencil,
@@ -16,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Brand, Product, Supplier } from "@/lib/types";
@@ -41,16 +45,25 @@ const ALL_COLUMN_IDS = COLUMNS.map((c) => c.id);
 const DEFAULT_COLUMNS: ColumnId[] = ALL_COLUMN_IDS.filter((id) => id !== "supplier");
 const COLUMNS_STORAGE_KEY = "pesito-productos-columns";
 
+// Mismo criterio que el contador de la pestaña Stock (sólo productos activos).
+const isLowStock = (p: Product) => p.active && p.stock <= p.min_stock;
+
 export function ProductosClient({
   products,
   brands,
   suppliers,
+  initialBrand,
 }: {
   products: Product[];
   brands: Pick<Brand, "id" | "name">[];
   suppliers: SupplierOption[];
+  // Viene de tocar el conteo de productos en la pestaña Marcas.
+  initialBrand: string | null;
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  const [brandFilter, setBrandFilter] = useState(initialBrand ?? "");
+  const [lowStockOnly, setLowStockOnly] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [adjusting, setAdjusting] = useState<Product | null>(null);
@@ -95,17 +108,31 @@ export function ProductosClient({
     [localSuppliers]
   );
 
+  // products.brand es texto libre: puede haber marcas en productos que no
+  // estén en el catálogo de marcas, así que se juntan las dos fuentes.
+  const brandOptions = useMemo(() => {
+    const names = new Set(localBrands.map((b) => b.name));
+    for (const p of products) if (p.brand) names.add(p.brand);
+    if (brandFilter) names.add(brandFilter);
+    return Array.from(names).sort((a, b) => a.localeCompare(b, "es"));
+  }, [localBrands, products, brandFilter]);
+
+  const lowStockCount = useMemo(() => products.filter(isLowStock).length, [products]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter(
-      (p) =>
+    return products.filter((p) => {
+      if (brandFilter && p.brand !== brandFilter) return false;
+      if (lowStockOnly && !isLowStock(p)) return false;
+      if (!q) return true;
+      return (
         p.name.toLowerCase().includes(q) ||
         p.brand?.toLowerCase().includes(q) ||
         p.barcode?.toLowerCase().includes(q) ||
         p.sku?.toLowerCase().includes(q)
-    );
-  }, [products, query]);
+      );
+    });
+  }, [products, query, brandFilter, lowStockOnly]);
 
   function openCreate() {
     setEditing(null);
@@ -134,15 +161,45 @@ export function ProductosClient({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre, marca, SKU o código…"
-            className="pl-10"
-          />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:flex-1 lg:w-96 lg:flex-none">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nombre, marca, SKU o código…"
+              className="pl-10"
+            />
+          </div>
+          <Select
+            value={brandFilter}
+            onChange={(e) => setBrandFilter(e.target.value)}
+            aria-label="Filtrar por marca"
+            className="sm:w-48"
+          >
+            <option value="">Todas las marcas</option>
+            {brandOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </Select>
+          <button
+            type="button"
+            onClick={() => setLowStockOnly((v) => !v)}
+            aria-pressed={lowStockOnly}
+            className={cn(
+              "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-sm font-medium transition-colors",
+              lowStockOnly
+                ? "border-danger/40 bg-danger-bg text-danger"
+                : "border-border bg-card text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Stock bajo
+            {lowStockCount > 0 && <span className="font-semibold">({lowStockCount})</span>}
+          </button>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setShowColumns(true)}>
@@ -162,7 +219,9 @@ export function ProductosClient({
             <p className="px-5 py-14 text-center text-sm text-muted-foreground">
               {products.length === 0
                 ? "Todavía no cargaste productos. Creá el primero."
-                : "No encontramos productos con esa búsqueda."}
+                : lowStockOnly && !query.trim() && !brandFilter
+                  ? "Ningún producto está por debajo de su stock mínimo."
+                  : "No encontramos productos con esos filtros."}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -310,7 +369,15 @@ export function ProductosClient({
                           >
                             <DropdownMenuItem onClick={() => setAdjusting(product)}>
                               <SlidersHorizontal className="h-4 w-4" />
-                              Ajustar stock (inventario)
+                              Ajustar stock
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(`/productos?tab=stock&producto=${product.id}`)
+                              }
+                            >
+                              <History className="h-4 w-4" />
+                              Ver movimientos
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleToggleActive(product)}

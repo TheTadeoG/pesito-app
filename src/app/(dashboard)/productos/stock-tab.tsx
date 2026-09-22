@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 
 interface MovementRow {
   id: string;
+  product_id: string;
   type: string;
   quantity: number;
   reference: string | null;
@@ -41,15 +42,18 @@ const movementTypeLabels: Record<string, string> = {
   apertura: "Apertura",
 };
 
-export function InventarioClient({
+export function StockTab({
   products,
   movements,
+  focusedProduct,
 }: {
   products: Product[];
   movements: MovementRow[];
+  // Viene de "Ver movimientos" en la tabla de productos.
+  focusedProduct: { id: string; name: string } | null;
 }) {
   const [adjusting, setAdjusting] = useState<Product | null>(null);
-  const [period, setPeriod] = useState<MovementPeriod>("30d");
+  const [period, setPeriod] = useState<MovementPeriod>(focusedProduct ? "all" : "30d");
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [movementQuery, setMovementQuery] = useState("");
   const lowStock = products.filter((p) => p.stock <= p.min_stock);
@@ -59,6 +63,7 @@ export function InventarioClient({
     const q = movementQuery.trim().toLowerCase();
 
     return movements.filter((m) => {
+      if (focusedProduct && m.product_id !== focusedProduct.id) return false;
       if (start && new Date(m.created_at) < start) return false;
       if (typeFilter && m.type !== typeFilter) return false;
       if (q) {
@@ -70,23 +75,10 @@ export function InventarioClient({
       }
       return true;
     });
-  }, [movements, period, typeFilter, movementQuery]);
+  }, [movements, focusedProduct, period, typeFilter, movementQuery]);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
-        <p className="text-sm text-muted-foreground">
-          El stock, costo y precio de cada producto se manejan desde Productos. Acá ves el stock
-          bajo y el historial de movimientos.
-        </p>
-        <Link href="/productos">
-          <Button variant="outline" size="sm">
-            Ir a Productos
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
-        </Link>
-      </div>
-
       <Card className={lowStock.length > 0 ? "border-danger/30 bg-danger-bg/40" : undefined}>
         <CardHeader>
           <CardTitle className="text-base">
@@ -129,6 +121,19 @@ export function InventarioClient({
         <CardHeader>
           <CardTitle className="text-base">Movimientos de stock</CardTitle>
           <div className="mt-3 space-y-3">
+            {focusedProduct && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Mostrando sólo</span>
+                <Link
+                  href="/productos?tab=stock"
+                  className="inline-flex items-center gap-1 rounded-full border border-primary bg-accent px-2.5 py-1 text-xs font-medium text-foreground"
+                  title="Ver todos los productos"
+                >
+                  {focusedProduct.name}
+                  <X className="h-3 w-3" />
+                </Link>
+              </div>
+            )}
             <div className="inline-flex flex-wrap rounded-xl border border-border bg-muted/50 p-1">
               {periodOptions.map((option) => (
                 <button

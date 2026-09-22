@@ -68,7 +68,6 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     if (error) return { error: "No pudimos guardar los cambios." };
 
     revalidatePath("/productos");
-    revalidatePath("/inventario");
     revalidatePath("/pos");
     return {};
   }
@@ -82,7 +81,6 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
   if (error || !data) return { error: "No pudimos crear el producto." };
 
   revalidatePath("/productos");
-  revalidatePath("/inventario");
   revalidatePath("/pos");
   revalidatePath("/compras");
 
@@ -152,7 +150,6 @@ export async function toggleProductActive(id: string, active: boolean): Promise<
   if (error) return { error: "No pudimos actualizar el producto." };
 
   revalidatePath("/productos");
-  revalidatePath("/inventario");
   revalidatePath("/pos");
   return {};
 }
@@ -168,7 +165,104 @@ export async function deleteProduct(id: string): Promise<ActionState> {
   }
 
   revalidatePath("/productos");
-  revalidatePath("/inventario");
   revalidatePath("/pos");
+  return {};
+}
+
+export async function adjustStock(
+  productId: string,
+  delta: number,
+  reason: string
+): Promise<ActionState> {
+  if (!delta) return { error: "Ingresá una cantidad distinta de cero." };
+
+  const { organization, userId } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data: product, error: fetchError } = await supabase
+    .from("products")
+    .select("id, stock")
+    .eq("id", productId)
+    .eq("org_id", organization.id)
+    .single();
+
+  if (fetchError || !product) {
+    return { error: "No encontramos el producto." };
+  }
+
+  const newStock = Number(product.stock) + delta;
+  if (newStock < 0) {
+    return { error: "El ajuste dejaría el stock en negativo." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("products")
+    .update({ stock: newStock })
+    .eq("id", productId);
+
+  if (updateError) {
+    return { error: "No pudimos actualizar el stock." };
+  }
+
+  await supabase.from("stock_movements").insert({
+    org_id: organization.id,
+    product_id: productId,
+    type: "ajuste",
+    quantity: delta,
+    reference: reason || null,
+    user_id: userId,
+  });
+
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  return {};
+}
+
+export async function saveBrand(id: string | undefined, name: string): Promise<ActionState> {
+  const trimmed = name.trim();
+  if (!trimmed) return { error: "La marca necesita un nombre." };
+
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  if (id) {
+    const { data: existing } = await supabase
+      .from("brands")
+      .select("name")
+      .eq("id", id)
+      .single();
+
+    const { error } = await supabase
+      .from("brands")
+      .update({ name: trimmed })
+      .eq("id", id);
+    if (error) return { error: "No pudimos guardar los cambios." };
+
+    // products.brand guarda el nombre (no un id): renombrar la marca acá
+    // debe reflejarse en los productos que ya la tenían asignada.
+    if (existing && existing.name !== trimmed) {
+      await supabase
+        .from("products")
+        .update({ brand: trimmed })
+        .eq("org_id", organization.id)
+        .eq("brand", existing.name);
+    }
+  } else {
+    const { error } = await supabase
+      .from("brands")
+      .insert({ org_id: organization.id, name: trimmed });
+    if (error) return { error: "No pudimos crear la marca." };
+  }
+
+  revalidatePath("/productos");
+  return {};
+}
+
+export async function deleteBrand(id: string): Promise<ActionState> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("brands").delete().eq("id", id);
+  if (error) return { error: "No pudimos borrar la marca." };
+
+  revalidatePath("/productos");
   return {};
 }

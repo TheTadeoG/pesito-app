@@ -1,14 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Brand } from "@/lib/types";
-import { saveBrand, deleteBrand } from "@/app/(dashboard)/marcas/actions";
+import { saveBrand, deleteBrand } from "@/app/(dashboard)/productos/actions";
 
-export function MarcasClient({ brands }: { brands: Brand[] }) {
+export function MarcasTab({
+  brands,
+  productCountByBrand,
+}: {
+  brands: Brand[];
+  // products.brand guarda el nombre de la marca, así que se cuenta por nombre.
+  productCountByBrand: Record<string, number>;
+}) {
   const [query, setQuery] = useState("");
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -122,7 +130,21 @@ export function MarcasClient({ brands }: { brands: Brand[] }) {
                       className="max-w-xs"
                     />
                   ) : (
-                    <p className="truncate font-medium text-foreground">{brand.name}</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">{brand.name}</p>
+                      {productCountByBrand[brand.name] ? (
+                        <Link
+                          href={`/productos?marca=${encodeURIComponent(brand.name)}`}
+                          className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                        >
+                          {productCountByBrand[brand.name] === 1
+                            ? "1 producto"
+                            : `${productCountByBrand[brand.name]} productos`}
+                        </Link>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Sin productos</p>
+                      )}
+                    </div>
                   )}
 
                   <div className="flex items-center gap-1.5">

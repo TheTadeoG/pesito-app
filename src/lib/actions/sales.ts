@@ -101,7 +101,6 @@ export async function voidSale(saleId: string): Promise<ActionState> {
   }
 
   revalidatePath("/reportes");
-  revalidatePath("/inventario");
   revalidatePath("/productos");
   revalidatePath("/pos");
   revalidatePath("/clientes");

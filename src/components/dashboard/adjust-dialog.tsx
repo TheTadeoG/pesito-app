@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { adjustStock } from "@/app/(dashboard)/inventario/actions";
+import { adjustStock } from "@/app/(dashboard)/productos/actions";
 import type { Product } from "@/lib/types";
 
 type Mode = "sumar" | "restar" | "ajustar";

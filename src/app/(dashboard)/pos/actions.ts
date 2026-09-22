@@ -56,7 +56,6 @@ export async function checkoutSale(
   }
 
   revalidatePath("/pos");
-  revalidatePath("/inventario");
   revalidatePath("/productos");
   revalidatePath("/caja");
   revalidatePath("/reportes");

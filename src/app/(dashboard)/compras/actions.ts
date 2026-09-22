@@ -77,7 +77,6 @@ export async function registerPurchase(
   }
 
   revalidatePath("/compras");
-  revalidatePath("/inventario");
   revalidatePath("/productos");
   revalidatePath("/reportes");
   revalidatePath("/proveedores");
@@ -171,7 +170,6 @@ export async function voidPurchase(purchaseId: string): Promise<{ error?: string
   }
 
   revalidatePath("/compras");
-  revalidatePath("/inventario");
   revalidatePath("/productos");
   revalidatePath("/reportes");
   revalidatePath("/proveedores");
