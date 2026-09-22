@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Banknote } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -38,7 +39,19 @@ export default async function InvitacionPage({
     .rpc("get_invitation_preview", { p_code: code })
     .maybeSingle();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!preview || !preview.valid) {
+    // Si ya hay una sesión activa, lo más probable es que esta misma
+    // persona ya haya usado el link con éxito (ej. volvió a entrar al
+    // link desde WhatsApp, o recargó la página de éxito) — no tiene
+    // sentido mostrarle un error, la mandamos directo a donde ya entró.
+    if (user) {
+      redirect("/pos");
+    }
+
     return (
       <Shell>
         <Card>
@@ -53,10 +66,6 @@ export default async function InvitacionPage({
       </Shell>
     );
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const roleLabel = roleLabels[preview.role as "admin" | "vendedor"];
 
