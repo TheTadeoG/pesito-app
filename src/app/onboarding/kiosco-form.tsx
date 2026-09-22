@@ -8,9 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function KioscoForm() {
-  const [step, setStep] = useState<"nombre" | "rubro">("nombre");
-  const [name, setName] = useState("");
+export function KioscoForm({ initialName = "" }: { initialName?: string }) {
+  // El nombre ya se pidió una vez en /registro (queda guardado en el
+  // usuario hasta confirmar el email). Si ya lo tenemos, no lo volvemos a
+  // pedir acá: arrancamos directo en el paso del rubro.
+  const [step, setStep] = useState<"nombre" | "rubro">(initialName.trim() ? "rubro" : "nombre");
+  const [name, setName] = useState(initialName);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +62,8 @@ export function KioscoForm() {
     <div>
       <h2 className="text-xl font-bold text-foreground">¿Qué tipo de negocio es?</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Esto nos ayuda a configurar funciones específicas.
+        Esto nos ayuda a configurar funciones específicas para{" "}
+        <span className="font-medium text-foreground">{name}</span>.
       </p>
 
       <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">

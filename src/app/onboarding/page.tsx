@@ -29,6 +29,9 @@ export default async function OnboardingPage() {
     redirect("/pos");
   }
 
+  const initialName =
+    typeof user.user_metadata?.business_name === "string" ? user.user_metadata.business_name : "";
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-xl">
@@ -39,7 +42,7 @@ export default async function OnboardingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <KioscoForm />
+          <KioscoForm initialName={initialName} />
         </CardContent>
       </Card>
     </div>
