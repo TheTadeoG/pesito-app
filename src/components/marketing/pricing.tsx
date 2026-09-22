@@ -1,39 +1,67 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const plans = [
   {
-    name: "Gratis",
-    price: "$0",
-    period: "para siempre",
-    description: "Para arrancar y probar Pesito en tu kiosco.",
+    name: "Plan Esencial",
+    price: "$9.900",
+    period: "por mes · IVA incl.",
+    badge: null,
     features: [
-      "1 usuario",
-      "Hasta 100 productos",
-      "Punto de venta y caja diaria",
-      "Reportes básicos",
+      "Ventas rápidas con lector de código de barras o teclado",
+      "Productos por unidad, peso y variantes",
+      "Stock: sumar, restar y ajustar a cantidad exacta",
+      "Caja diaria con arqueo y diferencias",
+      "Clientes y cuentas corrientes (fiado)",
+      "Reportes de ventas e ingresos",
+      "Hasta 2 usuarios",
+      "Facturación de ARCA (costo adicional)",
     ],
-    cta: "Empezar gratis",
+    cta: "Activar Plan Esencial",
     highlighted: false,
   },
   {
-    name: "Pro",
-    price: "$9.900",
-    period: "por mes",
-    description: "Para el kiosco o almacén que ya no para de crecer.",
+    name: "Plan Pro",
+    price: "$16.900",
+    period: "por mes · IVA incl.",
+    badge: "Más elegido",
     features: [
-      "Usuarios ilimitados",
-      "Productos ilimitados",
-      "Clientes y cuenta corriente (fiado)",
-      "Recomendaciones con IA",
-      "Reportes avanzados",
+      "Todas las funciones del Plan Esencial +",
+      "Reportes avanzados: períodos, gráficos y widgets",
+      "Múltiples cajas y usuarios simultáneos",
+      "Historial completo de caja (aperturas, cierres, diferencias)",
+      "Hasta 10 usuarios",
+      "Facturación de ARCA (costo adicional)",
       "Soporte prioritario",
     ],
-    cta: "Probar Pro",
+    cta: "Activar Plan Pro",
     highlighted: true,
   },
+  {
+    name: "Plan IA",
+    price: "$19.900",
+    period: "por mes · IVA incl.",
+    badge: "Nuevo",
+    features: [
+      "Todas las funciones del Plan Pro +",
+      "Recomendaciones de reposición con IA",
+      "Detección de productos de baja rotación",
+      "Precios sugeridos automáticamente",
+      "Facturación de ARCA (costo adicional)",
+      "Soporte prioritario 24/7",
+    ],
+    cta: "Activar Plan IA",
+    highlighted: false,
+  },
+];
+
+const invoiceTiers = [
+  { label: "500 fact/mes", price: "$10.000/mes" },
+  { label: "1.000 fact/mes", price: "$20.000/mes" },
+  { label: "2.000 fact/mes", price: "$40.000/mes" },
+  { label: "4.000 fact/mes", price: "$80.000/mes" },
 ];
 
 export function Pricing() {
@@ -44,11 +72,11 @@ export function Pricing() {
           Precios simples, sin letra chica
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Empezá gratis. Pasate a Pro cuando tu kiosco lo necesite.
+          Elegí el plan que se ajuste a tu kiosco o almacén. Probá 7 días gratis, sin tarjeta.
         </p>
       </div>
 
-      <div className="mx-auto mt-14 grid max-w-3xl gap-6 sm:grid-cols-2">
+      <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-3">
         {plans.map((plan) => (
           <div
             key={plan.name}
@@ -59,17 +87,23 @@ export function Pricing() {
                 : "border-border bg-card"
             )}
           >
-            {plan.highlighted && (
-              <span className="mb-3 w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                Más elegido
+            {plan.badge && (
+              <span
+                className={cn(
+                  "mb-3 w-fit rounded-full px-3 py-1 text-xs font-semibold",
+                  plan.highlighted
+                    ? "bg-primary/10 text-primary"
+                    : "bg-success-bg text-success"
+                )}
+              >
+                {plan.badge}
               </span>
             )}
             <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
             <div className="mt-2 flex items-baseline gap-1.5">
               <span className="text-3xl font-bold text-foreground">{plan.price}</span>
-              <span className="text-sm text-muted-foreground">{plan.period}</span>
             </div>
-            <p className="mt-3 text-sm text-muted-foreground">{plan.description}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{plan.period}</p>
 
             <ul className="mt-6 flex-1 space-y-3">
               {plan.features.map((feature) => (
@@ -88,9 +122,47 @@ export function Pricing() {
                 {plan.cta}
               </Button>
             </Link>
+            <p className="mt-2 text-center text-xs text-muted-foreground">Probar gratis 7 días</p>
           </div>
         ))}
       </div>
+
+      <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-4 rounded-card border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+            <Receipt className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Facturación electrónica</p>
+            <p className="text-xs text-muted-foreground">Facturas A, B y C con CAE automático.</p>
+          </div>
+        </div>
+
+        <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
+          {invoiceTiers.map((tier) => (
+            <div
+              key={tier.label}
+              className="rounded-xl border border-border px-3 py-2 text-center"
+            >
+              <p className="text-xs font-semibold text-foreground">{tier.label}</p>
+              <p className="text-xs text-muted-foreground">{tier.price}</p>
+            </div>
+          ))}
+        </div>
+
+        <Link href="/registro" className="shrink-0">
+          <Button variant="primary" className="w-full sm:w-auto">
+            Activar con facturación
+          </Button>
+        </Link>
+      </div>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        ¿Cadenas o franquicias con varias sucursales?{" "}
+        <Link href="/soporte" className="font-medium text-primary hover:underline">
+          Hablemos
+        </Link>
+      </p>
     </section>
   );
 }
