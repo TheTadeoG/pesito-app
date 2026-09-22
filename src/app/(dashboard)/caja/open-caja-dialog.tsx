@@ -85,8 +85,9 @@ export function OpenCajaDialog() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && amount && !pending) {
-                  e.preventDefault();
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                if (amount && !pending) {
                   submitOpen();
                 }
               }}
