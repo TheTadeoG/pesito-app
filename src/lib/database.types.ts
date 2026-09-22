@@ -87,6 +87,7 @@ export interface Database {
           brand: string | null;
           image_url: string | null;
           default_supplier_id: string | null;
+          package_label: string | null;
           active: boolean;
           created_at: string;
           updated_at: string;
@@ -106,6 +107,7 @@ export interface Database {
           brand?: string | null;
           image_url?: string | null;
           default_supplier_id?: string | null;
+          package_label?: string | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;

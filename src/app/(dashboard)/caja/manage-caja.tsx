@@ -23,6 +23,7 @@ import { paymentLabels } from "@/lib/payment-labels";
 import type { PaymentBreakdownRow } from "@/lib/caja";
 import { addCashMovement, closeCaja, getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
 import { CajaDetailDialog } from "@/app/(dashboard)/caja/caja-detail-dialog";
+import { CashCalculator } from "@/components/dashboard/cash-calculator";
 import { useToast } from "@/components/toast/toast-provider";
 
 type View = "closed" | "gestionar" | "ingreso" | "retiro" | "cerrar";
@@ -143,6 +144,10 @@ export function ManageCaja({
             <Button variant="outline" onClick={() => setView("gestionar")}>
               <SlidersHorizontal className="h-4 w-4" />
               Gestionar Caja
+            </Button>
+            <Button variant="danger" onClick={() => setView("cerrar")}>
+              <Calculator className="h-4 w-4" />
+              Cerrar caja
             </Button>
             <Button variant="outline" onClick={openDetail}>
               <Eye className="h-4 w-4" />
@@ -310,6 +315,8 @@ export function ManageCaja({
               placeholder="0.00"
             />
           </div>
+
+          <CashCalculator onUseTotal={(total) => setCountedAmount(String(total))} />
 
           {diff !== null && diff !== 0 && (
             <div className="flex items-center justify-between rounded-xl bg-warning-bg px-4 py-3">

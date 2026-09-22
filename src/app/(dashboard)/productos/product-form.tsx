@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   saveProduct,
   createBrandQuick,
+  createSupplierQuick,
   type ProductFormInput,
   type SaveProductResult,
 } from "@/app/(dashboard)/productos/actions";
@@ -41,6 +42,7 @@ interface ProductFormProps {
   suppliers?: SupplierOption[];
   onSaved?: (product: NonNullable<SaveProductResult["product"]>, initialStock: number) => void;
   onBrandCreated?: (brand: BrandOption) => void;
+  onSupplierCreated?: (supplier: SupplierOption) => void;
   // Cuando el alta viene desde Compras: la cantidad ingresada no se guarda
   // como stock directo del producto (quedaría en 0), sino que se devuelve
   // vía onSaved para que el que llama la cargue como línea de esa compra —
@@ -57,6 +59,7 @@ export function ProductForm({
   suppliers = [],
   onSaved,
   onBrandCreated,
+  onSupplierCreated,
   initialStockAsPurchase = false,
 }: ProductFormProps) {
   const isEdit = Boolean(product);
@@ -78,9 +81,15 @@ export function ProductForm({
   const [stock, setStock] = useState(String(product?.stock ?? "0"));
   const [minStock, setMinStock] = useState(String(product?.min_stock ?? "0"));
   const [unit, setUnit] = useState(product?.unit ?? "u");
+  const [packageLabel, setPackageLabel] = useState(product?.package_label ?? "");
   const [defaultSupplierId, setDefaultSupplierId] = useState<string | null>(
     product?.default_supplier_id ?? null
   );
+  const [localSuppliers, setLocalSuppliers] = useState(suppliers);
+  const [showNewSupplier, setShowNewSupplier] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState("");
+  const [creatingSupplier, setCreatingSupplier] = useState(false);
+  const [supplierError, setSupplierError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(product?.image_url ?? null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageDragActive, setImageDragActive] = useState(false);
@@ -168,6 +177,31 @@ export function ProductForm({
     setShowNewBrand(false);
   }
 
+  async function handleCreateSupplier() {
+    const name = newSupplierName.trim();
+    if (!name) {
+      setSupplierError("Ingresá un nombre.");
+      return;
+    }
+    setCreatingSupplier(true);
+    setSupplierError(null);
+    const result = await createSupplierQuick(name);
+    setCreatingSupplier(false);
+    if (result.error || !result.id) {
+      setSupplierError(result.error ?? "No pudimos crear el proveedor.");
+      return;
+    }
+    const newSupplier: SupplierOption = { id: result.id, name };
+    setLocalSuppliers((current) => [...current, newSupplier]);
+    onSupplierCreated?.(newSupplier);
+    setDefaultSupplierId(result.id);
+    setNewSupplierName("");
+    setShowNewSupplier(false);
+  }
+
+  const priceBelowCost =
+    cost.trim() !== "" && price.trim() !== "" && Number(price) > 0 && Number(price) < Number(cost);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
@@ -185,6 +219,7 @@ export function ProductForm({
       stock: initialStockAsPurchase ? 0 : enteredStock,
       minStock: Number(minStock) || 0,
       unit,
+      packageLabel,
       active: product?.active ?? true,
       imageUrl,
       defaultSupplierId,
@@ -287,9 +322,11 @@ export function ProductForm({
                     setSelectedBrandName(null);
                     setBrandQuery("");
                   }}
-                  className="shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  aria-label="Quitar marca"
+                  title="Quitar marca"
+                  className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-danger"
                 >
-                  Sin marca
+                  <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             ) : (
@@ -308,7 +345,8 @@ export function ProductForm({
                     id="p-brand"
                     value={brandQuery}
                     onChange={(e) => setBrandQuery(e.target.value)}
-                    placeholder="Buscar marca…"
+                    onFocus={() => setBrowseBrands(true)}
+                    placeholder="Buscar marca… (o mirá la lista)"
                     className="pl-10"
                   />
                   {(brandQuery.trim() || browseBrands) && (
@@ -357,14 +395,18 @@ export function ProductForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="p-barcode">Código de barras</Label>
+            <Label htmlFor="p-barcode">Código de barras (opcional)</Label>
             <Input id="p-barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="p-sku">SKU</Label>
+            <Label htmlFor="p-sku">SKU (opcional)</Label>
             <Input id="p-sku" value={sku} onChange={(e) => setSku(e.target.value)} />
           </div>
         </div>
+        <p className="-mt-2 text-xs text-muted-foreground">
+          El código de barras lo podés escanear con un lector en el campo de arriba, o cargarlo a
+          mano si no tenés lector.
+        </p>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -391,11 +433,16 @@ export function ProductForm({
             />
           </div>
         </div>
+        {priceBelowCost && (
+          <p className="-mt-2 rounded-xl bg-danger-bg px-3 py-2 text-xs font-medium text-danger">
+            El precio de venta es menor al costo: estarías vendiendo a pérdida.
+          </p>
+        )}
 
         <div className="grid grid-cols-3 gap-3">
           <div>
             <Label htmlFor="p-stock">
-              {initialStockAsPurchase ? "Cantidad a recibir" : "Stock inicial"}
+              {initialStockAsPurchase ? "Cantidad a recibir" : "Stock inicial (opcional)"}
             </Label>
             <Input
               id="p-stock"
@@ -407,7 +454,7 @@ export function ProductForm({
             />
           </div>
           <div>
-            <Label htmlFor="p-min">Stock mínimo</Label>
+            <Label htmlFor="p-min">Stock mínimo (opcional)</Label>
             <Input
               id="p-min"
               type="number"
@@ -417,7 +464,7 @@ export function ProductForm({
             />
           </div>
           <div>
-            <Label htmlFor="p-unit">Unidad</Label>
+            <Label htmlFor="p-unit">Cómo lo vendés</Label>
             <Select id="p-unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
               {units.map((u) => (
                 <option key={u.value} value={u.value}>
@@ -427,21 +474,54 @@ export function ProductForm({
             </Select>
           </div>
         </div>
+        <p className="-mt-2 text-xs text-muted-foreground">
+          Elegí si lo vendés por unidad, por peso (kg/g) o por volumen (l/ml). El stock y el mínimo
+          se manejan en esa misma medida.
+        </p>
+
+        <div>
+          <Label htmlFor="p-package">Presentación (opcional)</Label>
+          <Input
+            id="p-package"
+            value={packageLabel}
+            onChange={(e) => setPackageLabel(e.target.value)}
+            placeholder="Ej: Pack de 6, Fardo de 12, Docena"
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Si viene agrupado (pack, fardo, docena), aclaralo acá para que se entienda al vender.
+          </p>
+        </div>
 
         <div>
           <Label htmlFor="p-supplier">Proveedor habitual (opcional)</Label>
-          <Select
-            id="p-supplier"
-            value={defaultSupplierId ?? ""}
-            onChange={(e) => setDefaultSupplierId(e.target.value || null)}
-          >
-            <option value="">Sin proveedor</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </Select>
+          <div className="flex gap-2">
+            <Select
+              id="p-supplier"
+              value={defaultSupplierId ?? ""}
+              onChange={(e) => setDefaultSupplierId(e.target.value || null)}
+              className="flex-1"
+            >
+              <option value="">Sin proveedor</option>
+              {localSuppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Cargar proveedor nuevo"
+              onClick={() => {
+                setNewSupplierName("");
+                setSupplierError(null);
+                setShowNewSupplier(true);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {isEdit && (
@@ -512,6 +592,55 @@ export function ProductForm({
               onClick={handleCreateBrand}
             >
               {creatingBrand ? "Guardando…" : "Crear y seleccionar"}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={showNewSupplier}
+        onClose={() => {
+          setShowNewSupplier(false);
+          setSupplierError(null);
+        }}
+        title="Nuevo proveedor"
+        description="Cargá un proveedor sin salir del alta del producto."
+      >
+        <div className="space-y-4">
+          <Input
+            autoFocus
+            value={newSupplierName}
+            onChange={(e) => setNewSupplierName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !creatingSupplier) {
+                e.preventDefault();
+                handleCreateSupplier();
+              }
+            }}
+            placeholder="Nombre del proveedor"
+          />
+          {supplierError && (
+            <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">
+              {supplierError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowNewSupplier(false);
+                setSupplierError(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={creatingSupplier || !newSupplierName.trim()}
+              onClick={handleCreateSupplier}
+            >
+              {creatingSupplier ? "Guardando…" : "Crear y seleccionar"}
             </Button>
           </div>
         </div>

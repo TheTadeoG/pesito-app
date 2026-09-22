@@ -93,6 +93,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
     return [...products, ...extraProducts.filter((p) => !existingIds.has(p.id))];
   }, [products, extraProducts]);
   const [showNewProduct, setShowNewProduct] = useState(false);
+  const [newProductKey, setNewProductKey] = useState(0);
   const [supplierId, setSupplierId] = useState<string>("");
   const [supplierQuery, setSupplierQuery] = useState("");
   const [extraSuppliers, setExtraSuppliers] = useState<SupplierLite[]>([]);
@@ -507,7 +508,8 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                     setHighlightedIndex(-1);
                   }}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Buscar producto... (↑↓ para elegir, Enter para agregar)"
+                  onFocus={() => setBrowseProducts(true)}
+                  placeholder="Buscar producto o escanear código... (↑↓ para elegir, Enter para agregar)"
                   className="pl-10"
                 />
                 {(query.trim() || browseProducts) && (
@@ -558,7 +560,10 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowNewProduct(true)}
+                onClick={() => {
+                  setNewProductKey((k) => k + 1);
+                  setShowNewProduct(true);
+                }}
                 title="Crear producto nuevo"
               >
                 <Plus className="h-4 w-4" />
@@ -740,6 +745,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                       setSupplierHighlightedIndex(-1);
                     }}
                     onKeyDown={handleSupplierSearchKeyDown}
+                    onFocus={() => setBrowseSuppliers(true)}
                     placeholder="Buscar proveedor… (↑↓ para elegir, Enter selecciona)"
                     className="pl-10"
                   />
@@ -1013,9 +1019,14 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
       </Dialog>
 
       <ProductForm
+        key={`new-${newProductKey}`}
         open={showNewProduct}
         onClose={() => setShowNewProduct(false)}
         onSaved={handleProductCreated}
+        suppliers={localSuppliers}
+        onSupplierCreated={(supplier) =>
+          setExtraSuppliers((current) => [...current, { ...supplier, balance: 0 }])
+        }
         initialStockAsPurchase
       />
 

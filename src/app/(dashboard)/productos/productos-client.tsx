@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ImageIcon,
+  MoreVertical,
   Pencil,
   Plus,
   Search,
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Brand, Product, Supplier } from "@/lib/types";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
@@ -54,6 +56,8 @@ export function ProductosClient({
   const [adjusting, setAdjusting] = useState<Product | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [localBrands, setLocalBrands] = useState(brands);
+  const [localSuppliers, setLocalSuppliers] = useState(suppliers);
+  const [formKey, setFormKey] = useState(0);
   const [columns, setColumns] = useState<Set<ColumnId>>(new Set(DEFAULT_COLUMNS));
   const [showColumns, setShowColumns] = useState(false);
 
@@ -87,8 +91,8 @@ export function ProductosClient({
   const showColumn = (id: ColumnId) => columns.has(id);
 
   const supplierNameById = useMemo(
-    () => new Map(suppliers.map((s) => [s.id, s.name])),
-    [suppliers]
+    () => new Map(localSuppliers.map((s) => [s.id, s.name])),
+    [localSuppliers]
   );
 
   const filtered = useMemo(() => {
@@ -105,11 +109,13 @@ export function ProductosClient({
 
   function openCreate() {
     setEditing(null);
+    setFormKey((k) => k + 1);
     setFormOpen(true);
   }
 
   function openEdit(product: Product) {
     setEditing(product);
+    setFormKey((k) => k + 1);
     setFormOpen(true);
   }
 
@@ -141,7 +147,7 @@ export function ProductosClient({
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setShowColumns(true)}>
             <Settings2 className="h-4 w-4" />
-            Columnas
+            Filtros
           </Button>
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />
@@ -284,39 +290,43 @@ export function ProductosClient({
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => setAdjusting(product)}
-                            aria-label="Ajustar stock"
-                            title="Ajustar stock"
-                          >
-                            <SlidersHorizontal className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
                             onClick={() => openEdit(product)}
                             aria-label="Editar"
                             title="Editar"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDelete(product)}
-                            disabled={busyId === product.id}
-                            aria-label="Borrar"
-                            title="Borrar"
+                          <DropdownMenu
+                            trigger={
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                aria-label="Más acciones"
+                                title="Más acciones"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            }
                           >
-                            <Trash2 className="h-4 w-4 text-danger" />
-                          </Button>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleActive(product)}
-                            disabled={busyId === product.id}
-                            className="ml-1 shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground"
-                          >
-                            {product.active ? "Desactivar" : "Activar"}
-                          </button>
+                            <DropdownMenuItem onClick={() => setAdjusting(product)}>
+                              <SlidersHorizontal className="h-4 w-4" />
+                              Ajustar stock (inventario)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleToggleActive(product)}
+                              disabled={busyId === product.id}
+                            >
+                              {product.active ? "Desactivar" : "Activar"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(product)}
+                              disabled={busyId === product.id}
+                              danger
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Borrar
+                            </DropdownMenuItem>
+                          </DropdownMenu>
                         </div>
                       </td>
                     </tr>
@@ -329,13 +339,14 @@ export function ProductosClient({
       </Card>
 
       <ProductForm
-        key={editing?.id ?? "new"}
+        key={editing?.id ?? `new-${formKey}`}
         open={formOpen}
         onClose={() => setFormOpen(false)}
         product={editing}
         brands={localBrands}
-        suppliers={suppliers}
+        suppliers={localSuppliers}
         onBrandCreated={(brand) => setLocalBrands((current) => [...current, brand])}
+        onSupplierCreated={(supplier) => setLocalSuppliers((current) => [...current, supplier])}
       />
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />

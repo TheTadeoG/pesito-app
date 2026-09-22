@@ -15,6 +15,7 @@ export interface ProductFormInput {
   stock: number;
   minStock: number;
   unit: string;
+  packageLabel: string;
   active: boolean;
   imageUrl: string | null;
   defaultSupplierId: string | null;
@@ -56,6 +57,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     cost: input.cost,
     min_stock: input.minStock,
     unit: input.unit,
+    package_label: input.packageLabel.trim() || null,
     active: input.active,
     image_url: input.imageUrl,
     default_supplier_id: input.defaultSupplierId,
@@ -114,6 +116,32 @@ export async function createBrandQuick(name: string): Promise<{ error?: string; 
   }
 
   revalidatePath("/productos");
+
+  return { id: data.id };
+}
+
+export async function createSupplierQuick(name: string): Promise<{ error?: string; id?: string }> {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { error: "Ingresá un nombre." };
+  }
+
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("suppliers")
+    .insert({ org_id: organization.id, name: trimmed })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return { error: "No pudimos crear el proveedor." };
+  }
+
+  revalidatePath("/productos");
+  revalidatePath("/compras");
+  revalidatePath("/proveedores");
 
   return { id: data.id };
 }

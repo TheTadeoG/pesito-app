@@ -1,5 +1,5 @@
 // Billetes de peso argentino en circulación, de mayor a menor.
-const DENOMINATIONS = [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20, 10];
+export const DENOMINATIONS = [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20, 10];
 
 export interface BilleteCount {
   value: number;

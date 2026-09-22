@@ -499,6 +499,11 @@ export function UsuariosClient({
                 <option value="vendedor">Vendedor</option>
                 <option value="admin">Administrador</option>
               </Select>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {directRole === "admin"
+                  ? "Puede gestionar productos, clientes, proveedores y también invitar y gestionar usuarios."
+                  : "Puede vender, cargar compras y ver el catálogo, sin gestionar el equipo."}
+              </p>
             </div>
 
             {directError && (

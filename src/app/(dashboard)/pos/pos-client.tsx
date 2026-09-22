@@ -105,6 +105,50 @@ export function PosClient({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartRestored, setCartRestored] = useState(false);
+  const cartStorageKey = `pesito-pos-cart-${cashRegisterId}`;
+
+  // Si se recarga la página con productos ya agregados (F5 sin querer, se
+  // corta la luz, etc.), recuperamos el carrito guardado en este dispositivo
+  // en vez de perderlo. Se descartan líneas de productos que ya no existen.
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(cartStorageKey);
+      if (raw) {
+        const parsed: CartItem[] = JSON.parse(raw);
+        const valid = parsed.filter(
+          (item) => item.kind === "manual" || products.some((p) => p.id === item.product.id)
+        );
+        if (valid.length > 0) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setCart(valid);
+        }
+      }
+    } catch {
+      // ignore malformed/blocked localStorage
+    }
+    setCartRestored(true);
+    // Sólo al montar: una vez restaurado, `cart` pasa a ser la única fuente
+    // de verdad de esta sesión.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!cartRestored) return;
+    try {
+      window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+    } catch {
+      // ignore
+    }
+  }, [cart, cartRestored, cartStorageKey]);
+
+  function clearCart() {
+    if (cart.length > 0 && !confirm("¿Vaciar el carrito? Se van a quitar todos los productos.")) {
+      return;
+    }
+    setCart([]);
+  }
+
   const [customerId, setCustomerId] = useState<string>("");
   const [customerQuery, setCustomerQuery] = useState("");
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
@@ -463,46 +507,62 @@ export function PosClient({
     }
 
     return (
-      <div className="relative">
-        <Input
-          value={customerQuery}
-          onChange={(e) => {
-            setCustomerQuery(e.target.value);
-            setCustomerHighlightedIndex(-1);
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            value={customerQuery}
+            onChange={(e) => {
+              setCustomerQuery(e.target.value);
+              setCustomerHighlightedIndex(-1);
+            }}
+            onKeyDown={handleCustomerSearchKeyDown}
+            onFocus={() => setBrowseCustomers(true)}
+            placeholder="Buscar cliente… (↑↓ para elegir, Enter selecciona)"
+          />
+          {(customerQuery.trim() || browseCustomers) && (
+            <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+              {customerResults.length === 0 && (
+                <p className="px-3.5 py-2.5 text-sm text-muted-foreground">
+                  {customerQuery.trim()
+                    ? `No encontramos clientes que coincidan con "${customerQuery}". Podés cargarlo con el botón +.`
+                    : "Todavía no cargaste clientes."}
+                </p>
+              )}
+              {customerResults.map((customer, index) => (
+                <button
+                  key={customer.id}
+                  type="button"
+                  onClick={() => selectCustomer(customer)}
+                  onMouseEnter={() => setCustomerHighlightedIndex(index)}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-2 px-3.5 py-2 text-left text-sm",
+                    index === customerHighlightedIndex ? "bg-accent" : "hover:bg-muted"
+                  )}
+                >
+                  <span className="truncate">{customer.name}</span>
+                  {customer.balance > 0 && (
+                    <span className="shrink-0 text-xs text-danger">
+                      debe {formatCurrency(customer.balance)}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          title="Cargar cliente nuevo"
+          onClick={() => {
+            setNewCustomerName(customerQuery);
+            setCustomerError(null);
+            setShowNewCustomer(true);
           }}
-          onKeyDown={handleCustomerSearchKeyDown}
-          placeholder="Buscar cliente… (↑↓ para elegir, Enter selecciona)"
-        />
-        {(customerQuery.trim() || browseCustomers) && (
-          <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
-            {customerResults.length === 0 && (
-              <p className="px-3.5 py-2.5 text-sm text-muted-foreground">
-                {customerQuery.trim()
-                  ? `No encontramos clientes que coincidan con "${customerQuery}".`
-                  : "Todavía no cargaste clientes."}
-              </p>
-            )}
-            {customerResults.map((customer, index) => (
-              <button
-                key={customer.id}
-                type="button"
-                onClick={() => selectCustomer(customer)}
-                onMouseEnter={() => setCustomerHighlightedIndex(index)}
-                className={cn(
-                  "flex w-full items-center justify-between gap-2 px-3.5 py-2 text-left text-sm",
-                  index === customerHighlightedIndex ? "bg-accent" : "hover:bg-muted"
-                )}
-              >
-                <span className="truncate">{customer.name}</span>
-                {customer.balance > 0 && (
-                  <span className="shrink-0 text-xs text-danger">
-                    debe {formatCurrency(customer.balance)}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
     );
   }
@@ -679,8 +739,8 @@ export function PosClient({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="space-y-6 lg:col-span-2">
+    <div className="grid gap-6 xl:grid-cols-3">
+      <div className="space-y-6 xl:col-span-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Buscar Producto</CardTitle>
@@ -711,7 +771,8 @@ export function PosClient({
                     setHighlightedIndex(-1);
                   }}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Buscar producto... (↑↓ para elegir, Enter para agregar)"
+                  onFocus={() => setBrowseProducts(true)}
+                  placeholder="Escaneá el código de barras o buscá por nombre… (↑↓, Enter agrega)"
                   className={query ? "pl-10 pr-9" : "pl-10"}
                 />
                 {query && (
@@ -844,7 +905,21 @@ export function PosClient({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Carrito</CardTitle>
-            <span className="text-sm text-muted-foreground">Total: {formatCurrency(total)}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">Total: {formatCurrency(total)}</span>
+              {cart.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={clearCart}
+                  aria-label="Vaciar carrito"
+                  title="Vaciar carrito"
+                >
+                  <Trash2 className="h-4 w-4 text-danger" />
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {cart.length === 0 ? (
@@ -1023,6 +1098,7 @@ export function PosClient({
                       setCustomerHighlightedIndex(-1);
                     }}
                     onKeyDown={handleCustomerSearchKeyDown}
+                    onFocus={() => setBrowseCustomers(true)}
                     placeholder="Buscar cliente… (↑↓ para elegir, Enter selecciona)"
                     className="pl-10"
                   />

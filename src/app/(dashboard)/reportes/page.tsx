@@ -123,20 +123,31 @@ export default async function ReportesPage({
     .slice(0, 5)
     .map((p) => ({ name: p.name, quantity: p.quantity }));
   const topByMargin = Array.from(byProductQty.values())
+    // Un producto vendido a pérdida no es "el que más ganancia deja" — no
+    // tiene sentido mostrarlo acá con margen negativo.
+    .filter((p) => p.margin >= 0)
     .sort((a, b) => b.margin - a.margin)
     .slice(0, 5)
     .map((p) => ({ name: p.name, margin: p.margin }));
 
+  let consumidorFinalTotal = 0;
   const byCustomer = new Map<string, number>();
   for (const sale of sales) {
-    if (!sale.customer_id) continue;
+    if (!sale.customer_id) {
+      consumidorFinalTotal += sale.total;
+      continue;
+    }
     byCustomer.set(sale.customer_id, (byCustomer.get(sale.customer_id) ?? 0) + sale.total);
   }
-  const topCustomers = Array.from(byCustomer.entries())
-    .map(([customerId, total]) => ({
+  const topCustomers = [
+    ...(consumidorFinalTotal > 0
+      ? [{ name: "Consumidor Final", total: consumidorFinalTotal }]
+      : []),
+    ...Array.from(byCustomer.entries()).map(([customerId, total]) => ({
       name: customerNameById.get(customerId) ?? "Cliente eliminado",
       total,
-    }))
+    })),
+  ]
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 
