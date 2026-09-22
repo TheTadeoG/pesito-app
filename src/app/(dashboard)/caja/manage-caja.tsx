@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -63,6 +63,20 @@ export function ManageCaja({
     setDetail(result.detail ?? null);
   }
 
+  // Con la caja abierta y sin ningún diálogo activo, Enter lleva directo a
+  // vender — no hace falta ni un click ni esperar un segundo Enter.
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Enter" || e.repeat) return;
+      if (view !== "closed" || detailOpen) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      router.push("/pos");
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [view, detailOpen, router]);
+
   function closeAndReset() {
     setView("closed");
     setAmount("");
@@ -115,7 +129,7 @@ export function ManageCaja({
           <div className="mt-2 flex flex-wrap justify-center gap-2">
             <Button onClick={() => router.push("/pos")}>
               <ShoppingCart className="h-4 w-4" />
-              Vender
+              Vender (Enter)
             </Button>
             <Button variant="outline" onClick={() => setView("gestionar")}>
               <SlidersHorizontal className="h-4 w-4" />
