@@ -46,7 +46,7 @@ export function OpenCajaDialog() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Enter" || open) return;
+      if (e.key !== "Enter" || e.repeat || open) return;
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       openDialog();
@@ -102,7 +102,7 @@ export function OpenCajaDialog() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key !== "Enter") return;
+                if (e.key !== "Enter" || e.repeat) return;
                 e.preventDefault();
                 if (amount && !pending && enterReady) {
                   submitOpen();

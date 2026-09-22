@@ -11,7 +11,7 @@ export function OpenCajaPrompt() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Enter") return;
+      if (e.key !== "Enter" || e.repeat) return;
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       router.push("/caja");
