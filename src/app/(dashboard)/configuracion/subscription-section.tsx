@@ -7,7 +7,7 @@ import { cn, formatDateTime } from "@/lib/utils";
 import type { SubscriptionInfo } from "@/lib/subscription";
 import { FREE_PLAN_MONTHLY_SALES_LIMIT } from "@/lib/subscription";
 import { paidPlanDefinitions, planDefinitions, getPlanOwnFeatures } from "@/lib/plan-features";
-import { planAccents, planIcons } from "@/lib/plan-visuals";
+import { planAccents, planIcons, PlanTierBadge } from "@/lib/plan-visuals";
 
 export function SubscriptionSection({
   subscription,
@@ -86,9 +86,7 @@ export function SubscriptionSection({
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                   <span>
                     {feature}
-                    <Badge tone="accent" className="ml-1.5 align-middle">
-                      PRO
-                    </Badge>
+                    <PlanTierBadge plan="pro" />
                   </span>
                 </li>
               ))}

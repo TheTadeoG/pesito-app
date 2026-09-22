@@ -1,4 +1,5 @@
 import { Bot, Crown, Sparkles, Zap, type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Plan } from "@/lib/subscription";
 
 // Ícono y acento de color por plan, compartido entre la landing
@@ -59,3 +60,23 @@ export const planAccents: Record<Plan, PlanAccent> = {
     buttonVariant: "violet",
   },
 };
+
+/**
+ * Etiqueta chica ("PRO"/"IA") para marcar una función puntual como
+ * exclusiva de ese plan — p. ej. las que se destraban temporalmente con
+ * la prueba. Reutiliza el mismo tono suave que el ícono del plan (ya
+ * pensado para leerse bien en claro y oscuro) en vez de un color fijo,
+ * para que la etiqueta siempre combine con la identidad de ese plan.
+ */
+export function PlanTierBadge({ plan }: { plan: Plan }) {
+  return (
+    <span
+      className={cn(
+        "ml-1.5 inline-flex items-center rounded-full px-2 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide",
+        planAccents[plan].iconBg
+      )}
+    >
+      {plan === "ia" ? "IA" : plan}
+    </span>
+  );
+}
