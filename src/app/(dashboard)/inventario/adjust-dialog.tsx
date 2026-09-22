@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Equal, Minus, Plus } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,10 @@ import type { Product } from "@/lib/types";
 
 type Mode = "sumar" | "restar" | "ajustar";
 
-const modes: { value: Mode; label: string }[] = [
-  { value: "sumar", label: "Sumar" },
-  { value: "restar", label: "Restar" },
-  { value: "ajustar", label: "Ajustar a" },
+const modes: { value: Mode; label: string; icon: typeof Plus; activeClass: string }[] = [
+  { value: "sumar", label: "Sumar", icon: Plus, activeClass: "bg-success-bg text-success" },
+  { value: "restar", label: "Restar", icon: Minus, activeClass: "bg-danger-bg text-danger" },
+  { value: "ajustar", label: "Ajustar a", icon: Equal, activeClass: "bg-accent text-accent-foreground" },
 ];
 
 export function AdjustDialog({
@@ -90,12 +91,13 @@ export function AdjustDialog({
               type="button"
               onClick={() => setMode(m.value)}
               className={cn(
-                "flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors",
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-sm font-medium transition-colors",
                 mode === m.value
-                  ? "bg-card text-foreground shadow-sm"
+                  ? cn(m.activeClass, "shadow-sm")
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
+              <m.icon className="h-3.5 w-3.5" />
               {m.label}
             </button>
           ))}
@@ -134,7 +136,12 @@ export function AdjustDialog({
           <Button type="button" variant="outline" onClick={closeAndReset}>
             Cancelar
           </Button>
-          <Button type="button" disabled={pending || !amount} onClick={handleSubmit}>
+          <Button
+            type="button"
+            variant={mode === "restar" ? "danger" : "primary"}
+            disabled={pending || !amount}
+            onClick={handleSubmit}
+          >
             {pending ? "Guardando…" : "Confirmar"}
           </Button>
         </div>
