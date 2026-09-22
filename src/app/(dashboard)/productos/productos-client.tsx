@@ -7,15 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
-import type { Product } from "@/lib/types";
+import type { Brand, Product } from "@/lib/types";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 import { deleteProduct, toggleProductActive } from "@/app/(dashboard)/productos/actions";
 
-export function ProductosClient({ products }: { products: Product[] }) {
+export function ProductosClient({
+  products,
+  brands,
+}: {
+  products: Product[];
+  brands: Pick<Brand, "id" | "name">[];
+}) {
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [localBrands, setLocalBrands] = useState(brands);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -162,6 +169,8 @@ export function ProductosClient({ products }: { products: Product[] }) {
         open={formOpen}
         onClose={() => setFormOpen(false)}
         product={editing}
+        brands={localBrands}
+        onBrandCreated={(brand) => setLocalBrands((current) => [...current, brand])}
       />
     </div>
   );

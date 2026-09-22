@@ -4,6 +4,7 @@ export type Organization = Database["public"]["Tables"]["organizations"]["Row"];
 export type Membership = Database["public"]["Tables"]["memberships"]["Row"];
 export type Category = Database["public"]["Tables"]["categories"]["Row"];
 export type Product = Database["public"]["Tables"]["products"]["Row"];
+export type Brand = Database["public"]["Tables"]["brands"]["Row"];
 export type Customer = Database["public"]["Tables"]["customers"]["Row"];
 export type CashRegister = Database["public"]["Tables"]["cash_registers"]["Row"];
 export type CashMovement = Database["public"]["Tables"]["cash_movements"]["Row"];

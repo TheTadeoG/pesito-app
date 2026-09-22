@@ -6,11 +6,10 @@ export default async function ProductosPage() {
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
 
-  const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .eq("org_id", organization.id)
-    .order("name");
+  const [{ data: products }, { data: brands }] = await Promise.all([
+    supabase.from("products").select("*").eq("org_id", organization.id).order("name"),
+    supabase.from("brands").select("id, name").eq("org_id", organization.id).order("name"),
+  ]);
 
   const normalized = (products ?? []).map((p) => ({
     ...p,
@@ -20,5 +19,5 @@ export default async function ProductosPage() {
     min_stock: Number(p.min_stock),
   }));
 
-  return <ProductosClient products={normalized} />;
+  return <ProductosClient products={normalized} brands={brands ?? []} />;
 }

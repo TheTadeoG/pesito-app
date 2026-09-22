@@ -263,6 +263,22 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["stock_movements"]["Insert"]>;
         Relationships: [];
       };
+      brands: {
+        Row: {
+          id: string;
+          org_id: string;
+          name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          name: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["brands"]["Insert"]>;
+        Relationships: [];
+      };
       suppliers: {
         Row: {
           id: string;

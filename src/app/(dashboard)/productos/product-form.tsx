@@ -1,19 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ImageIcon, Loader2, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { ImageIcon, Loader2, Plus, X } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import {
   saveProduct,
+  createBrandQuick,
   type ProductFormInput,
   type SaveProductResult,
 } from "@/app/(dashboard)/productos/actions";
-import type { Product } from "@/lib/types";
+import type { Brand, Product } from "@/lib/types";
 
 const units = [
   { value: "u", label: "Unidad" },
@@ -27,17 +29,36 @@ const units = [
 
 const MAX_IMAGE_MB = 5;
 
+type BrandOption = Pick<Brand, "id" | "name">;
+
 interface ProductFormProps {
   open: boolean;
   onClose: () => void;
   product?: Product | null;
+  brands?: BrandOption[];
   onSaved?: (product: NonNullable<SaveProductResult["product"]>) => void;
+  onBrandCreated?: (brand: BrandOption) => void;
 }
 
-export function ProductForm({ open, onClose, product, onSaved }: ProductFormProps) {
+export function ProductForm({
+  open,
+  onClose,
+  product,
+  brands = [],
+  onSaved,
+  onBrandCreated,
+}: ProductFormProps) {
   const isEdit = Boolean(product);
   const [name, setName] = useState(product?.name ?? "");
-  const [brand, setBrand] = useState(product?.brand ?? "");
+  const [selectedBrandName, setSelectedBrandName] = useState<string | null>(
+    product?.brand ?? null
+  );
+  const [brandQuery, setBrandQuery] = useState("");
+  const [localBrands, setLocalBrands] = useState(brands);
+  const [showNewBrand, setShowNewBrand] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [creatingBrand, setCreatingBrand] = useState(false);
+  const [brandError, setBrandError] = useState<string | null>(null);
   const [barcode, setBarcode] = useState(product?.barcode ?? "");
   const [sku, setSku] = useState(product?.sku ?? "");
   const [price, setPrice] = useState(String(product?.price ?? ""));
@@ -47,20 +68,23 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
   const [unit, setUnit] = useState(product?.unit ?? "u");
   const [imageUrl, setImageUrl] = useState<string | null>(product?.image_url ?? null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageDragActive, setImageDragActive] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const brandResults = useMemo(() => {
+    const q = brandQuery.trim().toLowerCase();
+    if (!q) return [];
+    return localBrands.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [localBrands, brandQuery]);
+
   function resetAndClose() {
     onClose();
   }
 
-  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
+  async function uploadFile(file: File) {
     if (!file.type.startsWith("image/")) {
       setImageError("Elegí un archivo de imagen.");
       return;
@@ -92,6 +116,42 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
     setImageUrl(data.publicUrl);
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) void uploadFile(file);
+  }
+
+  function handleImageDrop(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    setImageDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) void uploadFile(file);
+  }
+
+  async function handleCreateBrand() {
+    const name = newBrandName.trim();
+    if (!name) {
+      setBrandError("Ingresá un nombre.");
+      return;
+    }
+    setCreatingBrand(true);
+    setBrandError(null);
+    const result = await createBrandQuick(name);
+    setCreatingBrand(false);
+    if (result.error || !result.id) {
+      setBrandError(result.error ?? "No pudimos crear la marca.");
+      return;
+    }
+    const newBrand: BrandOption = { id: result.id, name };
+    setLocalBrands((current) => [...current, newBrand]);
+    onBrandCreated?.(newBrand);
+    setSelectedBrandName(name);
+    setBrandQuery("");
+    setNewBrandName("");
+    setShowNewBrand(false);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
@@ -100,7 +160,7 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
     const input: ProductFormInput = {
       id: product?.id,
       name,
-      brand,
+      brand: selectedBrandName ?? "",
       barcode,
       sku,
       price: Number(price) || 0,
@@ -143,8 +203,17 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setImageDragActive(true);
+            }}
+            onDragLeave={() => setImageDragActive(false)}
+            onDrop={handleImageDrop}
             disabled={uploadingImage}
-            className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground hover:border-primary/50"
+            className={cn(
+              "relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed bg-muted/50 text-muted-foreground transition-colors",
+              imageDragActive ? "border-primary bg-accent" : "border-border hover:border-primary/50"
+            )}
           >
             {uploadingImage ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -175,6 +244,9 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
                 Quitar
               </button>
             )}
+            <p className="text-xs text-muted-foreground">
+              Arrastrá una imagen acá o hacé click para elegirla.
+            </p>
             {imageError && <p className="text-xs text-danger">{imageError}</p>}
           </div>
         </div>
@@ -186,7 +258,64 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
           </div>
           <div>
             <Label htmlFor="p-brand">Marca</Label>
-            <Input id="p-brand" value={brand} onChange={(e) => setBrand(e.target.value)} />
+            {selectedBrandName ? (
+              <div className="flex h-10 items-center justify-between rounded-xl border border-border px-3.5">
+                <span className="truncate text-sm font-medium text-foreground">
+                  {selectedBrandName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedBrandName(null);
+                    setBrandQuery("");
+                  }}
+                  className="shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Sin marca
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="p-brand"
+                    value={brandQuery}
+                    onChange={(e) => setBrandQuery(e.target.value)}
+                    placeholder="Buscar marca…"
+                  />
+                  {brandResults.length > 0 && (
+                    <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                      {brandResults.map((b) => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedBrandName(b.name);
+                            setBrandQuery("");
+                          }}
+                          className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
+                        >
+                          {b.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="Cargar marca nueva"
+                  onClick={() => {
+                    setNewBrandName(brandQuery);
+                    setBrandError(null);
+                    setShowNewBrand(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -280,6 +409,53 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
           </Button>
         </div>
       </form>
+
+      <Dialog
+        open={showNewBrand}
+        onClose={() => {
+          setShowNewBrand(false);
+          setBrandError(null);
+        }}
+        title="Nueva marca"
+        description="Cargá una marca para poder reutilizarla en otros productos."
+      >
+        <div className="space-y-4">
+          <Input
+            autoFocus
+            value={newBrandName}
+            onChange={(e) => setNewBrandName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !creatingBrand) {
+                e.preventDefault();
+                handleCreateBrand();
+              }
+            }}
+            placeholder="Nombre de la marca"
+          />
+          {brandError && (
+            <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{brandError}</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowNewBrand(false);
+                setBrandError(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={creatingBrand || !newBrandName.trim()}
+              onClick={handleCreateBrand}
+            >
+              {creatingBrand ? "Guardando…" : "Crear y seleccionar"}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </Dialog>
   );
 }

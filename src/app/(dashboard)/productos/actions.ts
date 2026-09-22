@@ -89,6 +89,30 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
   };
 }
 
+export async function createBrandQuick(name: string): Promise<{ error?: string; id?: string }> {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { error: "Ingresá un nombre." };
+  }
+
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("brands")
+    .insert({ org_id: organization.id, name: trimmed })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return { error: "No pudimos crear la marca." };
+  }
+
+  revalidatePath("/productos");
+
+  return { id: data.id };
+}
+
 export async function toggleProductActive(id: string, active: boolean): Promise<ActionState> {
   const supabase = await createClient();
   const { error } = await supabase.from("products").update({ active }).eq("id", id);

@@ -74,6 +74,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>("");
   const [customerQuery, setCustomerQuery] = useState("");
+  const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [localCustomers, setLocalCustomers] = useState<CustomerLite[]>(customers);
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
@@ -370,6 +371,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     setSurchargeInput("");
     setCustomerId("");
     setCustomerQuery("");
+    setShowCustomerSearch(false);
     router.refresh();
   }
 
@@ -594,7 +596,19 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                   onClick={() => {
                     setCustomerId("");
                     setCustomerQuery("");
+                    setShowCustomerSearch(false);
                   }}
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Cambiar
+                </button>
+              </div>
+            ) : !showCustomerSearch ? (
+              <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5">
+                <span className="text-sm font-medium text-foreground">Consumidor Final</span>
+                <button
+                  type="button"
+                  onClick={() => setShowCustomerSearch(true)}
                   className="text-xs font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cambiar
@@ -613,6 +627,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                     <Search className="h-4 w-4" />
                   </button>
                   <Input
+                    autoFocus
                     value={customerQuery}
                     onChange={(e) => setCustomerQuery(e.target.value)}
                     placeholder="Buscar cliente… (vacío = Consumidor Final)"
@@ -628,6 +643,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                             setCustomerId(customer.id);
                             setCustomerQuery("");
                             setBrowseCustomers(false);
+                            setShowCustomerSearch(false);
                           }}
                           className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
                         >
@@ -650,6 +666,17 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerQuery("");
+                    setBrowseCustomers(false);
+                    setShowCustomerSearch(false);
+                  }}
+                  className="shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Cancelar
+                </button>
               </div>
             )}
           </CardContent>
