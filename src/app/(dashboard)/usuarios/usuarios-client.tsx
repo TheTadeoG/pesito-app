@@ -582,8 +582,7 @@ export function UsuariosClient({
                 placeholder="Dejalo vacío para no cambiarla"
               />
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Las contraseñas no se guardan en texto plano, así que no se puede ver la actual —
-                sólo pisarla por una nueva.
+                No podés ver la contraseña actual, pero podés poner una nueva cuando quieras.
               </p>
             </div>
 
