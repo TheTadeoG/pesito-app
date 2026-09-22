@@ -71,6 +71,8 @@ export function ManageCaja({
       if (view !== "closed" || detailOpen) return;
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      e.preventDefault();
+      (document.activeElement as HTMLElement | null)?.blur();
       router.push("/pos");
     }
     window.addEventListener("keydown", handleKeyDown);

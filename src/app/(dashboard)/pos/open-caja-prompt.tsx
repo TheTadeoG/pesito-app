@@ -14,6 +14,8 @@ export function OpenCajaPrompt() {
       if (e.key !== "Enter" || e.repeat) return;
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      e.preventDefault();
+      (document.activeElement as HTMLElement | null)?.blur();
       router.push("/caja");
     }
     window.addEventListener("keydown", handleKeyDown);

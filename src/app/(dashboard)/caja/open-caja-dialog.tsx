@@ -50,6 +50,8 @@ export function OpenCajaDialog() {
       if (e.key !== "Enter" || e.repeat || open) return;
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      e.preventDefault();
+      (document.activeElement as HTMLElement | null)?.blur();
       openDialog();
     }
     window.addEventListener("keydown", handleKeyDown);
