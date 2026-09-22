@@ -72,6 +72,7 @@ interface PosClientProps {
 export function PosClient({ orgId, cashRegisterId, products, customers }: PosClientProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>("");
   const [customerQuery, setCustomerQuery] = useState("");
@@ -158,6 +159,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     });
     setQuery("");
     setBrowseProducts(false);
+    setHighlightedIndex(-1);
   }
 
   function changeQuantity(index: number, delta: number) {
@@ -303,10 +305,28 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   }, [cart.length, showPaymentPicker]);
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      if (results.length === 0) return;
+      e.preventDefault();
+      setHighlightedIndex((i) => (i + 1 >= results.length ? 0 : i + 1));
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      if (results.length === 0) return;
+      e.preventDefault();
+      setHighlightedIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
+      return;
+    }
+
     if (e.key !== "Enter") return;
     e.preventDefault();
 
     if (query.trim()) {
+      if (highlightedIndex >= 0 && highlightedIndex < results.length) {
+        addProduct(results[highlightedIndex]);
+        return;
+      }
       const exactBarcode = products.find(
         (p) => p.barcode && p.barcode.toLowerCase() === query.trim().toLowerCase()
       );
@@ -404,9 +424,12 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                 <Input
                   ref={searchRef}
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setHighlightedIndex(-1);
+                  }}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Buscar producto... (Enter para agregar)"
+                  placeholder="Buscar producto... (↑↓ para elegir, Enter para agregar)"
                   className={query ? "pl-10 pr-9" : "pl-10"}
                 />
                 {query && (
@@ -425,12 +448,16 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
                 {results.length > 0 && (
                   <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
-                    {results.map((product) => (
+                    {results.map((product, index) => (
                       <button
                         key={product.id}
                         type="button"
                         onClick={() => addProduct(product)}
-                        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm hover:bg-muted"
+                        onMouseEnter={() => setHighlightedIndex(index)}
+                        className={cn(
+                          "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm",
+                          index === highlightedIndex ? "bg-accent" : "hover:bg-muted"
+                        )}
                       >
                         <span className="min-w-0">
                           <span className="block truncate font-medium text-foreground">

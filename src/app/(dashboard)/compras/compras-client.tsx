@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
   registerPurchase,
   createSupplierQuick,
@@ -46,6 +46,7 @@ interface ComprasClientProps {
 export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [localProducts, setLocalProducts] = useState<ProductLite[]>(products);
   const [showNewProduct, setShowNewProduct] = useState(false);
@@ -103,7 +104,31 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
     });
     setQuery("");
     setBrowseProducts(false);
+    setHighlightedIndex(-1);
     searchRef.current?.focus();
+  }
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      if (results.length === 0) return;
+      e.preventDefault();
+      setHighlightedIndex((i) => (i + 1 >= results.length ? 0 : i + 1));
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      if (results.length === 0) return;
+      e.preventDefault();
+      setHighlightedIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
+      return;
+    }
+    if (e.key !== "Enter") return;
+    if (highlightedIndex >= 0 && highlightedIndex < results.length) {
+      e.preventDefault();
+      addProduct(results[highlightedIndex]);
+    } else if (results.length === 1) {
+      e.preventDefault();
+      addProduct(results[0]);
+    }
   }
 
   function changeQuantity(index: number, delta: number) {
@@ -222,18 +247,26 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                 <Input
                   ref={searchRef}
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setHighlightedIndex(-1);
+                  }}
+                  onKeyDown={handleSearchKeyDown}
                   placeholder="Buscar producto por nombre o código..."
                   className="pl-10"
                 />
                 {results.length > 0 && (
                   <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
-                    {results.map((product) => (
+                    {results.map((product, index) => (
                       <button
                         key={product.id}
                         type="button"
                         onClick={() => addProduct(product)}
-                        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm hover:bg-muted"
+                        onMouseEnter={() => setHighlightedIndex(index)}
+                        className={cn(
+                          "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm",
+                          index === highlightedIndex ? "bg-accent" : "hover:bg-muted"
+                        )}
                       >
                         <span className="min-w-0">
                           <span className="block truncate font-medium text-foreground">
