@@ -32,7 +32,7 @@ export default async function PosPage() {
             Necesitás abrir la caja del día antes de poder cobrar ventas.
           </p>
           <Link href="/caja">
-            <Button className="mt-2">Ir a Mi Caja</Button>
+            <Button className="mt-2">Abrir Mi Caja</Button>
           </Link>
         </CardContent>
       </Card>

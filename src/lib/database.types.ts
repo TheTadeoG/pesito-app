@@ -188,8 +188,9 @@ export interface Database {
           user_id: string;
           subtotal: number;
           discount: number;
+          surcharge: number;
           total: number;
-          payment_method: "efectivo" | "tarjeta" | "transferencia" | "mixto" | "fiado";
+          payment_method: "efectivo" | "tarjeta" | "transferencia" | "qr" | "mixto" | "fiado";
           status: "completada" | "anulada";
           created_at: string;
         };
@@ -201,8 +202,9 @@ export interface Database {
           user_id: string;
           subtotal?: number;
           discount?: number;
+          surcharge?: number;
           total?: number;
-          payment_method?: "efectivo" | "tarjeta" | "transferencia" | "mixto" | "fiado";
+          payment_method?: "efectivo" | "tarjeta" | "transferencia" | "qr" | "mixto" | "fiado";
           status?: "completada" | "anulada";
           created_at?: string;
         };
@@ -274,8 +276,13 @@ export interface Database {
           p_payment_method: string;
           p_discount: number;
           p_items: Json;
+          p_surcharge?: number;
         };
         Returns: string;
+      };
+      void_sale: {
+        Args: { p_sale_id: string };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

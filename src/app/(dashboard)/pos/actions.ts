@@ -15,8 +15,9 @@ export interface CheckoutInput {
   orgId: string;
   cashRegisterId: string;
   customerId: string | null;
-  paymentMethod: "efectivo" | "tarjeta" | "transferencia" | "mixto" | "fiado";
+  paymentMethod: "efectivo" | "tarjeta" | "transferencia" | "qr" | "mixto" | "fiado";
   discount: number;
+  surcharge: number;
   items: CheckoutItemInput[];
 }
 
@@ -35,6 +36,7 @@ export async function checkoutSale(
     p_payment_method: input.paymentMethod,
     p_discount: input.discount,
     p_items: input.items as unknown as Json,
+    p_surcharge: input.surcharge,
   });
 
   if (error) {

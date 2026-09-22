@@ -3,7 +3,8 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
+import { VentasList, type SaleRow } from "@/app/(dashboard)/reportes/ventas-list";
 
 const PERIOD_DAYS = 30;
 
@@ -11,6 +12,7 @@ const paymentLabels: Record<string, string> = {
   efectivo: "Efectivo",
   tarjeta: "Tarjeta",
   transferencia: "Transferencia",
+  qr: "QR",
   mixto: "Mixto",
   fiado: "Fiado",
 };
@@ -56,12 +58,21 @@ export default async function ReportesPage() {
     new Set(items.map((i) => i.product_id).filter((id): id is string => Boolean(id)))
   );
 
-  const { data: productsRaw } =
+  const customerIds = Array.from(
+    new Set(sales.map((s) => s.customer_id).filter((id): id is string => Boolean(id)))
+  );
+
+  const [{ data: productsRaw }, { data: customersRaw }] = await Promise.all([
     productIds.length > 0
-      ? await supabase.from("products").select("id, cost").in("id", productIds)
-      : { data: [] };
+      ? supabase.from("products").select("id, cost").in("id", productIds)
+      : Promise.resolve({ data: [] }),
+    customerIds.length > 0
+      ? supabase.from("customers").select("id, name").in("id", customerIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const costById = new Map((productsRaw ?? []).map((p) => [p.id, Number(p.cost ?? 0)]));
+  const customerNameById = new Map((customersRaw ?? []).map((c) => [c.id, c.name]));
 
   const ingresos = sales.reduce((acc, s) => acc + s.total, 0);
   const totalVentas = sales.length;
@@ -114,6 +125,24 @@ export default async function ReportesPage() {
     return { date, total };
   });
   const maxDaily = Math.max(1, ...dailyTotals.map((d) => d.total));
+
+  const itemsBySale = new Map<string, string[]>();
+  for (const item of items) {
+    const list = itemsBySale.get(item.sale_id) ?? [];
+    list.push(item.quantity > 1 ? `${item.product_name} x${item.quantity}` : item.product_name);
+    itemsBySale.set(item.sale_id, list);
+  }
+
+  const saleRows: SaleRow[] = sales.slice(0, 15).map((sale) => ({
+    id: sale.id,
+    created_at: sale.created_at,
+    total: sale.total,
+    payment_method: sale.payment_method,
+    customerName: sale.customer_id
+      ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
+      : "Consumidor Final",
+    itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
+  }));
 
   const tiles = [
     { icon: DollarSign, label: "Ingresos (30 días)", value: formatCurrency(ingresos) },
@@ -255,21 +284,7 @@ export default async function ReportesPage() {
           )}
         </CardHeader>
         <CardContent className="p-0">
-          {sales.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-              Todavía no registraste ventas.
-            </p>
-          ) : (
-            <div className="divide-y divide-border">
-              {sales.slice(0, 10).map((sale) => (
-                <div key={sale.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                  <span className="text-muted-foreground">{formatDateTime(sale.created_at)}</span>
-                  <Badge>{paymentLabels[sale.payment_method] ?? sale.payment_method}</Badge>
-                  <span className="font-semibold text-foreground">{formatCurrency(sale.total)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <VentasList sales={saleRows} paymentLabels={paymentLabels} />
         </CardContent>
       </Card>
     </div>

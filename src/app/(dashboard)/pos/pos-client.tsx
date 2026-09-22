@@ -42,6 +42,7 @@ const paymentMethods = [
   { value: "efectivo", label: "Efectivo" },
   { value: "tarjeta", label: "Tarjeta" },
   { value: "transferencia", label: "Transferencia" },
+  { value: "qr", label: "QR" },
   { value: "mixto", label: "Mixto" },
   { value: "fiado", label: "Fiado" },
 ] as const;
@@ -61,6 +62,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [paymentMethod, setPaymentMethod] =
     useState<(typeof paymentMethods)[number]["value"]>("efectivo");
   const [discount, setDiscount] = useState(0);
+  const [surcharge, setSurcharge] = useState(0);
   const [showExtras, setShowExtras] = useState(false);
   const [showManualAmount, setShowManualAmount] = useState(false);
   const [manualLabel, setManualLabel] = useState("");
@@ -87,7 +89,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     if (item.kind === "product") return acc + item.product.price * item.quantity;
     return acc + item.amount;
   }, 0);
-  const total = Math.max(0, subtotal - discount);
+  const total = Math.max(0, subtotal - discount + surcharge);
   const itemCount = cart.reduce(
     (acc, item) => acc + (item.kind === "product" ? item.quantity : 1),
     0
@@ -196,6 +198,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       customerId: customerId || null,
       paymentMethod,
       discount,
+      surcharge,
       items,
     });
 
@@ -208,6 +211,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
     setCart([]);
     setDiscount(0);
+    setSurcharge(0);
     setCustomerId("");
     router.refresh();
   }
@@ -426,6 +430,12 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                 <span className="font-medium text-danger">-{formatCurrency(discount)}</span>
               </div>
             )}
+            {surcharge > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Recargo:</span>
+                <span className="font-medium text-foreground">+{formatCurrency(surcharge)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-border pt-3 text-base">
               <span className="font-semibold text-foreground">Total:</span>
               <span className="text-xl font-bold text-foreground">{formatCurrency(total)}</span>
@@ -457,17 +467,31 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
             {showExtras && (
               <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Descuento
-                  </label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={discount || ""}
-                    onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-                    placeholder="0"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Descuento
+                    </label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={discount || ""}
+                      onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Recargo
+                    </label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={surcharge || ""}
+                      onChange={(e) => setSurcharge(Number(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
