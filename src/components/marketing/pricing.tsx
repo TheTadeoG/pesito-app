@@ -2,28 +2,17 @@ import Link from "next/link";
 import { Check, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { paidPlanDefinitions, planDefinitions } from "@/lib/plan-features";
+import { paidPlanDefinitions } from "@/lib/plan-features";
 
-const plans = [
-  {
-    name: planDefinitions.gratis.name,
-    price: planDefinitions.gratis.priceLabel,
-    period: planDefinitions.gratis.period,
-    badge: null as string | null,
-    features: planDefinitions.gratis.features,
-    cta: "Empezar gratis",
-    highlighted: false,
-  },
-  ...paidPlanDefinitions.map((def) => ({
-    name: def.name,
-    price: def.priceLabel,
-    period: def.period,
-    badge: def.badge,
-    features: def.features,
-    cta: `Activar ${def.name}`,
-    highlighted: def.plan === "pro",
-  })),
-];
+const plans = paidPlanDefinitions.map((def) => ({
+  name: def.name,
+  price: def.priceLabel,
+  period: def.period,
+  badge: def.badge,
+  features: def.features,
+  cta: `Activar ${def.name}`,
+  highlighted: def.plan === "pro",
+}));
 
 const invoiceTiers = [
   { label: "500 fact/mes", price: "$10.000/mes" },
@@ -40,12 +29,11 @@ export function Pricing() {
           Precios simples, sin letra chica
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Empezá gratis, sin tarjeta. Los primeros 14 días tenés todas las funciones del Plan Pro
-          incluidas.
+          Elegí el plan que se ajuste a tu kiosco o almacén. Probá 14 días gratis, sin tarjeta.
         </p>
       </div>
 
-      <div className="mx-auto mt-14 grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-3">
         {plans.map((plan) => (
           <div
             key={plan.name}
@@ -91,6 +79,7 @@ export function Pricing() {
                 {plan.cta}
               </Button>
             </Link>
+            <p className="mt-2 text-center text-xs text-muted-foreground">Probá gratis 14 días</p>
           </div>
         ))}
       </div>

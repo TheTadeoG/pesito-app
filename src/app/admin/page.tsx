@@ -1,8 +1,10 @@
+import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
   Clock,
   CreditCard,
+  Download,
   DollarSign,
   Package,
   Receipt,
@@ -22,6 +24,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { OrgPlanManager } from "@/app/admin/org-plan-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BarChart, type BarChartDatum } from "@/components/dashboard/bar-chart";
 import { DonutChart } from "@/components/dashboard/donut-chart";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -29,6 +32,7 @@ import { businessTypes } from "@/lib/business-types";
 import { ARG_TZ, argDateString, argMidnightUTC } from "@/lib/timezone";
 import { paymentLabels } from "@/lib/payment-labels";
 import { roleLabels } from "@/lib/roles";
+import { planLabels, planOrder, type Plan } from "@/lib/subscription";
 
 const businessTypeLabels: Record<string, string> = Object.fromEntries(
   businessTypes.map((t) => [t.value, t.label])
@@ -276,6 +280,12 @@ export default async function AdminPage() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10)
     .map((o) => ({ ...o, hasSold: revenueByOrg.has(o.id) }));
+
+  const planCounts = new Map<Plan, number>(planOrder.map((p) => [p, 0]));
+  for (const org of organizations) {
+    const plan = (subscriptionByOrgId.get(org.id)?.plan ?? "gratis") as Plan;
+    planCounts.set(plan, (planCounts.get(plan) ?? 0) + 1);
+  }
 
   const orgsForPlanManager = [...organizations]
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -659,12 +669,29 @@ export default async function AdminPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Planes</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">Planes</CardTitle>
+            </div>
+            <Link href="/admin/export/clientes">
+              <Button variant="outline" size="sm">
+                <Download className="h-3.5 w-3.5" />
+                Descargar clientes (CSV)
+              </Button>
+            </Link>
           </CardHeader>
-          <CardContent className="p-0">
-            <OrgPlanManager orgs={orgsForPlanManager} />
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {planOrder.map((plan) => (
+                <Badge key={plan} tone={plan === "gratis" ? "default" : "accent"}>
+                  {planLabels[plan]}: {planCounts.get(plan) ?? 0}
+                </Badge>
+              ))}
+            </div>
+            <div className="-mx-5 -mb-5 border-t border-border">
+              <OrgPlanManager orgs={orgsForPlanManager} />
+            </div>
           </CardContent>
         </Card>
 
