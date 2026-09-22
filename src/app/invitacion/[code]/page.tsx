@@ -44,10 +44,49 @@ export default async function InvitacionPage({
   } = await supabase.auth.getUser();
 
   if (!preview || !preview.valid) {
-    // Si ya hay una sesión activa, lo más probable es que esta misma
-    // persona ya haya usado el link con éxito (ej. volvió a entrar al
-    // link desde WhatsApp, o recargó la página de éxito) — no tiene
-    // sentido mostrarle un error, la mandamos directo a donde ya entró.
+    // Si ya hay sesión activa, lo más probable es que esta misma persona ya
+    // haya usado el link con éxito (ej. volvió a tocar el link desde
+    // WhatsApp, o recargó la página de éxito) — no tiene sentido mostrarle
+    // un error. Buscamos su usuario para poder recordárselo (por si
+    // recargó antes de anotarlo) en vez de sólo mandarla para adelante.
+    if (user && preview?.org_id) {
+      const { data: memberRow } = await supabase
+        .from("memberships")
+        .select("username")
+        .eq("org_id", preview.org_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (memberRow?.username) {
+        return (
+          <Shell>
+            <Card>
+              <CardHeader>
+                <CardTitle>Ya te sumaste a {preview.org_name}</CardTitle>
+                <CardDescription>
+                  Guardá tu usuario para la próxima vez que entres.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-3.5 py-3">
+                  <span className="text-sm text-muted-foreground">Tu usuario</span>
+                  <span className="font-mono text-lg font-bold text-foreground">
+                    {memberRow.username}
+                  </span>
+                </div>
+                <Link
+                  href="/pos"
+                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 transition-colors hover:bg-primary-hover"
+                >
+                  Continuar
+                </Link>
+              </CardContent>
+            </Card>
+          </Shell>
+        );
+      }
+    }
+
     if (user) {
       redirect("/pos");
     }

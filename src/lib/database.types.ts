@@ -501,7 +501,7 @@ export interface Database {
       };
       get_invitation_preview: {
         Args: { p_code: string };
-        Returns: { org_name: string; role: string; valid: boolean }[];
+        Returns: { org_id: string; org_name: string; role: string; valid: boolean }[];
       };
       accept_invitation: {
         Args: { p_code: string; p_username?: string | null };
