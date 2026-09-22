@@ -510,8 +510,15 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                   placeholder="Buscar producto... (↑↓ para elegir, Enter para agregar)"
                   className="pl-10"
                 />
-                {results.length > 0 && (
+                {(query.trim() || browseProducts) && (
                   <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                    {results.length === 0 && (
+                      <p className="px-3.5 py-3 text-sm text-muted-foreground">
+                        {query.trim()
+                          ? `No encontramos productos que coincidan con "${query}".`
+                          : "Todavía no cargaste productos."}
+                      </p>
+                    )}
                     {results.map((product, index) => (
                       <button
                         key={product.id}
@@ -736,8 +743,15 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                     placeholder="Buscar proveedor… (↑↓ para elegir, Enter selecciona)"
                     className="pl-10"
                   />
-                  {supplierResults.length > 0 && (
+                  {(supplierQuery.trim() || browseSuppliers) && (
                     <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                      {supplierResults.length === 0 && (
+                        <p className="px-3.5 py-2.5 text-sm text-muted-foreground">
+                          {supplierQuery.trim()
+                            ? `No encontramos proveedores que coincidan con "${supplierQuery}".`
+                            : "Todavía no cargaste proveedores."}
+                        </p>
+                      )}
                       {supplierResults.map((supplier, index) => (
                         <button
                           key={supplier.id}

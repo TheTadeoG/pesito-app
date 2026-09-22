@@ -311,8 +311,15 @@ export function ProductForm({
                     placeholder="Buscar marca…"
                     className="pl-10"
                   />
-                  {brandResults.length > 0 && (
+                  {(brandQuery.trim() || browseBrands) && (
                     <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                      {brandResults.length === 0 && (
+                        <p className="px-3.5 py-2.5 text-sm text-muted-foreground">
+                          {brandQuery.trim()
+                            ? `No encontramos marcas que coincidan con "${brandQuery}". Podés cargarla con el botón +.`
+                            : "Todavía no cargaste marcas."}
+                        </p>
+                      )}
                       {brandResults.map((b) => (
                         <button
                           key={b.id}

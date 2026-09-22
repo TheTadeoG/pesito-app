@@ -473,8 +473,15 @@ export function PosClient({
           onKeyDown={handleCustomerSearchKeyDown}
           placeholder="Buscar cliente… (↑↓ para elegir, Enter selecciona)"
         />
-        {customerResults.length > 0 && (
+        {(customerQuery.trim() || browseCustomers) && (
           <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+            {customerResults.length === 0 && (
+              <p className="px-3.5 py-2.5 text-sm text-muted-foreground">
+                {customerQuery.trim()
+                  ? `No encontramos clientes que coincidan con "${customerQuery}".`
+                  : "Todavía no cargaste clientes."}
+              </p>
+            )}
             {customerResults.map((customer, index) => (
               <button
                 key={customer.id}
@@ -721,8 +728,15 @@ export function PosClient({
                   </button>
                 )}
 
-                {results.length > 0 && (
+                {(query.trim() || browseProducts) && (
                   <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                    {results.length === 0 && (
+                      <p className="px-3.5 py-3 text-sm text-muted-foreground">
+                        {query.trim()
+                          ? `No encontramos productos que coincidan con "${query}".`
+                          : "Todavía no cargaste productos."}
+                      </p>
+                    )}
                     {results.map((product, index) => (
                       <button
                         key={product.id}
@@ -1012,8 +1026,15 @@ export function PosClient({
                     placeholder="Buscar cliente… (↑↓ para elegir, Enter selecciona)"
                     className="pl-10"
                   />
-                  {customerResults.length > 0 && (
+                  {(customerQuery.trim() || browseCustomers) && (
                     <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                      {customerResults.length === 0 && (
+                        <p className="px-3.5 py-2.5 text-sm text-muted-foreground">
+                          {customerQuery.trim()
+                            ? `No encontramos clientes que coincidan con "${customerQuery}".`
+                            : "Todavía no cargaste clientes."}
+                        </p>
+                      )}
                       {customerResults.map((customer, index) => (
                         <button
                           key={customer.id}
