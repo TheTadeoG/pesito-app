@@ -10,6 +10,9 @@ export type CashMovement = Database["public"]["Tables"]["cash_movements"]["Row"]
 export type Sale = Database["public"]["Tables"]["sales"]["Row"];
 export type SaleItem = Database["public"]["Tables"]["sale_items"]["Row"];
 export type StockMovement = Database["public"]["Tables"]["stock_movements"]["Row"];
+export type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
+export type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
+export type PurchaseItem = Database["public"]["Tables"]["purchase_items"]["Row"];
 
 export interface CartLine {
   product: Product;

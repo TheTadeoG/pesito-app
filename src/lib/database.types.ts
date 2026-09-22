@@ -259,6 +259,74 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["stock_movements"]["Insert"]>;
         Relationships: [];
       };
+      suppliers: {
+        Row: {
+          id: string;
+          org_id: string;
+          name: string;
+          phone: string | null;
+          email: string | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          name: string;
+          phone?: string | null;
+          email?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;
+        Relationships: [];
+      };
+      purchases: {
+        Row: {
+          id: string;
+          org_id: string;
+          supplier_id: string | null;
+          user_id: string;
+          subtotal: number;
+          total: number;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          supplier_id?: string | null;
+          user_id: string;
+          subtotal?: number;
+          total?: number;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["purchases"]["Insert"]>;
+        Relationships: [];
+      };
+      purchase_items: {
+        Row: {
+          id: string;
+          purchase_id: string;
+          product_id: string;
+          product_name: string;
+          quantity: number;
+          unit_cost: number;
+          subtotal: number;
+        };
+        Insert: {
+          id?: string;
+          purchase_id: string;
+          product_id: string;
+          product_name: string;
+          quantity: number;
+          unit_cost: number;
+          subtotal: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["purchase_items"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -286,6 +354,15 @@ export interface Database {
       void_sale: {
         Args: { p_sale_id: string };
         Returns: undefined;
+      };
+      register_purchase: {
+        Args: {
+          p_org_id: string;
+          p_supplier_id: string | null;
+          p_items: Json;
+          p_notes?: string | null;
+        };
+        Returns: string;
       };
     };
     Enums: Record<string, never>;

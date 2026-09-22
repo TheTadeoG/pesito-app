@@ -30,7 +30,7 @@ export const navSections: NavSection[] = [
     title: "Operación",
     items: [
       { href: "/pos", label: "Punto de Venta", icon: ShoppingCart },
-      { href: "/compras", label: "Compras", icon: ShoppingBag, badge: "Pronto" },
+      { href: "/compras", label: "Compras", icon: ShoppingBag },
     ],
   },
   {
