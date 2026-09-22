@@ -12,6 +12,7 @@ import {
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 import { getMemberLabelsById } from "@/lib/member-labels";
+import { getSubscription } from "@/lib/subscription";
 
 const paymentLabels: Record<string, string> = {
   efectivo: "Efectivo",
@@ -42,6 +43,7 @@ export default async function ReportesPage({
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const isManager = membership.role === "owner" || membership.role === "admin";
+  const subscription = await getSubscription(supabase, organization.id);
 
   const { data: salesRaw } = await supabase
     .from("sales")
@@ -129,6 +131,16 @@ export default async function ReportesPage({
     .sort((a, b) => b.margin - a.margin)
     .slice(0, 5)
     .map((p) => ({ name: p.name, margin: p.margin }));
+
+  // Reporte Pro: productos vendidos a pérdida (margen negativo), los que
+  // "más ganancia dejan" arriba justamente excluye.
+  const lossProducts = subscription.hasProAccess
+    ? Array.from(byProductQty.values())
+        .filter((p) => p.margin < 0)
+        .sort((a, b) => a.margin - b.margin)
+        .slice(0, 5)
+        .map((p) => ({ name: p.name, quantity: p.quantity, loss: -p.margin }))
+    : null;
 
   let consumidorFinalTotal = 0;
   const byCustomer = new Map<string, number>();
@@ -240,6 +252,85 @@ export default async function ReportesPage({
       .sort((a, b) => b.faltante + b.sobrante - (a.faltante + a.sobrante));
   }
 
+  // "Quién te debe": clientes con saldo de fiado, con hace cuánto no pagan.
+  const { data: debtorsRaw } = await supabase
+    .from("customers")
+    .select("id, name, balance")
+    .eq("org_id", organization.id)
+    .gt("balance", 0)
+    .order("balance", { ascending: false });
+
+  const debtors = debtorsRaw ?? [];
+  const lastPaymentByCustomer = new Map<string, string>();
+  if (debtors.length > 0) {
+    const { data: paymentsRaw } = await supabase
+      .from("customer_payments")
+      .select("customer_id, created_at")
+      .in(
+        "customer_id",
+        debtors.map((d) => d.id)
+      )
+      .order("created_at", { ascending: false });
+    // Ordenado desc: la primera vez que vemos un customer_id es su pago
+    // más reciente.
+    for (const p of paymentsRaw ?? []) {
+      if (!lastPaymentByCustomer.has(p.customer_id)) {
+        lastPaymentByCustomer.set(p.customer_id, p.created_at);
+      }
+    }
+  }
+  const fiadoDebtors = debtors.map((d) => {
+    const lastPayment = lastPaymentByCustomer.get(d.id) ?? null;
+    return {
+      name: d.name,
+      amount: Number(d.balance),
+      daysSincePayment: lastPayment
+        ? // eslint-disable-next-line react-hooks/purity
+          Math.floor((Date.now() - new Date(lastPayment).getTime()) / (24 * 60 * 60 * 1000))
+        : null,
+    };
+  });
+
+  // Stock valorizado: cuánta plata hay parada en mercadería, al costo y al
+  // precio de venta.
+  const { data: stockProductsRaw } = await supabase
+    .from("products")
+    .select("cost, price, stock")
+    .eq("org_id", organization.id)
+    .eq("active", true);
+
+  const stockValue = (stockProductsRaw ?? []).reduce(
+    (acc, p) => {
+      const stock = Number(p.stock);
+      acc.atCost += stock * Number(p.cost ?? 0);
+      acc.atPrice += stock * Number(p.price);
+      return acc;
+    },
+    { atCost: 0, atPrice: 0 }
+  );
+
+  // Reporte Pro: comparación contra el período anterior de la misma
+  // duración (p. ej. últimos 7 días vs los 7 días previos).
+  let periodComparison: { ingresos: number; deltaPct: number | null } | null = null;
+  if (subscription.hasProAccess) {
+    // eslint-disable-next-line react-hooks/purity
+    const durationMs = Date.now() - start.getTime();
+    const previousStart = new Date(start.getTime() - durationMs);
+    const { data: previousSalesRaw } = await supabase
+      .from("sales")
+      .select("total")
+      .eq("org_id", organization.id)
+      .eq("status", "completada")
+      .gte("created_at", previousStart.toISOString())
+      .lt("created_at", start.toISOString());
+
+    const previousIngresos = (previousSalesRaw ?? []).reduce((acc, s) => acc + Number(s.total), 0);
+    periodComparison = {
+      ingresos: previousIngresos,
+      deltaPct: previousIngresos > 0 ? ((ingresos - previousIngresos) / previousIngresos) * 100 : null,
+    };
+  }
+
   const data: ReportesData = {
     periodLabel,
     tiles: [
@@ -256,6 +347,11 @@ export default async function ReportesPage({
     topCustomers,
     saleRows,
     cashDiffByUser,
+    fiadoDebtors,
+    stockValue,
+    hasProAccess: subscription.hasProAccess,
+    periodComparison,
+    lossProducts,
   };
 
   return (

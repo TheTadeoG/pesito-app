@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  CreditCard,
   DollarSign,
   Package,
   Receipt,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { OrgPlanManager } from "@/app/admin/org-plan-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, type BarChartDatum } from "@/components/dashboard/bar-chart";
@@ -100,6 +102,7 @@ export default async function AdminPage() {
 
   const [
     { data: orgsRaw },
+    { data: subscriptionsRaw },
     { data: salesRaw },
     { data: purchasesRaw },
     { data: membershipRows },
@@ -110,6 +113,7 @@ export default async function AdminPage() {
     { count: openRegistersCount },
   ] = await Promise.all([
     admin.from("organizations").select("id, name, business_type, created_at"),
+    admin.from("organization_subscriptions").select("org_id, plan, pro_trial_ends_at"),
     // Tope de 20.000 ventas más recientes: de sobra para esta etapa. Si la
     // plataforma crece mucho más, esto pasa a subestimar el total histórico
     // y conviene mover los totales a una función agregada en SQL.
@@ -149,6 +153,9 @@ export default async function AdminPage() {
   }
 
   const organizations = orgsRaw ?? [];
+  const subscriptionByOrgId = new Map(
+    (subscriptionsRaw ?? []).map((s) => [s.org_id, { plan: s.plan, proTrialEndsAt: s.pro_trial_ends_at }])
+  );
   const sales = (salesRaw ?? []).map((s) => ({ ...s, total: Number(s.total) }));
   const purchases = (purchasesRaw ?? []).map((p) => ({ ...p, total: Number(p.total) }));
   const memberships = membershipRows ?? [];
@@ -269,6 +276,15 @@ export default async function AdminPage() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10)
     .map((o) => ({ ...o, hasSold: revenueByOrg.has(o.id) }));
+
+  const orgsForPlanManager = [...organizations]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((o) => ({
+      id: o.id,
+      name: o.name,
+      plan: subscriptionByOrgId.get(o.id)?.plan ?? "gratis",
+      proTrialEndsAt: subscriptionByOrgId.get(o.id)?.proTrialEndsAt ?? null,
+    }));
 
   const recentSales = sales.slice(0, 15).map((s) => ({
     ...s,
@@ -639,6 +655,16 @@ export default async function AdminPage() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Planes</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <OrgPlanManager orgs={orgsForPlanManager} />
           </CardContent>
         </Card>
 

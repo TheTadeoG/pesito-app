@@ -391,6 +391,22 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["purchase_items"]["Insert"]>;
         Relationships: [];
       };
+      organization_subscriptions: {
+        Row: {
+          org_id: string;
+          plan: "gratis" | "esencial" | "pro" | "ia";
+          pro_trial_ends_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          org_id: string;
+          plan?: "gratis" | "esencial" | "pro" | "ia";
+          pro_trial_ends_at?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
+        Relationships: [];
+      };
       customer_payments: {
         Row: {
           id: string;

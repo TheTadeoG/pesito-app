@@ -7,9 +7,11 @@ import { capitalizeWords } from "@/lib/utils";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { CommercialDatesBanner } from "@/components/dashboard/commercial-dates-banner";
+import { ProTrialBanner } from "@/components/dashboard/pro-trial-banner";
 import { ToastProvider } from "@/components/toast/toast-provider";
 import { getUpcomingCommercialDates } from "@/lib/commercial-dates";
 import { argDateString } from "@/lib/timezone";
+import { getSubscription } from "@/lib/subscription";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -18,6 +20,8 @@ export const metadata: Metadata = {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId, email, firstName, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
+
+  const subscription = await getSubscription(supabase, organization.id);
 
   const { data: openRegister } = await supabase
     .from("cash_registers")
@@ -75,6 +79,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             greetingName={greetingName}
           />
           <CommercialDatesBanner dates={commercialDates} />
+          {subscription.plan === "gratis" && subscription.proTrialEndsAt && (
+            <ProTrialBanner proTrialEndsAt={subscription.proTrialEndsAt} />
+          )}
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>

@@ -2,60 +2,17 @@ import Link from "next/link";
 import { Check, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { paidPlanDefinitions } from "@/lib/plan-features";
 
-const plans = [
-  {
-    name: "Plan Esencial",
-    price: "$20.000",
-    period: "por mes · IVA incl.",
-    badge: null,
-    features: [
-      "Ventas rápidas con lector de código de barras o teclado",
-      "Productos por unidad, peso y variantes",
-      "Stock: sumar, restar y ajustar a cantidad exacta",
-      "Caja diaria con arqueo y diferencias",
-      "Clientes y cuentas corrientes (fiado)",
-      "Reportes de ventas e ingresos",
-      "Hasta 2 usuarios",
-      "Facturación de ARCA (costo adicional)",
-    ],
-    cta: "Activar Plan Esencial",
-    highlighted: false,
-  },
-  {
-    name: "Plan Pro",
-    price: "$35.000",
-    period: "por mes · IVA incl.",
-    badge: "Más elegido",
-    features: [
-      "Todas las funciones del Plan Esencial +",
-      "Reportes avanzados: períodos, gráficos y widgets",
-      "Múltiples cajas y usuarios simultáneos",
-      "Historial completo de caja (aperturas, cierres, diferencias)",
-      "Hasta 10 usuarios",
-      "Facturación de ARCA (costo adicional)",
-      "Soporte prioritario",
-    ],
-    cta: "Activar Plan Pro",
-    highlighted: true,
-  },
-  {
-    name: "Plan IA",
-    price: "$40.000",
-    period: "por mes · IVA incl.",
-    badge: "Nuevo",
-    features: [
-      "Todas las funciones del Plan Pro +",
-      "Recomendaciones de reposición con IA",
-      "Detección de productos de baja rotación",
-      "Precios sugeridos automáticamente",
-      "Facturación de ARCA (costo adicional)",
-      "Soporte prioritario 24/7",
-    ],
-    cta: "Activar Plan IA",
-    highlighted: false,
-  },
-];
+const plans = paidPlanDefinitions.map((def) => ({
+  name: def.name,
+  price: def.priceLabel,
+  period: def.period,
+  badge: def.badge,
+  features: def.features,
+  cta: `Activar ${def.name}`,
+  highlighted: def.plan === "pro",
+}));
 
 const invoiceTiers = [
   { label: "500 fact/mes", price: "$10.000/mes" },

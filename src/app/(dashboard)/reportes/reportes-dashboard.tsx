@@ -9,8 +9,10 @@ import {
   Receipt,
   Scale,
   Settings2,
+  TrendingDown,
   TrendingUp,
   Users,
+  Wallet,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +21,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { BarChart, type BarChartDatum } from "@/components/dashboard/bar-chart";
 import { DonutChart } from "@/components/dashboard/donut-chart";
 import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
+import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { formatCurrency } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 
@@ -28,8 +31,12 @@ const WIDGETS = [
   { id: "payments", label: "Métodos de pago" },
   { id: "topQty", label: "Productos más vendidos" },
   { id: "topMargin", label: "Productos con más ganancia" },
+  { id: "fiadoDebtors", label: "Quién te debe (fiado)" },
+  { id: "stockValue", label: "Stock valorizado" },
   { id: "topCustomers", label: "Mejores clientes" },
   { id: "cashDiff", label: "Diferencias de caja por vendedor" },
+  { id: "periodComparison", label: "Comparación con el período anterior (Pro)" },
+  { id: "lossProducts", label: "Productos vendidos a pérdida (Pro)" },
   { id: "recentSales", label: "Últimas ventas" },
 ] as const;
 
@@ -44,6 +51,19 @@ export interface CashDiffRow {
   sobrante: number;
 }
 
+export interface FiadoDebtorRow {
+  name: string;
+  amount: number;
+  /** null si nunca hizo un pago registrado. */
+  daysSincePayment: number | null;
+}
+
+export interface LossProductRow {
+  name: string;
+  quantity: number;
+  loss: number;
+}
+
 export interface ReportesData {
   periodLabel: string;
   tiles: { label: string; value: string; icon: "dollar" | "trending" | "chart" | "receipt" }[];
@@ -56,6 +76,13 @@ export interface ReportesData {
   saleRows: SaleRow[];
   // Sólo se completa para dueños/administradores.
   cashDiffByUser: CashDiffRow[] | null;
+  fiadoDebtors: FiadoDebtorRow[];
+  stockValue: { atCost: number; atPrice: number };
+  hasProAccess: boolean;
+  // Los dos siguientes vienen en null cuando el negocio no tiene acceso Pro
+  // (no vale la pena calcularlos en el servidor si no se van a mostrar).
+  periodComparison: { ingresos: number; deltaPct: number | null } | null;
+  lossProducts: LossProductRow[] | null;
 }
 
 const tileIcons = {
@@ -97,9 +124,7 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
   }
 
   const isVisible = (id: WidgetId) => visible.has(id);
-  const availableWidgets = WIDGETS.filter(
-    (w) => w.id !== "cashDiff" || data.cashDiffByUser !== null
-  );
+  const availableWidgets = WIDGETS.filter((w) => w.id !== "cashDiff" || data.cashDiffByUser !== null);
 
   return (
     <div className="space-y-6">
@@ -231,6 +256,69 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
         </div>
       )}
 
+      {(isVisible("fiadoDebtors") || isVisible("stockValue")) && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {isVisible("fiadoDebtors") && (
+            <Card>
+              <CardHeader className="flex flex-row items-center gap-2">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base">Quién te debe</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {data.fiadoDebtors.length === 0 ? (
+                  <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+                    Nadie te debe fiado ahora mismo.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {data.fiadoDebtors.map((d) => (
+                      <div key={d.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                        <div className="min-w-0">
+                          <p className="truncate text-foreground">{d.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {d.daysSincePayment === null
+                              ? "Nunca registró un pago"
+                              : d.daysSincePayment === 0
+                                ? "Pagó hoy"
+                                : `Hace ${d.daysSincePayment} día${d.daysSincePayment !== 1 ? "s" : ""} que no paga`}
+                          </p>
+                        </div>
+                        <span className="shrink-0 font-semibold text-danger">
+                          {formatCurrency(d.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {isVisible("stockValue") && (
+            <Card>
+              <CardHeader className="flex flex-row items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base">Stock valorizado</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Al costo</p>
+                  <p className="text-xl font-bold text-foreground">
+                    {formatCurrency(data.stockValue.atCost)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">A precio de venta</p>
+                  <p className="text-xl font-bold text-foreground">
+                    {formatCurrency(data.stockValue.atPrice)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
       {isVisible("topCustomers") && (
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
@@ -313,6 +401,71 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {(isVisible("periodComparison") || isVisible("lossProducts")) && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {isVisible("periodComparison") &&
+            (data.periodComparison ? (
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                  <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-base">Comparación con el período anterior</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  {data.periodComparison.deltaPct === null ? (
+                    <p className="text-sm text-muted-foreground">
+                      No hubo ventas en el período anterior para comparar.
+                    </p>
+                  ) : (
+                    <p
+                      className={`text-2xl font-bold ${
+                        data.periodComparison.deltaPct >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {data.periodComparison.deltaPct >= 0 ? "+" : ""}
+                      {data.periodComparison.deltaPct.toFixed(0)}%
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Período anterior: {formatCurrency(data.periodComparison.ingresos)}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <ProLockedCard title="Comparación con el período anterior" />
+            ))}
+
+          {isVisible("lossProducts") &&
+            (data.lossProducts ? (
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                  <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-base">Productos vendidos a pérdida</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {data.lossProducts.length === 0 ? (
+                    <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+                      Ningún producto se vendió por debajo de su costo.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {data.lossProducts.map((p) => (
+                        <div key={p.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                          <span className="truncate text-foreground">{p.name}</span>
+                          <span className="font-semibold text-danger">
+                            -{formatCurrency(p.loss)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <ProLockedCard title="Productos vendidos a pérdida" />
+            ))}
+        </div>
       )}
 
       {isVisible("recentSales") && (

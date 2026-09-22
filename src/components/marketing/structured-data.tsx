@@ -1,5 +1,7 @@
 import { faqs } from "@/components/marketing/faq";
 import { siteUrl } from "@/lib/utils";
+import { planOrder } from "@/lib/subscription";
+import { planDefinitions } from "@/lib/plan-features";
 
 export function StructuredData() {
   const data = [
@@ -12,20 +14,12 @@ export function StructuredData() {
       url: siteUrl,
       description:
         "Sistema de punto de venta, inventario, clientes y caja para kioscos y almacenes de barrio.",
-      offers: [
-        {
-          "@type": "Offer",
-          name: "Plan Gratis",
-          price: "0",
-          priceCurrency: "ARS",
-        },
-        {
-          "@type": "Offer",
-          name: "Plan Pro",
-          price: "9900",
-          priceCurrency: "ARS",
-        },
-      ],
+      offers: planOrder.map((plan) => ({
+        "@type": "Offer",
+        name: planDefinitions[plan].name,
+        price: String(planDefinitions[plan].price),
+        priceCurrency: "ARS",
+      })),
     },
     {
       "@context": "https://schema.org",
