@@ -105,7 +105,17 @@ export function PosClient({
   const [customerId, setCustomerId] = useState<string>("");
   const [customerQuery, setCustomerQuery] = useState("");
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
-  const [localCustomers, setLocalCustomers] = useState<CustomerLite[]>(customers);
+  // Clientes creados al vuelo (alta rápida) que todavía no llegaron en el
+  // prop `customers` del servidor. Derivar así (en vez de copiar `customers`
+  // a un useState y sincronizarlo en un efecto) evita que un saldo de fiado
+  // que cambia en el servidor (venta, cobro de deuda) quede pisado por una
+  // copia vieja: como `customers` se usa directo acá, un `router.refresh()`
+  // ya alcanza para verlo actualizado sin salir y volver a entrar a /pos.
+  const [extraCustomers, setExtraCustomers] = useState<CustomerLite[]>([]);
+  const localCustomers = useMemo(() => {
+    const existingIds = new Set(customers.map((c) => c.id));
+    return [...customers, ...extraCustomers.filter((c) => !existingIds.has(c.id))];
+  }, [customers, extraCustomers]);
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [creatingCustomer, setCreatingCustomer] = useState(false);
@@ -260,6 +270,66 @@ export function PosClient({
     setShowFiadoStep(false);
   }
 
+  async function processSale(method: PaymentMethod, payments?: PaymentLineInput[]) {
+    const fiadoAmount = payments
+      ? payments.find((p) => p.method === "fiado")?.amount ?? 0
+      : method === "fiado"
+        ? total
+        : 0;
+
+    if (fiadoAmount > 0 && !customerId) {
+      closePaymentPicker();
+      setError("Para cargar fiado primero elegí un cliente.");
+      return;
+    }
+
+    closePaymentPicker();
+    setPending(true);
+    setError(null);
+
+    const items: CheckoutItemInput[] = cart.map((item) =>
+      item.kind === "product"
+        ? {
+            product_id: item.product.id,
+            quantity: item.quantity,
+            unit_price: item.product.price,
+          }
+        : {
+            product_id: null,
+            product_name: item.label,
+            quantity: 1,
+            unit_price: item.amount,
+          }
+    );
+
+    const result = await checkoutSale({
+      orgId,
+      cashRegisterId,
+      customerId: customerId || null,
+      paymentMethod: method,
+      discount,
+      surcharge,
+      invoiceType: resolveInvoiceType(selectedCustomer?.invoice_type, method, autoInvoiceByPayment),
+      items,
+      payments,
+    });
+
+    setPending(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setCart([]);
+    setDiscountInput("");
+    setSurchargeInput("");
+    setCustomerId("");
+    setCustomerQuery("");
+    setShowCustomerSearch(false);
+    router.refresh();
+  }
+
   function pickMethod(method: PaymentMethod) {
     if (method === "efectivo") {
       setShowCashStep(true);
@@ -290,7 +360,7 @@ export function PosClient({
       setCustomerError(result.error ?? "No pudimos crear el cliente.");
       return;
     }
-    setLocalCustomers((current) => [
+    setExtraCustomers((current) => [
       ...current,
       { id: result.id!, name, invoice_type: null, balance: 0 },
     ]);
@@ -470,6 +540,65 @@ export function PosClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart.length, showPaymentPicker]);
 
+  // En los pasos de pago que dejan elegir un cliente para fiado (Fiado
+  // directo, Mixto, o cargar a fiado la diferencia en efectivo), apenas se
+  // elige el cliente el buscador desaparece del DOM y el foco se pierde —
+  // sin nada enfocado, el Enter nativo del <form> no dispara. Este listener
+  // confirma la venta igual mientras el paso esté en un estado válido.
+  useEffect(() => {
+    if (!showPaymentPicker) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Enter" || e.repeat || pending) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (showFiadoStep) {
+        if (!customerId) return;
+        e.preventDefault();
+        void processSale("fiado");
+        return;
+      }
+
+      if (showMixedStep) {
+        if (mixedEntries.length === 0 || Math.abs(mixedRemaining) > 0.01) return;
+        if (mixedFiadoAmount > 0 && !customerId) return;
+        e.preventDefault();
+        void processSale(paymentMethodForLines(mixedEntries), mixedEntries);
+        return;
+      }
+
+      if (showCashStep && cashReceived !== "" && Number(cashReceived) < total) {
+        if (!customerId) return;
+        e.preventDefault();
+        const efectivoAmount = Number(cashReceived) || 0;
+        const fiadoAmount = total - efectivoAmount;
+        const allLines: PaymentLineInput[] = [
+          { method: "efectivo", amount: efectivoAmount },
+          { method: "fiado", amount: fiadoAmount },
+        ];
+        const lines = allLines.filter((p) => p.amount > 0);
+        void processSale(paymentMethodForLines(lines), lines);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    showPaymentPicker,
+    showFiadoStep,
+    showMixedStep,
+    showCashStep,
+    customerId,
+    pending,
+    mixedEntries,
+    mixedRemaining,
+    mixedFiadoAmount,
+    cashReceived,
+    total,
+  ]);
+
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
       if (results.length === 0) return;
@@ -507,66 +636,6 @@ export function PosClient({
     }
 
     registerEnterForCheckout();
-  }
-
-  async function processSale(method: PaymentMethod, payments?: PaymentLineInput[]) {
-    const fiadoAmount = payments
-      ? payments.find((p) => p.method === "fiado")?.amount ?? 0
-      : method === "fiado"
-        ? total
-        : 0;
-
-    if (fiadoAmount > 0 && !customerId) {
-      closePaymentPicker();
-      setError("Para cargar fiado primero elegí un cliente.");
-      return;
-    }
-
-    closePaymentPicker();
-    setPending(true);
-    setError(null);
-
-    const items: CheckoutItemInput[] = cart.map((item) =>
-      item.kind === "product"
-        ? {
-            product_id: item.product.id,
-            quantity: item.quantity,
-            unit_price: item.product.price,
-          }
-        : {
-            product_id: null,
-            product_name: item.label,
-            quantity: 1,
-            unit_price: item.amount,
-          }
-    );
-
-    const result = await checkoutSale({
-      orgId,
-      cashRegisterId,
-      customerId: customerId || null,
-      paymentMethod: method,
-      discount,
-      surcharge,
-      invoiceType: resolveInvoiceType(selectedCustomer?.invoice_type, method, autoInvoiceByPayment),
-      items,
-      payments,
-    });
-
-    setPending(false);
-
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-
-    setCart([]);
-    setDiscountInput("");
-    setSurchargeInput("");
-    setCustomerId("");
-    setCustomerQuery("");
-    setShowCustomerSearch(false);
-    router.refresh();
   }
 
   return (
