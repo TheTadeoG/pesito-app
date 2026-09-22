@@ -80,11 +80,26 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [localProducts, setLocalProducts] = useState<ProductLite[]>(products);
+  // Productos/proveedores creados al vuelo (alta rápida) que todavía no
+  // llegaron en los props del servidor. Derivar así (en vez de copiar
+  // `products`/`suppliers` a un useState y sincronizarlo en un efecto)
+  // evita que un stock o saldo de cuenta corriente que cambia en el
+  // servidor (otra compra en esta misma pantalla) quede pisado por una
+  // copia vieja: como los props se usan directo acá, un `router.refresh()`
+  // ya alcanza para verlos actualizados sin salir y volver a entrar a /compras.
+  const [extraProducts, setExtraProducts] = useState<ProductLite[]>([]);
+  const localProducts = useMemo(() => {
+    const existingIds = new Set(products.map((p) => p.id));
+    return [...products, ...extraProducts.filter((p) => !existingIds.has(p.id))];
+  }, [products, extraProducts]);
   const [showNewProduct, setShowNewProduct] = useState(false);
   const [supplierId, setSupplierId] = useState<string>("");
   const [supplierQuery, setSupplierQuery] = useState("");
-  const [localSuppliers, setLocalSuppliers] = useState<SupplierLite[]>(suppliers);
+  const [extraSuppliers, setExtraSuppliers] = useState<SupplierLite[]>([]);
+  const localSuppliers = useMemo(() => {
+    const existingIds = new Set(suppliers.map((s) => s.id));
+    return [...suppliers, ...extraSuppliers.filter((s) => !existingIds.has(s.id))];
+  }, [suppliers, extraSuppliers]);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
   const [newSupplierName, setNewSupplierName] = useState("");
   const [creatingSupplier, setCreatingSupplier] = useState(false);
@@ -226,6 +241,18 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
     }
   }
 
+  // Los inputs de "cuánto se paga con cada medio" no pasan por el listener
+  // global de doble Enter (ese ignora cualquier campo de texto enfocado
+  // para no interceptar Enter mientras se está escribiendo un número), así
+  // que necesitan este handler propio para que el doble Enter también
+  // registre la compra sin tener que sacar el foco del campo primero.
+  function handlePaymentAmountKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.currentTarget.blur();
+    registerEnterForConfirm();
+  }
+
   function selectSupplier(supplier: SupplierLite) {
     setSupplierId(supplier.id);
     setSupplierQuery("");
@@ -364,7 +391,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
     },
     initialStock: number
   ) {
-    setLocalProducts((current) => [...current, product]);
+    setExtraProducts((current) => [...current, product]);
     addProduct(product, initialStock > 0 ? initialStock : 1);
     setShowNewProduct(false);
   }
@@ -383,7 +410,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
       setSupplierError(result.error ?? "No pudimos crear el proveedor.");
       return;
     }
-    setLocalSuppliers((current) => [...current, { id: result.id!, name, balance: 0 }]);
+    setExtraSuppliers((current) => [...current, { id: result.id!, name, balance: 0 }]);
     setSupplierId(result.id);
     setSupplierQuery("");
     setNewSupplierName("");
@@ -805,6 +832,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                               [m.value]: e.target.value,
                             }))
                           }
+                          onKeyDown={handlePaymentAmountKeyDown}
                           placeholder="0.00"
                         />
                       </div>

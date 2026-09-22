@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { computeCashOnHand } from "@/lib/caja";
 import type { Json } from "@/lib/database.types";
 
 export interface PurchaseItemInput {
@@ -43,10 +44,24 @@ export async function registerPurchase(
 
   const { data: register } = await supabase
     .from("cash_registers")
-    .select("id")
+    .select("id, opening_amount")
     .eq("user_id", userId)
     .eq("status", "abierta")
     .maybeSingle();
+
+  const cashAmount = input.payments
+    .filter((p) => p.method === "efectivo")
+    .reduce((acc, p) => acc + p.amount, 0);
+
+  if (cashAmount > 0) {
+    if (!register) {
+      return { error: "Abrí tu caja para poder pagar en efectivo." };
+    }
+    const cashOnHand = await computeCashOnHand(supabase, register.id, Number(register.opening_amount));
+    if (cashAmount > cashOnHand) {
+      return { error: "No hay suficiente efectivo en la caja para pagar esta parte de la compra." };
+    }
+  }
 
   const { data, error } = await supabase.rpc("register_purchase", {
     p_org_id: input.orgId,

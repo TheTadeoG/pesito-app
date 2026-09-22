@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { computeCashOnHand } from "@/lib/caja";
 
 export interface ActionState {
   error?: string;
@@ -67,13 +68,20 @@ export async function registerSupplierPayment(
 
   const { data: register } = await supabase
     .from("cash_registers")
-    .select("id")
+    .select("id, opening_amount")
     .eq("user_id", userId)
     .eq("status", "abierta")
     .maybeSingle();
 
   if (!register) {
     return { error: "Abrí tu caja para poder registrar pagos a proveedores." };
+  }
+
+  if (method === "efectivo") {
+    const cashOnHand = await computeCashOnHand(supabase, register.id, Number(register.opening_amount));
+    if (amount > cashOnHand) {
+      return { error: "No hay suficiente efectivo en la caja para este pago." };
+    }
   }
 
   const { error } = await supabase.rpc("register_supplier_payment", {
