@@ -79,24 +79,21 @@ export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
                   <Link
                     href={`/proveedores/${supplier.id}`}
                     title="Ver ficha del proveedor"
-                    className="-mx-2.5 flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-1 transition-colors hover:bg-muted"
+                    className="-mx-2.5 min-w-0 flex-1 rounded-xl px-2.5 py-1 transition-colors hover:bg-muted"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate font-medium text-foreground">{supplier.name}</p>
-                        {supplier.balance > 0 && (
-                          <Badge tone="warning">Le debés {formatCurrency(supplier.balance)}</Badge>
-                        )}
-                      </div>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {[supplier.phone, supplier.email].filter(Boolean).join(" · ") ||
-                          "Sin datos de contacto"}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium text-foreground">{supplier.name}</p>
+                      {supplier.balance > 0 && (
+                        <Badge tone="warning">Le debés {formatCurrency(supplier.balance)}</Badge>
+                      )}
                     </div>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {[supplier.phone, supplier.email].filter(Boolean).join(" · ") ||
+                        "Sin datos de contacto"}
+                    </p>
                   </Link>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     {supplier.balance > 0 && (
                       <Button variant="outline" size="sm" onClick={() => setPaying(supplier)}>
                         <Wallet className="h-3.5 w-3.5" />
@@ -124,6 +121,7 @@ export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
                       <Trash2 className="h-4 w-4 text-danger" />
                     </Button>
                   </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </div>
               ))}
             </div>
