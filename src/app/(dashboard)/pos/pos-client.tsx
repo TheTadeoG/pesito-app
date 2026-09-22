@@ -807,6 +807,14 @@ export function PosClient({
               </p>
             ) : (
               <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3 px-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span>Producto (precio c/u)</span>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="w-20 text-right">Subtotal</span>
+                    <span className="w-[92px] text-center">Cantidad</span>
+                    <span className="w-7" />
+                  </div>
+                </div>
                 {cart.map((item, index) => (
                   <div
                     key={item.kind === "product" ? item.product.id : item.id}
@@ -840,7 +848,8 @@ export function PosClient({
                           <span className="text-xs text-muted-foreground">
                             {formatCurrency(
                               item.kind === "product" ? item.product.price : item.amount
-                            )}
+                            )}{" "}
+                            c/u
                           </span>
                           {item.kind === "product" && item.product.stock <= 5 && (
                             <Badge tone="danger" className="px-1.5 py-0 text-[10px]">

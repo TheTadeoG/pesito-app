@@ -82,6 +82,7 @@ export interface Database {
           unit: string;
           brand: string | null;
           image_url: string | null;
+          default_supplier_id: string | null;
           active: boolean;
           created_at: string;
           updated_at: string;
@@ -100,6 +101,7 @@ export interface Database {
           unit?: string;
           brand?: string | null;
           image_url?: string | null;
+          default_supplier_id?: string | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;

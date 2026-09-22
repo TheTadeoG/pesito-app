@@ -95,16 +95,21 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const total = cart.reduce((acc, line) => acc + line.quantity * line.unitCost, 0);
   const itemCount = cart.reduce((acc, line) => acc + line.quantity, 0);
 
-  function addProduct(product: ProductLite) {
+  function addProduct(product: ProductLite, initialQuantity = 1) {
     setError(null);
     setCart((current) => {
       const existing = current.find((line) => line.product.id === product.id);
       if (existing) {
         return current.map((line) =>
-          line.product.id === product.id ? { ...line, quantity: line.quantity + 1 } : line
+          line.product.id === product.id
+            ? { ...line, quantity: line.quantity + initialQuantity }
+            : line
         );
       }
-      return [...current, { product, quantity: 1, unitCost: Number(product.cost ?? 0) }];
+      return [
+        ...current,
+        { product, quantity: initialQuantity, unitCost: Number(product.cost ?? 0) },
+      ];
     });
     setQuery("");
     setBrowseProducts(false);
@@ -280,17 +285,20 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
     setCart((current) => current.filter((_, i) => i !== index));
   }
 
-  function handleProductCreated(product: {
-    id: string;
-    name: string;
-    barcode: string | null;
-    sku: string | null;
-    cost: number | null;
-    stock: number;
-    unit: string;
-  }) {
+  function handleProductCreated(
+    product: {
+      id: string;
+      name: string;
+      barcode: string | null;
+      sku: string | null;
+      cost: number | null;
+      stock: number;
+      unit: string;
+    },
+    initialStock: number
+  ) {
     setLocalProducts((current) => [...current, product]);
-    addProduct(product);
+    addProduct(product, initialStock > 0 ? initialStock : 1);
     setShowNewProduct(false);
   }
 
@@ -440,6 +448,13 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
               </p>
             ) : (
               <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3 px-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className="min-w-0 flex-1">Producto</span>
+                  <span className="w-[124px] text-center">Cantidad</span>
+                  <span className="w-28">Costo unitario</span>
+                  <span className="w-24 text-right">Subtotal</span>
+                  <span className="w-7" />
+                </div>
                 {cart.map((line, index) => (
                   <div
                     key={line.product.id}
@@ -690,6 +705,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
         open={showNewProduct}
         onClose={() => setShowNewProduct(false)}
         onSaved={handleProductCreated}
+        initialStockAsPurchase
       />
     </div>
   );

@@ -15,7 +15,7 @@ import {
   type ProductFormInput,
   type SaveProductResult,
 } from "@/app/(dashboard)/productos/actions";
-import type { Brand, Product } from "@/lib/types";
+import type { Brand, Product, Supplier } from "@/lib/types";
 
 const units = [
   { value: "u", label: "Unidad" },
@@ -31,13 +31,22 @@ const MAX_IMAGE_MB = 5;
 
 type BrandOption = Pick<Brand, "id" | "name">;
 
+type SupplierOption = Pick<Supplier, "id" | "name">;
+
 interface ProductFormProps {
   open: boolean;
   onClose: () => void;
   product?: Product | null;
   brands?: BrandOption[];
-  onSaved?: (product: NonNullable<SaveProductResult["product"]>) => void;
+  suppliers?: SupplierOption[];
+  onSaved?: (product: NonNullable<SaveProductResult["product"]>, initialStock: number) => void;
   onBrandCreated?: (brand: BrandOption) => void;
+  // Cuando el alta viene desde Compras: la cantidad ingresada no se guarda
+  // como stock directo del producto (quedaría en 0), sino que se devuelve
+  // vía onSaved para que el que llama la cargue como línea de esa compra —
+  // así el stock inicial entra por un único camino (la compra) y no se
+  // duplica sumando el "stock inicial" del alta más la compra en sí.
+  initialStockAsPurchase?: boolean;
 }
 
 export function ProductForm({
@@ -45,8 +54,10 @@ export function ProductForm({
   onClose,
   product,
   brands = [],
+  suppliers = [],
   onSaved,
   onBrandCreated,
+  initialStockAsPurchase = false,
 }: ProductFormProps) {
   const isEdit = Boolean(product);
   const [name, setName] = useState(product?.name ?? "");
@@ -67,6 +78,9 @@ export function ProductForm({
   const [stock, setStock] = useState(String(product?.stock ?? "0"));
   const [minStock, setMinStock] = useState(String(product?.min_stock ?? "0"));
   const [unit, setUnit] = useState(product?.unit ?? "u");
+  const [defaultSupplierId, setDefaultSupplierId] = useState<string | null>(
+    product?.default_supplier_id ?? null
+  );
   const [imageUrl, setImageUrl] = useState<string | null>(product?.image_url ?? null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageDragActive, setImageDragActive] = useState(false);
@@ -159,6 +173,7 @@ export function ProductForm({
     setPending(true);
     setError(null);
 
+    const enteredStock = Number(stock) || 0;
     const input: ProductFormInput = {
       id: product?.id,
       name,
@@ -167,11 +182,12 @@ export function ProductForm({
       sku,
       price: Number(price) || 0,
       cost: cost ? Number(cost) : null,
-      stock: Number(stock) || 0,
+      stock: initialStockAsPurchase ? 0 : enteredStock,
       minStock: Number(minStock) || 0,
       unit,
       active: product?.active ?? true,
       imageUrl,
+      defaultSupplierId,
     };
 
     const result = await saveProduct(input);
@@ -182,7 +198,7 @@ export function ProductForm({
       return;
     }
 
-    if (result.product) onSaved?.(result.product);
+    if (result.product) onSaved?.(result.product, enteredStock);
     resetAndClose();
   }
 
@@ -371,7 +387,9 @@ export function ProductForm({
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label htmlFor="p-stock">Stock inicial</Label>
+            <Label htmlFor="p-stock">
+              {initialStockAsPurchase ? "Cantidad a recibir" : "Stock inicial"}
+            </Label>
             <Input
               id="p-stock"
               type="number"
@@ -403,9 +421,31 @@ export function ProductForm({
           </div>
         </div>
 
+        <div>
+          <Label htmlFor="p-supplier">Proveedor habitual (opcional)</Label>
+          <Select
+            id="p-supplier"
+            value={defaultSupplierId ?? ""}
+            onChange={(e) => setDefaultSupplierId(e.target.value || null)}
+          >
+            <option value="">Sin proveedor</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+
         {isEdit && (
           <p className="text-xs text-muted-foreground">
             Para cambiar el stock usá los ajustes desde Inventario.
+          </p>
+        )}
+        {!isEdit && initialStockAsPurchase && (
+          <p className="text-xs text-muted-foreground">
+            Esta cantidad se agrega como línea de esta compra, no como stock directo — así no se
+            carga dos veces.
           </p>
         )}
 

@@ -17,6 +17,7 @@ export interface ProductFormInput {
   unit: string;
   active: boolean;
   imageUrl: string | null;
+  defaultSupplierId: string | null;
 }
 
 export interface ActionState {
@@ -55,6 +56,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     unit: input.unit,
     active: input.active,
     image_url: input.imageUrl,
+    default_supplier_id: input.defaultSupplierId,
   };
 
   if (input.id) {
