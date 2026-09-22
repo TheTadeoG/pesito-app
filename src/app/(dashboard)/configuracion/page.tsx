@@ -4,14 +4,9 @@ import { businessTypes } from "@/lib/business-types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
+import { roleLabels } from "@/lib/roles";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
 import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
-
-const roleLabels: Record<string, string> = {
-  owner: "Dueño",
-  admin: "Administrador",
-  vendedor: "Vendedor",
-};
 
 export default async function ConfiguracionPage() {
   const { userId, email, organization } = await requireOrgContext();
@@ -19,7 +14,7 @@ export default async function ConfiguracionPage() {
 
   const { data: memberships } = await supabase
     .from("memberships")
-    .select("id, user_id, role, created_at")
+    .select("id, user_id, role, email, username, created_at")
     .eq("org_id", organization.id)
     .order("created_at");
 
@@ -64,7 +59,10 @@ export default async function ConfiguracionPage() {
             {(memberships ?? []).map((m) => (
               <div key={m.id} className="flex items-center justify-between px-5 py-3 text-sm">
                 <span className="text-foreground">
-                  {m.user_id === userId ? `${email} (vos)` : `Usuario ${m.user_id.slice(0, 8)}`}
+                  {m.username ?? m.email ?? "Sin email"}
+                  {m.user_id === userId && (
+                    <span className="ml-1.5 text-xs text-muted-foreground">(vos)</span>
+                  )}
                 </span>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground">
