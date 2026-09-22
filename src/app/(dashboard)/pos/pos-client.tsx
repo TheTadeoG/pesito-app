@@ -84,6 +84,8 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [showExtras, setShowExtras] = useState(false);
   const [showManualAmount, setShowManualAmount] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
+  const [showCashStep, setShowCashStep] = useState(false);
+  const [cashReceived, setCashReceived] = useState("");
   const [manualLabel, setManualLabel] = useState("");
   const [manualAmount, setManualAmount] = useState("");
   const [pending, setPending] = useState(false);
@@ -178,7 +180,23 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   function openPaymentPicker() {
     if (cart.length === 0 || pending) return;
     setError(null);
+    setShowCashStep(false);
+    setCashReceived("");
     setShowPaymentPicker(true);
+  }
+
+  function closePaymentPicker() {
+    setShowPaymentPicker(false);
+    setShowCashStep(false);
+    setCashReceived("");
+  }
+
+  function pickMethod(method: PaymentMethod) {
+    if (method === "efectivo") {
+      setShowCashStep(true);
+      return;
+    }
+    void processSale(method);
   }
 
   async function handleCreateCustomer() {
@@ -292,12 +310,12 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
   async function processSale(method: PaymentMethod) {
     if (method === "fiado" && !customerId) {
-      setShowPaymentPicker(false);
+      closePaymentPicker();
       setError("Para vender fiado primero elegí un cliente.");
       return;
     }
 
-    setShowPaymentPicker(false);
+    closePaymentPicker();
     setPending(true);
     setError(null);
 
@@ -689,28 +707,92 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
       <Dialog
         open={showPaymentPicker}
-        onClose={() => setShowPaymentPicker(false)}
-        title="¿Cómo paga?"
+        onClose={closePaymentPicker}
+        title={showCashStep ? "Pago en efectivo" : "¿Cómo paga?"}
         description={`Total a cobrar: ${formatCurrency(total)}`}
       >
-        <div className="grid grid-cols-2 gap-2">
-          {paymentMethods.map((method) => {
-            const disabled = method.value === "fiado" && !customerId;
-            return (
-              <button
-                key={method.value}
+        {showCashStep ? (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                ¿Con cuánto paga?
+              </label>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                inputMode="decimal"
+                autoFocus
+                value={cashReceived}
+                onChange={(e) => setCashReceived(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  if (Number(cashReceived) >= total && !pending) {
+                    void processSale("efectivo");
+                  }
+                }}
+                placeholder={String(total)}
+              />
+            </div>
+
+            {cashReceived !== "" &&
+              (Number(cashReceived) >= total ? (
+                <div className="flex items-center justify-between rounded-xl bg-success-bg px-4 py-3">
+                  <span className="text-sm font-medium text-success">Vuelto</span>
+                  <span className="text-lg font-bold text-success">
+                    {formatCurrency(Number(cashReceived) - total)}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between rounded-xl bg-danger-bg px-4 py-3">
+                  <span className="text-sm font-medium text-danger">Falta</span>
+                  <span className="text-lg font-bold text-danger">
+                    {formatCurrency(total - Number(cashReceived))}
+                  </span>
+                </div>
+              ))}
+
+            <div className="flex justify-end gap-2">
+              <Button
                 type="button"
-                disabled={disabled || pending}
-                onClick={() => void processSale(method.value)}
-                className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
-                title={disabled ? "Elegí un cliente para vender fiado" : undefined}
+                variant="outline"
+                onClick={() => {
+                  setShowCashStep(false);
+                  setCashReceived("");
+                }}
               >
-                <method.icon className="h-5 w-5 text-accent-foreground" />
-                {method.label}
-              </button>
-            );
-          })}
-        </div>
+                Atrás
+              </Button>
+              <Button
+                type="button"
+                disabled={pending || !cashReceived || Number(cashReceived) < total}
+                onClick={() => void processSale("efectivo")}
+              >
+                {pending ? "Procesando…" : "Confirmar venta"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {paymentMethods.map((method) => {
+              const disabled = method.value === "fiado" && !customerId;
+              return (
+                <button
+                  key={method.value}
+                  type="button"
+                  disabled={disabled || pending}
+                  onClick={() => pickMethod(method.value)}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
+                  title={disabled ? "Elegí un cliente para vender fiado" : undefined}
+                >
+                  <method.icon className="h-5 w-5 text-accent-foreground" />
+                  {method.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </Dialog>
 
       <Dialog
