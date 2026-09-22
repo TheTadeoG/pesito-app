@@ -23,6 +23,20 @@ export function SignupForm() {
       <div>
         <Label htmlFor="businessName">Nombre de tu kiosco o almacén</Label>
         <Input id="businessName" name="businessName" placeholder="Kiosco Don José" required />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Podés cambiarlo más adelante desde Configuración.
+        </p>
+      </div>
+
+      <div>
+        <Label htmlFor="phone">Teléfono (opcional)</Label>
+        <Input
+          id="phone"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          placeholder="11 2345 6789"
+        />
       </div>
 
       <div>

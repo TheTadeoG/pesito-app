@@ -36,6 +36,7 @@ export async function signup(
   formData: FormData
 ): Promise<AuthActionState> {
   const businessName = String(formData.get("businessName") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
@@ -54,7 +55,7 @@ export async function signup(
     email,
     password,
     options: {
-      data: { business_name: businessName },
+      data: { business_name: businessName, phone: phone || null },
       emailRedirectTo: `${origin}/auth/confirm`,
     },
   });

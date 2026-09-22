@@ -29,11 +29,13 @@ export async function createKiosco(
 
   const baseSlug = slugify(trimmedName) || "negocio";
   const slug = `${baseSlug}-${user.id.slice(0, 6)}`;
+  const phone = typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone : null;
 
   const { error } = await supabase.rpc("create_organization", {
     p_name: trimmedName,
     p_slug: slug,
     p_business_type: businessType || "otro",
+    p_phone: phone,
   });
 
   if (error) {

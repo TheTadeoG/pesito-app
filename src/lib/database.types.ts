@@ -16,6 +16,7 @@ export interface Database {
           slug: string;
           business_type: string;
           currency: string;
+          phone: string | null;
           auto_invoice_by_payment: boolean;
           created_at: string;
         };
@@ -25,6 +26,7 @@ export interface Database {
           slug: string;
           business_type?: string;
           currency?: string;
+          phone?: string | null;
           auto_invoice_by_payment?: boolean;
           created_at?: string;
         };
@@ -405,7 +407,12 @@ export interface Database {
         Returns: boolean;
       };
       create_organization: {
-        Args: { p_name: string; p_slug: string; p_business_type?: string };
+        Args: {
+          p_name: string;
+          p_slug: string;
+          p_business_type?: string;
+          p_phone?: string | null;
+        };
         Returns: string;
       };
       checkout_sale: {

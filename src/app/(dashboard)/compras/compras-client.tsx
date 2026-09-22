@@ -210,6 +210,12 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       if (e.key === "Enter") {
         if (document.activeElement === searchRef.current) return;
         if (isTypingInOtherField()) return;
+        // Si el foco quedó en un botón (ej: el "+" de cantidad recién
+        // tocado), el navegador reactiva ese botón con cada Enter además
+        // de correr esta lógica — sacamos el foco para evitar que sumar
+        // items o clickear "-" pase de nuevo sin querer.
+        e.preventDefault();
+        (document.activeElement as HTMLElement | null)?.blur();
         registerEnterForConfirm();
         return;
       }
