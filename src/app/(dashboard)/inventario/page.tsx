@@ -6,7 +6,7 @@ export default async function InventarioPage() {
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
 
-  const [{ data: products }, { data: movements }] = await Promise.all([
+  const [{ data: products }, { data: movements }, { data: allProducts }] = await Promise.all([
     supabase
       .from("products")
       .select("*")
@@ -18,7 +18,10 @@ export default async function InventarioPage() {
       .select("id, product_id, type, quantity, reference, created_at")
       .eq("org_id", organization.id)
       .order("created_at", { ascending: false })
-      .limit(30),
+      .limit(500),
+    // Sin filtrar por activo: un movimiento puede referenciar un producto
+    // ya desactivado, y lo necesitamos igual para mostrar/filtrar por SKU.
+    supabase.from("products").select("id, name, sku, barcode").eq("org_id", organization.id),
   ]);
 
   const normalizedProducts = (products ?? []).map((p) => ({
@@ -29,16 +32,21 @@ export default async function InventarioPage() {
     min_stock: Number(p.min_stock),
   }));
 
-  const productNameById = new Map(normalizedProducts.map((p) => [p.id, p.name]));
+  const productById = new Map((allProducts ?? []).map((p) => [p.id, p]));
 
-  const normalizedMovements = (movements ?? []).map((m) => ({
-    id: m.id,
-    type: m.type,
-    quantity: Number(m.quantity),
-    reference: m.reference,
-    created_at: m.created_at,
-    product_name: productNameById.get(m.product_id) ?? "Producto eliminado",
-  }));
+  const normalizedMovements = (movements ?? []).map((m) => {
+    const product = productById.get(m.product_id);
+    return {
+      id: m.id,
+      type: m.type,
+      quantity: Number(m.quantity),
+      reference: m.reference,
+      created_at: m.created_at,
+      product_name: product?.name ?? "Producto eliminado",
+      product_sku: product?.sku ?? null,
+      product_barcode: product?.barcode ?? null,
+    };
+  });
 
   return <InventarioClient products={normalizedProducts} movements={normalizedMovements} />;
 }
