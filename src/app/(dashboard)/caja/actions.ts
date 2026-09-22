@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { computeCashOnHand, computePaymentBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
+import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 
 export interface ActionState {
@@ -92,7 +93,7 @@ export async function getCajaDetail(
     .reduce((acc, s) => acc + s.total, 0);
 
   const saleIds = sales.map((s) => s.id);
-  const [{ data: itemsRaw }, { data: customersRaw }] = await Promise.all([
+  const [{ data: itemsRaw }, { data: customersRaw }, fiadoBySale] = await Promise.all([
     saleIds.length > 0
       ? supabase
           .from("sale_items")
@@ -107,6 +108,7 @@ export async function getCajaDetail(
         ? supabase.from("customers").select("id, name").in("id", customerIds)
         : Promise.resolve({ data: [] });
     })(),
+    getFiadoAmountsBySale(supabase, saleIds),
   ]);
 
   const customerNameById = new Map((customersRaw ?? []).map((c) => [c.id, c.name]));
@@ -128,6 +130,7 @@ export async function getCajaDetail(
       ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
       : "Consumidor Final",
     itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
+    fiadoAmount: fiadoBySale.get(sale.id) ?? 0,
   }));
 
   return {

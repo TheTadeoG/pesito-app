@@ -8,6 +8,7 @@ import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 import { ClienteDetailClient } from "@/app/(dashboard)/clientes/[id]/cliente-detail-client";
+import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 
 export default async function ClienteDetailPage({
   params,
@@ -56,6 +57,8 @@ export default async function ClienteDetailPage({
     itemsBySale.set(item.sale_id, list);
   }
 
+  const fiadoBySale = await getFiadoAmountsBySale(supabase, saleIds);
+
   const saleRows: SaleRow[] = sales.map((sale) => ({
     id: sale.id,
     created_at: sale.created_at,
@@ -64,6 +67,7 @@ export default async function ClienteDetailPage({
     invoice_type: sale.invoice_type,
     customerName: customer.name,
     itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
+    fiadoAmount: fiadoBySale.get(sale.id) ?? 0,
   }));
 
   const totalComprado = completedSales.reduce((acc, s) => acc + s.total, 0);

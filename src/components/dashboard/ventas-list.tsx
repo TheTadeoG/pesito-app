@@ -19,6 +19,9 @@ export interface SaleRow {
   invoice_type: string;
   customerName: string;
   itemsSummary: string;
+  // Sólo se completa cuando la venta tiene una parte cargada a fiado (venta
+  // 100% fiado, o "mixto" con un componente fiado). 0/undefined = no debe.
+  fiadoAmount?: number;
 }
 
 export function VentasList({
@@ -97,6 +100,9 @@ export function VentasList({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-foreground">{sale.customerName}</span>
                 <Badge>{paymentLabels[sale.payment_method] ?? sale.payment_method}</Badge>
+                {sale.payment_method === "mixto" && !!sale.fiadoAmount && sale.fiadoAmount > 0 && (
+                  <Badge tone="danger">Fiado {formatCurrency(sale.fiadoAmount)}</Badge>
+                )}
                 {sale.invoice_type && sale.invoice_type !== "consumidor_final" && (
                   <Badge tone="accent">
                     {invoiceLabels[sale.invoice_type] ?? sale.invoice_type}

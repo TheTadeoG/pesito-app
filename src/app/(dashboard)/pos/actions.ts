@@ -60,6 +60,8 @@ export async function checkoutSale(
   revalidatePath("/productos");
   revalidatePath("/caja");
   revalidatePath("/reportes");
+  revalidatePath("/clientes");
+  if (input.customerId) revalidatePath(`/clientes/${input.customerId}`);
 
   return { saleId: data ?? undefined };
 }

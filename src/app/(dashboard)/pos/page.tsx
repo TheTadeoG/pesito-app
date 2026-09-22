@@ -5,6 +5,7 @@ import { paymentLabels } from "@/lib/payment-labels";
 import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 import { PosClient } from "@/app/(dashboard)/pos/pos-client";
 import { OpenCajaPrompt } from "@/app/(dashboard)/pos/open-caja-prompt";
+import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 
 const RECENT_SALES_LIMIT = 8;
 
@@ -50,7 +51,7 @@ export default async function PosPage() {
   const sales = (salesRaw ?? []).map((s) => ({ ...s, total: Number(s.total) }));
   const saleIds = sales.map((s) => s.id);
 
-  const [{ data: itemsRaw }, { data: saleCustomersRaw }] = await Promise.all([
+  const [{ data: itemsRaw }, { data: saleCustomersRaw }, fiadoBySale] = await Promise.all([
     saleIds.length > 0
       ? supabase
           .from("sale_items")
@@ -65,6 +66,7 @@ export default async function PosPage() {
         ? supabase.from("customers").select("id, name").in("id", customerIds)
         : Promise.resolve({ data: [] });
     })(),
+    getFiadoAmountsBySale(supabase, saleIds),
   ]);
 
   const customerNameById = new Map((saleCustomersRaw ?? []).map((c) => [c.id, c.name]));
@@ -86,6 +88,7 @@ export default async function PosPage() {
       ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
       : "Consumidor Final",
     itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
+    fiadoAmount: fiadoBySale.get(sale.id) ?? 0,
   }));
 
   return (

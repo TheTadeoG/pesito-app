@@ -6,6 +6,7 @@ import { ARG_TZ, argHour } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { ReportesDashboard, type ReportesData } from "@/app/(dashboard)/reportes/reportes-dashboard";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
+import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 
 const paymentLabels: Record<string, string> = {
   efectivo: "Efectivo",
@@ -168,7 +169,13 @@ export default async function ReportesPage({
     itemsBySale.set(item.sale_id, list);
   }
 
-  const saleRows: SaleRow[] = sales.slice(0, 15).map((sale) => ({
+  const recentSales = sales.slice(0, 15);
+  const fiadoBySale = await getFiadoAmountsBySale(
+    supabase,
+    recentSales.map((s) => s.id)
+  );
+
+  const saleRows: SaleRow[] = recentSales.map((sale) => ({
     id: sale.id,
     created_at: sale.created_at,
     total: sale.total,
@@ -178,6 +185,7 @@ export default async function ReportesPage({
       ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
       : "Consumidor Final",
     itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
+    fiadoAmount: fiadoBySale.get(sale.id) ?? 0,
   }));
 
   const data: ReportesData = {
