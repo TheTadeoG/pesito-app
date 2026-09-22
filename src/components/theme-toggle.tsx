@@ -8,18 +8,11 @@ export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    // The anti-flash inline script only sets data-theme when the visitor
-    // already made an explicit choice (stored in localStorage). Without
-    // that, the page still renders dark via the prefers-color-scheme media
-    // query, so falling back to `dataset.theme === "dark"` alone reads
-    // "light" even though the screen is dark — this syncs to what's
-    // actually on screen either way.
-    const explicit = document.documentElement.dataset.theme;
-    const actual =
-      explicit === "dark" ||
-      (explicit !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    // The anti-flash inline script in <head> always sets an explicit
+    // data-theme (locking in the OS preference on first visit and reusing
+    // it on every later load), so this just reads what's already applied.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsDark(actual);
+    setIsDark(document.documentElement.dataset.theme === "dark");
   }, []);
 
   function toggle() {
