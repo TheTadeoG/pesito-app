@@ -4,9 +4,14 @@ import { formatCurrency } from "@/lib/utils";
 import { daysSince, getPeriodRange, resolvePeriod } from "@/lib/report-periods";
 import { ARG_TZ, argHour } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
-import { ReportesDashboard, type ReportesData } from "@/app/(dashboard)/reportes/reportes-dashboard";
+import {
+  ReportesDashboard,
+  type CashDiffRow,
+  type ReportesData,
+} from "@/app/(dashboard)/reportes/reportes-dashboard";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
+import { getMemberLabelsById } from "@/lib/member-labels";
 
 const paymentLabels: Record<string, string> = {
   efectivo: "Efectivo",
@@ -34,8 +39,9 @@ export default async function ReportesPage({
   const period = resolvePeriod(periodParam);
   const { start, label: periodLabel, groupBy } = getPeriodRange(period);
 
-  const { organization } = await requireOrgContext();
+  const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
+  const isManager = membership.role === "owner" || membership.role === "admin";
 
   const { data: salesRaw } = await supabase
     .from("sales")
@@ -188,6 +194,41 @@ export default async function ReportesPage({
     fiadoAmount: fiadoBySale.get(sale.id) ?? 0,
   }));
 
+  let cashDiffByUser: CashDiffRow[] | null = null;
+  if (isManager) {
+    const { data: closedRegisters } = await supabase
+      .from("cash_registers")
+      .select("user_id, expected_amount, closing_amount")
+      .eq("org_id", organization.id)
+      .eq("status", "cerrada")
+      .gte("closed_at", start.toISOString());
+
+    const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
+    const totalsByUser = new Map<
+      string,
+      { cajasCerradas: number; faltante: number; sobrante: number }
+    >();
+    for (const r of closedRegisters ?? []) {
+      const diff = Number(r.closing_amount ?? 0) - Number(r.expected_amount ?? 0);
+      const current = totalsByUser.get(r.user_id) ?? {
+        cajasCerradas: 0,
+        faltante: 0,
+        sobrante: 0,
+      };
+      current.cajasCerradas += 1;
+      if (diff < 0) current.faltante += -diff;
+      if (diff > 0) current.sobrante += diff;
+      totalsByUser.set(r.user_id, current);
+    }
+
+    cashDiffByUser = Array.from(totalsByUser.entries())
+      .map(([userId, totals]) => ({
+        userLabel: memberLabelsById.get(userId) ?? "Usuario eliminado",
+        ...totals,
+      }))
+      .sort((a, b) => b.faltante + b.sobrante - (a.faltante + a.sobrante));
+  }
+
   const data: ReportesData = {
     periodLabel,
     tiles: [
@@ -203,6 +244,7 @@ export default async function ReportesPage({
     topByMargin,
     topCustomers,
     saleRows,
+    cashDiffByUser,
   };
 
   return (

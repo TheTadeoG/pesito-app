@@ -7,6 +7,7 @@ import {
   DollarSign,
   Package,
   Receipt,
+  Scale,
   Settings2,
   TrendingUp,
   Users,
@@ -28,12 +29,20 @@ const WIDGETS = [
   { id: "topQty", label: "Productos más vendidos" },
   { id: "topMargin", label: "Productos con más ganancia" },
   { id: "topCustomers", label: "Mejores clientes" },
+  { id: "cashDiff", label: "Diferencias de caja por vendedor" },
   { id: "recentSales", label: "Últimas ventas" },
 ] as const;
 
 type WidgetId = (typeof WIDGETS)[number]["id"];
 const ALL_WIDGET_IDS = WIDGETS.map((w) => w.id);
 const STORAGE_KEY = "pesito-reportes-widgets";
+
+export interface CashDiffRow {
+  userLabel: string;
+  cajasCerradas: number;
+  faltante: number;
+  sobrante: number;
+}
 
 export interface ReportesData {
   periodLabel: string;
@@ -45,6 +54,8 @@ export interface ReportesData {
   topByMargin: { name: string; margin: number }[];
   topCustomers: { name: string; total: number }[];
   saleRows: SaleRow[];
+  // Sólo se completa para dueños/administradores.
+  cashDiffByUser: CashDiffRow[] | null;
 }
 
 const tileIcons = {
@@ -86,6 +97,9 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
   }
 
   const isVisible = (id: WidgetId) => visible.has(id);
+  const availableWidgets = WIDGETS.filter(
+    (w) => w.id !== "cashDiff" || data.cashDiffByUser !== null
+  );
 
   return (
     <div className="space-y-6">
@@ -242,6 +256,65 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
         </Card>
       )}
 
+      {isVisible("cashDiff") && data.cashDiffByUser && (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <Scale className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Diferencias de caja por vendedor</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {data.cashDiffByUser.length === 0 ? (
+              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+                Nadie cerró una caja en este período.
+              </p>
+            ) : (
+              <div className="divide-y divide-border">
+                {data.cashDiffByUser.map((row) => (
+                  <div
+                    key={row.userLabel}
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-2.5 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">{row.userLabel}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {row.cajasCerradas} caja{row.cajasCerradas !== 1 ? "s" : ""} cerrada
+                        {row.cajasCerradas !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-4 text-right">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Faltante</p>
+                        <p
+                          className={
+                            row.faltante > 0
+                              ? "font-semibold text-danger"
+                              : "font-semibold text-muted-foreground"
+                          }
+                        >
+                          {formatCurrency(row.faltante)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Sobrante</p>
+                        <p
+                          className={
+                            row.sobrante > 0
+                              ? "font-semibold text-success"
+                              : "font-semibold text-muted-foreground"
+                          }
+                        >
+                          {formatCurrency(row.sobrante)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {isVisible("recentSales") && (
         <Card>
           <CardHeader>
@@ -260,7 +333,7 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
         description="Elegí qué secciones querés ver. Se guarda en este dispositivo."
       >
         <div className="space-y-2">
-          {WIDGETS.map((widget) => (
+          {availableWidgets.map((widget) => (
             <label
               key={widget.id}
               className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm"
