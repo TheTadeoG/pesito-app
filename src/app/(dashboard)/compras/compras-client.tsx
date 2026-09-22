@@ -59,11 +59,13 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const [notes, setNotes] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [browseProducts, setBrowseProducts] = useState(false);
+  const [browseSuppliers, setBrowseSuppliers] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return [];
+    if (!q) return browseProducts ? localProducts.slice(0, 50) : [];
     return localProducts
       .filter(
         (p) =>
@@ -71,8 +73,8 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
           p.barcode?.toLowerCase() === q ||
           p.sku?.toLowerCase() === q
       )
-      .slice(0, 8);
-  }, [localProducts, query]);
+      .slice(0, 50);
+  }, [localProducts, query, browseProducts]);
 
   const selectedSupplier = useMemo(
     () => localSuppliers.find((s) => s.id === supplierId) ?? null,
@@ -81,9 +83,9 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
 
   const supplierResults = useMemo(() => {
     const q = supplierQuery.trim().toLowerCase();
-    if (!q) return [];
-    return localSuppliers.filter((s) => s.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [localSuppliers, supplierQuery]);
+    if (!q) return browseSuppliers ? localSuppliers.slice(0, 50) : [];
+    return localSuppliers.filter((s) => s.name.toLowerCase().includes(q)).slice(0, 50);
+  }, [localSuppliers, supplierQuery, browseSuppliers]);
 
   const total = cart.reduce((acc, line) => acc + line.quantity * line.unitCost, 0);
   const itemCount = cart.reduce((acc, line) => acc + line.quantity, 0);
@@ -100,6 +102,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       return [...current, { product, quantity: 1, unitCost: Number(product.cost ?? 0) }];
     });
     setQuery("");
+    setBrowseProducts(false);
     searchRef.current?.focus();
   }
 
@@ -204,7 +207,18 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
           <CardContent>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBrowseProducts((v) => !v);
+                    searchRef.current?.focus();
+                  }}
+                  aria-label="Ver todo el catálogo"
+                  title="Ver todo el catálogo"
+                  className="absolute left-3.5 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
                 <Input
                   ref={searchRef}
                   value={query}
@@ -213,7 +227,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                   className="pl-10"
                 />
                 {results.length > 0 && (
-                  <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                  <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
                     {results.map((product) => (
                       <button
                         key={product.id}
@@ -349,7 +363,15 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
             ) : (
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <button
+                    type="button"
+                    onClick={() => setBrowseSuppliers((v) => !v)}
+                    aria-label="Ver todos los proveedores"
+                    title="Ver todos los proveedores"
+                    className="absolute left-3.5 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
                   <Input
                     value={supplierQuery}
                     onChange={(e) => setSupplierQuery(e.target.value)}
@@ -357,7 +379,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                     className="pl-10"
                   />
                   {supplierResults.length > 0 && (
-                    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                    <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
                       {supplierResults.map((supplier) => (
                         <button
                           key={supplier.id}
@@ -365,6 +387,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                           onClick={() => {
                             setSupplierId(supplier.id);
                             setSupplierQuery("");
+                            setBrowseSuppliers(false);
                           }}
                           className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
                         >

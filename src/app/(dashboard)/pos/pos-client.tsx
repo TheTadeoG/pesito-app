@@ -92,12 +92,14 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [manualAmount, setManualAmount] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [browseProducts, setBrowseProducts] = useState(false);
+  const [browseCustomers, setBrowseCustomers] = useState(false);
   const lastEnterAt = useRef<number>(0);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return [];
+    if (!q) return browseProducts ? products.slice(0, 50) : [];
     return products
       .filter(
         (p) =>
@@ -105,8 +107,8 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
           p.barcode?.toLowerCase() === q ||
           p.sku?.toLowerCase() === q
       )
-      .slice(0, 8);
-  }, [products, query]);
+      .slice(0, 50);
+  }, [products, query, browseProducts]);
 
   const selectedCustomer = useMemo(
     () => localCustomers.find((c) => c.id === customerId) ?? null,
@@ -115,9 +117,9 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
   const customerResults = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
-    if (!q) return [];
-    return localCustomers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [localCustomers, customerQuery]);
+    if (!q) return browseCustomers ? localCustomers.slice(0, 50) : [];
+    return localCustomers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 50);
+  }, [localCustomers, customerQuery, browseCustomers]);
 
   const subtotal = cart.reduce((acc, item) => {
     if (item.kind === "product") return acc + item.product.price * item.quantity;
@@ -153,6 +155,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       return [...current, { kind: "product", product, quantity: 1 }];
     });
     setQuery("");
+    setBrowseProducts(false);
   }
 
   function changeQuantity(index: number, delta: number) {
@@ -383,7 +386,18 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
           <CardContent>
             <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBrowseProducts((v) => !v);
+                    searchRef.current?.focus();
+                  }}
+                  aria-label="Ver todo el catálogo"
+                  title="Ver todo el catálogo"
+                  className="absolute left-3.5 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
                 <Input
                   ref={searchRef}
                   value={query}
@@ -407,7 +421,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                 )}
 
                 {results.length > 0 && (
-                  <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                  <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
                     {results.map((product) => (
                       <button
                         key={product.id}
@@ -589,7 +603,15 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
             ) : (
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <button
+                    type="button"
+                    onClick={() => setBrowseCustomers((v) => !v)}
+                    aria-label="Ver todos los clientes"
+                    title="Ver todos los clientes"
+                    className="absolute left-3.5 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
                   <Input
                     value={customerQuery}
                     onChange={(e) => setCustomerQuery(e.target.value)}
@@ -597,7 +619,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                     className="pl-10"
                   />
                   {customerResults.length > 0 && (
-                    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                    <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
                       {customerResults.map((customer) => (
                         <button
                           key={customer.id}
@@ -605,6 +627,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                           onClick={() => {
                             setCustomerId(customer.id);
                             setCustomerQuery("");
+                            setBrowseCustomers(false);
                           }}
                           className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
                         >
