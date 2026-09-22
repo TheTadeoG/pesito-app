@@ -35,12 +35,15 @@ export async function signup(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
+  const inviteCode = String(formData.get("inviteCode") ?? "").trim();
+  // Con invitación el negocio ya existe: no pedimos nombre de negocio y, al
+  // confirmar la cuenta, se acepta la invitación en vez de armar una nueva.
   const businessName = String(formData.get("businessName") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  if (!businessName || !email || !password) {
+  if (!email || !password || (!inviteCode && !businessName)) {
     return { error: "Completá todos los campos." };
   }
 
@@ -48,6 +51,7 @@ export async function signup(
     return { error: "La contraseña debe tener al menos 6 caracteres." };
   }
 
+  const postSignupPath = inviteCode ? `/invitacion/${inviteCode}` : "/onboarding";
   const origin = (await headers()).get("origin");
   const supabase = await createClient();
 
@@ -55,8 +59,8 @@ export async function signup(
     email,
     password,
     options: {
-      data: { business_name: businessName, phone: phone || null },
-      emailRedirectTo: `${origin}/auth/confirm`,
+      data: { business_name: businessName || null, phone: phone || null },
+      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(postSignupPath)}`,
     },
   });
 
@@ -73,7 +77,7 @@ export async function signup(
     };
   }
 
-  redirect("/onboarding");
+  redirect(postSignupPath);
 }
 
 export async function signOut() {

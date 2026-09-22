@@ -9,15 +9,25 @@ export const metadata: Metadata = {
   alternates: { canonical: "/registro" },
 };
 
-export default function RegistroPage() {
+export default async function RegistroPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ invite?: string }>;
+}) {
+  const { invite } = await searchParams;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Creá tu cuenta gratis</CardTitle>
-        <CardDescription>Empezá a usar Pesito en tu kiosco en minutos.</CardDescription>
+        <CardTitle>{invite ? "Creá tu cuenta" : "Creá tu cuenta gratis"}</CardTitle>
+        <CardDescription>
+          {invite
+            ? "Un último paso antes de sumarte al equipo."
+            : "Empezá a usar Pesito en tu kiosco en minutos."}
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <SignupForm />
+        <SignupForm inviteCode={invite} />
       </CardContent>
     </Card>
   );

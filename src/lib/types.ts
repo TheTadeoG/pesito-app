@@ -14,6 +14,7 @@ export type StockMovement = Database["public"]["Tables"]["stock_movements"]["Row
 export type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
 export type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
 export type PurchaseItem = Database["public"]["Tables"]["purchase_items"]["Row"];
+export type Invitation = Database["public"]["Tables"]["invitations"]["Row"];
 
 export interface CartLine {
   product: Product;

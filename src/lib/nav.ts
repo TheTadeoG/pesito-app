@@ -20,6 +20,8 @@ export interface NavItem {
   label: string;
   icon: LucideIcon;
   badge?: string;
+  // Sólo visible para dueños/administradores (ej. gestión de usuarios).
+  adminOnly?: boolean;
 }
 
 export interface NavSection {
@@ -48,7 +50,7 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/clientes", label: "Clientes", icon: Users },
       { href: "/proveedores", label: "Proveedores", icon: Truck },
-      { href: "/usuarios", label: "Usuarios", icon: UserCog, badge: "Pronto" },
+      { href: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
     ],
   },
   {
@@ -79,7 +81,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/marcas": { title: "Marcas", description: "Catálogo de marcas de tus productos." },
   "/clientes": { title: "Clientes", description: "Tus clientes y sus cuentas." },
   "/proveedores": { title: "Proveedores", description: "Tus proveedores para compras." },
-  "/usuarios": { title: "Usuarios", description: "Accesos de tu equipo." },
+  "/usuarios": { title: "Usuarios", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
   "/recomendaciones": { title: "Recomendaciones", description: "Sugerencias inteligentes para tu kiosco." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },

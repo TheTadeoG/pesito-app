@@ -39,6 +39,7 @@ export interface Database {
           org_id: string;
           user_id: string;
           role: "owner" | "admin" | "vendedor";
+          email: string | null;
           created_at: string;
         };
         Insert: {
@@ -46,6 +47,7 @@ export interface Database {
           org_id: string;
           user_id: string;
           role?: "owner" | "admin" | "vendedor";
+          email?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["memberships"]["Insert"]>;
@@ -401,10 +403,40 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["customer_payments"]["Insert"]>;
         Relationships: [];
       };
+      invitations: {
+        Row: {
+          id: string;
+          org_id: string;
+          code: string;
+          role: "admin" | "vendedor";
+          created_by: string;
+          created_at: string;
+          expires_at: string;
+          used_at: string | null;
+          used_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          code: string;
+          role: "admin" | "vendedor";
+          created_by: string;
+          created_at?: string;
+          expires_at?: string;
+          used_at?: string | null;
+          used_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["invitations"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       is_org_member: {
+        Args: { p_org_id: string };
+        Returns: boolean;
+      };
+      is_org_admin: {
         Args: { p_org_id: string };
         Returns: boolean;
       };
@@ -455,6 +487,30 @@ export interface Database {
           p_method: string;
           p_amount: number;
         };
+        Returns: undefined;
+      };
+      create_invitation: {
+        Args: { p_org_id: string; p_role: string };
+        Returns: Database["public"]["Tables"]["invitations"]["Row"];
+      };
+      revoke_invitation: {
+        Args: { p_invitation_id: string };
+        Returns: undefined;
+      };
+      get_invitation_preview: {
+        Args: { p_code: string };
+        Returns: { org_name: string; role: string; valid: boolean }[];
+      };
+      accept_invitation: {
+        Args: { p_code: string };
+        Returns: string;
+      };
+      update_member_role: {
+        Args: { p_membership_id: string; p_role: string };
+        Returns: undefined;
+      };
+      remove_member: {
+        Args: { p_membership_id: string };
         Returns: undefined;
       };
     };

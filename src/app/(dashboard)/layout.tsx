@@ -2,18 +2,13 @@ import type { Metadata } from "next";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { computeCashOnHand } from "@/lib/caja";
+import { roleLabels } from "@/lib/roles";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { ToastProvider } from "@/components/toast/toast-provider";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
-};
-
-const roleLabels: Record<string, string> = {
-  owner: "Dueño",
-  admin: "Administrador",
-  vendedor: "Vendedor",
 };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -43,7 +38,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <ToastProvider>
       <div className="flex min-h-screen bg-background">
-        <Sidebar orgName={organization.name} memberLabel={memberLabel} cashRegister={cashRegister} />
+        <Sidebar
+          orgName={organization.name}
+          memberLabel={memberLabel}
+          role={membership.role}
+          cashRegister={cashRegister}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar orgName={organization.name} userLabel={email ?? ""} />
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>

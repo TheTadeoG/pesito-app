@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AuthActionState = {};
 
-export function SignupForm() {
+export function SignupForm({ inviteCode }: { inviteCode?: string }) {
   const [state, formAction, pending] = useActionState(signup, initialState);
 
   if (state.info) {
@@ -20,13 +20,17 @@ export function SignupForm() {
 
   return (
     <form action={formAction} className="space-y-4">
-      <div>
-        <Label htmlFor="businessName">Nombre de tu kiosco o almacén</Label>
-        <Input id="businessName" name="businessName" placeholder="Kiosco Don José" required />
-        <p className="mt-1 text-xs text-muted-foreground">
-          Podés cambiarlo más adelante desde Configuración.
-        </p>
-      </div>
+      {inviteCode && <input type="hidden" name="inviteCode" value={inviteCode} />}
+
+      {!inviteCode && (
+        <div>
+          <Label htmlFor="businessName">Nombre de tu kiosco o almacén</Label>
+          <Input id="businessName" name="businessName" placeholder="Kiosco Don José" required />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Podés cambiarlo más adelante desde Configuración.
+          </p>
+        </div>
+      )}
 
       <div>
         <Label htmlFor="phone">Teléfono (opcional)</Label>
@@ -61,12 +65,15 @@ export function SignupForm() {
       )}
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Creando cuenta…" : "Crear mi cuenta gratis"}
+        {pending ? "Creando cuenta…" : inviteCode ? "Crear cuenta y unirme" : "Crear mi cuenta gratis"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         ¿Ya tenés cuenta?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link
+          href={inviteCode ? `/login?next=${encodeURIComponent(`/invitacion/${inviteCode}`)}` : "/login"}
+          className="font-medium text-primary hover:underline"
+        >
           Ingresá
         </Link>
       </p>
