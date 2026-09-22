@@ -100,15 +100,20 @@ export function ProTrialBanner({ proTrialEndsAt }: ProTrialBannerProps) {
   return (
     <div
       className={cn(
-        "mx-4 mt-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm sm:mx-6 lg:mx-8",
-        isLastDay ? "border-danger/30 bg-danger-bg" : "border-primary/30 bg-accent"
+        // Ámbar (tono "warning" del sistema), no verde/primary: el resto de
+        // la app es verde sobre fondo oscuro, así que un aviso en ese mismo
+        // tono se perdía. El último día sube a rojo para la urgencia real.
+        "mx-4 mt-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-sm sm:mx-6 lg:mx-8",
+        isLastDay ? "border-danger/40 bg-danger-bg shadow-danger/10" : "border-warning/40 bg-warning-bg shadow-warning/10"
       )}
     >
       <Sparkles
-        className={cn("mt-0.5 h-4 w-4 shrink-0", isLastDay ? "text-danger" : "text-primary")}
+        className={cn("mt-0.5 h-4 w-4 shrink-0", isLastDay ? "text-danger" : "text-warning")}
       />
-      <p className={cn("min-w-0 flex-1", isLastDay ? "text-danger" : "text-accent-foreground")}>
-        Te quedan <span className="font-semibold">{timeLabel}</span> de funciones Pro de prueba.{" "}
+      <p className={cn("min-w-0 flex-1", isLastDay ? "text-danger" : "text-warning")}>
+        Estás usando funciones del <span className="font-semibold">Plan Pro</span>, de prueba.
+        Te quedan <span className="font-semibold">{timeLabel}</span> — después volvés al Plan
+        Gratis y las perdés.{" "}
         <Link href="/configuracion" className="font-semibold underline underline-offset-2">
           Ver planes
         </Link>

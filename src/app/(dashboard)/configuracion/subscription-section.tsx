@@ -1,19 +1,13 @@
 import Link from "next/link";
-import { Bot, Check, Crown, Sparkles, Zap } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatDateTime } from "@/lib/utils";
-import type { Plan, SubscriptionInfo } from "@/lib/subscription";
+import type { SubscriptionInfo } from "@/lib/subscription";
 import { FREE_PLAN_MONTHLY_SALES_LIMIT } from "@/lib/subscription";
-import { paidPlanDefinitions, planDefinitions } from "@/lib/plan-features";
-
-const planIcons: Record<Plan, typeof Sparkles> = {
-  gratis: Sparkles,
-  esencial: Zap,
-  pro: Crown,
-  ia: Bot,
-};
+import { paidPlanDefinitions, planDefinitions, getPlanOwnFeatures } from "@/lib/plan-features";
+import { planAccents, planIcons } from "@/lib/plan-visuals";
 
 export function SubscriptionSection({
   subscription,
@@ -25,10 +19,17 @@ export function SubscriptionSection({
   monthlySalesCount: number | null;
 }) {
   const current = planDefinitions[subscription.plan];
+  const currentAccent = planAccents[subscription.plan];
   const CurrentIcon = planIcons[subscription.plan];
   const otherPlans = paidPlanDefinitions.filter((p) => p.plan !== subscription.plan);
   const limitReached =
     monthlySalesCount !== null && monthlySalesCount >= FREE_PLAN_MONTHLY_SALES_LIMIT;
+
+  // Durante la prueba, lo que realmente cambia es que se destraban las
+  // funciones exclusivas de Pro (no todo lo de Esencial, que hoy no tiene
+  // nada gateado en código aparte del plan en sí) — se enumeran aparte,
+  // marcadas como "Pro" y con la fecha en que se apagan.
+  const trialFeatures = subscription.trialActive ? getPlanOwnFeatures("pro") : [];
 
   return (
     <Card>
@@ -39,7 +40,12 @@ export function SubscriptionSection({
       <CardContent className="space-y-6">
         <div className="flex flex-col gap-4 rounded-2xl border border-primary/20 bg-gradient-to-br from-accent to-transparent p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3.5">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <span
+              className={cn(
+                "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+                currentAccent.iconBg
+              )}
+            >
               <CurrentIcon className="h-6 w-6" />
             </span>
             <div>
@@ -49,15 +55,11 @@ export function SubscriptionSection({
               </p>
             </div>
           </div>
-          {subscription.trialActive && subscription.proTrialEndsAt ? (
-            <Badge tone="warning" className="w-fit text-sm">
-              Prueba Pro hasta {formatDateTime(subscription.proTrialEndsAt)}
-            </Badge>
-          ) : subscription.plan === "gratis" ? (
+          {subscription.plan === "gratis" && !subscription.trialActive && (
             <Badge tone="default" className="w-fit">
               Sin funciones Pro
             </Badge>
-          ) : null}
+          )}
         </div>
 
         <ul className="grid gap-2.5 sm:grid-cols-2">
@@ -68,6 +70,34 @@ export function SubscriptionSection({
             </li>
           ))}
         </ul>
+
+        {subscription.trialActive && subscription.proTrialEndsAt && (
+          <div className="space-y-3 rounded-xl border border-warning/30 bg-warning-bg p-4">
+            <div>
+              <p className="text-sm font-semibold text-warning">
+                Funciones Pro de prueba — se desactivan el{" "}
+                {formatDateTime(subscription.proTrialEndsAt)}
+              </p>
+              <p className="mt-0.5 text-xs text-warning/80">
+                Hoy tenés esto de prestado gracias a la prueba. Cuando termine, volvés al Plan
+                Gratis y dejás de verlo, salvo que te pases a un plan pago antes.
+              </p>
+            </div>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {trialFeatures.map((feature) => (
+                <li key={feature} className="flex items-start gap-2 text-sm text-warning">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                  <span>
+                    {feature}
+                    <span className="ml-1.5 inline-flex rounded-full bg-warning/15 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-warning">
+                      Pro
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {monthlySalesCount !== null && (
           <div
@@ -114,69 +144,73 @@ export function SubscriptionSection({
               <Sparkles className="h-4 w-4 shrink-0 text-primary" />
               <p className="text-sm font-semibold">Pasarte a otro plan</p>
             </div>
-            <div className="space-y-3">
+            {/* Una sola columna a propósito: en las 3 de antes el precio, el
+                período y hasta el botón se cortaban en dos líneas por el
+                ancho angosto de esta página. Acá cada plan tiene todo el
+                ancho para mostrar el detalle completo, sin recortar nada. */}
+            <div className="space-y-4">
               {otherPlans.map((plan) => {
+                const accent = planAccents[plan.plan];
                 const Icon = planIcons[plan.plan];
-                const isRecommended = plan.badge !== null;
-                const highlights = plan.features
-                  .filter((f) => !f.startsWith("Todas las funciones"))
-                  .slice(0, 3)
-                  .join(" · ");
                 return (
                   <div
                     key={plan.plan}
-                    className={cn(
-                      "flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between",
-                      isRecommended
-                        ? "border-primary bg-accent/40"
-                        : "border-border bg-card"
-                    )}
+                    className={cn("rounded-xl border bg-card p-5", accent.border, accent.shadow)}
                   >
-                    <div className="flex min-w-0 items-start gap-3">
-                      <span
-                        className={cn(
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                          isRecommended
-                            ? "bg-primary/15 text-primary"
-                            : "bg-accent text-accent-foreground"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-foreground">{plan.name}</p>
-                          {plan.badge && (
-                            <Badge tone="accent" className="shrink-0">
-                              {plan.badge}
-                            </Badge>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <span
+                          className={cn(
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                            accent.iconBg
                           )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          <span className="font-semibold text-foreground">{plan.priceLabel}</span>{" "}
-                          {plan.period}
-                        </p>
-                        {highlights && (
-                          <p className="mt-1 truncate text-xs text-muted-foreground">
-                            {highlights}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-foreground">{plan.name}</p>
+                            {plan.badge && (
+                              <span
+                                className={cn(
+                                  "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                                  accent.badgeBg,
+                                  accent.badgeText
+                                )}
+                              >
+                                {plan.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            <span className="text-base font-bold text-foreground">
+                              {plan.priceLabel}
+                            </span>{" "}
+                            {plan.period}
                           </p>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                    <a
-                      href={`mailto:soporte@pesito.app?subject=${encodeURIComponent(
-                        `Quiero pasarme al ${plan.name}`
-                      )}`}
-                      className="shrink-0"
-                    >
-                      <Button
-                        variant={isRecommended ? "primary" : "outline"}
-                        size="sm"
-                        className="w-full sm:w-auto"
+                      <a
+                        href={`mailto:soporte@pesito.app?subject=${encodeURIComponent(
+                          `Quiero pasarme al ${plan.name}`
+                        )}`}
                       >
-                        Pasate a {plan.name}
-                      </Button>
-                    </a>
+                        <Button variant={accent.buttonVariant} size="sm">
+                          Pasate a {plan.name}
+                        </Button>
+                      </a>
+                    </div>
+                    <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {plan.features.map((feature) => (
+                        <li
+                          key={feature}
+                          className="flex items-start gap-2 text-sm text-foreground"
+                        >
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 );
               })}

@@ -3,15 +3,16 @@ import { Check, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { paidPlanDefinitions } from "@/lib/plan-features";
+import { planAccents, planIcons } from "@/lib/plan-visuals";
 
 const plans = paidPlanDefinitions.map((def) => ({
+  plan: def.plan,
   name: def.name,
   price: def.priceLabel,
   period: def.period,
   badge: def.badge,
   features: def.features,
   cta: `Activar ${def.name}`,
-  highlighted: def.plan === "pro",
 }));
 
 const invoiceTiers = [
@@ -34,54 +35,63 @@ export function Pricing() {
       </div>
 
       <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-3">
-        {plans.map((plan) => (
-          <div
-            key={plan.name}
-            className={cn(
-              "flex flex-col rounded-card border p-7",
-              plan.highlighted
-                ? "border-primary bg-card shadow-xl shadow-primary/10"
-                : "border-border bg-card"
-            )}
-          >
-            {plan.badge && (
-              <span
-                className={cn(
-                  "mb-3 w-fit rounded-full px-3 py-1 text-xs font-semibold",
-                  plan.highlighted
-                    ? "bg-primary/10 text-primary"
-                    : "bg-success-bg text-success"
+        {plans.map((plan) => {
+          const accent = planAccents[plan.plan];
+          const Icon = planIcons[plan.plan];
+          return (
+            <div
+              key={plan.name}
+              className={cn(
+                "flex flex-col rounded-card border bg-card p-7",
+                accent.border,
+                accent.shadow
+              )}
+            >
+              <div className="mb-3 flex items-center gap-2.5">
+                <span
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                    accent.iconBg
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                {plan.badge && (
+                  <span
+                    className={cn(
+                      "w-fit rounded-full px-3 py-1 text-xs font-semibold",
+                      accent.badgeBg,
+                      accent.badgeText
+                    )}
+                  >
+                    {plan.badge}
+                  </span>
                 )}
-              >
-                {plan.badge}
-              </span>
-            )}
-            <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
-            <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{plan.period}</p>
+
+              <ul className="mt-6 flex-1 space-y-3">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <Link href="/registro" className="mt-7">
+                <Button variant={accent.buttonVariant} className="w-full">
+                  {plan.cta}
+                </Button>
+              </Link>
+              <p className="mt-2 text-center text-xs text-muted-foreground">Probá gratis 14 días</p>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{plan.period}</p>
-
-            <ul className="mt-6 flex-1 space-y-3">
-              {plan.features.map((feature) => (
-                <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-
-            <Link href="/registro" className="mt-7">
-              <Button
-                variant={plan.highlighted ? "primary" : "outline"}
-                className="w-full"
-              >
-                {plan.cta}
-              </Button>
-            </Link>
-            <p className="mt-2 text-center text-xs text-muted-foreground">Probá gratis 14 días</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-4 rounded-card border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">

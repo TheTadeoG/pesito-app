@@ -94,3 +94,13 @@ export const paidPlanDefinitions: PlanDefinition[] = [
   planDefinitions.pro,
   planDefinitions.ia,
 ];
+
+/**
+ * Las funciones que suma un plan sobre el anterior (sin el "Todas las
+ * funciones de X +" de encabezado). Se usa para enumerar, durante la
+ * prueba Pro, cuáles de esas funciones son "de prestado" y van a dejar de
+ * estar disponibles cuando termine.
+ */
+export function getPlanOwnFeatures(plan: Plan): string[] {
+  return planDefinitions[plan].features.filter((f) => !f.startsWith("Todas las funciones"));
+}

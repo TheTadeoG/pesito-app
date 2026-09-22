@@ -1,7 +1,15 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "secondary" | "ghost" | "outline" | "danger" | "onColor";
+type Variant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "outline"
+  | "danger"
+  | "onColor"
+  | "gold"
+  | "violet";
 type Size = "sm" | "md" | "lg" | "icon";
 
 const variantClasses: Record<Variant, string> = {
@@ -15,6 +23,12 @@ const variantClasses: Record<Variant, string> = {
   // colored text, since overriding primary's bg/text via className is not
   // reliable (Tailwind's cascade order isn't guaranteed to favor it).
   onColor: "bg-white text-primary hover:bg-white/90",
+  // Acentos de plan (Pro/IA en la landing y en Configuración > Suscripción),
+  // para que los planes más altos se sientan distintos entre sí y no todos
+  // el mismo verde — variantes propias en vez de intentar pisar `primary`
+  // por className, que no es confiable con clsx (sin tailwind-merge).
+  gold: "bg-amber-500 text-amber-950 hover:bg-amber-400 shadow-sm shadow-amber-500/25",
+  violet: "bg-violet-500 text-white hover:bg-violet-400 shadow-sm shadow-violet-500/25",
 };
 
 const sizeClasses: Record<Size, string> = {
