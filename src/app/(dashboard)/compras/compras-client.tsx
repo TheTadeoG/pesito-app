@@ -24,6 +24,7 @@ interface ProductLite {
   sku: string | null;
   cost: number | null;
   stock: number;
+  min_stock: number;
   unit: string;
   image_url: string | null;
 }
@@ -295,6 +296,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       sku: string | null;
       cost: number | null;
       stock: number;
+      min_stock: number;
       unit: string;
       image_url: string | null;
     },
@@ -417,8 +419,19 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                             {product.name}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            Stock actual: {product.stock}
-                            {product.unit} · Costo: {formatCurrency(Number(product.cost ?? 0))}
+                            Stock actual:{" "}
+                            <span
+                              className={cn(
+                                "font-medium",
+                                product.stock <= product.min_stock
+                                  ? "text-danger"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              {product.stock}
+                              {product.unit}
+                            </span>{" "}
+                            · Costo: {formatCurrency(Number(product.cost ?? 0))}
                           </span>
                         </span>
                       </button>
@@ -490,8 +503,18 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                           {line.product.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Stock actual: {line.product.stock}
-                          {line.product.unit}
+                          Stock actual:{" "}
+                          <span
+                            className={cn(
+                              "font-medium",
+                              line.product.stock <= line.product.min_stock
+                                ? "text-danger"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {line.product.stock}
+                            {line.product.unit}
+                          </span>
                         </p>
                       </div>
                     </div>
