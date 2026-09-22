@@ -8,13 +8,14 @@ import {
   Landmark,
   Minus,
   Plus,
+  Percent,
   QrCode,
   Scale,
   Search,
   Shuffle,
-  SlidersHorizontal,
   Trash2,
   Wallet,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -374,8 +375,21 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Buscar producto... (Enter para agregar)"
-                  className="pl-10"
+                  className={query ? "pl-10 pr-9" : "pl-10"}
                 />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      searchRef.current?.focus();
+                    }}
+                    aria-label="Borrar búsqueda"
+                    className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
 
                 {results.length > 0 && (
                   <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
@@ -650,8 +664,8 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
               type="button"
               onClick={() => setShowExtras((v) => !v)}
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              Gestionar Extras
+              <Percent className="h-4 w-4" />
+              Agregar descuento o recargo
             </Button>
 
             {showExtras && (

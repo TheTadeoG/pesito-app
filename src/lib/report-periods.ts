@@ -1,3 +1,5 @@
+import { argDateString, argMidnightUTC } from "@/lib/timezone";
+
 export type ReportPeriod = "today" | "7d" | "30d" | "month";
 
 export const periodOptions: { value: ReportPeriod; label: string }[] = [
@@ -20,29 +22,27 @@ export interface PeriodRange {
 }
 
 export function getPeriodRange(period: ReportPeriod): PeriodRange {
-  const now = new Date();
+  const todayStr = argDateString();
+  const todayMidnight = argMidnightUTC(todayStr);
 
   if (period === "today") {
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-    return { start, label: "hoy", groupBy: "hour" };
+    return { start: todayMidnight, label: "hoy", groupBy: "hour" };
   }
 
   if (period === "7d") {
-    const start = new Date(now);
-    start.setDate(start.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
+    const start = new Date(todayMidnight);
+    start.setUTCDate(start.getUTCDate() - 6);
     return { start, label: "en los últimos 7 días", groupBy: "day" };
   }
 
   if (period === "month") {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [year, month] = todayStr.split("-");
+    const start = argMidnightUTC(`${year}-${month}-01`);
     return { start, label: "este mes", groupBy: "day" };
   }
 
-  const start = new Date(now);
-  start.setDate(start.getDate() - 29);
-  start.setHours(0, 0, 0, 0);
+  const start = new Date(todayMidnight);
+  start.setUTCDate(start.getUTCDate() - 29);
   return { start, label: "en los últimos 30 días", groupBy: "day" };
 }
 

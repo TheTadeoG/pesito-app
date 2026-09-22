@@ -2,6 +2,7 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
 import { daysSince, getPeriodRange, resolvePeriod } from "@/lib/report-periods";
+import { ARG_TZ, argHour } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { ReportesDashboard, type ReportesData } from "@/app/(dashboard)/reportes/reportes-dashboard";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
@@ -16,7 +17,11 @@ const paymentLabels: Record<string, string> = {
 };
 
 function dayLabel(date: Date) {
-  return new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("es-AR", {
+    weekday: "short",
+    day: "numeric",
+    timeZone: ARG_TZ,
+  }).format(date);
 }
 
 export default async function ReportesPage({
@@ -132,7 +137,7 @@ export default async function ReportesPage({
   if (groupBy === "hour") {
     const hourTotals = Array.from({ length: 24 }, () => 0);
     for (const sale of sales) {
-      const hour = new Date(sale.created_at).getHours();
+      const hour = argHour(new Date(sale.created_at));
       hourTotals[hour] += sale.total;
     }
     revenueChart = hourTotals.map((value, hour) => ({ label: `${hour}h`, value }));
@@ -140,12 +145,12 @@ export default async function ReportesPage({
     const dayCount = daysSince(start);
     const days = Array.from({ length: dayCount }, (_, i) => {
       const date = new Date(start);
-      date.setDate(date.getDate() + i);
+      date.setUTCDate(date.getUTCDate() + i);
       return date;
     });
     revenueChart = days.map((date) => {
       const next = new Date(date);
-      next.setDate(next.getDate() + 1);
+      next.setUTCDate(next.getUTCDate() + 1);
       const value = sales
         .filter((s) => {
           const created = new Date(s.created_at);
