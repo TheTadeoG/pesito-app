@@ -120,6 +120,7 @@ export function PosClient({
   const [showCashStep, setShowCashStep] = useState(false);
   const [cashReceived, setCashReceived] = useState("");
   const [showMixedStep, setShowMixedStep] = useState(false);
+  const [showFiadoStep, setShowFiadoStep] = useState(false);
   const [mixedAmounts, setMixedAmounts] = useState<Record<CombinableMethod, string>>({
     efectivo: "",
     tarjeta: "",
@@ -247,6 +248,7 @@ export function PosClient({
     setCashReceived("");
     setShowMixedStep(false);
     setMixedAmounts({ efectivo: "", tarjeta: "", transferencia: "", qr: "", fiado: "" });
+    setShowFiadoStep(false);
     setShowPaymentPicker(true);
   }
 
@@ -255,6 +257,7 @@ export function PosClient({
     setShowCashStep(false);
     setCashReceived("");
     setShowMixedStep(false);
+    setShowFiadoStep(false);
   }
 
   function pickMethod(method: PaymentMethod) {
@@ -264,6 +267,10 @@ export function PosClient({
     }
     if (method === "mixto") {
       setShowMixedStep(true);
+      return;
+    }
+    if (method === "fiado" && !customerId) {
+      setShowFiadoStep(true);
       return;
     }
     void processSale(method);
@@ -1077,7 +1084,9 @@ export function PosClient({
             ? "Pago en efectivo"
             : showMixedStep
               ? "Combinar medios de pago"
-              : "¿Cómo paga?"
+              : showFiadoStep
+                ? "Vender fiado"
+                : "¿Cómo paga?"
         }
         description={`Total a cobrar: ${formatCurrency(total)}`}
       >
@@ -1270,36 +1279,54 @@ export function PosClient({
               </Button>
             </div>
           </form>
+        ) : showFiadoStep ? (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (pending || !customerId) return;
+              void processSale("fiado");
+            }}
+          >
+            <p className="text-xs text-muted-foreground">
+              Elegí a qué cliente le cargás esta venta ({formatCurrency(total)}) como fiado.
+            </p>
+            {renderInlineCustomerPicker()}
+
+            {error && (
+              <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowFiadoStep(false)}>
+                Atrás
+              </Button>
+              <Button type="submit" disabled={pending || !customerId}>
+                {pending ? "Procesando…" : "Confirmar venta (Enter)"}
+              </Button>
+            </div>
+          </form>
         ) : (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              {paymentMethods.map((method) => {
-                const disabled = method.value === "fiado" && !customerId;
-                return (
-                  <button
-                    key={method.value}
-                    type="button"
-                    disabled={disabled || pending}
-                    onClick={() => pickMethod(method.value)}
-                    className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
-                    title={disabled ? "Elegí un cliente para vender fiado" : undefined}
-                  >
-                    <method.icon className="h-5 w-5 text-accent-foreground" />
-                    {method.label}
-                    {method.value === "fiado" && (
-                      <span className="text-[10px] font-normal text-muted-foreground">
-                        (requiere cliente)
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+              {paymentMethods.map((method) => (
+                <button
+                  key={method.value}
+                  type="button"
+                  disabled={pending}
+                  onClick={() => pickMethod(method.value)}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
+                >
+                  <method.icon className="h-5 w-5 text-accent-foreground" />
+                  {method.label}
+                  {method.value === "fiado" && !customerId && (
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      (elegís cliente)
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
-            {!customerId && (
-              <p className="text-xs text-muted-foreground">
-                Para vender Fiado, primero elegí un cliente (no puede ser Consumidor Final).
-              </p>
-            )}
           </div>
         )}
       </Dialog>
