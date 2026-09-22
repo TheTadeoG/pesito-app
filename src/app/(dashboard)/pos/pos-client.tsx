@@ -99,7 +99,7 @@ export function PosClient({
   autoInvoiceByPayment,
 }: PosClientProps) {
   const router = useRouter();
-  const { showSuccess } = useToast();
+  const { showSuccess, showWarning } = useToast();
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -203,33 +203,56 @@ export function PosClient({
 
   function addProduct(product: ProductLite) {
     setError(null);
+    let blocked = false;
     setCart((current) => {
       const existing = current.find(
         (item) => item.kind === "product" && item.product.id === product.id
       );
-      if (existing) {
+      if (existing && existing.kind === "product") {
+        if (existing.quantity + 1 > product.stock) {
+          blocked = true;
+          return current;
+        }
         return current.map((item) =>
           item.kind === "product" && item.product.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
+      if (product.stock < 1) {
+        blocked = true;
+        return current;
+      }
       return [...current, { kind: "product", product, quantity: 1 }];
     });
+    if (blocked) {
+      showWarning("No hay más stock", `Sólo quedan ${product.stock} unidades de "${product.name}".`);
+      return;
+    }
     setQuery("");
     setBrowseProducts(false);
     setHighlightedIndex(-1);
   }
 
   function changeQuantity(index: number, delta: number) {
+    let blocked: ProductLite | null = null;
     setCart((current) =>
       current
         .map((item, i) => {
           if (i !== index || item.kind !== "product") return item;
-          return { ...item, quantity: item.quantity + delta };
+          const nextQuantity = item.quantity + delta;
+          if (delta > 0 && nextQuantity > item.product.stock) {
+            blocked = item.product;
+            return item;
+          }
+          return { ...item, quantity: nextQuantity };
         })
         .filter((item) => item.kind !== "product" || item.quantity > 0)
     );
+    if (blocked) {
+      const product: ProductLite = blocked;
+      showWarning("No hay más stock", `Sólo quedan ${product.stock} unidades de "${product.name}".`);
+    }
   }
 
   function removeItem(index: number) {
