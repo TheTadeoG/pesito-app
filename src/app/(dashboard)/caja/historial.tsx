@@ -61,7 +61,7 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
                       openDetail(row.id);
                     }
                   }}
-                  className="flex cursor-pointer flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted"
+                  className="flex cursor-pointer flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted sm:flex-nowrap"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">{row.userLabel}</p>
@@ -81,25 +81,27 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
                       </div>
                     )}
                   </div>
-                  <div className="space-y-0.5 text-right text-xs text-muted-foreground">
+                  <div className="w-48 shrink-0 space-y-0.5 text-right text-xs text-muted-foreground">
                     <p>Inicial: {formatCurrency(row.openingAmount)}</p>
                     <p>Efectivo esperado: {formatCurrency(row.expectedAmount)}</p>
                     <p className="font-medium text-foreground">
                       Efectivo contado: {formatCurrency(row.closingAmount)}
                     </p>
                   </div>
-                  {diff === 0 ? (
-                    <Badge tone="success">
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                      Sin diferencia
-                    </Badge>
-                  ) : (
-                    <Badge tone={diff > 0 ? "success" : "danger"}>
-                      <AlertTriangle className="mr-1 h-3 w-3" />
-                      {diff > 0 ? "+" : ""}
-                      {formatCurrency(diff)}
-                    </Badge>
-                  )}
+                  <div className="flex w-36 shrink-0 justify-end">
+                    {diff === 0 ? (
+                      <Badge tone="success">
+                        <CheckCircle2 className="mr-1 h-3 w-3" />
+                        Sin diferencia
+                      </Badge>
+                    ) : (
+                      <Badge tone={diff > 0 ? "success" : "danger"}>
+                        <AlertTriangle className="mr-1 h-3 w-3" />
+                        {diff > 0 ? "+" : ""}
+                        {formatCurrency(diff)}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               );
             })}
