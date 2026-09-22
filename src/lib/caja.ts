@@ -6,31 +6,42 @@ export async function computeCashOnHand(
   cashRegisterId: string,
   openingAmount: number
 ): Promise<number> {
-  const [{ data: sales }, { data: mixedSales }, { data: movements }, { data: debtPayments }] =
-    await Promise.all([
-      supabase
-        .from("sales")
-        .select("total")
-        .eq("cash_register_id", cashRegisterId)
-        .eq("payment_method", "efectivo")
-        .eq("status", "completada"),
-      supabase
-        .from("sales")
-        .select("id, total")
-        .eq("cash_register_id", cashRegisterId)
-        .eq("payment_method", "mixto")
-        .eq("status", "completada"),
-      supabase
-        .from("cash_movements")
-        .select("type, amount")
-        .eq("cash_register_id", cashRegisterId),
-      // Cobros de deuda de fiado (desde Clientes) en efectivo también suman.
-      supabase
-        .from("customer_payments")
-        .select("amount")
-        .eq("cash_register_id", cashRegisterId)
-        .eq("method", "efectivo"),
-    ]);
+  const [
+    { data: sales },
+    { data: mixedSales },
+    { data: movements },
+    { data: debtPayments },
+    { data: supplierPayments },
+  ] = await Promise.all([
+    supabase
+      .from("sales")
+      .select("total")
+      .eq("cash_register_id", cashRegisterId)
+      .eq("payment_method", "efectivo")
+      .eq("status", "completada"),
+    supabase
+      .from("sales")
+      .select("id, total")
+      .eq("cash_register_id", cashRegisterId)
+      .eq("payment_method", "mixto")
+      .eq("status", "completada"),
+    supabase
+      .from("cash_movements")
+      .select("type, amount")
+      .eq("cash_register_id", cashRegisterId),
+    // Cobros de deuda de fiado (desde Clientes) en efectivo también suman.
+    supabase
+      .from("customer_payments")
+      .select("amount")
+      .eq("cash_register_id", cashRegisterId)
+      .eq("method", "efectivo"),
+    // Pagos a proveedores (cuenta corriente) en efectivo restan.
+    supabase
+      .from("supplier_payments")
+      .select("amount")
+      .eq("cash_register_id", cashRegisterId)
+      .eq("method", "efectivo"),
+  ]);
 
   const salesTotal = (sales ?? []).reduce((acc, sale) => acc + Number(sale.total), 0);
 
@@ -54,8 +65,19 @@ export async function computeCashOnHand(
     0
   );
   const debtPaymentsTotal = (debtPayments ?? []).reduce((acc, p) => acc + Number(p.amount), 0);
+  const supplierPaymentsTotal = (supplierPayments ?? []).reduce(
+    (acc, p) => acc + Number(p.amount),
+    0
+  );
 
-  return openingAmount + salesTotal + mixedCashTotal + debtPaymentsTotal + movementsNet;
+  return (
+    openingAmount +
+    salesTotal +
+    mixedCashTotal +
+    debtPaymentsTotal -
+    supplierPaymentsTotal +
+    movementsNet
+  );
 }
 
 export interface PaymentBreakdownRow {

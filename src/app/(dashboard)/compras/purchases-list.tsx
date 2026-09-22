@@ -22,6 +22,7 @@ export interface PurchaseRow {
   supplierName: string;
   itemsSummary: string;
   notes: string | null;
+  accountAmount: number;
 }
 
 export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
@@ -94,6 +95,11 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-foreground">{purchase.supplierName}</p>
                 {purchase.status === "anulada" && <Badge tone="danger">Anulada</Badge>}
+                {purchase.status !== "anulada" && purchase.accountAmount > 0 && (
+                  <Badge tone="warning">
+                    Cuenta corriente {formatCurrency(purchase.accountAmount)}
+                  </Badge>
+                )}
               </div>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {formatDateTime(purchase.created_at)} · {purchase.itemsSummary}

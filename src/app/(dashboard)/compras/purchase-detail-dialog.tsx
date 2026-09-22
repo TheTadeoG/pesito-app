@@ -65,9 +65,17 @@ export function PurchaseDetailDialog({
             <p className="text-sm text-muted-foreground">Notas: {purchase.notes}</p>
           )}
 
-          <div className="flex justify-between border-t border-border pt-3 text-base font-semibold text-foreground">
-            <span>Total</span>
-            <span>{formatCurrency(purchase.total)}</span>
+          <div className="space-y-1.5 border-t border-border pt-3">
+            <div className="flex justify-between text-base font-semibold text-foreground">
+              <span>Total</span>
+              <span>{formatCurrency(purchase.total)}</span>
+            </div>
+            {purchase.accountAmount > 0 && (
+              <div className="flex justify-between text-sm text-warning">
+                <span>A cuenta corriente</span>
+                <span className="font-medium">{formatCurrency(purchase.accountAmount)}</span>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -80,7 +80,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/inventario": { title: "Inventario", description: "Alertas de stock bajo y movimientos." },
   "/marcas": { title: "Marcas", description: "Catálogo de marcas de tus productos." },
   "/clientes": { title: "Clientes", description: "Tus clientes y sus cuentas." },
-  "/proveedores": { title: "Proveedores", description: "Tus proveedores para compras." },
+  "/proveedores": { title: "Proveedores", description: "Tus proveedores y sus cuentas." },
   "/usuarios": { title: "Usuarios", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
   "/recomendaciones": { title: "Recomendaciones", description: "Sugerencias inteligentes para tu kiosco." },

@@ -54,3 +54,39 @@ export async function deleteSupplier(id: string): Promise<ActionState> {
   revalidatePath("/compras");
   return {};
 }
+
+export async function registerSupplierPayment(
+  id: string,
+  amount: number,
+  method: "efectivo" | "tarjeta" | "transferencia" | "qr"
+): Promise<ActionState> {
+  if (!amount || amount <= 0) return { error: "Ingresá un monto válido." };
+
+  const { userId } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data: register } = await supabase
+    .from("cash_registers")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "abierta")
+    .maybeSingle();
+
+  if (!register) {
+    return { error: "Abrí tu caja para poder registrar pagos a proveedores." };
+  }
+
+  const { error } = await supabase.rpc("register_supplier_payment", {
+    p_supplier_id: id,
+    p_cash_register_id: register.id,
+    p_method: method,
+    p_amount: amount,
+  });
+
+  if (error) return { error: "No pudimos registrar el pago." };
+
+  revalidatePath("/proveedores");
+  revalidatePath("/compras");
+  revalidatePath("/caja");
+  return {};
+}

@@ -12,5 +12,7 @@ export default async function ProveedoresPage() {
     .eq("org_id", organization.id)
     .order("name");
 
-  return <ProveedoresClient suppliers={suppliers ?? []} />;
+  const normalized = (suppliers ?? []).map((s) => ({ ...s, balance: Number(s.balance) }));
+
+  return <ProveedoresClient suppliers={normalized} />;
 }

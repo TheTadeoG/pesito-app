@@ -1,18 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/utils";
 import type { Supplier } from "@/lib/types";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
+import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import { deleteSupplier } from "@/app/(dashboard)/proveedores/actions";
 
 export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
+  const [paying, setPaying] = useState<Supplier | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -72,7 +76,12 @@ export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-foreground">{supplier.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium text-foreground">{supplier.name}</p>
+                      {supplier.balance > 0 && (
+                        <Badge tone="warning">Le debés {formatCurrency(supplier.balance)}</Badge>
+                      )}
+                    </div>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
                       {[supplier.phone, supplier.email].filter(Boolean).join(" · ") ||
                         "Sin datos de contacto"}
@@ -80,6 +89,12 @@ export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
                   </div>
 
                   <div className="flex items-center gap-1.5">
+                    {supplier.balance > 0 && (
+                      <Button variant="outline" size="sm" onClick={() => setPaying(supplier)}>
+                        <Wallet className="h-3.5 w-3.5" />
+                        Registrar pago
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="icon"
@@ -114,6 +129,7 @@ export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
         onClose={() => setFormOpen(false)}
         supplier={editing}
       />
+      <SupplierPaymentDialog supplier={paying} onClose={() => setPaying(null)} />
     </div>
   );
 }

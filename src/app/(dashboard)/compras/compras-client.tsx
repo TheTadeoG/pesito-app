@@ -32,6 +32,7 @@ interface ProductLite {
 interface SupplierLite {
   id: string;
   name: string;
+  balance: number;
 }
 
 interface CartLine {
@@ -62,6 +63,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const [creatingSupplier, setCreatingSupplier] = useState(false);
   const [supplierError, setSupplierError] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [accountAmountInput, setAccountAmountInput] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [browseProducts, setBrowseProducts] = useState(false);
@@ -97,6 +99,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
 
   const total = cart.reduce((acc, line) => acc + line.quantity * line.unitCost, 0);
   const itemCount = cart.reduce((acc, line) => acc + line.quantity, 0);
+  const accountAmount = Math.min(Math.max(Number(accountAmountInput) || 0, 0), total);
 
   function addProduct(product: ProductLite, initialQuantity = 1) {
     setError(null);
@@ -321,7 +324,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       setSupplierError(result.error ?? "No pudimos crear el proveedor.");
       return;
     }
-    setLocalSuppliers((current) => [...current, { id: result.id!, name }]);
+    setLocalSuppliers((current) => [...current, { id: result.id!, name, balance: 0 }]);
     setSupplierId(result.id);
     setSupplierQuery("");
     setNewSupplierName("");
@@ -348,6 +351,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       supplierId: supplierId || null,
       notes,
       items,
+      accountAmount,
     });
 
     setPending(false);
@@ -357,11 +361,17 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       return;
     }
 
-    showSuccess("¡Compra registrada!", `${formatCurrency(total)} · ${itemCount} unidades`);
+    showSuccess(
+      "¡Compra registrada!",
+      accountAmount > 0
+        ? `${formatCurrency(total)} · ${formatCurrency(accountAmount)} a cuenta corriente`
+        : `${formatCurrency(total)} · ${itemCount} unidades`
+    );
     setCart([]);
     setSupplierId("");
     setSupplierQuery("");
     setNotes("");
+    setAccountAmountInput("");
     router.refresh();
   }
 
@@ -587,12 +597,18 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
               <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5">
                 <span className="text-sm font-medium text-foreground">
                   {selectedSupplier.name}
+                  {selectedSupplier.balance > 0 && (
+                    <span className="ml-1.5 font-normal text-warning">
+                      (le debés {formatCurrency(selectedSupplier.balance)})
+                    </span>
+                  )}
                 </span>
                 <button
                   type="button"
                   onClick={() => {
                     setSupplierId("");
                     setSupplierQuery("");
+                    setAccountAmountInput("");
                   }}
                   className="text-xs font-medium text-muted-foreground hover:text-foreground"
                 >
@@ -667,6 +683,37 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
             <div className="flex justify-between border-b border-border pb-3 text-base">
               <span className="font-semibold text-foreground">Total:</span>
               <span className="text-xl font-bold text-foreground">{formatCurrency(total)}</span>
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">
+                  A cuenta corriente con el proveedor (opcional)
+                </label>
+                {total > 0 && accountAmountInput !== String(total) && (
+                  <button
+                    type="button"
+                    onClick={() => setAccountAmountInput(String(total))}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Toda la compra
+                  </button>
+                )}
+              </div>
+              <Input
+                type="number"
+                min={0}
+                max={total}
+                step="0.01"
+                value={accountAmountInput}
+                onChange={(e) => setAccountAmountInput(e.target.value)}
+                placeholder="0.00"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                {accountAmount > 0
+                  ? `Pagás ${formatCurrency(total - accountAmount)} ahora, el resto queda a cuenta.`
+                  : "Dejá algo acá si no pagás toda la compra en el momento."}
+              </p>
             </div>
 
             <div>

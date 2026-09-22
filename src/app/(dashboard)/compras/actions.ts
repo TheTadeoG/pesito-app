@@ -16,6 +16,7 @@ export interface RegisterPurchaseInput {
   supplierId: string | null;
   notes: string;
   items: PurchaseItemInput[];
+  accountAmount?: number;
 }
 
 export async function registerPurchase(
@@ -31,6 +32,7 @@ export async function registerPurchase(
     p_supplier_id: input.supplierId,
     p_items: input.items as unknown as Json,
     p_notes: input.notes || null,
+    p_account_amount: input.accountAmount ?? 0,
   });
 
   if (error) {
@@ -41,6 +43,8 @@ export async function registerPurchase(
   revalidatePath("/inventario");
   revalidatePath("/productos");
   revalidatePath("/reportes");
+  revalidatePath("/proveedores");
+  revalidatePath("/caja");
 
   return { purchaseId: data ?? undefined };
 }
@@ -60,6 +64,7 @@ export interface PurchaseDetail {
   notes: string | null;
   status: string;
   supplierName: string;
+  accountAmount: number;
   items: PurchaseDetailItem[];
 }
 
@@ -71,7 +76,7 @@ export async function getPurchaseDetail(
 
   const { data: purchase } = await supabase
     .from("purchases")
-    .select("id, created_at, subtotal, total, notes, status, supplier_id")
+    .select("id, created_at, subtotal, total, notes, status, supplier_id, account_amount")
     .eq("id", purchaseId)
     .eq("org_id", organization.id)
     .maybeSingle();
@@ -97,6 +102,7 @@ export async function getPurchaseDetail(
       notes: purchase.notes,
       status: purchase.status,
       supplierName: supplierRaw?.name ?? "Sin proveedor",
+      accountAmount: Number(purchase.account_amount ?? 0),
       items: (itemsRaw ?? []).map((i) => ({
         product_name: i.product_name,
         quantity: Number(i.quantity),
@@ -119,6 +125,8 @@ export async function voidPurchase(purchaseId: string): Promise<{ error?: string
   revalidatePath("/inventario");
   revalidatePath("/productos");
   revalidatePath("/reportes");
+  revalidatePath("/proveedores");
+  revalidatePath("/caja");
 
   return {};
 }

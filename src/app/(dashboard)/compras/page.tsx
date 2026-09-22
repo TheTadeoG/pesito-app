@@ -18,16 +18,24 @@ export default async function ComprasPage() {
       .eq("active", true)
       .order("name")
       .limit(500),
-    supabase.from("suppliers").select("id, name").eq("org_id", organization.id).order("name"),
+    supabase
+      .from("suppliers")
+      .select("id, name, balance")
+      .eq("org_id", organization.id)
+      .order("name"),
     supabase
       .from("purchases")
-      .select("id, total, notes, status, created_at, supplier_id")
+      .select("id, total, notes, status, created_at, supplier_id, account_amount")
       .eq("org_id", organization.id)
       .order("created_at", { ascending: false })
       .limit(RECENT_PURCHASES_LIMIT),
   ]);
 
-  const purchases = (purchasesRaw ?? []).map((p) => ({ ...p, total: Number(p.total) }));
+  const purchases = (purchasesRaw ?? []).map((p) => ({
+    ...p,
+    total: Number(p.total),
+    account_amount: Number(p.account_amount ?? 0),
+  }));
   const purchaseIds = purchases.map((p) => p.id);
 
   const [{ data: itemsRaw }, { data: purchaseSuppliersRaw }] = await Promise.all([
@@ -66,6 +74,7 @@ export default async function ComprasPage() {
       : "Sin proveedor",
     itemsSummary: (itemsByPurchase.get(purchase.id) ?? []).join(", ") || "Sin detalle",
     notes: purchase.notes,
+    accountAmount: purchase.account_amount,
   }));
 
   return (
@@ -77,7 +86,7 @@ export default async function ComprasPage() {
           cost: p.cost === null ? null : Number(p.cost),
           stock: Number(p.stock),
         }))}
-        suppliers={suppliers ?? []}
+        suppliers={(suppliers ?? []).map((s) => ({ ...s, balance: Number(s.balance) }))}
       />
 
       <Card>

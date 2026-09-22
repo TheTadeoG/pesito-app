@@ -319,6 +319,7 @@ export interface Database {
           phone: string | null;
           email: string | null;
           notes: string | null;
+          balance: number;
           created_at: string;
         };
         Insert: {
@@ -328,6 +329,7 @@ export interface Database {
           phone?: string | null;
           email?: string | null;
           notes?: string | null;
+          balance?: number;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;
@@ -343,6 +345,7 @@ export interface Database {
           total: number;
           notes: string | null;
           status: "completada" | "anulada";
+          account_amount: number;
           created_at: string;
         };
         Insert: {
@@ -354,6 +357,7 @@ export interface Database {
           total?: number;
           notes?: string | null;
           status?: "completada" | "anulada";
+          account_amount?: number;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["purchases"]["Insert"]>;
@@ -403,6 +407,30 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["customer_payments"]["Insert"]>;
+        Relationships: [];
+      };
+      supplier_payments: {
+        Row: {
+          id: string;
+          org_id: string;
+          supplier_id: string;
+          cash_register_id: string | null;
+          method: "efectivo" | "tarjeta" | "transferencia" | "qr";
+          amount: number;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          supplier_id: string;
+          cash_register_id?: string | null;
+          method: "efectivo" | "tarjeta" | "transferencia" | "qr";
+          amount: number;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["supplier_payments"]["Insert"]>;
         Relationships: [];
       };
       invitations: {
@@ -475,6 +503,7 @@ export interface Database {
           p_supplier_id: string | null;
           p_items: Json;
           p_notes?: string | null;
+          p_account_amount?: number;
         };
         Returns: string;
       };
@@ -485,6 +514,15 @@ export interface Database {
       register_customer_payment: {
         Args: {
           p_customer_id: string;
+          p_cash_register_id: string | null;
+          p_method: string;
+          p_amount: number;
+        };
+        Returns: undefined;
+      };
+      register_supplier_payment: {
+        Args: {
+          p_supplier_id: string;
           p_cash_register_id: string | null;
           p_method: string;
           p_amount: number;

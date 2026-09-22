@@ -9,8 +9,10 @@ import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/his
 import {
   TeamCajasOverview,
   DeudasFiadoOverview,
+  CuentasPorPagarOverview,
   type OpenRegisterRow,
   type DebtorRow,
+  type CreditorRow,
 } from "@/app/(dashboard)/caja/team-overview";
 
 export default async function CajaPage() {
@@ -86,19 +88,26 @@ export default async function CajaPage() {
 
   let teamOverview: ReactNode = null;
   if (isManager) {
-    const [{ data: openRegisters }, { data: debtorCustomers }] = await Promise.all([
-      supabase
-        .from("cash_registers")
-        .select("id, user_id, opening_amount, opened_at")
-        .eq("org_id", organization.id)
-        .eq("status", "abierta"),
-      supabase
-        .from("customers")
-        .select("id, name, balance")
-        .eq("org_id", organization.id)
-        .gt("balance", 0)
-        .order("balance", { ascending: false }),
-    ]);
+    const [{ data: openRegisters }, { data: debtorCustomers }, { data: creditorSuppliers }] =
+      await Promise.all([
+        supabase
+          .from("cash_registers")
+          .select("id, user_id, opening_amount, opened_at")
+          .eq("org_id", organization.id)
+          .eq("status", "abierta"),
+        supabase
+          .from("customers")
+          .select("id, name, balance")
+          .eq("org_id", organization.id)
+          .gt("balance", 0)
+          .order("balance", { ascending: false }),
+        supabase
+          .from("suppliers")
+          .select("id, name, balance")
+          .eq("org_id", organization.id)
+          .gt("balance", 0)
+          .order("balance", { ascending: false }),
+      ]);
 
     const openRegisterRows: OpenRegisterRow[] = await Promise.all(
       (openRegisters ?? []).map(async (r) => ({
@@ -117,10 +126,20 @@ export default async function CajaPage() {
     }));
     const totalDebt = debtors.reduce((acc, d) => acc + d.balance, 0);
 
+    const creditors: CreditorRow[] = (creditorSuppliers ?? []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      balance: Number(s.balance),
+    }));
+    const totalOwed = creditors.reduce((acc, c) => acc + c.balance, 0);
+
     teamOverview = (
       <>
         <TeamCajasOverview rows={openRegisterRows} />
-        <DeudasFiadoOverview totalDebt={totalDebt} debtors={debtors} />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <DeudasFiadoOverview totalDebt={totalDebt} debtors={debtors} />
+          <CuentasPorPagarOverview totalDebt={totalOwed} creditors={creditors} />
+        </div>
       </>
     );
   }

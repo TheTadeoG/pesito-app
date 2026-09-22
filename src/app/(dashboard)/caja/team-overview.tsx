@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, LockOpen, Users } from "lucide-react";
+import { AlertCircle, HandCoins, LockOpen, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -13,6 +13,12 @@ export interface OpenRegisterRow {
 }
 
 export interface DebtorRow {
+  id: string;
+  name: string;
+  balance: number;
+}
+
+export interface CreditorRow {
   id: string;
   name: string;
   balance: number;
@@ -93,6 +99,50 @@ export function DeudasFiadoOverview({
                 <span className="truncate font-medium text-foreground">{debtor.name}</span>
                 <span className="shrink-0 font-semibold text-warning">
                   {formatCurrency(debtor.balance)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function CuentasPorPagarOverview({
+  totalDebt,
+  creditors,
+}: {
+  totalDebt: number;
+  creditors: CreditorRow[];
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <HandCoins className="h-4 w-4" />
+          Cuentas por pagar a proveedores
+        </CardTitle>
+        <Badge tone={totalDebt > 0 ? "warning" : "default"}>
+          Total: {formatCurrency(totalDebt)}
+        </Badge>
+      </CardHeader>
+      <CardContent className="p-0">
+        {creditors.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+            No le debés saldo a ningún proveedor.
+          </p>
+        ) : (
+          <div className="divide-y divide-border">
+            {creditors.map((creditor) => (
+              <Link
+                key={creditor.id}
+                href="/proveedores"
+                className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm hover:bg-muted"
+              >
+                <span className="truncate font-medium text-foreground">{creditor.name}</span>
+                <span className="shrink-0 font-semibold text-warning">
+                  {formatCurrency(creditor.balance)}
                 </span>
               </Link>
             ))}
