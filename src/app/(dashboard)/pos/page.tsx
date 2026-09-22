@@ -95,6 +95,7 @@ export default async function PosPage() {
         cashRegisterId={openRegister.id}
         products={(products ?? []).map((p) => ({ ...p, price: Number(p.price), stock: Number(p.stock) }))}
         customers={customers ?? []}
+        autoInvoiceByPayment={organization.auto_invoice_by_payment}
       />
 
       <Card>

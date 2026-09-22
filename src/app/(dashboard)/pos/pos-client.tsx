@@ -69,9 +69,16 @@ interface PosClientProps {
   cashRegisterId: string;
   products: ProductLite[];
   customers: CustomerLite[];
+  autoInvoiceByPayment: boolean;
 }
 
-export function PosClient({ orgId, cashRegisterId, products, customers }: PosClientProps) {
+export function PosClient({
+  orgId,
+  cashRegisterId,
+  products,
+  customers,
+  autoInvoiceByPayment,
+}: PosClientProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -379,7 +386,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       paymentMethod: method,
       discount,
       surcharge,
-      invoiceType: resolveInvoiceType(selectedCustomer?.invoice_type, method),
+      invoiceType: resolveInvoiceType(selectedCustomer?.invoice_type, method, autoInvoiceByPayment),
       items,
     });
 

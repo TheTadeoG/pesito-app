@@ -16,6 +16,7 @@ export interface Database {
           slug: string;
           business_type: string;
           currency: string;
+          auto_invoice_by_payment: boolean;
           created_at: string;
         };
         Insert: {
@@ -24,6 +25,7 @@ export interface Database {
           slug: string;
           business_type?: string;
           currency?: string;
+          auto_invoice_by_payment?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["organizations"]["Insert"]>;

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
+import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
 
 const roleLabels: Record<string, string> = {
   owner: "Dueño",
@@ -39,6 +40,8 @@ export default async function ConfiguracionPage() {
             <Badge>Moneda: {organization.currency}</Badge>
             <Badge>ID: #{organization.id.slice(0, 5)}</Badge>
           </div>
+
+          <AutoInvoiceToggle initialEnabled={organization.auto_invoice_by_payment} />
         </CardContent>
       </Card>
 
