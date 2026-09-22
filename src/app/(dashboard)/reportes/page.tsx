@@ -4,18 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
-import { VentasList, type SaleRow } from "@/app/(dashboard)/reportes/ventas-list";
+import { paymentLabels } from "@/lib/payment-labels";
+import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 
 const PERIOD_DAYS = 30;
-
-const paymentLabels: Record<string, string> = {
-  efectivo: "Efectivo",
-  tarjeta: "Tarjeta",
-  transferencia: "Transferencia",
-  qr: "QR",
-  mixto: "Mixto",
-  fiado: "Fiado",
-};
 
 function dayLabel(date: Date) {
   return new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric" }).format(date);

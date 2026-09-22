@@ -6,7 +6,7 @@ import { Ban } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { voidSale } from "@/app/(dashboard)/reportes/actions";
+import { voidSale } from "@/lib/actions/sales";
 
 export interface SaleRow {
   id: string;
@@ -20,9 +20,11 @@ export interface SaleRow {
 export function VentasList({
   sales,
   paymentLabels,
+  emptyLabel = "Todavía no registraste ventas.",
 }: {
   sales: SaleRow[];
   paymentLabels: Record<string, string>;
+  emptyLabel?: string;
 }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -49,9 +51,7 @@ export function VentasList({
 
   if (sales.length === 0) {
     return (
-      <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-        Todavía no registraste ventas.
-      </p>
+      <p className="px-5 py-10 text-center text-sm text-muted-foreground">{emptyLabel}</p>
     );
   }
 
