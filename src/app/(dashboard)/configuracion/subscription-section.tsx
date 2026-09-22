@@ -114,29 +114,28 @@ export function SubscriptionSection({
               <Sparkles className="h-4 w-4 shrink-0 text-primary" />
               <p className="text-sm font-semibold">Pasarte a otro plan</p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-3">
               {otherPlans.map((plan) => {
                 const Icon = planIcons[plan.plan];
                 const isRecommended = plan.badge !== null;
+                const highlights = plan.features
+                  .filter((f) => !f.startsWith("Todas las funciones"))
+                  .slice(0, 3)
+                  .join(" · ");
                 return (
                   <div
                     key={plan.plan}
                     className={cn(
-                      "relative flex flex-col gap-3.5 rounded-2xl border p-5",
+                      "flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between",
                       isRecommended
-                        ? "border-primary bg-card shadow-lg shadow-primary/10"
+                        ? "border-primary bg-accent/40"
                         : "border-border bg-card"
                     )}
                   >
-                    {plan.badge && (
-                      <span className="absolute -top-3 left-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
-                        {plan.badge}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex min-w-0 items-start gap-3">
                       <span
                         className={cn(
-                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
                           isRecommended
                             ? "bg-primary/15 text-primary"
                             : "bg-accent text-accent-foreground"
@@ -144,35 +143,36 @@ export function SubscriptionSection({
                       >
                         <Icon className="h-4 w-4" />
                       </span>
-                      <p className="text-base font-semibold text-foreground">{plan.name}</p>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-foreground">{plan.name}</p>
+                          {plan.badge && (
+                            <Badge tone="accent" className="shrink-0">
+                              {plan.badge}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-semibold text-foreground">{plan.priceLabel}</span>{" "}
+                          {plan.period}
+                        </p>
+                        {highlights && (
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {highlights}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-foreground">{plan.priceLabel}</span>
-                      <span className="text-xs text-muted-foreground">{plan.period}</span>
-                    </div>
-                    <ul className="flex-1 space-y-1.5">
-                      {plan.features
-                        .filter((f) => !f.startsWith("Todas las funciones"))
-                        .slice(0, 4)
-                        .map((feature) => (
-                          <li
-                            key={feature}
-                            className="flex items-start gap-1.5 text-xs text-muted-foreground"
-                          >
-                            <Check className="mt-0.5 h-3 w-3 shrink-0 text-success" />
-                            {feature}
-                          </li>
-                        ))}
-                    </ul>
                     <a
                       href={`mailto:soporte@pesito.app?subject=${encodeURIComponent(
                         `Quiero pasarme al ${plan.name}`
                       )}`}
+                      className="shrink-0"
                     >
                       <Button
                         variant={isRecommended ? "primary" : "outline"}
                         size="sm"
-                        className="w-full"
+                        className="w-full sm:w-auto"
                       >
                         Pasate a {plan.name}
                       </Button>
