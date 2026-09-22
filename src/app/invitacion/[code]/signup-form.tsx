@@ -49,8 +49,8 @@ export function InvitationSignupForm({ code }: { code: string }) {
     return (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          ¡Listo! Anotá tu usuario — lo vas a necesitar para volver a entrar (la contraseña ya la
-          elegiste vos).
+          ¡Listo! Anotá tu usuario — junto con la contraseña que elegiste, es lo que vas a usar
+          para iniciar sesión la próxima vez.
         </p>
         <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-3.5 py-3">
           <span className="text-sm text-muted-foreground">Tu usuario</span>

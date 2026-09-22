@@ -64,7 +64,7 @@ export default async function InvitacionPage({
               <CardHeader>
                 <CardTitle>Ya te sumaste a {preview.org_name}</CardTitle>
                 <CardDescription>
-                  Guardá tu usuario para la próxima vez que entres.
+                  Guardá tu usuario: lo vas a necesitar para iniciar sesión la próxima vez.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

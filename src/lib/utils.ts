@@ -32,6 +32,14 @@ export function formatDateTime(value: string | Date) {
   }).format(date);
 }
 
+export function capitalizeWords(value: string) {
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toLocaleUpperCase("es-AR") + word.slice(1))
+    .join(" ");
+}
+
 export function slugify(value: string) {
   return value
     .toLowerCase()

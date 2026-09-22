@@ -3,6 +3,7 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { computeCashOnHand } from "@/lib/caja";
 import { roleLabels } from "@/lib/roles";
+import { capitalizeWords } from "@/lib/utils";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { ToastProvider } from "@/components/toast/toast-provider";
@@ -33,9 +34,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     };
   }
 
-  const memberLabel = `${roleLabels[membership.role] ?? membership.role} · #${organization.id.slice(0, 5)}`;
-  const greetingName =
+  const memberLabel = `Empresa #${organization.id.slice(0, 5)} · ${roleLabels[membership.role] ?? membership.role}`;
+  const greetingNameRaw =
     firstName || (membership.username ? membership.username.split("#")[0] : null) || null;
+  const greetingName = greetingNameRaw ? capitalizeWords(greetingNameRaw) : null;
 
   return (
     <ToastProvider>
