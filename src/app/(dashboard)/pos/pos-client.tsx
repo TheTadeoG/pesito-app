@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { resolveInvoiceType } from "@/lib/invoice-labels";
 import {
   checkoutSale,
@@ -79,8 +79,10 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [newCustomerName, setNewCustomerName] = useState("");
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const [customerError, setCustomerError] = useState<string | null>(null);
-  const [discount, setDiscount] = useState(0);
-  const [surcharge, setSurcharge] = useState(0);
+  const [discountMode, setDiscountMode] = useState<"amount" | "percent">("amount");
+  const [discountInput, setDiscountInput] = useState("");
+  const [surchargeMode, setSurchargeMode] = useState<"amount" | "percent">("amount");
+  const [surchargeInput, setSurchargeInput] = useState("");
   const [showExtras, setShowExtras] = useState(false);
   const [showManualAmount, setShowManualAmount] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
@@ -121,6 +123,14 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     if (item.kind === "product") return acc + item.product.price * item.quantity;
     return acc + item.amount;
   }, 0);
+  const discount =
+    discountMode === "percent"
+      ? (subtotal * (Number(discountInput) || 0)) / 100
+      : Number(discountInput) || 0;
+  const surcharge =
+    surchargeMode === "percent"
+      ? (subtotal * (Number(surchargeInput) || 0)) / 100
+      : Number(surchargeInput) || 0;
   const total = Math.max(0, subtotal - discount + surcharge);
   const itemCount = cart.reduce(
     (acc, item) => acc + (item.kind === "product" ? item.quantity : 1),
@@ -353,8 +363,8 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     }
 
     setCart([]);
-    setDiscount(0);
-    setSurcharge(0);
+    setDiscountInput("");
+    setSurchargeInput("");
     setCustomerId("");
     setCustomerQuery("");
     router.refresh();
@@ -634,14 +644,18 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Descuento:</span>
+                <span className="text-muted-foreground">
+                  Descuento{discountMode === "percent" ? ` (${discountInput}%)` : ""}:
+                </span>
                 <span className="font-medium text-danger">-{formatCurrency(discount)}</span>
               </div>
             )}
             {surcharge > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Recargo:</span>
-                <span className="font-medium text-foreground">+{formatCurrency(surcharge)}</span>
+                <span className="text-muted-foreground">
+                  Recargo{surchargeMode === "percent" ? ` (${surchargeInput}%)` : ""}:
+                </span>
+                <span className="font-medium text-warning">+{formatCurrency(surcharge)}</span>
               </div>
             )}
             <div className="flex justify-between border-t border-border pt-3 text-base">
@@ -674,28 +688,74 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
             </Button>
 
             {showExtras && (
-              <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-muted/50 p-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Descuento
-                  </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5 rounded-xl border border-danger/30 bg-danger-bg/60 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-danger">Descuento</label>
+                    <div className="flex overflow-hidden rounded-md border border-danger/40">
+                      {(["amount", "percent"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setDiscountMode(mode)}
+                          className={cn(
+                            "px-1.5 py-0.5 text-[10px] font-bold transition-colors",
+                            discountMode === mode
+                              ? "bg-danger text-white"
+                              : "text-danger hover:bg-danger/10"
+                          )}
+                        >
+                          {mode === "amount" ? "$" : "%"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <Input
                     type="number"
                     min={0}
-                    value={discount || ""}
-                    onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                    max={discountMode === "percent" ? 100 : undefined}
+                    value={discountInput}
+                    onChange={(e) => setDiscountInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      registerEnterForCheckout();
+                    }}
                     placeholder="0"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Recargo
-                  </label>
+                <div className="space-y-1.5 rounded-xl border border-warning/30 bg-warning-bg/60 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-warning">Recargo</label>
+                    <div className="flex overflow-hidden rounded-md border border-warning/40">
+                      {(["amount", "percent"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setSurchargeMode(mode)}
+                          className={cn(
+                            "px-1.5 py-0.5 text-[10px] font-bold transition-colors",
+                            surchargeMode === mode
+                              ? "bg-warning text-white"
+                              : "text-warning hover:bg-warning/10"
+                          )}
+                        >
+                          {mode === "amount" ? "$" : "%"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <Input
                     type="number"
                     min={0}
-                    value={surcharge || ""}
-                    onChange={(e) => setSurcharge(Number(e.target.value) || 0)}
+                    max={surchargeMode === "percent" ? 100 : undefined}
+                    value={surchargeInput}
+                    onChange={(e) => setSurchargeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      registerEnterForCheckout();
+                    }}
                     placeholder="0"
                   />
                 </div>
@@ -728,7 +788,10 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
                   e.preventDefault();
-                  if (Number(cashReceived) >= total && !pending) {
+                  if (pending) return;
+                  // Campo vacío = paga justo (el placeholder ya muestra el total).
+                  const received = cashReceived === "" ? total : Number(cashReceived);
+                  if (received >= total) {
                     void processSale("efectivo");
                   }
                 }}
@@ -766,7 +829,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
               </Button>
               <Button
                 type="button"
-                disabled={pending || !cashReceived || Number(cashReceived) < total}
+                disabled={pending || (cashReceived !== "" && Number(cashReceived) < total)}
                 onClick={() => void processSale("efectivo")}
               >
                 {pending ? "Procesando…" : "Confirmar venta"}
