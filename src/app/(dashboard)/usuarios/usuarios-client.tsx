@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { Copy, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import {
   updateMemberRole,
   removeMember,
   createDirectMember,
+  updateMemberCredentials,
 } from "@/app/(dashboard)/usuarios/actions";
 
 interface MemberRow {
@@ -61,6 +62,15 @@ export function UsuariosClient({
   const [directCreating, setDirectCreating] = useState(false);
   const [directError, setDirectError] = useState<string | null>(null);
   const [directCreated, setDirectCreated] = useState<{ username: string; password: string } | null>(
+    null
+  );
+
+  const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
+  const [editUsername, setEditUsername] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editResult, setEditResult] = useState<{ username: string; password: string | null } | null>(
     null
   );
 
@@ -140,6 +150,42 @@ export function UsuariosClient({
     setDirectCreated({ username: result.username, password: directPassword });
   }
 
+  function openEdit(member: MemberRow) {
+    setEditingMember(member);
+    setEditUsername(member.username?.split("#")[0] ?? "");
+    setEditPassword("");
+    setEditError(null);
+    setEditResult(null);
+  }
+
+  function closeEditDialog() {
+    setEditingMember(null);
+    setEditUsername("");
+    setEditPassword("");
+    setEditError(null);
+    setEditResult(null);
+  }
+
+  function generateEditPassword() {
+    const chars = "23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
+    let out = "";
+    for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    setEditPassword(out);
+  }
+
+  async function handleEditSave() {
+    if (!editingMember) return;
+    setEditSaving(true);
+    setEditError(null);
+    const result = await updateMemberCredentials(editingMember.id, editUsername, editPassword);
+    setEditSaving(false);
+    if (result.error || !result.username) {
+      setEditError(result.error ?? "No pudimos guardar los cambios.");
+      return;
+    }
+    setEditResult({ username: result.username, password: result.password ?? null });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-end gap-2">
@@ -194,6 +240,17 @@ export function UsuariosClient({
                         <option value="admin">{roleLabels.admin}</option>
                         <option value="vendedor">{roleLabels.vendedor}</option>
                       </Select>
+                    )}
+                    {!isOwner && member.username && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => openEdit(member)}
+                        aria-label="Editar usuario y contraseña"
+                        title="Editar usuario y contraseña"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     )}
                     {!isOwner && !isSelf && (
                       <Button
@@ -433,6 +490,112 @@ export function UsuariosClient({
                 disabled={directCreating || !directUsername || !directPassword}
               >
                 {directCreating ? "Creando…" : "Crear usuario"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={editingMember !== null}
+        onClose={closeEditDialog}
+        title="Editar usuario y contraseña"
+        description="Cambiá el nombre de usuario y/o pisá la contraseña por una nueva."
+      >
+        {editResult ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {editResult.password
+                ? "Anotá estos datos y pasáselos a tu empleado — la contraseña no se puede volver a ver después de cerrar esto."
+                : "El usuario se actualizó. Pasáselo a tu empleado."}
+            </p>
+            <div className="space-y-2 rounded-xl border border-border bg-muted/40 px-3.5 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Usuario</span>
+                <span className="font-mono font-semibold text-foreground">
+                  {editResult.username}
+                </span>
+              </div>
+              {editResult.password && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Contraseña nueva</span>
+                  <span className="font-mono font-semibold text-foreground">
+                    {editResult.password}
+                  </span>
+                </div>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() =>
+                copyText(
+                  editResult.password
+                    ? `Usuario: ${editResult.username}\nContraseña: ${editResult.password}`
+                    : `Usuario: ${editResult.username}`
+                )
+              }
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copiar
+            </Button>
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" onClick={closeEditDialog}>
+                Listo
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Usuario</label>
+              <Input
+                value={editUsername}
+                onChange={(e) => setEditUsername(e.target.value)}
+                placeholder="juan"
+                autoFocus
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Si lo cambiás, le agregamos un código nuevo automáticamente (ej.{" "}
+                {editUsername.trim() || "juan"}#4821).
+              </p>
+            </div>
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">
+                  Nueva contraseña (opcional)
+                </label>
+                <button
+                  type="button"
+                  onClick={generateEditPassword}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Generar una
+                </button>
+              </div>
+              <Input
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+                placeholder="Dejalo vacío para no cambiarla"
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Las contraseñas no se guardan en texto plano, así que no se puede ver la actual —
+                sólo pisarla por una nueva.
+              </p>
+            </div>
+
+            {editError && (
+              <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{editError}</p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={closeEditDialog}>
+                Cancelar
+              </Button>
+              <Button type="button" onClick={handleEditSave} disabled={editSaving || !editUsername}>
+                {editSaving ? "Guardando…" : "Guardar cambios"}
               </Button>
             </div>
           </div>

@@ -155,3 +155,94 @@ export async function createDirectMember(
   revalidatePath("/usuarios");
   return { username: fullUsername };
 }
+
+export interface UpdateCredentialsResult extends ActionState {
+  username?: string;
+  password?: string;
+}
+
+// Sólo para cuentas internas (usuario#código, sin email real): las
+// contraseñas nunca se guardan en texto plano en ningún lado, así que "ver
+// la contraseña de nuevo" no es posible — en cambio, esto permite pisarla
+// por una nueva (que sí se puede mostrar una vez, igual que al crearla).
+export async function updateMemberCredentials(
+  membershipId: string,
+  usernameBaseInput: string,
+  newPassword: string
+): Promise<UpdateCredentialsResult> {
+  const { membership } = await requireOrgContext();
+  if (!isOrgAdmin(membership.role)) {
+    return { error: "No tenés permiso para editar usuarios." };
+  }
+
+  const base = usernameBaseInput.trim().toLowerCase();
+  if (!isValidUsernameBase(base)) {
+    return {
+      error:
+        "El usuario debe tener entre 3 y 20 caracteres: letras, números, puntos, guiones o guión bajo.",
+    };
+  }
+  if (newPassword && newPassword.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
+  }
+
+  const supabase = await createClient();
+  const { data: memberRow } = await supabase
+    .from("memberships")
+    .select("id, user_id, username")
+    .eq("id", membershipId)
+    .maybeSingle();
+
+  if (!memberRow) return { error: "Usuario no encontrado." };
+  if (!memberRow.username) {
+    return { error: "Sólo se puede editar usuarios internos (usuario y contraseña)." };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return {
+      error:
+        "Falta configurar el servidor para editar usuarios internos (SUPABASE_SERVICE_ROLE_KEY).",
+    };
+  }
+
+  const currentBase = memberRow.username.split("#")[0];
+  let fullUsername = memberRow.username;
+
+  if (base !== currentBase) {
+    let candidate: string | null = null;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const c = buildFullUsername(base, generateDiscriminator());
+      const { data: available } = await supabase.rpc("username_available", { p_username: c });
+      if (available) {
+        candidate = c;
+        break;
+      }
+    }
+    if (!candidate) return { error: "No pudimos generar un usuario único. Probá de nuevo." };
+    fullUsername = candidate;
+
+    const { error: emailError } = await admin.auth.admin.updateUserById(memberRow.user_id, {
+      email: usernameToEmail(fullUsername),
+    });
+    if (emailError) return { error: "No pudimos actualizar el usuario." };
+
+    const { error: usernameError } = await supabase.rpc("update_member_username", {
+      p_membership_id: membershipId,
+      p_username: fullUsername,
+    });
+    if (usernameError) return { error: "No pudimos actualizar el usuario." };
+  }
+
+  if (newPassword) {
+    const { error: passwordError } = await admin.auth.admin.updateUserById(memberRow.user_id, {
+      password: newPassword,
+    });
+    if (passwordError) return { error: "No pudimos actualizar la contraseña." };
+  }
+
+  revalidatePath("/usuarios");
+  return { username: fullUsername, password: newPassword || undefined };
+}

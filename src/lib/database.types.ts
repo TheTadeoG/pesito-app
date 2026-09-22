@@ -539,6 +539,10 @@ export interface Database {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      update_member_username: {
+        Args: { p_membership_id: string; p_username: string };
+        Returns: undefined;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
