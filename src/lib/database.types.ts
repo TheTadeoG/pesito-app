@@ -241,6 +241,28 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["sale_items"]["Insert"]>;
         Relationships: [];
       };
+      sale_payments: {
+        Row: {
+          id: string;
+          org_id: string;
+          sale_id: string;
+          cash_register_id: string | null;
+          method: "efectivo" | "tarjeta" | "transferencia" | "qr" | "fiado";
+          amount: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          sale_id: string;
+          cash_register_id?: string | null;
+          method: "efectivo" | "tarjeta" | "transferencia" | "qr" | "fiado";
+          amount: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["sale_payments"]["Insert"]>;
+        Relationships: [];
+      };
       stock_movements: {
         Row: {
           id: string;
@@ -351,6 +373,30 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["purchase_items"]["Insert"]>;
         Relationships: [];
       };
+      customer_payments: {
+        Row: {
+          id: string;
+          org_id: string;
+          customer_id: string;
+          cash_register_id: string | null;
+          method: "efectivo" | "tarjeta" | "transferencia" | "qr";
+          amount: number;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          customer_id: string;
+          cash_register_id?: string | null;
+          method: "efectivo" | "tarjeta" | "transferencia" | "qr";
+          amount: number;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["customer_payments"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -372,6 +418,7 @@ export interface Database {
           p_items: Json;
           p_surcharge?: number;
           p_invoice_type?: string;
+          p_payments?: Json | null;
         };
         Returns: string;
       };
@@ -390,6 +437,15 @@ export interface Database {
       };
       void_purchase: {
         Args: { p_purchase_id: string };
+        Returns: undefined;
+      };
+      register_customer_payment: {
+        Args: {
+          p_customer_id: string;
+          p_cash_register_id: string | null;
+          p_method: string;
+          p_amount: number;
+        };
         Returns: undefined;
       };
     };

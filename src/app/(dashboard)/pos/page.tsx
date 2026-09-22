@@ -34,7 +34,7 @@ export default async function PosPage() {
       .limit(500),
     supabase
       .from("customers")
-      .select("id, name, invoice_type")
+      .select("id, name, invoice_type, balance")
       .eq("org_id", organization.id)
       .order("name")
       .limit(300),
@@ -94,7 +94,7 @@ export default async function PosPage() {
         orgId={organization.id}
         cashRegisterId={openRegister.id}
         products={(products ?? []).map((p) => ({ ...p, price: Number(p.price), stock: Number(p.stock) }))}
-        customers={customers ?? []}
+        customers={(customers ?? []).map((c) => ({ ...c, balance: Number(c.balance) }))}
         autoInvoiceByPayment={organization.auto_invoice_by_payment}
       />
 

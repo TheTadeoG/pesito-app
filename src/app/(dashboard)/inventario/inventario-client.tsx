@@ -51,7 +51,19 @@ export function InventarioClient({
   const [period, setPeriod] = useState<MovementPeriod>("30d");
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [movementQuery, setMovementQuery] = useState("");
+  const [productQuery, setProductQuery] = useState("");
   const lowStock = products.filter((p) => p.stock <= p.min_stock);
+
+  const filteredProducts = useMemo(() => {
+    const q = productQuery.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.barcode?.toLowerCase().includes(q)
+    );
+  }, [products, productQuery]);
 
   const filteredMovements = useMemo(() => {
     const start = period === "all" ? null : getPeriodRange(period).start;
@@ -87,21 +99,39 @@ export function InventarioClient({
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Stock por producto</CardTitle>
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={productQuery}
+              onChange={(e) => setProductQuery(e.target.value)}
+              placeholder="Buscar por nombre, SKU o código de barras…"
+              className="pl-10"
+            />
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {products.length === 0 ? (
             <p className="px-5 py-14 text-center text-sm text-muted-foreground">
               Cargá productos para empezar a controlar tu inventario.
             </p>
+          ) : filteredProducts.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+              No encontramos productos con esa búsqueda.
+            </p>
           ) : (
             <div className="divide-y divide-border">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <div
                   key={product.id}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{product.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {product.sku ? `SKU ${product.sku}` : "Sin SKU"}
+                      {" · "}
+                      {product.barcode ? `Cód. ${product.barcode}` : "Sin código de barras"}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       Costo: {product.cost ? formatCurrency(product.cost) : "—"} · Mínimo:{" "}
                       {product.min_stock}{product.unit}

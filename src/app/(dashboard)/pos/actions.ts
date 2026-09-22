@@ -12,6 +12,11 @@ export interface CheckoutItemInput {
   unit_price: number;
 }
 
+export interface PaymentLineInput {
+  method: "efectivo" | "tarjeta" | "transferencia" | "qr" | "fiado";
+  amount: number;
+}
+
 export interface CheckoutInput {
   orgId: string;
   cashRegisterId: string;
@@ -21,6 +26,9 @@ export interface CheckoutInput {
   surcharge: number;
   invoiceType: "consumidor_final" | "factura_a" | "factura_b" | "factura_c";
   items: CheckoutItemInput[];
+  // Sólo para pagos combinados (ej: parte efectivo + parte fiado). Si se
+  // omite, se usa paymentMethod como único medio de pago por el total.
+  payments?: PaymentLineInput[];
 }
 
 export async function checkoutSale(
@@ -40,6 +48,7 @@ export async function checkoutSale(
     p_items: input.items as unknown as Json,
     p_surcharge: input.surcharge,
     p_invoice_type: input.invoiceType,
+    p_payments: input.payments && input.payments.length > 0 ? (input.payments as unknown as Json) : null,
   });
 
   if (error) {

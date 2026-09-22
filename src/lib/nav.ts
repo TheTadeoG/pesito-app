@@ -8,6 +8,8 @@ import {
   ShoppingBag,
   ShoppingCart,
   Sparkles,
+  Tag,
+  Truck,
   TrendingDown,
   Users,
   UserCog,
@@ -38,12 +40,14 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/productos", label: "Productos", icon: LayoutGrid },
       { href: "/inventario", label: "Inventario", icon: Boxes },
+      { href: "/marcas", label: "Marcas", icon: Tag },
     ],
   },
   {
     title: "Personas",
     items: [
       { href: "/clientes", label: "Clientes", icon: Users },
+      { href: "/proveedores", label: "Proveedores", icon: Truck },
       { href: "/usuarios", label: "Usuarios", icon: UserCog, badge: "Pronto" },
     ],
   },
@@ -72,7 +76,9 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/compras": { title: "Compras", description: "Registrá el ingreso de mercadería." },
   "/productos": { title: "Productos", description: "Tu catálogo completo." },
   "/inventario": { title: "Inventario", description: "Stock y movimientos de productos." },
+  "/marcas": { title: "Marcas", description: "Catálogo de marcas de tus productos." },
   "/clientes": { title: "Clientes", description: "Tus clientes y sus cuentas." },
+  "/proveedores": { title: "Proveedores", description: "Tus proveedores para compras." },
   "/usuarios": { title: "Usuarios", description: "Accesos de tu equipo." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
   "/recomendaciones": { title: "Recomendaciones", description: "Sugerencias inteligentes para tu kiosco." },

@@ -64,26 +64,39 @@ export async function deleteCustomer(id: string): Promise<ActionState> {
   return {};
 }
 
-export async function registerPayment(id: string, amount: number): Promise<ActionState> {
+export async function registerPayment(
+  id: string,
+  amount: number,
+  method: "efectivo" | "tarjeta" | "transferencia" | "qr"
+): Promise<ActionState> {
   if (!amount || amount <= 0) return { error: "Ingresá un monto válido." };
 
+  const { userId } = await requireOrgContext();
   const supabase = await createClient();
-  const { data: customer } = await supabase
-    .from("customers")
-    .select("balance")
-    .eq("id", id)
-    .single();
 
-  if (!customer) return { error: "No encontramos el cliente." };
+  const { data: register } = await supabase
+    .from("cash_registers")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "abierta")
+    .maybeSingle();
 
-  const { error } = await supabase
-    .from("customers")
-    .update({ balance: Number(customer.balance) - amount })
-    .eq("id", id);
+  if (!register) {
+    return { error: "Abrí tu caja para poder registrar cobros de deuda." };
+  }
+
+  const { error } = await supabase.rpc("register_customer_payment", {
+    p_customer_id: id,
+    p_cash_register_id: register.id,
+    p_method: method,
+    p_amount: amount,
+  });
 
   if (error) return { error: "No pudimos registrar el pago." };
 
   revalidatePath("/clientes");
   revalidatePath(`/clientes/${id}`);
+  revalidatePath("/caja");
+  revalidatePath("/pos");
   return {};
 }

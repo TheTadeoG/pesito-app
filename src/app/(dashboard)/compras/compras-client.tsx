@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Minus, Package, Plus, Search, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +62,8 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const [error, setError] = useState<string | null>(null);
   const [browseProducts, setBrowseProducts] = useState(false);
   const [browseSuppliers, setBrowseSuppliers] = useState(false);
+  const [supplierHighlightedIndex, setSupplierHighlightedIndex] = useState(-1);
+  const lastEnterAt = useRef<number>(0);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const results = useMemo(() => {
@@ -125,17 +127,135 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
     if (highlightedIndex >= 0 && highlightedIndex < results.length) {
       e.preventDefault();
       addProduct(results[highlightedIndex]);
-    } else if (results.length === 1) {
+      return;
+    }
+    if (results.length === 1) {
       e.preventDefault();
       addProduct(results[0]);
+      return;
+    }
+    if (!query.trim()) {
+      registerEnterForConfirm();
     }
   }
+
+  // Doble Enter en cualquier lado (fuera de un campo de texto) registra la
+  // compra, igual que en POS. El proveedor es obligatorio: no hay un
+  // "proveedor por defecto" como sí existe Consumidor Final para clientes.
+  function registerEnterForConfirm() {
+    if (cart.length === 0) return;
+    // Only ever invoked from a keydown handler, never during render (same
+    // pattern as POS's registerEnterForCheckout).
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    if (now - lastEnterAt.current < 800) {
+      lastEnterAt.current = 0;
+      if (!supplierId) {
+        setError("Elegí un proveedor antes de registrar la compra.");
+        return;
+      }
+      void handleConfirm();
+    } else {
+      lastEnterAt.current = now;
+    }
+  }
+
+  function selectSupplier(supplier: SupplierLite) {
+    setSupplierId(supplier.id);
+    setSupplierQuery("");
+    setBrowseSuppliers(false);
+    setSupplierHighlightedIndex(-1);
+  }
+
+  function handleSupplierSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      if (supplierResults.length === 0) return;
+      e.preventDefault();
+      setSupplierHighlightedIndex((i) => (i + 1 >= supplierResults.length ? 0 : i + 1));
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      if (supplierResults.length === 0) return;
+      e.preventDefault();
+      setSupplierHighlightedIndex((i) => (i <= 0 ? supplierResults.length - 1 : i - 1));
+      return;
+    }
+    if (e.key !== "Enter") return;
+    if (supplierHighlightedIndex >= 0 && supplierHighlightedIndex < supplierResults.length) {
+      e.preventDefault();
+      selectSupplier(supplierResults[supplierHighlightedIndex]);
+    } else if (supplierResults.length === 1) {
+      e.preventDefault();
+      selectSupplier(supplierResults[0]);
+    }
+  }
+
+  // Igual que en POS: escribir o pegar desde cualquier lado de la pantalla
+  // (o escanear un código de barras) cae directo en el buscador de
+  // productos, sin tener que clickearlo primero — salvo que ya se esté
+  // escribiendo en otro campo o haya un diálogo abierto.
+  useEffect(() => {
+    function isTypingInOtherField() {
+      const active = document.activeElement;
+      if (active === searchRef.current) return false;
+      const tag = active?.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+    }
+
+    function handleWindowKeyDown(e: KeyboardEvent) {
+      if (showNewProduct || showNewSupplier) return;
+
+      if (e.key === "Enter") {
+        if (document.activeElement === searchRef.current) return;
+        if (isTypingInOtherField()) return;
+        registerEnterForConfirm();
+        return;
+      }
+
+      if (isTypingInOtherField()) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key.length !== 1) return; // only plain printable characters
+
+      if (document.activeElement !== searchRef.current) {
+        searchRef.current?.focus();
+      }
+    }
+
+    function handleWindowPaste(e: ClipboardEvent) {
+      if (showNewProduct || showNewSupplier) return;
+      if (isTypingInOtherField()) return;
+
+      const text = e.clipboardData?.getData("text");
+      if (!text) return;
+
+      e.preventDefault();
+      setQuery((prev) => prev + text);
+      searchRef.current?.focus();
+    }
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+    window.addEventListener("paste", handleWindowPaste);
+    return () => {
+      window.removeEventListener("keydown", handleWindowKeyDown);
+      window.removeEventListener("paste", handleWindowPaste);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showNewProduct, showNewSupplier, cart.length, supplierId]);
 
   function changeQuantity(index: number, delta: number) {
     setCart((current) =>
       current
         .map((line, i) => (i === index ? { ...line, quantity: line.quantity + delta } : line))
         .filter((line) => line.quantity > 0)
+    );
+  }
+
+  function updateQuantity(index: number, value: string) {
+    const parsed = Number(value);
+    setCart((current) =>
+      current.map((line, i) =>
+        i === index ? { ...line, quantity: Number.isNaN(parsed) || parsed < 0 ? 0 : parsed } : line
+      )
     );
   }
 
@@ -189,6 +309,10 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
 
   async function handleConfirm() {
     if (cart.length === 0 || pending) return;
+    if (!supplierId) {
+      setError("Elegí un proveedor antes de registrar la compra.");
+      return;
+    }
     setPending(true);
     setError(null);
 
@@ -252,7 +376,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                     setHighlightedIndex(-1);
                   }}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Buscar producto por nombre o código..."
+                  placeholder="Buscar producto... (↑↓ para elegir, Enter para agregar)"
                   className="pl-10"
                 />
                 {results.length > 0 && (
@@ -330,7 +454,14 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                       >
                         <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="w-8 text-center text-sm font-medium">{line.quantity}</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={line.quantity}
+                        onChange={(e) => updateQuantity(index, e.target.value)}
+                        className="w-16 px-2 text-center"
+                      />
                       <button
                         type="button"
                         onClick={() => changeQuantity(index, 1)}
@@ -374,7 +505,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Proveedor</CardTitle>
-            <p className="text-sm text-muted-foreground">Opcional</p>
+            <p className="text-sm text-muted-foreground">Obligatorio: no hay proveedor por defecto.</p>
           </CardHeader>
           <CardContent>
             {selectedSupplier ? (
@@ -407,22 +538,26 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                   </button>
                   <Input
                     value={supplierQuery}
-                    onChange={(e) => setSupplierQuery(e.target.value)}
-                    placeholder="Buscar proveedor…"
+                    onChange={(e) => {
+                      setSupplierQuery(e.target.value);
+                      setSupplierHighlightedIndex(-1);
+                    }}
+                    onKeyDown={handleSupplierSearchKeyDown}
+                    placeholder="Buscar proveedor… (↑↓ para elegir, Enter selecciona)"
                     className="pl-10"
                   />
                   {supplierResults.length > 0 && (
                     <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
-                      {supplierResults.map((supplier) => (
+                      {supplierResults.map((supplier, index) => (
                         <button
                           key={supplier.id}
                           type="button"
-                          onClick={() => {
-                            setSupplierId(supplier.id);
-                            setSupplierQuery("");
-                            setBrowseSuppliers(false);
-                          }}
-                          className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
+                          onClick={() => selectSupplier(supplier)}
+                          onMouseEnter={() => setSupplierHighlightedIndex(index)}
+                          className={cn(
+                            "block w-full px-3.5 py-2.5 text-left text-sm",
+                            index === supplierHighlightedIndex ? "bg-accent" : "hover:bg-muted"
+                          )}
                         >
                           {supplier.name}
                         </button>
@@ -477,12 +612,17 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
             <Button
               className="w-full"
               size="lg"
-              disabled={cart.length === 0 || pending}
+              disabled={cart.length === 0 || pending || !supplierId}
               onClick={handleConfirm}
             >
               <Package className="h-4 w-4" />
-              {pending ? "Registrando…" : "Registrar Compra"}
+              {pending ? "Registrando…" : "Registrar Compra (Doble Enter)"}
             </Button>
+            {cart.length > 0 && !supplierId && (
+              <p className="text-xs text-muted-foreground">
+                Elegí un proveedor para poder registrar la compra.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -496,19 +636,24 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
         title="Nuevo proveedor"
         description="Cargá un proveedor rápido para esta compra."
       >
-        <div className="space-y-4">
-          <Input
-            autoFocus
-            value={newSupplierName}
-            onChange={(e) => setNewSupplierName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !creatingSupplier) {
-                e.preventDefault();
-                handleCreateSupplier();
-              }
-            }}
-            placeholder="Nombre del proveedor"
-          />
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!creatingSupplier) handleCreateSupplier();
+          }}
+        >
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Nombre <span className="font-normal text-muted-foreground">(Enter confirma)</span>
+            </label>
+            <Input
+              autoFocus
+              value={newSupplierName}
+              onChange={(e) => setNewSupplierName(e.target.value)}
+              placeholder="Nombre del proveedor"
+            />
+          </div>
           {supplierError && (
             <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">
               {supplierError}
@@ -525,15 +670,11 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
             >
               Cancelar
             </Button>
-            <Button
-              type="button"
-              disabled={creatingSupplier || !newSupplierName.trim()}
-              onClick={handleCreateSupplier}
-            >
-              {creatingSupplier ? "Guardando…" : "Crear y seleccionar"}
+            <Button type="submit" disabled={creatingSupplier || !newSupplierName.trim()}>
+              {creatingSupplier ? "Guardando…" : "Crear y seleccionar (Enter)"}
             </Button>
           </div>
-        </div>
+        </form>
       </Dialog>
 
       <ProductForm

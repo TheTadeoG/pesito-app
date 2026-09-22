@@ -98,7 +98,10 @@ export function OpenCajaDialog() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Monto inicial (en efectivo)
+              Monto inicial (en efectivo){" "}
+              {enterReady && (
+                <span className="font-normal text-muted-foreground">(Enter confirma)</span>
+              )}
             </label>
             <Input
               ref={amountRef}
@@ -134,7 +137,7 @@ export function OpenCajaDialog() {
             </Button>
             <Button type="submit" disabled={pending}>
               <DollarSign className="h-4 w-4" />
-              {pending ? "Abriendo…" : "Abrir Caja"}
+              {pending ? "Abriendo…" : "Abrir Caja (Enter)"}
             </Button>
           </div>
         </form>

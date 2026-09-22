@@ -30,6 +30,7 @@ import {
   checkoutSale,
   createCustomerQuick,
   type CheckoutItemInput,
+  type PaymentLineInput,
 } from "@/app/(dashboard)/pos/actions";
 
 interface ProductLite {
@@ -47,6 +48,7 @@ interface CustomerLite {
   id: string;
   name: string;
   invoice_type: string | null;
+  balance: number;
 }
 
 type CartItem =
@@ -63,6 +65,22 @@ const paymentMethods: { value: PaymentMethod; label: string; icon: typeof Bankno
   { value: "mixto", label: "Mixto", icon: Shuffle },
   { value: "fiado", label: "Fiado", icon: Wallet },
 ];
+
+type CombinableMethod = "efectivo" | "tarjeta" | "transferencia" | "qr" | "fiado";
+
+const combinableMethods: { value: CombinableMethod; label: string; icon: typeof Banknote }[] = [
+  { value: "efectivo", label: "Efectivo", icon: Banknote },
+  { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
+  { value: "transferencia", label: "Transferencia", icon: Landmark },
+  { value: "qr", label: "QR", icon: QrCode },
+  { value: "fiado", label: "Fiado", icon: Wallet },
+];
+
+function paymentMethodForLines(lines: PaymentLineInput[]): PaymentMethod {
+  const nonZero = lines.filter((l) => l.amount > 0);
+  if (nonZero.length === 1) return nonZero[0].method;
+  return "mixto";
+}
 
 interface PosClientProps {
   orgId: string;
@@ -101,12 +119,21 @@ export function PosClient({
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
   const [showCashStep, setShowCashStep] = useState(false);
   const [cashReceived, setCashReceived] = useState("");
+  const [showMixedStep, setShowMixedStep] = useState(false);
+  const [mixedAmounts, setMixedAmounts] = useState<Record<CombinableMethod, string>>({
+    efectivo: "",
+    tarjeta: "",
+    transferencia: "",
+    qr: "",
+    fiado: "",
+  });
   const [manualLabel, setManualLabel] = useState("");
   const [manualAmount, setManualAmount] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [browseProducts, setBrowseProducts] = useState(false);
   const [browseCustomers, setBrowseCustomers] = useState(false);
+  const [customerHighlightedIndex, setCustomerHighlightedIndex] = useState(-1);
   const lastEnterAt = useRef<number>(0);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -151,6 +178,15 @@ export function PosClient({
     (acc, item) => acc + (item.kind === "product" ? item.quantity : 1),
     0
   );
+
+  const mixedEntries: PaymentLineInput[] = (
+    Object.entries(mixedAmounts) as [CombinableMethod, string][]
+  )
+    .map(([method, raw]) => ({ method, amount: Number(raw) || 0 }))
+    .filter((p) => p.amount > 0);
+  const mixedTotalAssigned = mixedEntries.reduce((acc, p) => acc + p.amount, 0);
+  const mixedRemaining = total - mixedTotalAssigned;
+  const mixedFiadoAmount = Number(mixedAmounts.fiado) || 0;
 
   function addProduct(product: ProductLite) {
     setError(null);
@@ -209,6 +245,8 @@ export function PosClient({
     setError(null);
     setShowCashStep(false);
     setCashReceived("");
+    setShowMixedStep(false);
+    setMixedAmounts({ efectivo: "", tarjeta: "", transferencia: "", qr: "", fiado: "" });
     setShowPaymentPicker(true);
   }
 
@@ -216,11 +254,16 @@ export function PosClient({
     setShowPaymentPicker(false);
     setShowCashStep(false);
     setCashReceived("");
+    setShowMixedStep(false);
   }
 
   function pickMethod(method: PaymentMethod) {
     if (method === "efectivo") {
       setShowCashStep(true);
+      return;
+    }
+    if (method === "mixto") {
+      setShowMixedStep(true);
       return;
     }
     void processSale(method);
@@ -240,11 +283,117 @@ export function PosClient({
       setCustomerError(result.error ?? "No pudimos crear el cliente.");
       return;
     }
-    setLocalCustomers((current) => [...current, { id: result.id!, name, invoice_type: null }]);
+    setLocalCustomers((current) => [
+      ...current,
+      { id: result.id!, name, invoice_type: null, balance: 0 },
+    ]);
     setCustomerId(result.id);
     setCustomerQuery("");
     setNewCustomerName("");
     setShowNewCustomer(false);
+  }
+
+  function selectCustomer(customer: CustomerLite) {
+    setCustomerId(customer.id);
+    setCustomerQuery("");
+    setBrowseCustomers(false);
+    setShowCustomerSearch(false);
+    setCustomerHighlightedIndex(-1);
+  }
+
+  function handleCustomerSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      if (customerResults.length === 0) return;
+      e.preventDefault();
+      setCustomerHighlightedIndex((i) => (i + 1 >= customerResults.length ? 0 : i + 1));
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      if (customerResults.length === 0) return;
+      e.preventDefault();
+      setCustomerHighlightedIndex((i) => (i <= 0 ? customerResults.length - 1 : i - 1));
+      return;
+    }
+
+    if (e.key !== "Enter") return;
+
+    if (customerHighlightedIndex >= 0 && customerHighlightedIndex < customerResults.length) {
+      e.preventDefault();
+      selectCustomer(customerResults[customerHighlightedIndex]);
+      return;
+    }
+    if (customerResults.length === 1) {
+      e.preventDefault();
+      selectCustomer(customerResults[0]);
+    }
+  }
+
+  // Selector de cliente compacto, reusado dentro de los diálogos de pago
+  // (combinar medios de pago, o cargar a fiado la diferencia de un pago en
+  // efectivo que no alcanza) para elegir/ver el cliente sin salir del paso.
+  function renderInlineCustomerPicker() {
+    if (selectedCustomer) {
+      return (
+        <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2">
+          <span className="text-sm font-medium text-foreground">
+            {selectedCustomer.name}
+            {selectedCustomer.balance > 0 && (
+              <span className="ml-1.5 text-xs font-normal text-danger">
+                (debe {formatCurrency(selectedCustomer.balance)})
+              </span>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setCustomerId("");
+              setCustomerQuery("");
+            }}
+            className="text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            Cambiar
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative">
+        <Input
+          value={customerQuery}
+          onChange={(e) => {
+            setCustomerQuery(e.target.value);
+            setCustomerHighlightedIndex(-1);
+          }}
+          onKeyDown={handleCustomerSearchKeyDown}
+          placeholder="Buscar cliente… (↑↓ para elegir, Enter selecciona)"
+        />
+        {customerResults.length > 0 && (
+          <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+            {customerResults.map((customer, index) => (
+              <button
+                key={customer.id}
+                type="button"
+                onClick={() => selectCustomer(customer)}
+                onMouseEnter={() => setCustomerHighlightedIndex(index)}
+                className={cn(
+                  "flex w-full items-center justify-between gap-2 px-3.5 py-2 text-left text-sm",
+                  index === customerHighlightedIndex ? "bg-accent" : "hover:bg-muted"
+                )}
+              >
+                <span className="truncate">{customer.name}</span>
+                {customer.balance > 0 && (
+                  <span className="shrink-0 text-xs text-danger">
+                    debe {formatCurrency(customer.balance)}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Triggered by a real Enter keypress anywhere on the page (not while
@@ -353,10 +502,16 @@ export function PosClient({
     registerEnterForCheckout();
   }
 
-  async function processSale(method: PaymentMethod) {
-    if (method === "fiado" && !customerId) {
+  async function processSale(method: PaymentMethod, payments?: PaymentLineInput[]) {
+    const fiadoAmount = payments
+      ? payments.find((p) => p.method === "fiado")?.amount ?? 0
+      : method === "fiado"
+        ? total
+        : 0;
+
+    if (fiadoAmount > 0 && !customerId) {
       closePaymentPicker();
-      setError("Para vender fiado primero elegí un cliente.");
+      setError("Para cargar fiado primero elegí un cliente.");
       return;
     }
 
@@ -388,6 +543,7 @@ export function PosClient({
       surcharge,
       invoiceType: resolveInvoiceType(selectedCustomer?.invoice_type, method, autoInvoiceByPayment),
       items,
+      payments,
     });
 
     setPending(false);
@@ -670,6 +826,11 @@ export function PosClient({
               <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5">
                 <span className="text-sm font-medium text-foreground">
                   {selectedCustomer.name}
+                  {selectedCustomer.balance > 0 && (
+                    <span className="ml-1.5 text-xs font-normal text-danger">
+                      (debe {formatCurrency(selectedCustomer.balance)})
+                    </span>
+                  )}
                 </span>
                 <button
                   type="button"
@@ -709,25 +870,33 @@ export function PosClient({
                   <Input
                     autoFocus
                     value={customerQuery}
-                    onChange={(e) => setCustomerQuery(e.target.value)}
-                    placeholder="Buscar cliente… (vacío = Consumidor Final)"
+                    onChange={(e) => {
+                      setCustomerQuery(e.target.value);
+                      setCustomerHighlightedIndex(-1);
+                    }}
+                    onKeyDown={handleCustomerSearchKeyDown}
+                    placeholder="Buscar cliente… (↑↓ para elegir, Enter selecciona)"
                     className="pl-10"
                   />
                   {customerResults.length > 0 && (
                     <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
-                      {customerResults.map((customer) => (
+                      {customerResults.map((customer, index) => (
                         <button
                           key={customer.id}
                           type="button"
-                          onClick={() => {
-                            setCustomerId(customer.id);
-                            setCustomerQuery("");
-                            setBrowseCustomers(false);
-                            setShowCustomerSearch(false);
-                          }}
-                          className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
+                          onClick={() => selectCustomer(customer)}
+                          onMouseEnter={() => setCustomerHighlightedIndex(index)}
+                          className={cn(
+                            "flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-sm",
+                            index === customerHighlightedIndex ? "bg-accent" : "hover:bg-muted"
+                          )}
                         >
-                          {customer.name}
+                          <span className="truncate">{customer.name}</span>
+                          {customer.balance > 0 && (
+                            <span className="shrink-0 text-xs text-danger">
+                              debe {formatCurrency(customer.balance)}
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -818,7 +987,11 @@ export function PosClient({
             </Button>
 
             {showExtras && (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  Doble Enter en estos campos también confirma la venta.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5 rounded-xl border border-danger/30 bg-danger-bg/60 p-2.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-danger">Descuento</label>
@@ -889,6 +1062,7 @@ export function PosClient({
                     placeholder="0"
                   />
                 </div>
+                </div>
               </div>
             )}
           </CardContent>
@@ -898,14 +1072,113 @@ export function PosClient({
       <Dialog
         open={showPaymentPicker}
         onClose={closePaymentPicker}
-        title={showCashStep ? "Pago en efectivo" : "¿Cómo paga?"}
+        title={
+          showCashStep
+            ? "Pago en efectivo"
+            : showMixedStep
+              ? "Combinar medios de pago"
+              : "¿Cómo paga?"
+        }
         description={`Total a cobrar: ${formatCurrency(total)}`}
       >
-        {showCashStep ? (
-          <div className="space-y-4">
+        {showMixedStep ? (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (pending) return;
+              if (mixedEntries.length === 0 || Math.abs(mixedRemaining) > 0.01) return;
+              if (mixedFiadoAmount > 0 && !customerId) return;
+              void processSale(paymentMethodForLines(mixedEntries), mixedEntries);
+            }}
+          >
+            <p className="text-xs text-muted-foreground">
+              Asigná cuánto paga con cada medio hasta cubrir el total.
+            </p>
+
+            <div className="space-y-2">
+              {combinableMethods.map((m) => (
+                <div key={m.value} className="flex items-center gap-2">
+                  <m.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="w-28 shrink-0 text-sm text-foreground">{m.label}</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    inputMode="decimal"
+                    value={mixedAmounts[m.value]}
+                    onChange={(e) =>
+                      setMixedAmounts((current) => ({ ...current, [m.value]: e.target.value }))
+                    }
+                    placeholder="0.00"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {mixedFiadoAmount > 0 && (
+              <div className="space-y-1.5 rounded-xl border border-border p-3">
+                <p className="text-xs font-medium text-foreground">Cliente para la parte fiado</p>
+                {renderInlineCustomerPicker()}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
+              <span className="text-muted-foreground">Asignado / Total</span>
+              <span className="font-semibold text-foreground">
+                {formatCurrency(mixedTotalAssigned)} / {formatCurrency(total)}
+              </span>
+            </div>
+            {Math.abs(mixedRemaining) > 0.01 && (
+              <p
+                className={cn(
+                  "text-xs font-medium",
+                  mixedRemaining > 0 ? "text-danger" : "text-warning"
+                )}
+              >
+                {mixedRemaining > 0
+                  ? `Falta asignar ${formatCurrency(mixedRemaining)}`
+                  : `Te pasaste por ${formatCurrency(-mixedRemaining)}`}
+              </p>
+            )}
+
+            {error && (
+              <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowMixedStep(false)}>
+                Atrás
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  pending ||
+                  mixedEntries.length === 0 ||
+                  Math.abs(mixedRemaining) > 0.01 ||
+                  (mixedFiadoAmount > 0 && !customerId)
+                }
+              >
+                {pending ? "Procesando…" : "Confirmar venta (Enter)"}
+              </Button>
+            </div>
+          </form>
+        ) : showCashStep ? (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (pending) return;
+              // Campo vacío = paga justo (el placeholder ya muestra el total).
+              const received = cashReceived === "" ? total : Number(cashReceived);
+              if (received >= total) {
+                void processSale("efectivo");
+              }
+            }}
+          >
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">
-                ¿Con cuánto paga?
+                ¿Con cuánto paga? <span className="font-normal text-muted-foreground">(Enter confirma)</span>
               </label>
               <Input
                 type="number"
@@ -915,16 +1188,6 @@ export function PosClient({
                 autoFocus
                 value={cashReceived}
                 onChange={(e) => setCashReceived(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  e.preventDefault();
-                  if (pending) return;
-                  // Campo vacío = paga justo (el placeholder ya muestra el total).
-                  const received = cashReceived === "" ? total : Number(cashReceived);
-                  if (received >= total) {
-                    void processSale("efectivo");
-                  }
-                }}
                 placeholder={String(total)}
               />
             </div>
@@ -952,11 +1215,39 @@ export function PosClient({
                   )}
                 </div>
               ) : (
-                <div className="flex items-center justify-between rounded-xl bg-danger-bg px-4 py-3">
-                  <span className="text-sm font-medium text-danger">Falta</span>
-                  <span className="text-lg font-bold text-danger">
-                    {formatCurrency(total - Number(cashReceived))}
-                  </span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between rounded-xl bg-danger-bg px-4 py-3">
+                    <span className="text-sm font-medium text-danger">Falta</span>
+                    <span className="text-lg font-bold text-danger">
+                      {formatCurrency(total - Number(cashReceived))}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 rounded-xl border border-border p-3">
+                    <p className="text-xs font-medium text-foreground">
+                      ¿Cargar la diferencia ({formatCurrency(total - Number(cashReceived))}) a la
+                      cuenta de un cliente (fiado)?
+                    </p>
+                    {renderInlineCustomerPicker()}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={!customerId || pending}
+                      onClick={() => {
+                        const efectivoAmount = Number(cashReceived) || 0;
+                        const fiadoAmount = total - efectivoAmount;
+                        const allLines: PaymentLineInput[] = [
+                          { method: "efectivo", amount: efectivoAmount },
+                          { method: "fiado", amount: fiadoAmount },
+                        ];
+                        const lines = allLines.filter((p) => p.amount > 0);
+                        void processSale(paymentMethodForLines(lines), lines);
+                      }}
+                    >
+                      Cargar diferencia a fiado y confirmar venta
+                    </Button>
+                  </div>
                 </div>
               ))}
 
@@ -972,32 +1263,43 @@ export function PosClient({
                 Atrás
               </Button>
               <Button
-                type="button"
+                type="submit"
                 disabled={pending || (cashReceived !== "" && Number(cashReceived) < total)}
-                onClick={() => void processSale("efectivo")}
               >
-                {pending ? "Procesando…" : "Confirmar venta"}
+                {pending ? "Procesando…" : "Confirmar venta (Enter)"}
               </Button>
             </div>
-          </div>
+          </form>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {paymentMethods.map((method) => {
-              const disabled = method.value === "fiado" && !customerId;
-              return (
-                <button
-                  key={method.value}
-                  type="button"
-                  disabled={disabled || pending}
-                  onClick={() => pickMethod(method.value)}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
-                  title={disabled ? "Elegí un cliente para vender fiado" : undefined}
-                >
-                  <method.icon className="h-5 w-5 text-accent-foreground" />
-                  {method.label}
-                </button>
-              );
-            })}
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              {paymentMethods.map((method) => {
+                const disabled = method.value === "fiado" && !customerId;
+                return (
+                  <button
+                    key={method.value}
+                    type="button"
+                    disabled={disabled || pending}
+                    onClick={() => pickMethod(method.value)}
+                    className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
+                    title={disabled ? "Elegí un cliente para vender fiado" : undefined}
+                  >
+                    <method.icon className="h-5 w-5 text-accent-foreground" />
+                    {method.label}
+                    {method.value === "fiado" && (
+                      <span className="text-[10px] font-normal text-muted-foreground">
+                        (requiere cliente)
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {!customerId && (
+              <p className="text-xs text-muted-foreground">
+                Para vender Fiado, primero elegí un cliente (no puede ser Consumidor Final).
+              </p>
+            )}
           </div>
         )}
       </Dialog>
@@ -1011,19 +1313,21 @@ export function PosClient({
         title="Nuevo cliente"
         description="Cargá un cliente rápido para esta venta."
       >
-        <div className="space-y-4">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!creatingCustomer) handleCreateCustomer();
+          }}
+        >
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Nombre</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Nombre <span className="font-normal text-muted-foreground">(Enter confirma)</span>
+            </label>
             <Input
               autoFocus
               value={newCustomerName}
               onChange={(e) => setNewCustomerName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !creatingCustomer) {
-                  e.preventDefault();
-                  handleCreateCustomer();
-                }
-              }}
               placeholder="Nombre y apellido"
             />
           </div>
@@ -1045,15 +1349,11 @@ export function PosClient({
             >
               Cancelar
             </Button>
-            <Button
-              type="button"
-              disabled={creatingCustomer || !newCustomerName.trim()}
-              onClick={handleCreateCustomer}
-            >
-              {creatingCustomer ? "Guardando…" : "Crear y seleccionar"}
+            <Button type="submit" disabled={creatingCustomer || !newCustomerName.trim()}>
+              {creatingCustomer ? "Guardando…" : "Crear y seleccionar (Enter)"}
             </Button>
           </div>
-        </div>
+        </form>
       </Dialog>
 
       <Dialog

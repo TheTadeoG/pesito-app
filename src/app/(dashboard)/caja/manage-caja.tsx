@@ -211,9 +211,17 @@ export function ManageCaja({
             : "Sacá efectivo de tu caja (ej: pago a un proveedor)."
         }
       >
-        <div className="space-y-4">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (amount && !pending) handleMovement(view === "ingreso" ? "ingreso" : "retiro");
+          }}
+        >
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Monto</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Monto <span className="font-normal text-muted-foreground">(Enter confirma)</span>
+            </label>
             <Input
               type="number"
               min={0}
@@ -221,11 +229,6 @@ export function ManageCaja({
               autoFocus
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && amount && !pending) {
-                  handleMovement(view === "ingreso" ? "ingreso" : "retiro");
-                }
-              }}
               placeholder="0.00"
             />
           </div>
@@ -244,14 +247,11 @@ export function ManageCaja({
             <Button type="button" variant="outline" onClick={() => setView("gestionar")}>
               Volver
             </Button>
-            <Button
-              disabled={pending || !amount}
-              onClick={() => handleMovement(view === "ingreso" ? "ingreso" : "retiro")}
-            >
-              {pending ? "Guardando…" : "Confirmar"}
+            <Button type="submit" disabled={pending || !amount}>
+              {pending ? "Guardando…" : "Confirmar (Enter)"}
             </Button>
           </div>
-        </div>
+        </form>
       </Dialog>
 
       <Dialog
@@ -260,7 +260,13 @@ export function ManageCaja({
         title="Cerrar Caja"
         description="Contá todo el efectivo en caja y verificá que coincida con el monto esperado."
       >
-        <div className="space-y-4">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (countedAmount && !pending) handleClose();
+          }}
+        >
           <div className="space-y-2 rounded-xl border border-border px-4 py-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Abierta por:</span>
@@ -283,7 +289,8 @@ export function ManageCaja({
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Monto real contado
+              Monto real contado{" "}
+              <span className="font-normal text-muted-foreground">(Enter confirma)</span>
             </label>
             <Input
               type="number"
@@ -292,11 +299,6 @@ export function ManageCaja({
               autoFocus
               value={countedAmount}
               onChange={(e) => setCountedAmount(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && countedAmount && !pending) {
-                  handleClose();
-                }
-              }}
               placeholder="0.00"
             />
           </div>
@@ -327,12 +329,12 @@ export function ManageCaja({
             <Button type="button" variant="outline" onClick={closeAndReset}>
               Cancelar
             </Button>
-            <Button variant="primary" disabled={pending || !countedAmount} onClick={handleClose}>
+            <Button type="submit" variant="primary" disabled={pending || !countedAmount}>
               <Calculator className="h-4 w-4" />
-              {pending ? "Cerrando…" : "Cerrar Caja"}
+              {pending ? "Cerrando…" : "Cerrar Caja (Enter)"}
             </Button>
           </div>
-        </div>
+        </form>
       </Dialog>
 
       <CajaDetailDialog
