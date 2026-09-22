@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import { resolveInvoiceType } from "@/lib/invoice-labels";
+import { suggestBilletes } from "@/lib/billetes";
 import {
   checkoutSale,
   createCustomerQuick,
@@ -851,11 +852,25 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
             {cashReceived !== "" &&
               (Number(cashReceived) >= total ? (
-                <div className="flex items-center justify-between rounded-xl bg-success-bg px-4 py-3">
-                  <span className="text-sm font-medium text-success">Vuelto</span>
-                  <span className="text-lg font-bold text-success">
-                    {formatCurrency(Number(cashReceived) - total)}
-                  </span>
+                <div className="space-y-2 rounded-xl bg-success-bg px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-success">Vuelto</span>
+                    <span className="text-lg font-bold text-success">
+                      {formatCurrency(Number(cashReceived) - total)}
+                    </span>
+                  </div>
+                  {Number(cashReceived) - total > 0 && (
+                    <div className="flex flex-wrap gap-1.5 border-t border-success/20 pt-2">
+                      {suggestBilletes(Number(cashReceived) - total).map((b) => (
+                        <span
+                          key={b.value}
+                          className="rounded-full bg-card px-2 py-0.5 text-xs font-medium text-success"
+                        >
+                          {b.count} x {formatCurrency(b.value)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center justify-between rounded-xl bg-danger-bg px-4 py-3">

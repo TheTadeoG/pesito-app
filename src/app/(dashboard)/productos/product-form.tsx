@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { ImageIcon, Loader2, Plus, X } from "lucide-react";
+import { ImageIcon, Loader2, Plus, Search, X } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,7 @@ export function ProductForm({
     product?.brand ?? null
   );
   const [brandQuery, setBrandQuery] = useState("");
+  const [browseBrands, setBrowseBrands] = useState(false);
   const [localBrands, setLocalBrands] = useState(brands);
   const [showNewBrand, setShowNewBrand] = useState(false);
   const [newBrandName, setNewBrandName] = useState("");
@@ -76,9 +77,9 @@ export function ProductForm({
 
   const brandResults = useMemo(() => {
     const q = brandQuery.trim().toLowerCase();
-    if (!q) return [];
-    return localBrands.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [localBrands, brandQuery]);
+    if (!q) return browseBrands ? localBrands.slice(0, 50) : [];
+    return localBrands.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 50);
+  }, [localBrands, brandQuery, browseBrands]);
 
   function resetAndClose() {
     onClose();
@@ -148,6 +149,7 @@ export function ProductForm({
     onBrandCreated?.(newBrand);
     setSelectedBrandName(name);
     setBrandQuery("");
+    setBrowseBrands(false);
     setNewBrandName("");
     setShowNewBrand(false);
   }
@@ -277,11 +279,21 @@ export function ProductForm({
             ) : (
               <div className="flex gap-2">
                 <div className="relative flex-1">
+                  <button
+                    type="button"
+                    onClick={() => setBrowseBrands((v) => !v)}
+                    aria-label="Ver todas las marcas"
+                    title="Ver todas las marcas"
+                    className="absolute left-3.5 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
                   <Input
                     id="p-brand"
                     value={brandQuery}
                     onChange={(e) => setBrandQuery(e.target.value)}
                     placeholder="Buscar marca…"
+                    className="pl-10"
                   />
                   {brandResults.length > 0 && (
                     <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
@@ -292,6 +304,7 @@ export function ProductForm({
                           onClick={() => {
                             setSelectedBrandName(b.name);
                             setBrandQuery("");
+                            setBrowseBrands(false);
                           }}
                           className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
                         >

@@ -8,6 +8,7 @@ import {
   ArrowUpCircle,
   Calculator,
   DollarSign,
+  Eye,
   LockOpen,
   ShoppingCart,
   SlidersHorizontal,
@@ -20,7 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 import type { PaymentBreakdownRow } from "@/lib/caja";
-import { addCashMovement, closeCaja } from "@/app/(dashboard)/caja/actions";
+import { addCashMovement, closeCaja, getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
+import { CajaDetailDialog } from "@/app/(dashboard)/caja/caja-detail-dialog";
 
 type View = "closed" | "gestionar" | "ingreso" | "retiro" | "cerrar";
 
@@ -48,6 +50,18 @@ export function ManageCaja({
   const [countedAmount, setCountedAmount] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detail, setDetail] = useState<CajaDetail | null>(null);
+
+  async function openDetail() {
+    setDetailOpen(true);
+    setDetailLoading(true);
+    setDetail(null);
+    const result = await getCajaDetail(cashRegisterId);
+    setDetailLoading(false);
+    setDetail(result.detail ?? null);
+  }
 
   function closeAndReset() {
     setView("closed");
@@ -106,6 +120,10 @@ export function ManageCaja({
             <Button variant="outline" onClick={() => setView("gestionar")}>
               <SlidersHorizontal className="h-4 w-4" />
               Gestionar Caja
+            </Button>
+            <Button variant="outline" onClick={openDetail}>
+              <Eye className="h-4 w-4" />
+              Ver detalle
             </Button>
           </div>
         </CardContent>
@@ -300,6 +318,13 @@ export function ManageCaja({
           </div>
         </div>
       </Dialog>
+
+      <CajaDetailDialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        loading={detailLoading}
+        detail={detail}
+      />
     </>
   );
 }

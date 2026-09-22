@@ -1,8 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
+import { getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
+import { CajaDetailDialog } from "@/app/(dashboard)/caja/caja-detail-dialog";
 import type { PaymentBreakdownRow } from "@/lib/caja";
 
 export interface CajaHistorialRow {
@@ -17,6 +22,19 @@ export interface CajaHistorialRow {
 }
 
 export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detail, setDetail] = useState<CajaDetail | null>(null);
+
+  async function openDetail(cashRegisterId: string) {
+    setDetailOpen(true);
+    setDetailLoading(true);
+    setDetail(null);
+    const result = await getCajaDetail(cashRegisterId);
+    setDetailLoading(false);
+    setDetail(result.detail ?? null);
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -32,7 +50,19 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
             {rows.map((row) => {
               const diff = row.closingAmount - row.expectedAmount;
               return (
-                <div key={row.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                <div
+                  key={row.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openDetail(row.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openDetail(row.id);
+                    }
+                  }}
+                  className="flex cursor-pointer flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted"
+                >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">{row.userLabel}</p>
                     <p className="text-xs text-muted-foreground">
@@ -71,6 +101,13 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
           </div>
         )}
       </CardContent>
+
+      <CajaDetailDialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        loading={detailLoading}
+        detail={detail}
+      />
     </Card>
   );
 }

@@ -3,10 +3,151 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
-import { computeCashOnHand } from "@/lib/caja";
+import { computeCashOnHand, computePaymentBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
+import type { SaleRow } from "@/components/dashboard/ventas-list";
 
 export interface ActionState {
   error?: string;
+}
+
+export interface CajaMovementRow {
+  id: string;
+  type: "ingreso" | "retiro";
+  amount: number;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface CajaDetail {
+  id: string;
+  status: string;
+  userLabel: string;
+  openedAt: string;
+  closedAt: string | null;
+  openingAmount: number;
+  expectedAmount: number;
+  closingAmount: number | null;
+  efectivoSalesTotal: number;
+  ingresosTotal: number;
+  retirosTotal: number;
+  paymentBreakdown: PaymentBreakdownRow[];
+  movements: CajaMovementRow[];
+  saleRows: SaleRow[];
+}
+
+export async function getCajaDetail(
+  cashRegisterId: string
+): Promise<{ error?: string; detail?: CajaDetail }> {
+  const { organization, userId } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data: register } = await supabase
+    .from("cash_registers")
+    .select(
+      "id, user_id, opening_amount, opened_at, closed_at, closing_amount, expected_amount, status"
+    )
+    .eq("id", cashRegisterId)
+    .eq("org_id", organization.id)
+    .maybeSingle();
+
+  if (!register) return { error: "No encontramos la caja." };
+
+  const openingAmount = Number(register.opening_amount);
+
+  const [{ data: movementsRaw }, { data: salesRaw }, expectedAmount, paymentBreakdown] =
+    await Promise.all([
+      supabase
+        .from("cash_movements")
+        .select("id, type, amount, reason, created_at")
+        .eq("cash_register_id", cashRegisterId)
+        .order("created_at"),
+      supabase
+        .from("sales")
+        .select("id, total, payment_method, invoice_type, created_at, customer_id, status")
+        .eq("cash_register_id", cashRegisterId)
+        .order("created_at", { ascending: false }),
+      computeCashOnHand(supabase, cashRegisterId, openingAmount),
+      computePaymentBreakdown(supabase, cashRegisterId),
+    ]);
+
+  const movements: CajaMovementRow[] = (movementsRaw ?? []).map((m) => ({
+    id: m.id,
+    type: m.type,
+    amount: Number(m.amount),
+    reason: m.reason,
+    created_at: m.created_at,
+  }));
+  const ingresosTotal = movements
+    .filter((m) => m.type === "ingreso")
+    .reduce((acc, m) => acc + m.amount, 0);
+  const retirosTotal = movements
+    .filter((m) => m.type === "retiro")
+    .reduce((acc, m) => acc + m.amount, 0);
+
+  const sales = (salesRaw ?? [])
+    .filter((s) => s.status === "completada")
+    .map((s) => ({ ...s, total: Number(s.total) }));
+  const efectivoSalesTotal = sales
+    .filter((s) => s.payment_method === "efectivo")
+    .reduce((acc, s) => acc + s.total, 0);
+
+  const saleIds = sales.map((s) => s.id);
+  const [{ data: itemsRaw }, { data: customersRaw }] = await Promise.all([
+    saleIds.length > 0
+      ? supabase
+          .from("sale_items")
+          .select("sale_id, product_name, quantity")
+          .in("sale_id", saleIds)
+      : Promise.resolve({ data: [] }),
+    (() => {
+      const customerIds = Array.from(
+        new Set(sales.map((s) => s.customer_id).filter((id): id is string => Boolean(id)))
+      );
+      return customerIds.length > 0
+        ? supabase.from("customers").select("id, name").in("id", customerIds)
+        : Promise.resolve({ data: [] });
+    })(),
+  ]);
+
+  const customerNameById = new Map((customersRaw ?? []).map((c) => [c.id, c.name]));
+  const itemsBySale = new Map<string, string[]>();
+  for (const item of itemsRaw ?? []) {
+    const list = itemsBySale.get(item.sale_id) ?? [];
+    const quantity = Number(item.quantity);
+    list.push(quantity > 1 ? `${item.product_name} x${quantity}` : item.product_name);
+    itemsBySale.set(item.sale_id, list);
+  }
+
+  const saleRows: SaleRow[] = sales.map((sale) => ({
+    id: sale.id,
+    created_at: sale.created_at,
+    total: sale.total,
+    payment_method: sale.payment_method,
+    invoice_type: sale.invoice_type,
+    customerName: sale.customer_id
+      ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
+      : "Consumidor Final",
+    itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
+  }));
+
+  return {
+    detail: {
+      id: register.id,
+      status: register.status,
+      userLabel: register.user_id === userId ? "Vos" : `Usuario ${register.user_id.slice(0, 8)}`,
+      openedAt: register.opened_at,
+      closedAt: register.closed_at,
+      openingAmount,
+      expectedAmount: register.status === "cerrada" ? Number(register.expected_amount ?? 0) : expectedAmount,
+      closingAmount: register.closing_amount === null ? null : Number(register.closing_amount),
+      efectivoSalesTotal,
+      ingresosTotal,
+      retirosTotal,
+      paymentBreakdown,
+      movements,
+      saleRows,
+    },
+  };
 }
 
 export async function openCaja(openingAmount: number): Promise<ActionState> {
