@@ -61,9 +61,13 @@ $$;
 create table if not exists login_lockouts (
   email text primary key,
   failed_count integer not null default 0,
+  lockout_count integer not null default 0,
   locked_until timestamptz,
   updated_at timestamptz not null default now()
 );
+
+-- Por si esta migración ya se había corrido antes de agregar lockout_count.
+alter table login_lockouts add column if not exists lockout_count integer not null default 0;
 
 alter table login_lockouts enable row level security;
 -- Sin policies de select/insert/update: sólo se toca a través de las
@@ -93,6 +97,11 @@ begin
 end;
 $$;
 
+-- Cada vez que se dispara un bloqueo, el siguiente dura más: 1 minuto la
+-- primera vez, 3 la segunda, 5 la tercera, 10 la cuarta y de ahí en más
+-- queda fijo en 15. lockout_count se resetea a 0 en cada login exitoso
+-- (register_login_success borra la fila), así que un usuario que se
+-- equivoca alguna vez pero después entra bien no arrastra el castigo.
 create or replace function public.register_login_failure(p_email text)
 returns void
 language plpgsql
@@ -102,20 +111,31 @@ as $$
 declare
   v_email text := lower(p_email);
   v_count integer;
+  v_lockout_count integer;
   v_max_attempts constant integer := 5;
-  v_lockout_minutes constant integer := 15;
+  v_lockout_minutes integer;
 begin
   insert into login_lockouts (email, failed_count, updated_at)
   values (v_email, 1, now())
   on conflict (email) do update
     set failed_count = login_lockouts.failed_count + 1,
         updated_at = now()
-  returning failed_count into v_count;
+  returning failed_count, lockout_count into v_count, v_lockout_count;
 
   if v_count >= v_max_attempts then
+    v_lockout_count := v_lockout_count + 1;
+    v_lockout_minutes := case
+      when v_lockout_count = 1 then 1
+      when v_lockout_count = 2 then 3
+      when v_lockout_count = 3 then 5
+      when v_lockout_count = 4 then 10
+      else 15
+    end;
+
     update login_lockouts
     set locked_until = now() + (v_lockout_minutes || ' minutes')::interval,
-        failed_count = 0
+        failed_count = 0,
+        lockout_count = v_lockout_count
     where email = v_email;
   end if;
 end;
