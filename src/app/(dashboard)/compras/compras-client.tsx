@@ -709,11 +709,26 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
                 onChange={(e) => setAccountAmountInput(e.target.value)}
                 placeholder="0.00"
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                {accountAmount > 0
-                  ? `Pagás ${formatCurrency(total - accountAmount)} ahora, el resto queda a cuenta.`
-                  : "Dejá algo acá si no pagás toda la compra en el momento."}
-              </p>
+              {accountAmount > 0 ? (
+                <div className="mt-2 space-y-1.5 rounded-xl bg-muted/50 px-3.5 py-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Pagás ahora</span>
+                    <span className="text-base font-semibold text-foreground">
+                      {formatCurrency(total - accountAmount)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border pt-1.5">
+                    <span className="text-sm text-muted-foreground">Queda a cuenta corriente</span>
+                    <span className="text-base font-semibold text-warning">
+                      {formatCurrency(accountAmount)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Dejá algo acá si no pagás toda la compra en el momento.
+                </p>
+              )}
             </div>
 
             <div>
