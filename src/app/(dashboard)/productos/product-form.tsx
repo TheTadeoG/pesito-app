@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ImageIcon, Loader2, X } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { createClient } from "@/lib/supabase/client";
 import {
   saveProduct,
   type ProductFormInput,
@@ -23,6 +25,8 @@ const units = [
   { value: "caja", label: "Caja" },
 ];
 
+const MAX_IMAGE_MB = 5;
+
 interface ProductFormProps {
   open: boolean;
   onClose: () => void;
@@ -33,6 +37,7 @@ interface ProductFormProps {
 export function ProductForm({ open, onClose, product, onSaved }: ProductFormProps) {
   const isEdit = Boolean(product);
   const [name, setName] = useState(product?.name ?? "");
+  const [brand, setBrand] = useState(product?.brand ?? "");
   const [barcode, setBarcode] = useState(product?.barcode ?? "");
   const [sku, setSku] = useState(product?.sku ?? "");
   const [price, setPrice] = useState(String(product?.price ?? ""));
@@ -40,11 +45,51 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
   const [stock, setStock] = useState(String(product?.stock ?? "0"));
   const [minStock, setMinStock] = useState(String(product?.min_stock ?? "0"));
   const [unit, setUnit] = useState(product?.unit ?? "u");
+  const [imageUrl, setImageUrl] = useState<string | null>(product?.image_url ?? null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function resetAndClose() {
     onClose();
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setImageError("Elegí un archivo de imagen.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setImageError(`La imagen no puede pesar más de ${MAX_IMAGE_MB}MB.`);
+      return;
+    }
+
+    setImageError(null);
+    setUploadingImage(true);
+
+    const supabase = createClient();
+    const extension = file.name.split(".").pop() || "jpg";
+    const path = `${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, { contentType: file.type, upsert: true });
+
+    setUploadingImage(false);
+
+    if (uploadError) {
+      setImageError("No pudimos subir la imagen.");
+      return;
+    }
+
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    setImageUrl(data.publicUrl);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,6 +100,7 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
     const input: ProductFormInput = {
       id: product?.id,
       name,
+      brand,
       barcode,
       sku,
       price: Number(price) || 0,
@@ -63,6 +109,7 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
       minStock: Number(minStock) || 0,
       unit,
       active: product?.active ?? true,
+      imageUrl,
     };
 
     const result = await saveProduct(input);
@@ -85,9 +132,62 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
       description={isEdit ? product?.name : "Sumá un producto a tu catálogo."}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="p-name">Nombre</Label>
-          <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <div className="flex items-start gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageChange}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingImage}
+            className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground hover:border-primary/50"
+          >
+            {uploadingImage ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <ImageIcon className="h-6 w-6" />
+            )}
+          </button>
+          <div className="min-w-0 flex-1 space-y-1.5 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+            >
+              {imageUrl ? "Cambiar imagen" : "Subir imagen"}
+            </Button>
+            {imageUrl && (
+              <button
+                type="button"
+                onClick={() => setImageUrl(null)}
+                className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-danger"
+              >
+                <X className="h-3 w-3" />
+                Quitar
+              </button>
+            )}
+            {imageError && <p className="text-xs text-danger">{imageError}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="p-name">Nombre</Label>
+            <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+          <div>
+            <Label htmlFor="p-brand">Marca</Label>
+            <Input id="p-brand" value={brand} onChange={(e) => setBrand(e.target.value)} />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -175,7 +275,7 @@ export function ProductForm({ open, onClose, product, onSaved }: ProductFormProp
           <Button type="button" variant="outline" onClick={resetAndClose}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || uploadingImage}>
             {pending ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear producto"}
           </Button>
         </div>

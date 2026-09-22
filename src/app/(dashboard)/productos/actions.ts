@@ -7,6 +7,7 @@ import { requireOrgContext } from "@/lib/org";
 export interface ProductFormInput {
   id?: string;
   name: string;
+  brand: string;
   barcode: string;
   sku: string;
   price: number;
@@ -15,6 +16,7 @@ export interface ProductFormInput {
   minStock: number;
   unit: string;
   active: boolean;
+  imageUrl: string | null;
 }
 
 export interface ActionState {
@@ -44,6 +46,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
   const payload = {
     org_id: organization.id,
     name: input.name.trim(),
+    brand: input.brand.trim() || null,
     barcode: input.barcode.trim() || null,
     sku: input.sku.trim() || null,
     price: input.price,
@@ -51,6 +54,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     min_stock: input.minStock,
     unit: input.unit,
     active: input.active,
+    image_url: input.imageUrl,
   };
 
   if (input.id) {

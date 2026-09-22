@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ImageIcon, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,18 +84,33 @@ export function ProductosClient({ products }: { products: Product[] }) {
                   key={product.id}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-medium text-foreground">{product.name}</p>
-                      {!product.active && <Badge>Inactivo</Badge>}
-                      {product.stock <= product.min_stock && (
-                        <Badge tone="danger">Stock: {product.stock}{product.unit}</Badge>
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground">
+                      {product.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={product.image_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="h-4 w-4" />
                       )}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium text-foreground">{product.name}</p>
+                        {!product.active && <Badge>Inactivo</Badge>}
+                        {product.stock <= product.min_stock && (
+                          <Badge tone="danger">Stock: {product.stock}{product.unit}</Badge>
+                        )}
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {[product.brand, product.barcode, product.sku]
+                          .filter(Boolean)
+                          .join(" · ") || "Sin código"}
+                      </p>
                     </div>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {[product.barcode, product.sku].filter(Boolean).join(" · ") ||
-                        "Sin código"}
-                    </p>
                   </div>
 
                   <div className="flex items-center gap-4">
