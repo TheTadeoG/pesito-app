@@ -15,6 +15,7 @@ export interface CustomerFormInput {
   email: string;
   document: string;
   notes: string;
+  invoiceType: "consumidor_final" | "factura_a" | "factura_b" | "factura_c";
 }
 
 export async function saveCustomer(input: CustomerFormInput): Promise<ActionState> {
@@ -32,6 +33,7 @@ export async function saveCustomer(input: CustomerFormInput): Promise<ActionStat
     email: input.email.trim() || null,
     document: input.document.trim() || null,
     notes: input.notes.trim() || null,
+    invoice_type: input.invoiceType,
   };
 
   if (input.id) {

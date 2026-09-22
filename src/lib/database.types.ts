@@ -111,6 +111,7 @@ export interface Database {
           document: string | null;
           notes: string | null;
           balance: number;
+          invoice_type: "consumidor_final" | "factura_a" | "factura_b" | "factura_c" | null;
           created_at: string;
         };
         Insert: {
@@ -122,6 +123,7 @@ export interface Database {
           document?: string | null;
           notes?: string | null;
           balance?: number;
+          invoice_type?: "consumidor_final" | "factura_a" | "factura_b" | "factura_c" | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;

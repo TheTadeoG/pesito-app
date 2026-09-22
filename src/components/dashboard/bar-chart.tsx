@@ -21,7 +21,7 @@ export function BarChart({
   const max = Math.max(1, ...data.map((d) => d.value));
 
   return (
-    <div className="flex h-40 items-end justify-between gap-1">
+    <div className="flex h-40 items-stretch justify-between gap-1">
       {data.map((d, i) => (
         <div key={`${d.label}-${i}`} className="flex flex-1 flex-col items-center gap-1.5">
           {showValueLabels && (

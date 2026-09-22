@@ -22,8 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { cn, formatCurrency } from "@/lib/utils";
-import { defaultInvoiceTypeByPayment, invoiceTypes, type InvoiceType } from "@/lib/invoice-labels";
+import { formatCurrency } from "@/lib/utils";
+import { resolveInvoiceType } from "@/lib/invoice-labels";
 import {
   checkoutSale,
   createCustomerQuick,
@@ -43,6 +43,7 @@ interface ProductLite {
 interface CustomerLite {
   id: string;
   name: string;
+  invoice_type: string | null;
 }
 
 type CartItem =
@@ -83,8 +84,6 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [showExtras, setShowExtras] = useState(false);
   const [showManualAmount, setShowManualAmount] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
-  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
-  const [invoiceType, setInvoiceType] = useState<InvoiceType>("consumidor_final");
   const [manualLabel, setManualLabel] = useState("");
   const [manualAmount, setManualAmount] = useState("");
   const [pending, setPending] = useState(false);
@@ -179,18 +178,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   function openPaymentPicker() {
     if (cart.length === 0 || pending) return;
     setError(null);
-    setPendingMethod(null);
     setShowPaymentPicker(true);
-  }
-
-  function closePaymentPicker() {
-    setShowPaymentPicker(false);
-    setPendingMethod(null);
-  }
-
-  function pickMethod(method: PaymentMethod) {
-    setPendingMethod(method);
-    setInvoiceType(defaultInvoiceTypeByPayment[method] ?? "consumidor_final");
   }
 
   async function handleCreateCustomer() {
@@ -207,7 +195,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       setCustomerError(result.error ?? "No pudimos crear el cliente.");
       return;
     }
-    setLocalCustomers((current) => [...current, { id: result.id!, name }]);
+    setLocalCustomers((current) => [...current, { id: result.id!, name, invoice_type: null }]);
     setCustomerId(result.id);
     setCustomerQuery("");
     setNewCustomerName("");
@@ -304,12 +292,12 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
   async function processSale(method: PaymentMethod) {
     if (method === "fiado" && !customerId) {
-      closePaymentPicker();
+      setShowPaymentPicker(false);
       setError("Para vender fiado primero elegí un cliente.");
       return;
     }
 
-    closePaymentPicker();
+    setShowPaymentPicker(false);
     setPending(true);
     setError(null);
 
@@ -335,7 +323,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       paymentMethod: method,
       discount,
       surcharge,
-      invoiceType,
+      invoiceType: resolveInvoiceType(selectedCustomer?.invoice_type, method),
       items,
     });
 
@@ -351,7 +339,6 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     setSurcharge(0);
     setCustomerId("");
     setCustomerQuery("");
-    setInvoiceType("consumidor_final");
     router.refresh();
   }
 
@@ -702,66 +689,28 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
 
       <Dialog
         open={showPaymentPicker}
-        onClose={closePaymentPicker}
-        title={pendingMethod ? "Comprobante" : "¿Cómo paga?"}
-        description={
-          pendingMethod
-            ? `${paymentMethods.find((m) => m.value === pendingMethod)?.label} · Total: ${formatCurrency(total)}`
-            : `Total a cobrar: ${formatCurrency(total)}`
-        }
+        onClose={() => setShowPaymentPicker(false)}
+        title="¿Cómo paga?"
+        description={`Total a cobrar: ${formatCurrency(total)}`}
       >
-        {pendingMethod ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-              {invoiceTypes.map((type) => (
-                <button
-                  key={type.value}
-                  type="button"
-                  onClick={() => setInvoiceType(type.value)}
-                  className={cn(
-                    "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
-                    invoiceType === type.value
-                      ? "border-primary bg-accent text-foreground"
-                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                  )}
-                >
-                  {type.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setPendingMethod(null)}>
-                Atrás
-              </Button>
-              <Button
+        <div className="grid grid-cols-2 gap-2">
+          {paymentMethods.map((method) => {
+            const disabled = method.value === "fiado" && !customerId;
+            return (
+              <button
+                key={method.value}
                 type="button"
-                disabled={pending}
-                onClick={() => void processSale(pendingMethod)}
+                disabled={disabled || pending}
+                onClick={() => void processSale(method.value)}
+                className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
+                title={disabled ? "Elegí un cliente para vender fiado" : undefined}
               >
-                {pending ? "Procesando…" : "Confirmar venta"}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {paymentMethods.map((method) => {
-              const disabled = method.value === "fiado" && !customerId;
-              return (
-                <button
-                  key={method.value}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => pickMethod(method.value)}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
-                  title={disabled ? "Elegí un cliente para vender fiado" : undefined}
-                >
-                  <method.icon className="h-5 w-5 text-accent-foreground" />
-                  {method.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
+                <method.icon className="h-5 w-5 text-accent-foreground" />
+                {method.label}
+              </button>
+            );
+          })}
+        </div>
       </Dialog>
 
       <Dialog

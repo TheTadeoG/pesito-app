@@ -34,7 +34,7 @@ export default async function PosPage() {
       .limit(500),
     supabase
       .from("customers")
-      .select("id, name")
+      .select("id, name, invoice_type")
       .eq("org_id", organization.id)
       .order("name")
       .limit(300),

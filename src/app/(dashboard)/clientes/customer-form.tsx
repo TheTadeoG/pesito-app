@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveCustomer, type CustomerFormInput } from "@/app/(dashboard)/clientes/actions";
+import { invoiceTypes, type InvoiceType } from "@/lib/invoice-labels";
 import type { Customer } from "@/lib/types";
 
 interface CustomerFormProps {
@@ -21,6 +22,9 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
   const [email, setEmail] = useState(customer?.email ?? "");
   const [document, setDocument] = useState(customer?.document ?? "");
   const [notes, setNotes] = useState(customer?.notes ?? "");
+  const [invoiceType, setInvoiceType] = useState<InvoiceType>(
+    customer?.invoice_type ?? "consumidor_final"
+  );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +40,7 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
       email,
       document,
       notes,
+      invoiceType,
     };
 
     const result = await saveCustomer(input);
@@ -81,6 +86,26 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+        </div>
+
+        <div>
+          <Label htmlFor="c-invoice-type">Comprobante que necesita</Label>
+          <select
+            id="c-invoice-type"
+            value={invoiceType}
+            onChange={(e) => setInvoiceType(e.target.value as InvoiceType)}
+            className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            {invoiceTypes.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            &quot;Consumidor Final&quot; usa el ticket automático según el medio de pago. Elegí
+            Factura A/B/C solo si este cliente siempre necesita ese comprobante.
+          </p>
         </div>
 
         <div>
