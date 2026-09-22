@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
-import { computeCashOnHand, computePaymentBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
+import {
+  computeCashBreakdown,
+  computeCashOnHand,
+  computePaymentBreakdown,
+  sumCashBreakdown,
+  type PaymentBreakdownRow,
+} from "@/lib/caja";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
@@ -29,9 +35,13 @@ export interface CajaDetail {
   openingAmount: number;
   expectedAmount: number;
   closingAmount: number | null;
-  efectivoSalesTotal: number;
+  // Ventas en efectivo, incluida la parte efectivo de ventas "mixto".
+  salesCashTotal: number;
+  debtPaymentsTotal: number;
   ingresosTotal: number;
   retirosTotal: number;
+  supplierPaymentsTotal: number;
+  cashPurchasesTotal: number;
   paymentBreakdown: PaymentBreakdownRow[];
   movements: CajaMovementRow[];
   saleRows: SaleRow[];
@@ -57,7 +67,7 @@ export async function getCajaDetail(
   const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
   const openingAmount = Number(register.opening_amount);
 
-  const [{ data: movementsRaw }, { data: salesRaw }, expectedAmount, paymentBreakdown] =
+  const [{ data: movementsRaw }, { data: salesRaw }, cashBreakdown, paymentBreakdown] =
     await Promise.all([
       supabase
         .from("cash_movements")
@@ -69,7 +79,7 @@ export async function getCajaDetail(
         .select("id, total, payment_method, invoice_type, created_at, customer_id, status")
         .eq("cash_register_id", cashRegisterId)
         .order("created_at", { ascending: false }),
-      computeCashOnHand(supabase, cashRegisterId, openingAmount),
+      computeCashBreakdown(supabase, cashRegisterId, openingAmount),
       computePaymentBreakdown(supabase, cashRegisterId),
     ]);
 
@@ -80,19 +90,10 @@ export async function getCajaDetail(
     reason: m.reason,
     created_at: m.created_at,
   }));
-  const ingresosTotal = movements
-    .filter((m) => m.type === "ingreso")
-    .reduce((acc, m) => acc + m.amount, 0);
-  const retirosTotal = movements
-    .filter((m) => m.type === "retiro")
-    .reduce((acc, m) => acc + m.amount, 0);
 
   const sales = (salesRaw ?? [])
     .filter((s) => s.status === "completada")
     .map((s) => ({ ...s, total: Number(s.total) }));
-  const efectivoSalesTotal = sales
-    .filter((s) => s.payment_method === "efectivo")
-    .reduce((acc, s) => acc + s.total, 0);
 
   const saleIds = sales.map((s) => s.id);
   const [{ data: itemsRaw }, { data: customersRaw }, fiadoBySale] = await Promise.all([
@@ -143,11 +144,17 @@ export async function getCajaDetail(
       openedAt: register.opened_at,
       closedAt: register.closed_at,
       openingAmount,
-      expectedAmount: register.status === "cerrada" ? Number(register.expected_amount ?? 0) : expectedAmount,
+      expectedAmount:
+        register.status === "cerrada"
+          ? Number(register.expected_amount ?? 0)
+          : sumCashBreakdown(cashBreakdown),
       closingAmount: register.closing_amount === null ? null : Number(register.closing_amount),
-      efectivoSalesTotal,
-      ingresosTotal,
-      retirosTotal,
+      salesCashTotal: cashBreakdown.salesCashTotal,
+      debtPaymentsTotal: cashBreakdown.debtPaymentsTotal,
+      ingresosTotal: cashBreakdown.ingresosTotal,
+      retirosTotal: cashBreakdown.retirosTotal,
+      supplierPaymentsTotal: cashBreakdown.supplierPaymentsTotal,
+      cashPurchasesTotal: cashBreakdown.cashPurchasesTotal,
       paymentBreakdown,
       movements,
       saleRows,

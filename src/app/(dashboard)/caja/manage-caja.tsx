@@ -155,7 +155,7 @@ export function ManageCaja({
       {paymentBreakdown.length > 0 && (
         <Card className="mx-auto max-w-md">
           <CardHeader>
-            <CardTitle className="text-base">Ventas de esta caja por medio de pago</CardTitle>
+            <CardTitle className="text-base">Cobros de esta caja por medio de pago</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {paymentBreakdown.map((row) => (

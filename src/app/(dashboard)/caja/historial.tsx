@@ -69,19 +69,24 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
                       {formatDateTime(row.openedAt)} → {formatDateTime(row.closedAt)}
                     </p>
                     {row.paymentBreakdown.length > 0 && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {row.paymentBreakdown
-                          .map(
-                            (p) =>
-                              `${paymentLabels[p.method] ?? p.method}: ${formatCurrency(p.total)}`
-                          )
-                          .join(" · ")}
-                      </p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {row.paymentBreakdown.map((p) => (
+                          <span
+                            key={p.method}
+                            className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                          >
+                            {paymentLabels[p.method] ?? p.method}: {formatCurrency(p.total)}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  <div className="text-right text-xs text-muted-foreground">
+                  <div className="space-y-0.5 text-right text-xs text-muted-foreground">
                     <p>Inicial: {formatCurrency(row.openingAmount)}</p>
-                    <p>Contado: {formatCurrency(row.closingAmount)}</p>
+                    <p>Efectivo esperado: {formatCurrency(row.expectedAmount)}</p>
+                    <p className="font-medium text-foreground">
+                      Efectivo contado: {formatCurrency(row.closingAmount)}
+                    </p>
                   </div>
                   {diff === 0 ? (
                     <Badge tone="success">

@@ -1,11 +1,37 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 
-export async function computeCashOnHand(
+export interface CashBreakdown {
+  openingAmount: number;
+  // Ventas en efectivo, incluida la parte efectivo de ventas "mixto".
+  salesCashTotal: number;
+  // Cobros de deuda de fiado (desde Clientes) en efectivo.
+  debtPaymentsTotal: number;
+  ingresosTotal: number;
+  retirosTotal: number;
+  // Pagos a proveedores (cuenta corriente) en efectivo.
+  supplierPaymentsTotal: number;
+  // Compras pagadas en efectivo en el momento.
+  cashPurchasesTotal: number;
+}
+
+export function sumCashBreakdown(b: CashBreakdown): number {
+  return (
+    b.openingAmount +
+    b.salesCashTotal +
+    b.debtPaymentsTotal +
+    b.ingresosTotal -
+    b.retirosTotal -
+    b.supplierPaymentsTotal -
+    b.cashPurchasesTotal
+  );
+}
+
+export async function computeCashBreakdown(
   supabase: SupabaseClient<Database>,
   cashRegisterId: string,
   openingAmount: number
-): Promise<number> {
+): Promise<CashBreakdown> {
   const [
     { data: sales },
     { data: mixedSales },
@@ -69,10 +95,12 @@ export async function computeCashOnHand(
     mixedCashTotal = (mixedCash ?? []).reduce((acc, p) => acc + Number(p.amount), 0);
   }
 
-  const movementsNet = (movements ?? []).reduce(
-    (acc, m) => acc + (m.type === "ingreso" ? Number(m.amount) : -Number(m.amount)),
-    0
-  );
+  const ingresosTotal = (movements ?? [])
+    .filter((m) => m.type === "ingreso")
+    .reduce((acc, m) => acc + Number(m.amount), 0);
+  const retirosTotal = (movements ?? [])
+    .filter((m) => m.type === "retiro")
+    .reduce((acc, m) => acc + Number(m.amount), 0);
   const debtPaymentsTotal = (debtPayments ?? []).reduce((acc, p) => acc + Number(p.amount), 0);
   const supplierPaymentsTotal = (supplierPayments ?? []).reduce(
     (acc, p) => acc + Number(p.amount),
@@ -93,15 +121,24 @@ export async function computeCashOnHand(
     );
   }
 
-  return (
-    openingAmount +
-    salesTotal +
-    mixedCashTotal +
-    debtPaymentsTotal -
-    supplierPaymentsTotal -
-    cashPurchasesTotal +
-    movementsNet
-  );
+  return {
+    openingAmount,
+    salesCashTotal: salesTotal + mixedCashTotal,
+    debtPaymentsTotal,
+    ingresosTotal,
+    retirosTotal,
+    supplierPaymentsTotal,
+    cashPurchasesTotal,
+  };
+}
+
+export async function computeCashOnHand(
+  supabase: SupabaseClient<Database>,
+  cashRegisterId: string,
+  openingAmount: number
+): Promise<number> {
+  const breakdown = await computeCashBreakdown(supabase, cashRegisterId, openingAmount);
+  return sumCashBreakdown(breakdown);
 }
 
 export interface PaymentBreakdownRow {
