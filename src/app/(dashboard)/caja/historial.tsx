@@ -2,6 +2,8 @@ import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { paymentLabels } from "@/lib/payment-labels";
+import type { PaymentBreakdownRow } from "@/lib/caja";
 
 export interface CajaHistorialRow {
   id: string;
@@ -11,6 +13,7 @@ export interface CajaHistorialRow {
   openingAmount: number;
   expectedAmount: number;
   closingAmount: number;
+  paymentBreakdown: PaymentBreakdownRow[];
 }
 
 export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
@@ -35,6 +38,16 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
                     <p className="text-xs text-muted-foreground">
                       {formatDateTime(row.openedAt)} → {formatDateTime(row.closedAt)}
                     </p>
+                    {row.paymentBreakdown.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {row.paymentBreakdown
+                          .map(
+                            (p) =>
+                              `${paymentLabels[p.method] ?? p.method}: ${formatCurrency(p.total)}`
+                          )
+                          .join(" · ")}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
                     <p>Inicial: {formatCurrency(row.openingAmount)}</p>

@@ -12,11 +12,13 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { paymentLabels } from "@/lib/payment-labels";
+import type { PaymentBreakdownRow } from "@/lib/caja";
 import { addCashMovement, closeCaja } from "@/app/(dashboard)/caja/actions";
 
 type View = "closed" | "gestionar" | "ingreso" | "retiro" | "cerrar";
@@ -27,6 +29,7 @@ interface ManageCajaProps {
   cashOnHand: number;
   openedAt: string;
   openedByLabel: string;
+  paymentBreakdown: PaymentBreakdownRow[];
 }
 
 export function ManageCaja({
@@ -35,6 +38,7 @@ export function ManageCaja({
   cashOnHand,
   openedAt,
   openedByLabel,
+  paymentBreakdown,
 }: ManageCajaProps) {
   const router = useRouter();
   const [view, setView] = useState<View>("closed");
@@ -99,6 +103,24 @@ export function ManageCaja({
           </Button>
         </CardContent>
       </Card>
+
+      {paymentBreakdown.length > 0 && (
+        <Card className="mx-auto max-w-md">
+          <CardHeader>
+            <CardTitle className="text-base">Ventas de esta caja por medio de pago</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {paymentBreakdown.map((row) => (
+              <div key={row.method} className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {paymentLabels[row.method] ?? row.method}
+                </span>
+                <span className="font-semibold text-foreground">{formatCurrency(row.total)}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog
         open={view === "gestionar"}

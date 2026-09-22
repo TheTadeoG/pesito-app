@@ -21,7 +21,7 @@ export function Sidebar({ orgName, memberLabel, cashRegister }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
       <div className="flex h-16 items-center gap-2 border-b border-border px-5">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
           <Banknote className="h-5 w-5" />

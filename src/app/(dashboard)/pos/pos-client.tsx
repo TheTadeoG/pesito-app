@@ -19,7 +19,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils";
@@ -67,6 +66,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>("");
+  const [customerQuery, setCustomerQuery] = useState("");
   const [discount, setDiscount] = useState(0);
   const [surcharge, setSurcharge] = useState(0);
   const [showExtras, setShowExtras] = useState(false);
@@ -91,6 +91,17 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       )
       .slice(0, 8);
   }, [products, query]);
+
+  const selectedCustomer = useMemo(
+    () => customers.find((c) => c.id === customerId) ?? null,
+    [customers, customerId]
+  );
+
+  const customerResults = useMemo(() => {
+    const q = customerQuery.trim().toLowerCase();
+    if (!q) return [];
+    return customers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [customers, customerQuery]);
 
   const subtotal = cart.reduce((acc, item) => {
     if (item.kind === "product") return acc + item.product.price * item.quantity;
@@ -293,6 +304,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     setDiscount(0);
     setSurcharge(0);
     setCustomerId("");
+    setCustomerQuery("");
     router.refresh();
   }
 
@@ -483,14 +495,50 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
             <p className="text-sm text-muted-foreground">Selecciona el cliente para la venta</p>
           </CardHeader>
           <CardContent>
-            <Select value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-              <option value="">Consumidor Final</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </Select>
+            {selectedCustomer ? (
+              <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedCustomer.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerId("");
+                    setCustomerQuery("");
+                  }}
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Cambiar
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={customerQuery}
+                  onChange={(e) => setCustomerQuery(e.target.value)}
+                  placeholder="Buscar cliente… (vacío = Consumidor Final)"
+                  className="pl-10"
+                />
+                {customerResults.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                    {customerResults.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onClick={() => {
+                          setCustomerId(customer.id);
+                          setCustomerQuery("");
+                        }}
+                        className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-muted"
+                      >
+                        {customer.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

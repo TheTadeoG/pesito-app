@@ -1,6 +1,6 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
-import { computeCashOnHand } from "@/lib/caja";
+import { computeCashOnHand, type PaymentBreakdownRow } from "@/lib/caja";
 import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
 import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/historial";
@@ -26,6 +26,40 @@ export default async function CajaPage() {
       .limit(20),
   ]);
 
+  const allRegisterIds = [
+    ...(register ? [register.id] : []),
+    ...(closedRegisters ?? []).map((r) => r.id),
+  ];
+
+  const { data: salesForBreakdown } =
+    allRegisterIds.length > 0
+      ? await supabase
+          .from("sales")
+          .select("cash_register_id, payment_method, total")
+          .in("cash_register_id", allRegisterIds)
+          .eq("status", "completada")
+      : { data: [] };
+
+  const breakdownByRegister = new Map<string, Map<string, number>>();
+  for (const sale of salesForBreakdown ?? []) {
+    const registerId = sale.cash_register_id;
+    if (!registerId) continue;
+    const methodTotals = breakdownByRegister.get(registerId) ?? new Map<string, number>();
+    methodTotals.set(
+      sale.payment_method,
+      (methodTotals.get(sale.payment_method) ?? 0) + Number(sale.total)
+    );
+    breakdownByRegister.set(registerId, methodTotals);
+  }
+
+  function getBreakdown(registerId: string): PaymentBreakdownRow[] {
+    const methodTotals = breakdownByRegister.get(registerId);
+    if (!methodTotals) return [];
+    return Array.from(methodTotals.entries())
+      .map(([method, total]) => ({ method, total }))
+      .sort((a, b) => b.total - a.total);
+  }
+
   const historialRows: CajaHistorialRow[] = (closedRegisters ?? [])
     .filter((r) => r.closed_at)
     .map((r) => ({
@@ -36,6 +70,7 @@ export default async function CajaPage() {
       openingAmount: Number(r.opening_amount),
       expectedAmount: Number(r.expected_amount ?? 0),
       closingAmount: Number(r.closing_amount ?? 0),
+      paymentBreakdown: getBreakdown(r.id),
     }));
 
   if (!register) {
@@ -58,6 +93,7 @@ export default async function CajaPage() {
         cashOnHand={cashOnHand}
         openedAt={register.opened_at}
         openedByLabel={email ?? "Vos"}
+        paymentBreakdown={getBreakdown(register.id)}
       />
       <CajaHistorial rows={historialRows} />
     </div>
