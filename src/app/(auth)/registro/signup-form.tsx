@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 const initialState: AuthActionState = {};
 
@@ -35,6 +36,17 @@ export function SignupForm({ inviteCode }: { inviteCode?: string }) {
     <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
       {inviteCode && <input type="hidden" name="inviteCode" value={inviteCode} />}
 
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label htmlFor="firstName">Nombre</Label>
+          <Input id="firstName" name="firstName" autoComplete="given-name" required />
+        </div>
+        <div>
+          <Label htmlFor="lastName">Apellido</Label>
+          <Input id="lastName" name="lastName" autoComplete="family-name" required />
+        </div>
+      </div>
+
       {!inviteCode && (
         <div>
           <Label htmlFor="businessName">Nombre de tu kiosco o almacén</Label>
@@ -46,14 +58,8 @@ export function SignupForm({ inviteCode }: { inviteCode?: string }) {
       )}
 
       <div>
-        <Label htmlFor="phone">Teléfono (opcional)</Label>
-        <Input
-          id="phone"
-          name="phone"
-          type="tel"
-          autoComplete="tel"
-          placeholder="11 2345 6789"
-        />
+        <Label htmlFor="phone">Teléfono</Label>
+        <PhoneInput id="phone" name="phone" required />
       </div>
 
       <div>

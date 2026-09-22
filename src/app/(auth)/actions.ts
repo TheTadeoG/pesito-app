@@ -56,12 +56,21 @@ export async function signup(
   // Con invitación el negocio ya existe: no pedimos nombre de negocio y, al
   // confirmar la cuenta, se acepta la invitación en vez de armar una nueva.
   const businessName = String(formData.get("businessName") ?? "").trim();
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-  if (!email || !password || (!inviteCode && !businessName)) {
+  if (
+    !email ||
+    !password ||
+    !firstName ||
+    !lastName ||
+    !phone ||
+    (!inviteCode && !businessName)
+  ) {
     return { error: "Completá todos los campos." };
   }
 
@@ -81,7 +90,12 @@ export async function signup(
     email,
     password,
     options: {
-      data: { business_name: businessName || null, phone: phone || null },
+      data: {
+        business_name: businessName || null,
+        phone,
+        first_name: firstName,
+        last_name: lastName,
+      },
       emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(postSignupPath)}`,
     },
   });

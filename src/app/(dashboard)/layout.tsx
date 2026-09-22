@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { userId, email, organization, membership } = await requireOrgContext();
+  const { userId, email, firstName, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
 
   const { data: openRegister } = await supabase
@@ -34,6 +34,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const memberLabel = `${roleLabels[membership.role] ?? membership.role} · #${organization.id.slice(0, 5)}`;
+  const greetingName =
+    firstName || (membership.username ? membership.username.split("#")[0] : null) || null;
 
   return (
     <ToastProvider>
@@ -45,7 +47,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
           cashRegister={cashRegister}
         />
         <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar orgName={organization.name} userLabel={membership.username ?? email ?? ""} />
+          <Topbar
+            orgName={organization.name}
+            userLabel={membership.username ?? email ?? ""}
+            greetingName={greetingName}
+          />
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>

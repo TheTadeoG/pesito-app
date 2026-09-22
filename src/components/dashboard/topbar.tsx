@@ -11,9 +11,10 @@ import { Button } from "@/components/ui/button";
 interface TopbarProps {
   orgName: string;
   userLabel: string;
+  greetingName?: string | null;
 }
 
-export function Topbar({ orgName, userLabel }: TopbarProps) {
+export function Topbar({ orgName, userLabel, greetingName }: TopbarProps) {
   const pathname = usePathname();
   const page = pageTitles[pathname] ?? { title: orgName, description: "" };
 
@@ -37,7 +38,15 @@ export function Topbar({ orgName, userLabel }: TopbarProps) {
         </Button>
         <ThemeToggle />
         <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
-        <span className="hidden text-sm text-muted-foreground sm:inline">{userLabel}</span>
+        <span className="hidden text-sm text-muted-foreground sm:inline">
+          {greetingName ? (
+            <>
+              Hola, <span className="font-medium text-foreground">{greetingName}</span>
+            </>
+          ) : (
+            userLabel
+          )}
+        </span>
         <form action={signOut}>
           <Button variant="outline" size="icon" aria-label="Cerrar sesión" type="submit">
             <LogOut className="h-4 w-4" />

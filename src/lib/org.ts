@@ -5,6 +5,7 @@ import type { Membership, Organization } from "@/lib/types";
 export interface CurrentOrgContext {
   userId: string;
   email: string | null;
+  firstName: string | null;
   organization: Organization;
   membership: Membership;
 }
@@ -39,9 +40,13 @@ export async function requireOrgContext(): Promise<CurrentOrgContext> {
 
   const { organizations, ...membershipRow } = membership;
 
+  const firstName =
+    typeof user.user_metadata?.first_name === "string" ? user.user_metadata.first_name : null;
+
   return {
     userId: user.id,
     email: user.email ?? null,
+    firstName,
     organization: organizations,
     membership: membershipRow,
   };
