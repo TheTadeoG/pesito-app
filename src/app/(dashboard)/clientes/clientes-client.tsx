@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,9 +76,11 @@ export function ClientesClient({ customers }: { customers: Customer[] }) {
                   key={customer.id}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
                 >
-                  <div className="min-w-0">
+                  <Link href={`/clientes/${customer.id}`} className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="truncate font-medium text-foreground">{customer.name}</p>
+                      <p className="truncate font-medium text-foreground hover:underline">
+                        {customer.name}
+                      </p>
                       {customer.balance > 0 && (
                         <Badge tone="warning">Debe {formatCurrency(customer.balance)}</Badge>
                       )}
@@ -86,7 +89,7 @@ export function ClientesClient({ customers }: { customers: Customer[] }) {
                       {[customer.phone, customer.email].filter(Boolean).join(" · ") ||
                         "Sin datos de contacto"}
                     </p>
-                  </div>
+                  </Link>
 
                   <div className="flex items-center gap-1.5">
                     {customer.balance > 0 && (

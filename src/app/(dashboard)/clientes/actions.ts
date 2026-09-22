@@ -43,6 +43,7 @@ export async function saveCustomer(input: CustomerFormInput): Promise<ActionStat
   }
 
   revalidatePath("/clientes");
+  if (input.id) revalidatePath(`/clientes/${input.id}`);
   revalidatePath("/pos");
   return {};
 }
@@ -81,5 +82,6 @@ export async function registerPayment(id: string, amount: number): Promise<Actio
   if (error) return { error: "No pudimos registrar el pago." };
 
   revalidatePath("/clientes");
+  revalidatePath(`/clientes/${id}`);
   return {};
 }
