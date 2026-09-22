@@ -48,6 +48,31 @@ export function SaleDetailDialog({
             Cliente: <span className="font-medium text-foreground">{sale.customerName}</span>
           </p>
 
+          {sale.payment_method === "mixto" && sale.payments.length > 0 && (
+            <div className="space-y-1.5 rounded-xl border border-border p-3">
+              <p className="text-xs font-medium text-foreground">Cómo pagó</p>
+              {sale.payments.map((p, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span
+                    className={
+                      p.method === "fiado" ? "font-medium text-danger" : "text-muted-foreground"
+                    }
+                  >
+                    {paymentLabels[p.method] ?? p.method}
+                    {p.method === "fiado" && " (a la cuenta del cliente)"}
+                  </span>
+                  <span
+                    className={
+                      p.method === "fiado" ? "font-semibold text-danger" : "font-medium text-foreground"
+                    }
+                  >
+                    {formatCurrency(p.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="divide-y divide-border rounded-xl border border-border">
             {sale.items.map((item, i) => (
               <div

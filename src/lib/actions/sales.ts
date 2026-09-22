@@ -15,6 +15,11 @@ export interface SaleDetailItem {
   subtotal: number;
 }
 
+export interface SalePaymentLine {
+  method: string;
+  amount: number;
+}
+
 export interface SaleDetail {
   id: string;
   created_at: string;
@@ -27,6 +32,7 @@ export interface SaleDetail {
   total: number;
   customerName: string;
   items: SaleDetailItem[];
+  payments: SalePaymentLine[];
 }
 
 export async function getSaleDetail(
@@ -46,7 +52,7 @@ export async function getSaleDetail(
 
   if (!sale) return { error: "No encontramos la venta." };
 
-  const [{ data: itemsRaw }, { data: customerRaw }] = await Promise.all([
+  const [{ data: itemsRaw }, { data: customerRaw }, { data: paymentsRaw }] = await Promise.all([
     supabase
       .from("sale_items")
       .select("product_name, quantity, unit_price, subtotal")
@@ -54,6 +60,7 @@ export async function getSaleDetail(
     sale.customer_id
       ? supabase.from("customers").select("name").eq("id", sale.customer_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase.from("sale_payments").select("method, amount").eq("sale_id", saleId),
   ]);
 
   return {
@@ -73,6 +80,13 @@ export async function getSaleDetail(
         quantity: Number(i.quantity),
         unit_price: Number(i.unit_price),
         subtotal: Number(i.subtotal),
+      })),
+      // Ventas de antes de que existiera sale_payments (o de un único
+      // medio) no tienen filas acá: el diálogo cae de vuelta a mostrar
+      // sólo payment_method en ese caso.
+      payments: (paymentsRaw ?? []).map((p) => ({
+        method: p.method,
+        amount: Number(p.amount),
       })),
     },
   };
