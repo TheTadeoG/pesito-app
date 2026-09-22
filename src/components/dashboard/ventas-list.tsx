@@ -6,8 +6,9 @@ import { Ban } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { voidSale } from "@/lib/actions/sales";
+import { voidSale, getSaleDetail, type SaleDetail } from "@/lib/actions/sales";
 import { invoiceLabels } from "@/lib/invoice-labels";
+import { SaleDetailDialog } from "@/components/dashboard/sale-detail-dialog";
 
 export interface SaleRow {
   id: string;
@@ -31,6 +32,18 @@ export function VentasList({
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailSale, setDetailSale] = useState<SaleDetail | null>(null);
+
+  async function openDetail(saleId: string) {
+    setDetailOpen(true);
+    setDetailLoading(true);
+    setDetailSale(null);
+    const result = await getSaleDetail(saleId);
+    setDetailLoading(false);
+    setDetailSale(result.sale ?? null);
+  }
 
   async function handleVoid(sale: SaleRow) {
     if (
@@ -64,7 +77,19 @@ export function VentasList({
       )}
       <div className="divide-y divide-border">
         {sales.map((sale) => (
-          <div key={sale.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+          <div
+            key={sale.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => openDetail(sale.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openDetail(sale.id);
+              }
+            }}
+            className="flex cursor-pointer flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted"
+          >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-foreground">{sale.customerName}</span>
@@ -83,7 +108,10 @@ export function VentasList({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => handleVoid(sale)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVoid(sale);
+              }}
               disabled={busyId === sale.id}
               aria-label="Anular venta"
             >
@@ -92,6 +120,14 @@ export function VentasList({
           </div>
         ))}
       </div>
+
+      <SaleDetailDialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        loading={detailLoading}
+        sale={detailSale}
+        paymentLabels={paymentLabels}
+      />
     </div>
   );
 }
