@@ -12,7 +12,7 @@ export async function computeCashOnHand(
     { data: movements },
     { data: debtPayments },
     { data: supplierPayments },
-    { data: cashPurchases },
+    { data: cashRegisterPurchases },
   ] = await Promise.all([
     supabase
       .from("sales")
@@ -42,13 +42,13 @@ export async function computeCashOnHand(
       .select("amount")
       .eq("cash_register_id", cashRegisterId)
       .eq("method", "efectivo"),
-    // Compras pagadas en efectivo en el momento (lo que no quedó a cuenta
-    // corriente con el proveedor) también restan.
+    // Compras de esta caja (para ver, abajo, cuánto de eso fue en efectivo).
+    // Una compra puede combinar medios, así que no alcanza con mirar
+    // purchases.payment_method: hay que ir al desglose de purchase_payments.
     supabase
       .from("purchases")
-      .select("total, account_amount")
+      .select("id")
       .eq("cash_register_id", cashRegisterId)
-      .eq("payment_method", "efectivo")
       .eq("status", "completada"),
   ]);
 
@@ -78,10 +78,20 @@ export async function computeCashOnHand(
     (acc, p) => acc + Number(p.amount),
     0
   );
-  const cashPurchasesTotal = (cashPurchases ?? []).reduce(
-    (acc, p) => acc + (Number(p.total) - Number(p.account_amount ?? 0)),
-    0
-  );
+
+  const purchaseIds = (cashRegisterPurchases ?? []).map((p) => p.id);
+  let cashPurchasesTotal = 0;
+  if (purchaseIds.length > 0) {
+    const { data: cashPurchasePayments } = await supabase
+      .from("purchase_payments")
+      .select("amount")
+      .in("purchase_id", purchaseIds)
+      .eq("method", "efectivo");
+    cashPurchasesTotal = (cashPurchasePayments ?? []).reduce(
+      (acc, p) => acc + Number(p.amount),
+      0
+    );
+  }
 
   return (
     openingAmount +

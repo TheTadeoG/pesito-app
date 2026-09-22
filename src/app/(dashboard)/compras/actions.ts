@@ -11,13 +11,24 @@ export interface PurchaseItemInput {
   unit_cost: number;
 }
 
+export type PurchasePaymentMethod =
+  | "efectivo"
+  | "tarjeta"
+  | "transferencia"
+  | "qr"
+  | "cuenta_corriente";
+
+export interface PurchasePaymentInput {
+  method: PurchasePaymentMethod;
+  amount: number;
+}
+
 export interface RegisterPurchaseInput {
   orgId: string;
   supplierId: string | null;
   notes: string;
   items: PurchaseItemInput[];
-  accountAmount?: number;
-  paymentMethod?: "efectivo" | "tarjeta" | "transferencia" | "qr" | null;
+  payments: PurchasePaymentInput[];
 }
 
 export async function registerPurchase(
@@ -42,9 +53,8 @@ export async function registerPurchase(
     p_supplier_id: input.supplierId,
     p_items: input.items as unknown as Json,
     p_notes: input.notes || null,
-    p_account_amount: input.accountAmount ?? 0,
     p_cash_register_id: register?.id ?? null,
-    p_payment_method: input.paymentMethod ?? null,
+    p_payments: input.payments as unknown as Json,
   });
 
   if (error) {
@@ -78,6 +88,7 @@ export interface PurchaseDetail {
   supplierName: string;
   accountAmount: number;
   paymentMethod: string | null;
+  payments: PurchasePaymentInput[];
   items: PurchaseDetailItem[];
 }
 
@@ -98,7 +109,7 @@ export async function getPurchaseDetail(
 
   if (!purchase) return { error: "No encontramos la compra." };
 
-  const [{ data: itemsRaw }, { data: supplierRaw }] = await Promise.all([
+  const [{ data: itemsRaw }, { data: supplierRaw }, { data: paymentsRaw }] = await Promise.all([
     supabase
       .from("purchase_items")
       .select("product_name, quantity, unit_cost, subtotal")
@@ -106,6 +117,7 @@ export async function getPurchaseDetail(
     purchase.supplier_id
       ? supabase.from("suppliers").select("name").eq("id", purchase.supplier_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase.from("purchase_payments").select("method, amount").eq("purchase_id", purchaseId),
   ]);
 
   return {
@@ -119,6 +131,12 @@ export async function getPurchaseDetail(
       supplierName: supplierRaw?.name ?? "Sin proveedor",
       accountAmount: Number(purchase.account_amount ?? 0),
       paymentMethod: purchase.payment_method,
+      // Compras de antes de esta migración no tienen filas acá: el diálogo
+      // cae de vuelta a mostrar sólo el resumen (payment_method/account_amount).
+      payments: (paymentsRaw ?? []).map((p) => ({
+        method: p.method as PurchasePaymentMethod,
+        amount: Number(p.amount),
+      })),
       items: (itemsRaw ?? []).map((i) => ({
         product_name: i.product_name,
         quantity: Number(i.quantity),

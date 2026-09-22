@@ -437,6 +437,28 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["supplier_payments"]["Insert"]>;
         Relationships: [];
       };
+      purchase_payments: {
+        Row: {
+          id: string;
+          org_id: string;
+          purchase_id: string;
+          cash_register_id: string | null;
+          method: "efectivo" | "tarjeta" | "transferencia" | "qr" | "cuenta_corriente";
+          amount: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          purchase_id: string;
+          cash_register_id?: string | null;
+          method: "efectivo" | "tarjeta" | "transferencia" | "qr" | "cuenta_corriente";
+          amount: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["purchase_payments"]["Insert"]>;
+        Relationships: [];
+      };
       invitations: {
         Row: {
           id: string;
@@ -507,9 +529,8 @@ export interface Database {
           p_supplier_id: string | null;
           p_items: Json;
           p_notes?: string | null;
-          p_account_amount?: number;
           p_cash_register_id?: string | null;
-          p_payment_method?: string | null;
+          p_payments?: Json | null;
         };
         Returns: string;
       };

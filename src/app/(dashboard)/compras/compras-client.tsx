@@ -13,6 +13,7 @@ import {
   QrCode,
   Search,
   Trash2,
+  Wallet,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ import {
   registerPurchase,
   createSupplierQuick,
   type PurchaseItemInput,
+  type PurchasePaymentInput,
+  type PurchasePaymentMethod,
 } from "@/app/(dashboard)/compras/actions";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 
@@ -52,13 +55,16 @@ interface CartLine {
   unitCost: number;
 }
 
-type PaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "qr";
-
-const paymentMethods: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
+const paymentMethodOptions: {
+  value: PurchasePaymentMethod;
+  label: string;
+  icon: typeof Banknote;
+}[] = [
   { value: "efectivo", label: "Efectivo", icon: Banknote },
   { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
   { value: "transferencia", label: "Transferencia", icon: Landmark },
   { value: "qr", label: "QR", icon: QrCode },
+  { value: "cuenta_corriente", label: "Cuenta corriente", icon: Wallet },
 ];
 
 interface ComprasClientProps {
@@ -84,8 +90,15 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
   const [creatingSupplier, setCreatingSupplier] = useState(false);
   const [supplierError, setSupplierError] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
-  const [accountAmountInput, setAccountAmountInput] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [splitPayment, setSplitPayment] = useState(false);
+  const [singleMethod, setSingleMethod] = useState<PurchasePaymentMethod | null>(null);
+  const [mixedAmounts, setMixedAmounts] = useState<Record<PurchasePaymentMethod, string>>({
+    efectivo: "",
+    tarjeta: "",
+    transferencia: "",
+    qr: "",
+    cuenta_corriente: "",
+  });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [browseProducts, setBrowseProducts] = useState(false);
@@ -121,8 +134,25 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
 
   const total = cart.reduce((acc, line) => acc + line.quantity * line.unitCost, 0);
   const itemCount = cart.reduce((acc, line) => acc + line.quantity, 0);
-  const accountAmount = Math.min(Math.max(Number(accountAmountInput) || 0, 0), total);
+
+  const mixedEntries: PurchasePaymentInput[] = (
+    Object.entries(mixedAmounts) as [PurchasePaymentMethod, string][]
+  )
+    .map(([method, raw]) => ({ method, amount: Number(raw) || 0 }))
+    .filter((p) => p.amount > 0);
+  const mixedTotalAssigned = mixedEntries.reduce((acc, p) => acc + p.amount, 0);
+  const mixedRemaining = total - mixedTotalAssigned;
+
+  const payments: PurchasePaymentInput[] = splitPayment
+    ? mixedEntries
+    : singleMethod
+      ? [{ method: singleMethod, amount: total }]
+      : [];
+  const accountAmount = payments.find((p) => p.method === "cuenta_corriente")?.amount ?? 0;
   const paidNow = total - accountAmount;
+  const paymentsValid = splitPayment
+    ? mixedEntries.length > 0 && Math.abs(mixedRemaining) < 0.01
+    : Boolean(singleMethod);
 
   function addProduct(product: ProductLite, initialQuantity = 1) {
     setError(null);
@@ -314,6 +344,12 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
     setCart((current) => current.filter((_, i) => i !== index));
   }
 
+  function resetPayment() {
+    setSplitPayment(false);
+    setSingleMethod(null);
+    setMixedAmounts({ efectivo: "", tarjeta: "", transferencia: "", qr: "", cuenta_corriente: "" });
+  }
+
   function handleProductCreated(
     product: {
       id: string;
@@ -360,11 +396,16 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
       setError("Elegí un proveedor antes de registrar la compra.");
       return;
     }
-    if (paidNow > 0 && !paymentMethod) {
-      setError("Elegí cómo pagás la parte que no queda a cuenta corriente.");
+    if (!paymentsValid) {
+      setError(
+        splitPayment
+          ? "Asigná cada medio hasta cubrir el total de la compra."
+          : "Elegí cómo se paga esta compra."
+      );
       return;
     }
-    if (paidNow > 0 && paymentMethod === "efectivo" && !hasOpenCaja) {
+    const hasCash = payments.some((p) => p.method === "efectivo" && p.amount > 0);
+    if (hasCash && !hasOpenCaja) {
       setError("Abrí tu caja para poder pagar en efectivo.");
       return;
     }
@@ -382,8 +423,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
       supplierId: supplierId || null,
       notes,
       items,
-      accountAmount,
-      paymentMethod: paidNow > 0 ? paymentMethod : null,
+      payments,
     });
 
     setPending(false);
@@ -403,8 +443,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
     setSupplierId("");
     setSupplierQuery("");
     setNotes("");
-    setAccountAmountInput("");
-    setPaymentMethod(null);
+    resetPayment();
     router.refresh();
   }
 
@@ -641,7 +680,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                   onClick={() => {
                     setSupplierId("");
                     setSupplierQuery("");
-                    setAccountAmountInput("");
+                    resetPayment();
                   }}
                   className="text-xs font-medium text-muted-foreground hover:text-foreground"
                 >
@@ -719,58 +758,80 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
             </div>
 
             <div>
-              <div className="mb-1 flex items-center justify-between">
+              <div className="mb-1.5 flex items-center justify-between">
                 <label className="text-xs font-medium text-muted-foreground">
-                  A cuenta corriente con el proveedor (opcional)
+                  ¿Cómo se paga esta compra?
                 </label>
-                {total > 0 && accountAmountInput !== String(total) && (
-                  <button
-                    type="button"
-                    onClick={() => setAccountAmountInput(String(total))}
-                    className="text-xs font-medium text-primary hover:underline"
-                  >
-                    Toda la compra
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSplitPayment((v) => !v);
+                    setSingleMethod(null);
+                    setMixedAmounts({
+                      efectivo: "",
+                      tarjeta: "",
+                      transferencia: "",
+                      qr: "",
+                      cuenta_corriente: "",
+                    });
+                  }}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {splitPayment ? "Usar un solo medio" : "Dividir en varios medios"}
+                </button>
               </div>
-              <Input
-                type="number"
-                min={0}
-                max={total}
-                step="0.01"
-                value={accountAmountInput}
-                onChange={(e) => setAccountAmountInput(e.target.value)}
-                placeholder="0.00"
-              />
-              {accountAmount > 0 ? (
-                <div className="mt-2 space-y-1.5 rounded-xl bg-muted/50 px-3.5 py-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Pagás ahora</span>
-                    <span className="text-base font-semibold text-foreground">
-                      {formatCurrency(total - accountAmount)}
+
+              {splitPayment ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Asigná cuánto se paga con cada medio hasta cubrir el total.
+                  </p>
+                  {paymentMethodOptions.map((m) => {
+                    const disabled = m.value === "efectivo" && !hasOpenCaja;
+                    return (
+                      <div key={m.value} className="flex items-center gap-2">
+                        <m.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="w-28 shrink-0 text-sm text-foreground">{m.label}</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          disabled={disabled}
+                          title={disabled ? "Abrí tu caja para pagar en efectivo" : undefined}
+                          value={mixedAmounts[m.value]}
+                          onChange={(e) =>
+                            setMixedAmounts((current) => ({
+                              ...current,
+                              [m.value]: e.target.value,
+                            }))
+                          }
+                          placeholder="0.00"
+                        />
+                      </div>
+                    );
+                  })}
+                  <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
+                    <span className="text-muted-foreground">Asignado / Total</span>
+                    <span className="font-semibold text-foreground">
+                      {formatCurrency(mixedTotalAssigned)} / {formatCurrency(total)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-border pt-1.5">
-                    <span className="text-sm text-muted-foreground">Queda a cuenta corriente</span>
-                    <span className="text-base font-semibold text-warning">
-                      {formatCurrency(accountAmount)}
-                    </span>
-                  </div>
+                  {Math.abs(mixedRemaining) > 0.01 && (
+                    <p
+                      className={cn(
+                        "text-xs font-medium",
+                        mixedRemaining > 0 ? "text-danger" : "text-warning"
+                      )}
+                    >
+                      {mixedRemaining > 0
+                        ? `Falta asignar ${formatCurrency(mixedRemaining)}`
+                        : `Te pasaste por ${formatCurrency(-mixedRemaining)}`}
+                    </p>
+                  )}
                 </div>
               ) : (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Dejá algo acá si no pagás toda la compra en el momento.
-                </p>
-              )}
-            </div>
-
-            {paidNow > 0 && (
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  ¿Cómo pagás {formatCurrency(paidNow)} ahora?
-                </label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {paymentMethods.map((m) => {
+                <div className="grid grid-cols-5 gap-1.5">
+                  {paymentMethodOptions.map((m) => {
                     const disabled = m.value === "efectivo" && !hasOpenCaja;
                     return (
                       <button
@@ -778,12 +839,12 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                         type="button"
                         disabled={disabled}
                         title={disabled ? "Abrí tu caja para pagar en efectivo" : undefined}
-                        onClick={() => setPaymentMethod(m.value)}
+                        onClick={() => setSingleMethod(m.value)}
                         className={cn(
-                          "flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-xs font-medium transition-colors",
+                          "flex flex-col items-center gap-1 rounded-xl border px-1.5 py-2.5 text-center text-[11px] font-medium transition-colors",
                           disabled
                             ? "cursor-not-allowed border-border text-muted-foreground/50"
-                            : paymentMethod === m.value
+                            : singleMethod === m.value
                               ? "border-primary bg-accent text-accent-foreground"
                               : "border-border text-foreground hover:bg-muted"
                         )}
@@ -794,13 +855,37 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                     );
                   })}
                 </div>
-                {!hasOpenCaja && (
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    Abrí tu caja para poder pagar en efectivo.
-                  </p>
-                )}
-              </div>
-            )}
+              )}
+              {!hasOpenCaja && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Abrí tu caja para poder pagar en efectivo.
+                </p>
+              )}
+
+              {accountAmount > 0 && (
+                <div className="mt-2 space-y-1.5 rounded-xl bg-muted/50 px-3.5 py-3">
+                  {paidNow > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Pagás ahora</span>
+                      <span className="text-base font-semibold text-foreground">
+                        {formatCurrency(paidNow)}
+                      </span>
+                    </div>
+                  )}
+                  <div
+                    className={cn(
+                      "flex items-center justify-between",
+                      paidNow > 0 && "border-t border-border pt-1.5"
+                    )}
+                  >
+                    <span className="text-sm text-muted-foreground">Queda a cuenta corriente</span>
+                    <span className="text-base font-semibold text-warning">
+                      {formatCurrency(accountAmount)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -820,12 +905,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
             <Button
               className="w-full"
               size="lg"
-              disabled={
-                cart.length === 0 ||
-                pending ||
-                !supplierId ||
-                (paidNow > 0 && !paymentMethod)
-              }
+              disabled={cart.length === 0 || pending || !supplierId || !paymentsValid}
               onClick={handleConfirm}
             >
               <Package className="h-4 w-4" />

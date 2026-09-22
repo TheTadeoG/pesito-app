@@ -66,28 +66,60 @@ export function PurchaseDetailDialog({
             <p className="text-sm text-muted-foreground">Notas: {purchase.notes}</p>
           )}
 
-          <div className="space-y-1.5 border-t border-border pt-3">
-            <div className="flex justify-between text-base font-semibold text-foreground">
-              <span>Total</span>
-              <span>{formatCurrency(purchase.total)}</span>
+          {purchase.payments.length > 0 ? (
+            <div className="space-y-1.5 rounded-xl border border-border p-3">
+              <p className="text-xs font-medium text-foreground">Cómo se pagó</p>
+              {purchase.payments.map((p, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span
+                    className={
+                      p.method === "cuenta_corriente"
+                        ? "font-medium text-warning"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {p.method === "cuenta_corriente"
+                      ? "A cuenta corriente"
+                      : paymentLabels[p.method] ?? p.method}
+                  </span>
+                  <span
+                    className={
+                      p.method === "cuenta_corriente"
+                        ? "font-semibold text-warning"
+                        : "font-medium text-foreground"
+                    }
+                  >
+                    {formatCurrency(p.amount)}
+                  </span>
+                </div>
+              ))}
             </div>
-            {purchase.total - purchase.accountAmount > 0 && (
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>
-                  Pagado
-                  {purchase.paymentMethod && ` con ${paymentLabels[purchase.paymentMethod] ?? purchase.paymentMethod}`}
-                </span>
-                <span className="font-medium text-foreground">
-                  {formatCurrency(purchase.total - purchase.accountAmount)}
-                </span>
-              </div>
-            )}
-            {purchase.accountAmount > 0 && (
-              <div className="flex justify-between text-sm text-warning">
-                <span>A cuenta corriente</span>
-                <span className="font-medium">{formatCurrency(purchase.accountAmount)}</span>
-              </div>
-            )}
+          ) : (
+            <div className="space-y-1.5 rounded-xl border border-border p-3">
+              {purchase.total - purchase.accountAmount > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>
+                    Pagado
+                    {purchase.paymentMethod &&
+                      ` con ${paymentLabels[purchase.paymentMethod] ?? purchase.paymentMethod}`}
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {formatCurrency(purchase.total - purchase.accountAmount)}
+                  </span>
+                </div>
+              )}
+              {purchase.accountAmount > 0 && (
+                <div className="flex justify-between text-sm text-warning">
+                  <span>A cuenta corriente</span>
+                  <span className="font-medium">{formatCurrency(purchase.accountAmount)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-between border-t border-border pt-3 text-base font-semibold text-foreground">
+            <span>Total</span>
+            <span>{formatCurrency(purchase.total)}</span>
           </div>
         </div>
       )}
