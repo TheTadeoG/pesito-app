@@ -771,7 +771,6 @@ export function PosClient({
                     setHighlightedIndex(-1);
                   }}
                   onKeyDown={handleSearchKeyDown}
-                  onFocus={() => setBrowseProducts(true)}
                   placeholder="Escaneá el código de barras o buscá por nombre… (↑↓, Enter agrega)"
                   className={query ? "pl-10 pr-9" : "pl-10"}
                 />

@@ -508,7 +508,6 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                     setHighlightedIndex(-1);
                   }}
                   onKeyDown={handleSearchKeyDown}
-                  onFocus={() => setBrowseProducts(true)}
                   placeholder="Buscar producto o escanear código... (↑↓ para elegir, Enter para agregar)"
                   className="pl-10"
                 />
