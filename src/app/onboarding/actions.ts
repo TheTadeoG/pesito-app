@@ -27,6 +27,18 @@ export async function createKiosco(
     redirect("/login");
   }
 
+  // Cuenta interna (usuario#código, sin email real): se creó para sumarse
+  // al equipo de otro negocio, no para arrancar uno propio. Si alguna vez
+  // la sacan de ese equipo, esta cuenta queda sin membresías pero no puede
+  // usarse para esto — evita que alguien arranque un negocio "por las
+  // dudas" con credenciales que en realidad le dio su empleador.
+  if (typeof user.user_metadata?.internal_username === "string") {
+    return {
+      error:
+        "Esta cuenta se creó como parte de un equipo y no puede usarse para dar de alta un negocio propio. Si necesitás una cuenta propia, registrate con tu email en /registro.",
+    };
+  }
+
   const baseSlug = slugify(trimmedName) || "negocio";
   const slug = `${baseSlug}-${user.id.slice(0, 6)}`;
   const phone = typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone : null;

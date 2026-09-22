@@ -109,28 +109,12 @@ export async function removeMember(membershipId: string): Promise<ActionState> {
   const { error } = await supabase.rpc("remove_member", { p_membership_id: membershipId });
   if (error) return { error: "No pudimos quitar al usuario." };
 
-  // Cuenta interna (usuario#código, creada sólo para este equipo): si tras
-  // esto ya no le queda ninguna membresía en ningún negocio, no dejamos la
-  // cuenta viva — si no, podría loguearse igual y armarse su propio negocio
-  // desde /onboarding con el mismo usuario y contraseña que vos le diste.
-  if (memberRow.username) {
-    try {
-      const admin = createAdminClient();
-      const { data: remaining } = await admin
-        .from("memberships")
-        .select("id")
-        .eq("user_id", memberRow.user_id)
-        .limit(1);
-
-      if (!remaining || remaining.length === 0) {
-        await admin.auth.admin.deleteUser(memberRow.user_id);
-      }
-    } catch {
-      // Sin SUPABASE_SERVICE_ROLE_KEY configurada no podemos borrar la
-      // cuenta de auth; el usuario ya quedó fuera del equipo igual, que es
-      // lo importante — esto es sólo una limpieza extra.
-    }
-  }
+  // A propósito NO se borra la cuenta de auth acá, aunque sea una cuenta
+  // interna (usuario#código) sin membresías después de esto: si la
+  // persona vuelve al equipo más adelante, es mejor poder reincorporarla
+  // en vez de haber borrado el usuario para siempre. Igual queda protegida
+  // — sin membresías no puede entrar a ningún negocio, y no puede usar esa
+  // cuenta para darse de alta un negocio propio (ver onboarding/actions.ts).
 
   revalidatePath("/usuarios");
   revalidatePath("/caja");
