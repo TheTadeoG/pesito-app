@@ -180,6 +180,11 @@ export function ManageCaja({
               autoFocus
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && amount && !pending) {
+                  handleMovement(view === "ingreso" ? "ingreso" : "retiro");
+                }
+              }}
               placeholder="0.00"
             />
           </div>
@@ -246,6 +251,11 @@ export function ManageCaja({
               autoFocus
               value={countedAmount}
               onChange={(e) => setCountedAmount(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && countedAmount && !pending) {
+                  handleClose();
+                }
+              }}
               placeholder="0.00"
             />
           </div>
