@@ -72,26 +72,23 @@ export function SubscriptionSection({
         </ul>
 
         {subscription.trialActive && subscription.proTrialEndsAt && (
-          <div className="space-y-3 rounded-xl border border-warning/30 bg-warning-bg p-4">
-            <div>
-              <p className="text-sm font-semibold text-warning">
-                Funciones Pro de prueba — se desactivan el{" "}
+          <div className="space-y-2.5">
+            <p className="text-xs text-muted-foreground">
+              Además, por tu prueba, hasta el{" "}
+              <span className="font-medium text-foreground">
                 {formatDateTime(subscription.proTrialEndsAt)}
-              </p>
-              <p className="mt-0.5 text-xs text-warning/80">
-                Hoy tenés esto de prestado gracias a la prueba. Cuando termine, volvés al Plan
-                Gratis y dejás de verlo, salvo que te pases a un plan pago antes.
-              </p>
-            </div>
-            <ul className="grid gap-2 sm:grid-cols-2">
+              </span>
+              :
+            </p>
+            <ul className="grid gap-2.5 sm:grid-cols-2">
               {trialFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-2 text-sm text-warning">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                   <span>
                     {feature}
-                    <span className="ml-1.5 inline-flex rounded-full bg-warning/15 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-warning">
-                      Pro
-                    </span>
+                    <Badge tone="accent" className="ml-1.5 align-middle">
+                      PRO
+                    </Badge>
                   </span>
                 </li>
               ))}
