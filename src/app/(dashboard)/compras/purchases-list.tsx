@@ -1,23 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Ban } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { getPurchaseDetail, type PurchaseDetail } from "@/app/(dashboard)/compras/actions";
+import {
+  getPurchaseDetail,
+  voidPurchase,
+  type PurchaseDetail,
+} from "@/app/(dashboard)/compras/actions";
 import { PurchaseDetailDialog } from "@/app/(dashboard)/compras/purchase-detail-dialog";
 
 export interface PurchaseRow {
   id: string;
   created_at: string;
   total: number;
+  status: string;
   supplierName: string;
   itemsSummary: string;
   notes: string | null;
 }
 
 export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
+  const router = useRouter();
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailPurchase, setDetailPurchase] = useState<PurchaseDetail | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function openDetail(purchaseId: string) {
     setDetailOpen(true);
@@ -26,6 +38,25 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
     const result = await getPurchaseDetail(purchaseId);
     setDetailLoading(false);
     setDetailPurchase(result.purchase ?? null);
+  }
+
+  async function handleVoid(purchase: PurchaseRow) {
+    if (
+      !confirm(
+        `¿Anular la compra de ${formatCurrency(purchase.total)}? Se revierte el stock sumado y no se puede deshacer.`
+      )
+    ) {
+      return;
+    }
+    setBusyId(purchase.id);
+    setError(null);
+    const result = await voidPurchase(purchase.id);
+    setBusyId(null);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    router.refresh();
   }
 
   if (purchases.length === 0) {
@@ -38,6 +69,9 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
 
   return (
     <div>
+      {error && (
+        <p className="mx-5 mt-3 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
+      )}
       <div className="divide-y divide-border">
         {purchases.map((purchase) => (
           <div
@@ -54,7 +88,10 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
             className="flex cursor-pointer flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted"
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground">{purchase.supplierName}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-foreground">{purchase.supplierName}</p>
+                {purchase.status === "anulada" && <Badge tone="danger">Anulada</Badge>}
+              </div>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {formatDateTime(purchase.created_at)} · {purchase.itemsSummary}
               </p>
@@ -63,6 +100,18 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
               )}
             </div>
             <span className="font-semibold text-foreground">{formatCurrency(purchase.total)}</span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVoid(purchase);
+              }}
+              disabled={busyId === purchase.id || purchase.status === "anulada"}
+              aria-label="Anular compra"
+            >
+              <Ban className="h-4 w-4 text-danger" />
+            </Button>
           </div>
         ))}
       </div>

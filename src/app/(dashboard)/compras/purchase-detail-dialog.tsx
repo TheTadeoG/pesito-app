@@ -1,4 +1,5 @@
 import { Dialog } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import type { PurchaseDetail } from "@/app/(dashboard)/compras/actions";
 
@@ -32,10 +33,13 @@ export function PurchaseDetailDialog({
 
       {!loading && purchase && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Proveedor:{" "}
-            <span className="font-medium text-foreground">{purchase.supplierName}</span>
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              Proveedor:{" "}
+              <span className="font-medium text-foreground">{purchase.supplierName}</span>
+            </p>
+            {purchase.status === "anulada" && <Badge tone="danger">Anulada</Badge>}
+          </div>
 
           <div className="divide-y divide-border rounded-xl border border-border">
             {purchase.items.map((item, i) => (

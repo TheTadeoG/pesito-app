@@ -21,7 +21,7 @@ export default async function ComprasPage() {
     supabase.from("suppliers").select("id, name").eq("org_id", organization.id).order("name"),
     supabase
       .from("purchases")
-      .select("id, total, notes, created_at, supplier_id")
+      .select("id, total, notes, status, created_at, supplier_id")
       .eq("org_id", organization.id)
       .order("created_at", { ascending: false })
       .limit(RECENT_PURCHASES_LIMIT),
@@ -60,6 +60,7 @@ export default async function ComprasPage() {
     id: purchase.id,
     created_at: purchase.created_at,
     total: purchase.total,
+    status: purchase.status,
     supplierName: purchase.supplier_id
       ? supplierNameById.get(purchase.supplier_id) ?? "Proveedor eliminado"
       : "Sin proveedor",

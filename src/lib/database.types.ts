@@ -310,6 +310,7 @@ export interface Database {
           subtotal: number;
           total: number;
           notes: string | null;
+          status: "completada" | "anulada";
           created_at: string;
         };
         Insert: {
@@ -320,6 +321,7 @@ export interface Database {
           subtotal?: number;
           total?: number;
           notes?: string | null;
+          status?: "completada" | "anulada";
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["purchases"]["Insert"]>;
@@ -383,6 +385,10 @@ export interface Database {
           p_notes?: string | null;
         };
         Returns: string;
+      };
+      void_purchase: {
+        Args: { p_purchase_id: string };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

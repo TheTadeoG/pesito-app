@@ -58,6 +58,7 @@ export interface PurchaseDetail {
   subtotal: number;
   total: number;
   notes: string | null;
+  status: string;
   supplierName: string;
   items: PurchaseDetailItem[];
 }
@@ -70,7 +71,7 @@ export async function getPurchaseDetail(
 
   const { data: purchase } = await supabase
     .from("purchases")
-    .select("id, created_at, subtotal, total, notes, supplier_id")
+    .select("id, created_at, subtotal, total, notes, status, supplier_id")
     .eq("id", purchaseId)
     .eq("org_id", organization.id)
     .maybeSingle();
@@ -94,6 +95,7 @@ export async function getPurchaseDetail(
       subtotal: Number(purchase.subtotal),
       total: Number(purchase.total),
       notes: purchase.notes,
+      status: purchase.status,
       supplierName: supplierRaw?.name ?? "Sin proveedor",
       items: (itemsRaw ?? []).map((i) => ({
         product_name: i.product_name,
@@ -103,6 +105,22 @@ export async function getPurchaseDetail(
       })),
     },
   };
+}
+
+export async function voidPurchase(purchaseId: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("void_purchase", { p_purchase_id: purchaseId });
+
+  if (error) {
+    return { error: error.message || "No pudimos anular la compra." };
+  }
+
+  revalidatePath("/compras");
+  revalidatePath("/inventario");
+  revalidatePath("/productos");
+  revalidatePath("/reportes");
+
+  return {};
 }
 
 export async function createSupplierQuick(
