@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 import { getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
 import { CajaDetailDialog } from "@/app/(dashboard)/caja/caja-detail-dialog";
@@ -18,6 +18,8 @@ export interface CajaHistorialRow {
   openingAmount: number;
   expectedAmount: number;
   closingAmount: number;
+  // Retiros manuales + compras y pagos a proveedores pagados en efectivo.
+  egresosTotal: number;
   paymentBreakdown: PaymentBreakdownRow[];
 }
 
@@ -49,6 +51,9 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
           <div className="divide-y divide-border">
             {rows.map((row) => {
               const diff = row.closingAmount - row.expectedAmount;
+              const openedDate = formatDate(row.openedAt);
+              const closedDate = formatDate(row.closedAt);
+              const sameDay = openedDate === closedDate;
               return (
                 <div
                   key={row.id}
@@ -63,21 +68,37 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
                   }}
                   className="flex cursor-pointer flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted sm:flex-nowrap"
                 >
+                  <div className="w-20 shrink-0">
+                    <p className="text-sm font-semibold text-foreground">{openedDate}</p>
+                    {!sameDay && (
+                      <p className="text-xs text-muted-foreground">→ {closedDate}</p>
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">{row.userLabel}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDateTime(row.openedAt)} → {formatDateTime(row.closedAt)}
+                      {formatTime(row.openedAt)} → {formatTime(row.closedAt)}
                     </p>
-                    {row.paymentBreakdown.length > 0 && (
+                    {(row.paymentBreakdown.length > 0 || row.egresosTotal > 0) && (
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {row.paymentBreakdown.map((p) => (
                           <span
                             key={p.method}
-                            className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                              p.method === "fiado"
+                                ? "bg-warning-bg text-warning"
+                                : "bg-muted text-muted-foreground"
+                            )}
                           >
                             {paymentLabels[p.method] ?? p.method}: {formatCurrency(p.total)}
                           </span>
                         ))}
+                        {row.egresosTotal > 0 && (
+                          <span className="rounded-full bg-danger-bg px-2 py-0.5 text-[11px] font-medium text-danger">
+                            Egresos: {formatCurrency(row.egresosTotal)}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

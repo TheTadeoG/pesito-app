@@ -32,6 +32,22 @@ export function formatDateTime(value: string | Date) {
   }).format(date);
 }
 
+export function formatDate(value: string | Date) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "short",
+    timeZone: "America/Argentina/Buenos_Aires",
+  }).format(date);
+}
+
+export function formatTime(value: string | Date) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("es-AR", {
+    timeStyle: "short",
+    timeZone: "America/Argentina/Buenos_Aires",
+  }).format(date);
+}
+
 export function capitalizeWords(value: string) {
   return value
     .split(" ")

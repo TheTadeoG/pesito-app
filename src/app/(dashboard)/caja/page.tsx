@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
-import { computeCashOnHand, type PaymentBreakdownRow } from "@/lib/caja";
+import {
+  computeCashBreakdown,
+  computeCashOnHand,
+  computePaymentBreakdown,
+  type PaymentBreakdownRow,
+} from "@/lib/caja";
 import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
@@ -44,47 +49,42 @@ export default async function CajaPage() {
 
   const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
 
-  const { data: salesForBreakdown } =
-    allRegisterIds.length > 0
-      ? await supabase
-          .from("sales")
-          .select("cash_register_id, payment_method, total")
-          .in("cash_register_id", allRegisterIds)
-          .eq("status", "completada")
-      : { data: [] };
-
-  const breakdownByRegister = new Map<string, Map<string, number>>();
-  for (const sale of salesForBreakdown ?? []) {
-    const registerId = sale.cash_register_id;
-    if (!registerId) continue;
-    const methodTotals = breakdownByRegister.get(registerId) ?? new Map<string, number>();
-    methodTotals.set(
-      sale.payment_method,
-      (methodTotals.get(sale.payment_method) ?? 0) + Number(sale.total)
-    );
-    breakdownByRegister.set(registerId, methodTotals);
-  }
+  const breakdownByRegister = new Map<string, PaymentBreakdownRow[]>(
+    await Promise.all(
+      allRegisterIds.map(
+        async (id): Promise<[string, PaymentBreakdownRow[]]> => [
+          id,
+          await computePaymentBreakdown(supabase, id),
+        ]
+      )
+    )
+  );
 
   function getBreakdown(registerId: string): PaymentBreakdownRow[] {
-    const methodTotals = breakdownByRegister.get(registerId);
-    if (!methodTotals) return [];
-    return Array.from(methodTotals.entries())
-      .map(([method, total]) => ({ method, total }))
-      .sort((a, b) => b.total - a.total);
+    return breakdownByRegister.get(registerId) ?? [];
   }
 
-  const historialRows: CajaHistorialRow[] = (closedRegisters ?? [])
-    .filter((r) => r.closed_at)
-    .map((r) => ({
-      id: r.id,
-      userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
-      openedAt: r.opened_at,
-      closedAt: r.closed_at as string,
-      openingAmount: Number(r.opening_amount),
-      expectedAmount: Number(r.expected_amount ?? 0),
-      closingAmount: Number(r.closing_amount ?? 0),
-      paymentBreakdown: getBreakdown(r.id),
-    }));
+  const closedRows = (closedRegisters ?? []).filter((r) => r.closed_at);
+  const egresosByRegister = new Map<string, number>(
+    await Promise.all(
+      closedRows.map(async (r): Promise<[string, number]> => {
+        const b = await computeCashBreakdown(supabase, r.id, Number(r.opening_amount));
+        return [r.id, b.retirosTotal + b.cashPurchasesTotal + b.supplierPaymentsTotal];
+      })
+    )
+  );
+
+  const historialRows: CajaHistorialRow[] = closedRows.map((r) => ({
+    id: r.id,
+    userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
+    openedAt: r.opened_at,
+    closedAt: r.closed_at as string,
+    openingAmount: Number(r.opening_amount),
+    expectedAmount: Number(r.expected_amount ?? 0),
+    closingAmount: Number(r.closing_amount ?? 0),
+    egresosTotal: egresosByRegister.get(r.id) ?? 0,
+    paymentBreakdown: getBreakdown(r.id),
+  }));
 
   let teamOverview: ReactNode = null;
   if (isManager) {
