@@ -346,6 +346,8 @@ export interface Database {
           notes: string | null;
           status: "completada" | "anulada";
           account_amount: number;
+          cash_register_id: string | null;
+          payment_method: "efectivo" | "tarjeta" | "transferencia" | "qr" | null;
           created_at: string;
         };
         Insert: {
@@ -358,6 +360,8 @@ export interface Database {
           notes?: string | null;
           status?: "completada" | "anulada";
           account_amount?: number;
+          cash_register_id?: string | null;
+          payment_method?: "efectivo" | "tarjeta" | "transferencia" | "qr" | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["purchases"]["Insert"]>;
@@ -504,6 +508,8 @@ export interface Database {
           p_items: Json;
           p_notes?: string | null;
           p_account_amount?: number;
+          p_cash_register_id?: string | null;
+          p_payment_method?: string | null;
         };
         Returns: string;
       };

@@ -1,6 +1,7 @@
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { paymentLabels } from "@/lib/payment-labels";
 import type { PurchaseDetail } from "@/app/(dashboard)/compras/actions";
 
 export function PurchaseDetailDialog({
@@ -70,6 +71,17 @@ export function PurchaseDetailDialog({
               <span>Total</span>
               <span>{formatCurrency(purchase.total)}</span>
             </div>
+            {purchase.total - purchase.accountAmount > 0 && (
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>
+                  Pagado
+                  {purchase.paymentMethod && ` con ${paymentLabels[purchase.paymentMethod] ?? purchase.paymentMethod}`}
+                </span>
+                <span className="font-medium text-foreground">
+                  {formatCurrency(purchase.total - purchase.accountAmount)}
+                </span>
+              </div>
+            )}
             {purchase.accountAmount > 0 && (
               <div className="flex justify-between text-sm text-warning">
                 <span>A cuenta corriente</span>

@@ -17,6 +17,7 @@ export interface RegisterPurchaseInput {
   notes: string;
   items: PurchaseItemInput[];
   accountAmount?: number;
+  paymentMethod?: "efectivo" | "tarjeta" | "transferencia" | "qr" | null;
 }
 
 export async function registerPurchase(
@@ -26,13 +27,24 @@ export async function registerPurchase(
     return { error: "Agregá al menos un producto a la compra." };
   }
 
+  const { userId } = await requireOrgContext();
   const supabase = await createClient();
+
+  const { data: register } = await supabase
+    .from("cash_registers")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "abierta")
+    .maybeSingle();
+
   const { data, error } = await supabase.rpc("register_purchase", {
     p_org_id: input.orgId,
     p_supplier_id: input.supplierId,
     p_items: input.items as unknown as Json,
     p_notes: input.notes || null,
     p_account_amount: input.accountAmount ?? 0,
+    p_cash_register_id: register?.id ?? null,
+    p_payment_method: input.paymentMethod ?? null,
   });
 
   if (error) {
@@ -65,6 +77,7 @@ export interface PurchaseDetail {
   status: string;
   supplierName: string;
   accountAmount: number;
+  paymentMethod: string | null;
   items: PurchaseDetailItem[];
 }
 
@@ -76,7 +89,9 @@ export async function getPurchaseDetail(
 
   const { data: purchase } = await supabase
     .from("purchases")
-    .select("id, created_at, subtotal, total, notes, status, supplier_id, account_amount")
+    .select(
+      "id, created_at, subtotal, total, notes, status, supplier_id, account_amount, payment_method"
+    )
     .eq("id", purchaseId)
     .eq("org_id", organization.id)
     .maybeSingle();
@@ -103,6 +118,7 @@ export async function getPurchaseDetail(
       status: purchase.status,
       supplierName: supplierRaw?.name ?? "Sin proveedor",
       accountAmount: Number(purchase.account_amount ?? 0),
+      paymentMethod: purchase.payment_method,
       items: (itemsRaw ?? []).map((i) => ({
         product_name: i.product_name,
         quantity: Number(i.quantity),

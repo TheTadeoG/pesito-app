@@ -12,6 +12,7 @@ export async function computeCashOnHand(
     { data: movements },
     { data: debtPayments },
     { data: supplierPayments },
+    { data: cashPurchases },
   ] = await Promise.all([
     supabase
       .from("sales")
@@ -41,6 +42,14 @@ export async function computeCashOnHand(
       .select("amount")
       .eq("cash_register_id", cashRegisterId)
       .eq("method", "efectivo"),
+    // Compras pagadas en efectivo en el momento (lo que no quedó a cuenta
+    // corriente con el proveedor) también restan.
+    supabase
+      .from("purchases")
+      .select("total, account_amount")
+      .eq("cash_register_id", cashRegisterId)
+      .eq("payment_method", "efectivo")
+      .eq("status", "completada"),
   ]);
 
   const salesTotal = (sales ?? []).reduce((acc, sale) => acc + Number(sale.total), 0);
@@ -69,13 +78,18 @@ export async function computeCashOnHand(
     (acc, p) => acc + Number(p.amount),
     0
   );
+  const cashPurchasesTotal = (cashPurchases ?? []).reduce(
+    (acc, p) => acc + (Number(p.total) - Number(p.account_amount ?? 0)),
+    0
+  );
 
   return (
     openingAmount +
     salesTotal +
     mixedCashTotal +
     debtPaymentsTotal -
-    supplierPaymentsTotal +
+    supplierPaymentsTotal -
+    cashPurchasesTotal +
     movementsNet
   );
 }

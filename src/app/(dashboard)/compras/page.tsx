@@ -7,29 +7,37 @@ import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purch
 const RECENT_PURCHASES_LIMIT = 20;
 
 export default async function ComprasPage() {
-  const { organization } = await requireOrgContext();
+  const { userId, organization } = await requireOrgContext();
   const supabase = await createClient();
 
-  const [{ data: products }, { data: suppliers }, { data: purchasesRaw }] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, name, barcode, sku, cost, stock, min_stock, unit, image_url")
-      .eq("org_id", organization.id)
-      .eq("active", true)
-      .order("name")
-      .limit(500),
-    supabase
-      .from("suppliers")
-      .select("id, name, balance")
-      .eq("org_id", organization.id)
-      .order("name"),
-    supabase
-      .from("purchases")
-      .select("id, total, notes, status, created_at, supplier_id, account_amount")
-      .eq("org_id", organization.id)
-      .order("created_at", { ascending: false })
-      .limit(RECENT_PURCHASES_LIMIT),
-  ]);
+  const [{ data: products }, { data: suppliers }, { data: purchasesRaw }, { data: openRegister }] =
+    await Promise.all([
+      supabase
+        .from("products")
+        .select("id, name, barcode, sku, cost, stock, min_stock, unit, image_url")
+        .eq("org_id", organization.id)
+        .eq("active", true)
+        .order("name")
+        .limit(500),
+      supabase
+        .from("suppliers")
+        .select("id, name, balance")
+        .eq("org_id", organization.id)
+        .order("name"),
+      supabase
+        .from("purchases")
+        .select("id, total, notes, status, created_at, supplier_id, account_amount")
+        .eq("org_id", organization.id)
+        .order("created_at", { ascending: false })
+        .limit(RECENT_PURCHASES_LIMIT),
+      supabase
+        .from("cash_registers")
+        .select("id")
+        .eq("org_id", organization.id)
+        .eq("user_id", userId)
+        .eq("status", "abierta")
+        .maybeSingle(),
+    ]);
 
   const purchases = (purchasesRaw ?? []).map((p) => ({
     ...p,
@@ -87,6 +95,7 @@ export default async function ComprasPage() {
           stock: Number(p.stock),
         }))}
         suppliers={(suppliers ?? []).map((s) => ({ ...s, balance: Number(s.balance) }))}
+        hasOpenCaja={Boolean(openRegister)}
       />
 
       <Card>

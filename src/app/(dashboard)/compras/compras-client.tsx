@@ -2,7 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImageIcon, Minus, Package, Plus, Search, Trash2 } from "lucide-react";
+import {
+  Banknote,
+  CreditCard,
+  ImageIcon,
+  Landmark,
+  Minus,
+  Package,
+  Plus,
+  QrCode,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,13 +52,23 @@ interface CartLine {
   unitCost: number;
 }
 
+type PaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "qr";
+
+const paymentMethods: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
+  { value: "efectivo", label: "Efectivo", icon: Banknote },
+  { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
+  { value: "transferencia", label: "Transferencia", icon: Landmark },
+  { value: "qr", label: "QR", icon: QrCode },
+];
+
 interface ComprasClientProps {
   orgId: string;
   products: ProductLite[];
   suppliers: SupplierLite[];
+  hasOpenCaja: boolean;
 }
 
-export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps) {
+export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: ComprasClientProps) {
   const router = useRouter();
   const { showSuccess } = useToast();
   const [query, setQuery] = useState("");
@@ -64,6 +85,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const [supplierError, setSupplierError] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [accountAmountInput, setAccountAmountInput] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [browseProducts, setBrowseProducts] = useState(false);
@@ -100,6 +122,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const total = cart.reduce((acc, line) => acc + line.quantity * line.unitCost, 0);
   const itemCount = cart.reduce((acc, line) => acc + line.quantity, 0);
   const accountAmount = Math.min(Math.max(Number(accountAmountInput) || 0, 0), total);
+  const paidNow = total - accountAmount;
 
   function addProduct(product: ProductLite, initialQuantity = 1) {
     setError(null);
@@ -337,6 +360,14 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       setError("Elegí un proveedor antes de registrar la compra.");
       return;
     }
+    if (paidNow > 0 && !paymentMethod) {
+      setError("Elegí cómo pagás la parte que no queda a cuenta corriente.");
+      return;
+    }
+    if (paidNow > 0 && paymentMethod === "efectivo" && !hasOpenCaja) {
+      setError("Abrí tu caja para poder pagar en efectivo.");
+      return;
+    }
     setPending(true);
     setError(null);
 
@@ -352,6 +383,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       notes,
       items,
       accountAmount,
+      paymentMethod: paidNow > 0 ? paymentMethod : null,
     });
 
     setPending(false);
@@ -372,6 +404,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
     setSupplierQuery("");
     setNotes("");
     setAccountAmountInput("");
+    setPaymentMethod(null);
     router.refresh();
   }
 
@@ -731,6 +764,44 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
               )}
             </div>
 
+            {paidNow > 0 && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  ¿Cómo pagás {formatCurrency(paidNow)} ahora?
+                </label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {paymentMethods.map((m) => {
+                    const disabled = m.value === "efectivo" && !hasOpenCaja;
+                    return (
+                      <button
+                        key={m.value}
+                        type="button"
+                        disabled={disabled}
+                        title={disabled ? "Abrí tu caja para pagar en efectivo" : undefined}
+                        onClick={() => setPaymentMethod(m.value)}
+                        className={cn(
+                          "flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-xs font-medium transition-colors",
+                          disabled
+                            ? "cursor-not-allowed border-border text-muted-foreground/50"
+                            : paymentMethod === m.value
+                              ? "border-primary bg-accent text-accent-foreground"
+                              : "border-border text-foreground hover:bg-muted"
+                        )}
+                      >
+                        <m.icon className="h-4 w-4" />
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!hasOpenCaja && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    Abrí tu caja para poder pagar en efectivo.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">
                 Notas (opcional)
@@ -749,7 +820,12 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
             <Button
               className="w-full"
               size="lg"
-              disabled={cart.length === 0 || pending || !supplierId}
+              disabled={
+                cart.length === 0 ||
+                pending ||
+                !supplierId ||
+                (paidNow > 0 && !paymentMethod)
+              }
               onClick={handleConfirm}
             >
               <Package className="h-4 w-4" />
