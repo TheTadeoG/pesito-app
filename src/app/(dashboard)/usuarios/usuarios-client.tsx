@@ -99,7 +99,7 @@ export function UsuariosClient({
   }
 
   async function handleRemove(member: MemberRow) {
-    const label = member.username ? `@${member.username}` : member.email ?? "este usuario";
+    const label = member.username ?? member.email ?? "este usuario";
     if (!confirm(`¿Quitar a ${label} del equipo?`)) return;
     setBusyId(member.id);
     await removeMember(member.id);
@@ -122,9 +122,9 @@ export function UsuariosClient({
   }
 
   function generatePassword() {
-    const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const chars = "23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
     let out = "";
-    for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
     setDirectPassword(out);
   }
 
@@ -169,7 +169,7 @@ export function UsuariosClient({
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">
-                      {member.username ? `@${member.username}` : member.email ?? "Sin email"}
+                      {member.username ?? member.email ?? "Sin email"}
                       {isSelf && (
                         <span className="ml-1.5 text-xs text-muted-foreground">(vos)</span>
                       )}
@@ -382,7 +382,9 @@ export function UsuariosClient({
                 autoFocus
               />
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Sin espacios ni acentos, 3 a 20 caracteres. Con esto entra en vez de un email.
+                Sin espacios ni acentos, 3 a 20 caracteres. Le vamos a agregar un código al final
+                (ej. {directUsername.trim() || "juan"}#4821) para que no choque con el mismo
+                nombre en otro kiosco. Con esto entra en vez de un email.
               </p>
             </div>
 
@@ -400,7 +402,7 @@ export function UsuariosClient({
               <Input
                 value={directPassword}
                 onChange={(e) => setDirectPassword(e.target.value)}
-                placeholder="Mínimo 4 caracteres"
+                placeholder="Mínimo 8 caracteres"
               />
             </div>
 

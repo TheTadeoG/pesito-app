@@ -5,7 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
-import { isValidUsername, usernameToEmail } from "@/lib/internal-auth";
+import {
+  buildFullUsername,
+  generateDiscriminator,
+  isValidUsernameBase,
+  usernameToEmail,
+} from "@/lib/internal-auth";
 
 export interface ActionState {
   error?: string;
@@ -80,23 +85,37 @@ export async function createDirectMember(
     return { error: "No tenés permiso para crear usuarios." };
   }
 
-  const trimmedUsername = username.trim().toLowerCase();
-  if (!isValidUsername(trimmedUsername)) {
+  const base = username.trim().toLowerCase();
+  if (!isValidUsernameBase(base)) {
     return {
       error:
         "El usuario debe tener entre 3 y 20 caracteres: letras, números, puntos, guiones o guión bajo.",
     };
   }
-  if (password.length < 4) {
-    return { error: "La contraseña debe tener al menos 4 caracteres." };
+  if (password.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
   }
 
   const supabase = await createClient();
-  const { data: available } = await supabase.rpc("username_available", {
-    p_username: trimmedUsername,
-  });
-  if (!available) {
-    return { error: "Ese usuario ya está en uso. Probá con otro." };
+
+  // "base" puede repetirse entre distintos kioscos (le agregamos un código
+  // #XXXX al estilo Discord para que el usuario final sea único de verdad).
+  // Con 10.000 códigos por nombre base, un choque es rarísimo; igual
+  // reintentamos unas vueltas por si acaso.
+  let fullUsername: string | null = null;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const candidate = buildFullUsername(base, generateDiscriminator());
+    const { data: available } = await supabase.rpc("username_available", {
+      p_username: candidate,
+    });
+    if (available) {
+      fullUsername = candidate;
+      break;
+    }
+  }
+
+  if (!fullUsername) {
+    return { error: "No pudimos generar un usuario único. Probá de nuevo." };
   }
 
   let admin;
@@ -110,21 +129,21 @@ export async function createDirectMember(
   }
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email: usernameToEmail(trimmedUsername),
+    email: usernameToEmail(fullUsername),
     password,
     email_confirm: true,
-    user_metadata: { internal_username: trimmedUsername },
+    user_metadata: { internal_username: fullUsername },
   });
 
   if (createError || !created.user) {
-    return { error: "No pudimos crear el usuario. Probá con otro nombre de usuario." };
+    return { error: "No pudimos crear el usuario. Probá de nuevo." };
   }
 
   const { error: membershipError } = await supabase.rpc("create_member_direct", {
     p_org_id: organization.id,
     p_user_id: created.user.id,
     p_role: role,
-    p_username: trimmedUsername,
+    p_username: fullUsername,
   });
 
   if (membershipError) {
@@ -134,5 +153,5 @@ export async function createDirectMember(
   }
 
   revalidatePath("/usuarios");
-  return { username: trimmedUsername };
+  return { username: fullUsername };
 }

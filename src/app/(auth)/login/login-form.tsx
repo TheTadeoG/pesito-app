@@ -18,7 +18,14 @@ export function LoginForm({ next }: { next?: string }) {
 
       <div>
         <Label htmlFor="identifier">Email o usuario</Label>
-        <Input id="identifier" name="identifier" type="text" autoComplete="username" required />
+        <Input
+          id="identifier"
+          name="identifier"
+          type="text"
+          autoComplete="username"
+          placeholder="tu@email.com o juan#4821"
+          required
+        />
       </div>
 
       <div>

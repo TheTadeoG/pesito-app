@@ -64,8 +64,8 @@ export async function signup(
     return { error: "Completá todos los campos." };
   }
 
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
+  if (password.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
   }
 
   const postSignupPath = inviteCode ? `/invitacion/${inviteCode}` : "/onboarding";

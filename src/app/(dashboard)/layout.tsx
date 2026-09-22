@@ -45,7 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           cashRegister={cashRegister}
         />
         <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar orgName={organization.name} userLabel={email ?? ""} />
+          <Topbar orgName={organization.name} userLabel={membership.username ?? email ?? ""} />
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>
