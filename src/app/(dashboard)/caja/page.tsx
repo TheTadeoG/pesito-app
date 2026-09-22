@@ -1,13 +1,21 @@
+import type { ReactNode } from "react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { computeCashOnHand, type PaymentBreakdownRow } from "@/lib/caja";
 import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
 import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/historial";
+import {
+  TeamCajasOverview,
+  DeudasFiadoOverview,
+  type OpenRegisterRow,
+  type DebtorRow,
+} from "@/app/(dashboard)/caja/team-overview";
 
 export default async function CajaPage() {
-  const { userId, email, organization } = await requireOrgContext();
+  const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
+  const isManager = membership.role === "owner" || membership.role === "admin";
 
   const [{ data: register }, { data: closedRegisters }] = await Promise.all([
     supabase
@@ -73,10 +81,52 @@ export default async function CajaPage() {
       paymentBreakdown: getBreakdown(r.id),
     }));
 
+  let teamOverview: ReactNode = null;
+  if (isManager) {
+    const [{ data: openRegisters }, { data: debtorCustomers }] = await Promise.all([
+      supabase
+        .from("cash_registers")
+        .select("id, user_id, opening_amount, opened_at")
+        .eq("org_id", organization.id)
+        .eq("status", "abierta"),
+      supabase
+        .from("customers")
+        .select("id, name, balance")
+        .eq("org_id", organization.id)
+        .gt("balance", 0)
+        .order("balance", { ascending: false }),
+    ]);
+
+    const openRegisterRows: OpenRegisterRow[] = await Promise.all(
+      (openRegisters ?? []).map(async (r) => ({
+        id: r.id,
+        userLabel: r.user_id === userId ? "Vos" : `Usuario ${r.user_id.slice(0, 8)}`,
+        openedAt: r.opened_at,
+        openingAmount: Number(r.opening_amount),
+        cashOnHand: await computeCashOnHand(supabase, r.id, Number(r.opening_amount)),
+      }))
+    );
+
+    const debtors: DebtorRow[] = (debtorCustomers ?? []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      balance: Number(c.balance),
+    }));
+    const totalDebt = debtors.reduce((acc, d) => acc + d.balance, 0);
+
+    teamOverview = (
+      <>
+        <TeamCajasOverview rows={openRegisterRows} />
+        <DeudasFiadoOverview totalDebt={totalDebt} debtors={debtors} />
+      </>
+    );
+  }
+
   if (!register) {
     return (
       <div className="space-y-6">
         <OpenCajaDialog />
+        {teamOverview}
         <CajaHistorial rows={historialRows} />
       </div>
     );
@@ -95,6 +145,7 @@ export default async function CajaPage() {
         openedByLabel={email ?? "Vos"}
         paymentBreakdown={getBreakdown(register.id)}
       />
+      {teamOverview}
       <CajaHistorial rows={historialRows} />
     </div>
   );
