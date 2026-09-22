@@ -760,12 +760,20 @@ export function PosClient({
                             {product.name}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {formatCurrency(product.price)}
+                            {formatCurrency(product.price)} · Stock actual:{" "}
+                            <span
+                              className={cn(
+                                "font-medium",
+                                product.stock <= product.min_stock
+                                  ? "text-danger"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              {product.stock}
+                              {product.unit}
+                            </span>
                           </span>
                         </span>
-                        {product.stock <= product.min_stock && (
-                          <Badge tone="danger">Stock {product.stock}</Badge>
-                        )}
                       </button>
                     ))}
                   </div>
@@ -875,12 +883,19 @@ export function PosClient({
                             )}{" "}
                             c/u
                           </span>
-                          {item.kind === "product" &&
-                            item.product.stock <= item.product.min_stock && (
-                              <Badge tone="danger" className="px-1.5 py-0 text-[10px]">
-                                Stock: {item.product.stock}{item.product.unit}
-                              </Badge>
-                            )}
+                          {item.kind === "product" && (
+                            <span
+                              className={cn(
+                                "text-xs font-medium",
+                                item.product.stock <= item.product.min_stock
+                                  ? "text-danger"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              · Stock: {item.product.stock}
+                              {item.product.unit}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
