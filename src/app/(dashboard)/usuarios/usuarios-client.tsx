@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Plus, Trash2, X } from "lucide-react";
+import { Copy, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { roleLabels } from "@/lib/roles";
 import { useToast } from "@/components/toast/toast-provider";
@@ -14,6 +15,7 @@ import {
   revokeInvitation,
   updateMemberRole,
   removeMember,
+  createDirectMember,
 } from "@/app/(dashboard)/usuarios/actions";
 
 interface MemberRow {
@@ -21,6 +23,7 @@ interface MemberRow {
   user_id: string;
   role: "owner" | "admin" | "vendedor";
   email: string | null;
+  username: string | null;
   created_at: string;
 }
 
@@ -51,6 +54,16 @@ export function UsuariosClient({
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const [showDirectCreate, setShowDirectCreate] = useState(false);
+  const [directUsername, setDirectUsername] = useState("");
+  const [directPassword, setDirectPassword] = useState("");
+  const [directRole, setDirectRole] = useState<"admin" | "vendedor">("vendedor");
+  const [directCreating, setDirectCreating] = useState(false);
+  const [directError, setDirectError] = useState<string | null>(null);
+  const [directCreated, setDirectCreated] = useState<{ username: string; password: string } | null>(
+    null
+  );
+
   async function handleInvite() {
     setInviting(true);
     setInviteError(null);
@@ -70,10 +83,10 @@ export function UsuariosClient({
     setGeneratedLink(null);
   }
 
-  async function copyLink(link: string) {
+  async function copyText(text: string, message = "¡Copiado!") {
     try {
-      await navigator.clipboard.writeText(link);
-      showSuccess("¡Link copiado!");
+      await navigator.clipboard.writeText(text);
+      showSuccess(message);
     } catch {
       // clipboard API bloqueada (permisos/http): no hay mucho más que hacer.
     }
@@ -86,7 +99,8 @@ export function UsuariosClient({
   }
 
   async function handleRemove(member: MemberRow) {
-    if (!confirm(`¿Quitar a ${member.email ?? "este usuario"} del equipo?`)) return;
+    const label = member.username ? `@${member.username}` : member.email ?? "este usuario";
+    if (!confirm(`¿Quitar a ${label} del equipo?`)) return;
     setBusyId(member.id);
     await removeMember(member.id);
     setBusyId(null);
@@ -98,12 +112,44 @@ export function UsuariosClient({
     setBusyId(null);
   }
 
+  function closeDirectDialog() {
+    setShowDirectCreate(false);
+    setDirectUsername("");
+    setDirectPassword("");
+    setDirectRole("vendedor");
+    setDirectError(null);
+    setDirectCreated(null);
+  }
+
+  function generatePassword() {
+    const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    let out = "";
+    for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    setDirectPassword(out);
+  }
+
+  async function handleDirectCreate() {
+    setDirectCreating(true);
+    setDirectError(null);
+    const result = await createDirectMember(directUsername, directPassword, directRole);
+    setDirectCreating(false);
+    if (result.error || !result.username) {
+      setDirectError(result.error ?? "No pudimos crear el usuario.");
+      return;
+    }
+    setDirectCreated({ username: result.username, password: directPassword });
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button variant="outline" onClick={() => setShowDirectCreate(true)}>
+          <UserPlus className="h-4 w-4" />
+          Crear usuario y contraseña
+        </Button>
         <Button onClick={() => setShowInvite(true)}>
           <Plus className="h-4 w-4" />
-          Invitar usuario
+          Invitar por link
         </Button>
       </div>
 
@@ -123,11 +169,14 @@ export function UsuariosClient({
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">
-                      {member.email ?? "Sin email"}
+                      {member.username ? `@${member.username}` : member.email ?? "Sin email"}
                       {isSelf && (
                         <span className="ml-1.5 text-xs text-muted-foreground">(vos)</span>
                       )}
                     </p>
+                    {member.username && (
+                      <p className="text-xs text-muted-foreground">Usuario interno</p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -191,7 +240,7 @@ export function UsuariosClient({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => copyLink(`${siteUrl}/invitacion/${inv.code}`)}
+                      onClick={() => copyText(`${siteUrl}/invitacion/${inv.code}`, "¡Link copiado!")}
                     >
                       <Copy className="h-3.5 w-3.5" />
                       Copiar link
@@ -230,7 +279,7 @@ export function UsuariosClient({
               <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                 {generatedLink}
               </span>
-              <Button type="button" size="sm" onClick={() => copyLink(generatedLink)}>
+              <Button type="button" size="sm" onClick={() => copyText(generatedLink, "¡Link copiado!")}>
                 <Copy className="h-3.5 w-3.5" />
                 Copiar
               </Button>
@@ -271,6 +320,117 @@ export function UsuariosClient({
               </Button>
               <Button type="button" onClick={handleInvite} disabled={inviting}>
                 {inviting ? "Generando…" : "Generar link"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={showDirectCreate}
+        onClose={closeDirectDialog}
+        title="Crear usuario y contraseña"
+        description="Para empleados que no usan email: elegís vos el usuario y la contraseña, y se lo pasás."
+      >
+        {directCreated ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Anotá estos datos y pasáselos a tu empleado — la contraseña no se puede volver a ver
+              después de cerrar esto.
+            </p>
+            <div className="space-y-2 rounded-xl border border-border bg-muted/40 px-3.5 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Usuario</span>
+                <span className="font-mono font-semibold text-foreground">
+                  {directCreated.username}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Contraseña</span>
+                <span className="font-mono font-semibold text-foreground">
+                  {directCreated.password}
+                </span>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() =>
+                copyText(
+                  `Usuario: ${directCreated.username}\nContraseña: ${directCreated.password}`
+                )
+              }
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copiar usuario y contraseña
+            </Button>
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" onClick={closeDirectDialog}>
+                Listo
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Usuario</label>
+              <Input
+                value={directUsername}
+                onChange={(e) => setDirectUsername(e.target.value)}
+                placeholder="juan"
+                autoFocus
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Sin espacios ni acentos, 3 a 20 caracteres. Con esto entra en vez de un email.
+              </p>
+            </div>
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Contraseña</label>
+                <button
+                  type="button"
+                  onClick={generatePassword}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Generar una
+                </button>
+              </div>
+              <Input
+                value={directPassword}
+                onChange={(e) => setDirectPassword(e.target.value)}
+                placeholder="Mínimo 4 caracteres"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Rol</label>
+              <Select
+                value={directRole}
+                onChange={(e) => setDirectRole(e.target.value as "admin" | "vendedor")}
+              >
+                <option value="vendedor">Vendedor</option>
+                <option value="admin">Administrador</option>
+              </Select>
+            </div>
+
+            {directError && (
+              <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">
+                {directError}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={closeDirectDialog}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDirectCreate}
+                disabled={directCreating || !directUsername || !directPassword}
+              >
+                {directCreating ? "Creando…" : "Crear usuario"}
               </Button>
             </div>
           </div>

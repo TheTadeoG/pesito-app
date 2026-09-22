@@ -17,8 +17,8 @@ export function LoginForm({ next }: { next?: string }) {
       <input type="hidden" name="next" value={next ?? ""} />
 
       <div>
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Label htmlFor="identifier">Email o usuario</Label>
+        <Input id="identifier" name="identifier" type="text" autoComplete="username" required />
       </div>
 
       <div>

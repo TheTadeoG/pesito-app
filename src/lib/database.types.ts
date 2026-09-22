@@ -40,6 +40,7 @@ export interface Database {
           user_id: string;
           role: "owner" | "admin" | "vendedor";
           email: string | null;
+          username: string | null;
           created_at: string;
         };
         Insert: {
@@ -48,6 +49,7 @@ export interface Database {
           user_id: string;
           role?: "owner" | "admin" | "vendedor";
           email?: string | null;
+          username?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["memberships"]["Insert"]>;
@@ -511,6 +513,26 @@ export interface Database {
       };
       remove_member: {
         Args: { p_membership_id: string };
+        Returns: undefined;
+      };
+      username_available: {
+        Args: { p_username: string };
+        Returns: boolean;
+      };
+      create_member_direct: {
+        Args: { p_org_id: string; p_user_id: string; p_role: string; p_username: string };
+        Returns: undefined;
+      };
+      check_login_lockout: {
+        Args: { p_email: string };
+        Returns: { locked: boolean; retry_after_seconds: number }[];
+      };
+      register_login_failure: {
+        Args: { p_email: string };
+        Returns: undefined;
+      };
+      register_login_success: {
+        Args: { p_email: string };
         Returns: undefined;
       };
     };

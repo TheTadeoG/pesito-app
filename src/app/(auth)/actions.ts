@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isEmailIdentifier, usernameToEmail } from "@/lib/internal-auth";
 
 export interface AuthActionState {
   error?: string;
@@ -13,20 +14,36 @@ export async function login(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const identifier = String(formData.get("identifier") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "") || "/pos";
 
-  if (!email || !password) {
-    return { error: "Completá tu email y tu contraseña." };
+  if (!identifier || !password) {
+    return { error: "Completá tu email/usuario y tu contraseña." };
   }
 
+  const email = isEmailIdentifier(identifier) ? identifier : usernameToEmail(identifier);
   const supabase = await createClient();
+
+  const { data: lockoutRows } = await supabase.rpc("check_login_lockout", { p_email: email });
+  const lockout = lockoutRows?.[0];
+  if (lockout?.locked) {
+    const minutes = Math.max(1, Math.ceil((lockout.retry_after_seconds ?? 0) / 60));
+    return {
+      error: `Demasiados intentos fallidos. Probá de nuevo en ${minutes} minuto${
+        minutes === 1 ? "" : "s"
+      }.`,
+    };
+  }
+
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: "Email o contraseña incorrectos." };
+    await supabase.rpc("register_login_failure", { p_email: email });
+    return { error: "Email/usuario o contraseña incorrectos." };
   }
+
+  await supabase.rpc("register_login_success", { p_email: email });
 
   redirect(next);
 }

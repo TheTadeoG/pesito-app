@@ -47,8 +47,7 @@ sumarlos sin romper nada.
    Si desplegás en Vercel, la
    [integración oficial de Supabase](https://vercel.com/integrations/supabase)
    puede cargar estas variables por vos automáticamente (junto con otras que
-   la app no usa, como `POSTGRES_URL` o `SUPABASE_SERVICE_ROLE_KEY` — no
-   hacen falta, pero tampoco molestan). De cualquier forma, cada vez que
+   la app no usa, como `POSTGRES_URL`). De cualquier forma, cada vez que
    agregues o cambies una variable de entorno en Vercel hay que disparar un
    **Redeploy** a mano: los deploys existentes no las recogen solos.
 
@@ -60,6 +59,12 @@ sumarlos sin romper nada.
 
    # dominio real una vez desplegado (usado en metadata, sitemap.xml y robots.txt)
    NEXT_PUBLIC_SITE_URL=https://tu-dominio.com
+
+   # sólo server-side: necesaria para que Usuarios pueda dar de alta
+   # vendedores con usuario/contraseña interno (Project Settings → API →
+   # service_role). Sin esta variable esa opción muestra un error pero el
+   # resto de la app (incluida la invitación por link) funciona igual.
+   SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
    ```
 
 4. Aplicar el esquema de base de datos. La migración vive en
@@ -131,5 +136,5 @@ npm run lint    # eslint
 
 Cualquier hosting compatible con Next.js sirve (por ejemplo
 [Vercel](https://vercel.com/new)). Configurar las mismas variables de
-entorno (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) en el
-proveedor elegido.
+entorno (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) en el proveedor elegido.
