@@ -59,6 +59,7 @@ export async function signup(
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
   if (!email || !password || (!inviteCode && !businessName)) {
     return { error: "Completá todos los campos." };
@@ -66,6 +67,10 @@ export async function signup(
 
   if (password.length < 8) {
     return { error: "La contraseña debe tener al menos 8 caracteres." };
+  }
+
+  if (password !== confirmPassword) {
+    return { error: "Las contraseñas no coinciden." };
   }
 
   const postSignupPath = inviteCode ? `/invitacion/${inviteCode}` : "/onboarding";

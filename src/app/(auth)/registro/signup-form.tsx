@@ -1,16 +1,20 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { signup, type AuthActionState } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const initialState: AuthActionState = {};
 
 export function SignupForm({ inviteCode }: { inviteCode?: string }) {
   const [state, formAction, pending] = useActionState(signup, initialState);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [mismatchError, setMismatchError] = useState(false);
 
   if (state.info) {
     return (
@@ -18,8 +22,17 @@ export function SignupForm({ inviteCode }: { inviteCode?: string }) {
     );
   }
 
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (password !== confirmPassword) {
+      e.preventDefault();
+      setMismatchError(true);
+      return;
+    }
+    setMismatchError(false);
+  }
+
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
       {inviteCode && <input type="hidden" name="inviteCode" value={inviteCode} />}
 
       {!inviteCode && (
@@ -50,17 +63,37 @@ export function SignupForm({ inviteCode }: { inviteCode?: string }) {
 
       <div>
         <Label htmlFor="password">Contraseña</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
       </div>
 
-      {state.error && (
+      <div>
+        <Label htmlFor="confirmPassword">Repetí la contraseña</Label>
+        <PasswordInput
+          id="confirmPassword"
+          name="confirmPassword"
+          autoComplete="new-password"
+          minLength={8}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+        />
+      </div>
+
+      {mismatchError && (
+        <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">
+          Las contraseñas no coinciden.
+        </p>
+      )}
+
+      {!mismatchError && state.error && (
         <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{state.error}</p>
       )}
 
