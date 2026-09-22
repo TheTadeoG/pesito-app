@@ -9,12 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { openCaja } from "@/app/(dashboard)/caja/actions";
 
+const ENTER_GUARD_MS = 3000;
+
 export function OpenCajaDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [enterReady, setEnterReady] = useState(false);
+
+  function openDialog() {
+    setEnterReady(false);
+    setOpen(true);
+  }
 
   async function submitOpen() {
     setPending(true);
@@ -41,10 +49,19 @@ export function OpenCajaDialog() {
       if (e.key !== "Enter" || open) return;
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      setOpen(true);
+      openDialog();
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
+  // Evita que un Enter que llega justo al abrirse el diálogo (p. ej. el
+  // mismo doble Enter que lo abrió) confirme la apertura antes de que el
+  // usuario haya podido cargar un monto real.
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => setEnterReady(true), ENTER_GUARD_MS);
+    return () => clearTimeout(timer);
   }, [open]);
 
   return (
@@ -58,7 +75,7 @@ export function OpenCajaDialog() {
           <p className="text-sm text-muted-foreground">
             Abrí tu caja con el efectivo con el que empezás el día para poder vender.
           </p>
-          <Button className="mt-2" onClick={() => setOpen(true)}>
+          <Button className="mt-2" onClick={openDialog}>
             <DollarSign className="h-4 w-4" />
             Abrir Mi Caja (Enter)
           </Button>
@@ -87,7 +104,7 @@ export function OpenCajaDialog() {
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
                 e.preventDefault();
-                if (amount && !pending) {
+                if (amount && !pending && enterReady) {
                   submitOpen();
                 }
               }}
@@ -95,6 +112,7 @@ export function OpenCajaDialog() {
             />
             <p className="mt-1.5 text-xs text-muted-foreground">
               Contá todo el efectivo que tenés en caja en este momento.
+              {!enterReady && " Esperá unos segundos para confirmar con Enter."}
             </p>
           </div>
 

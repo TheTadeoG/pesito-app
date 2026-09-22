@@ -57,6 +57,12 @@ const plans = [
   },
 ];
 
+const invoiceTiers = [
+  { label: "500 fact/mes", price: "$10.000/mes" },
+  { label: "1.000 fact/mes", price: "$20.000/mes" },
+  { label: "2.000 fact/mes", price: "$40.000/mes" },
+  { label: "4.000 fact/mes", price: "$80.000/mes" },
+];
 
 export function Pricing() {
   return (
@@ -121,20 +127,32 @@ export function Pricing() {
         ))}
       </div>
 
-      <div className="mx-auto mt-8 max-w-3xl rounded-card border border-dashed border-border bg-muted/40 p-5 text-center">
-        <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground">
-          <Receipt className="h-4 w-4" />
-        </span>
-        <p className="mt-2.5 text-sm font-semibold text-foreground">
-          ¿Necesitás emitir Factura A, B o C con CAE?
-        </p>
-        <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
-          Sumá facturación electrónica de ARCA a cualquier plan por un costo aparte, que
-          calculamos según cuánto factures por mes.
-        </p>
-        <Link href="/soporte" className="mt-3 inline-block">
-          <Button variant="outline" size="sm">
-            Consultar precio de facturación
+      <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-4 rounded-card border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+            <Receipt className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Facturación electrónica</p>
+            <p className="text-xs text-muted-foreground">Facturas A, B y C con CAE automático.</p>
+          </div>
+        </div>
+
+        <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
+          {invoiceTiers.map((tier) => (
+            <div
+              key={tier.label}
+              className="rounded-xl border border-border px-3 py-2 text-center"
+            >
+              <p className="text-xs font-semibold text-foreground">{tier.label}</p>
+              <p className="text-xs text-muted-foreground">{tier.price}</p>
+            </div>
+          ))}
+        </div>
+
+        <Link href="/registro" className="shrink-0">
+          <Button variant="primary" className="w-full sm:w-auto">
+            Activar con facturación
           </Button>
         </Link>
       </div>
