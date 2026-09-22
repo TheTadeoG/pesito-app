@@ -1,21 +1,27 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
+  CreditCard,
+  Landmark,
   Minus,
   Plus,
+  QrCode,
   Scale,
   Search,
+  Shuffle,
   SlidersHorizontal,
   Trash2,
+  Wallet,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils";
 import { checkoutSale, type CheckoutItemInput } from "@/app/(dashboard)/pos/actions";
 
@@ -38,14 +44,16 @@ type CartItem =
   | { kind: "product"; product: ProductLite; quantity: number }
   | { kind: "manual"; id: string; label: string; amount: number };
 
-const paymentMethods = [
-  { value: "efectivo", label: "Efectivo" },
-  { value: "tarjeta", label: "Tarjeta" },
-  { value: "transferencia", label: "Transferencia" },
-  { value: "qr", label: "QR" },
-  { value: "mixto", label: "Mixto" },
-  { value: "fiado", label: "Fiado" },
-] as const;
+type PaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "qr" | "mixto" | "fiado";
+
+const paymentMethods: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
+  { value: "efectivo", label: "Efectivo", icon: Banknote },
+  { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
+  { value: "transferencia", label: "Transferencia", icon: Landmark },
+  { value: "qr", label: "QR", icon: QrCode },
+  { value: "mixto", label: "Mixto", icon: Shuffle },
+  { value: "fiado", label: "Fiado", icon: Wallet },
+];
 
 interface PosClientProps {
   orgId: string;
@@ -59,12 +67,11 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] =
-    useState<(typeof paymentMethods)[number]["value"]>("efectivo");
   const [discount, setDiscount] = useState(0);
   const [surcharge, setSurcharge] = useState(0);
   const [showExtras, setShowExtras] = useState(false);
   const [showManualAmount, setShowManualAmount] = useState(false);
+  const [showPaymentPicker, setShowPaymentPicker] = useState(false);
   const [manualLabel, setManualLabel] = useState("");
   const [manualAmount, setManualAmount] = useState("");
   const [pending, setPending] = useState(false);
@@ -145,6 +152,79 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
     setShowManualAmount(false);
   }
 
+  function openPaymentPicker() {
+    if (cart.length === 0 || pending) return;
+    setError(null);
+    setShowPaymentPicker(true);
+  }
+
+  // Triggered by a real Enter keypress anywhere on the page (not while
+  // typing in a field): two presses within 800ms open the payment picker,
+  // so a cashier can check out without touching the mouse.
+  function registerEnterForCheckout() {
+    if (cart.length === 0) return;
+    const now = Date.now();
+    if (now - lastEnterAt.current < 800) {
+      lastEnterAt.current = 0;
+      openPaymentPicker();
+    } else {
+      lastEnterAt.current = now;
+    }
+  }
+
+  // A cashier (or a barcode scanner, which just types fast) should be able
+  // to start typing/scanning or paste from anywhere on the page and have it
+  // land in the search box, without clicking into it first — as long as
+  // they're not already typing into some other field (discount, manual
+  // amount, customer select, etc.) or a dialog is open.
+  useEffect(() => {
+    function isTypingInOtherField() {
+      const active = document.activeElement;
+      if (active === searchRef.current) return false;
+      const tag = active?.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+    }
+
+    function handleWindowKeyDown(e: KeyboardEvent) {
+      if (showPaymentPicker) return;
+
+      if (e.key === "Enter") {
+        if (document.activeElement === searchRef.current) return;
+        if (isTypingInOtherField()) return;
+        registerEnterForCheckout();
+        return;
+      }
+
+      if (isTypingInOtherField()) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key.length !== 1) return; // only plain printable characters
+
+      if (document.activeElement !== searchRef.current) {
+        searchRef.current?.focus();
+      }
+    }
+
+    function handleWindowPaste(e: ClipboardEvent) {
+      if (showPaymentPicker) return;
+      if (isTypingInOtherField()) return;
+
+      const text = e.clipboardData?.getData("text");
+      if (!text) return;
+
+      e.preventDefault();
+      setQuery((prev) => prev + text);
+      searchRef.current?.focus();
+    }
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+    window.addEventListener("paste", handleWindowPaste);
+    return () => {
+      window.removeEventListener("keydown", handleWindowKeyDown);
+      window.removeEventListener("paste", handleWindowPaste);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart.length, showPaymentPicker]);
+
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -163,17 +243,17 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       return;
     }
 
-    const now = Date.now();
-    if (now - lastEnterAt.current < 800) {
-      lastEnterAt.current = 0;
-      void processSale();
-    } else {
-      lastEnterAt.current = now;
-    }
+    registerEnterForCheckout();
   }
 
-  async function processSale() {
-    if (cart.length === 0 || pending) return;
+  async function processSale(method: PaymentMethod) {
+    if (method === "fiado" && !customerId) {
+      setShowPaymentPicker(false);
+      setError("Para vender fiado primero elegí un cliente.");
+      return;
+    }
+
+    setShowPaymentPicker(false);
     setPending(true);
     setError(null);
 
@@ -196,7 +276,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
       orgId,
       cashRegisterId,
       customerId: customerId || null,
-      paymentMethod,
+      paymentMethod: method,
       discount,
       surcharge,
       items,
@@ -449,7 +529,7 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
               className="w-full"
               size="lg"
               disabled={cart.length === 0 || pending}
-              onClick={() => void processSale()}
+              onClick={openPaymentPicker}
             >
               <Banknote className="h-4 w-4" />
               {pending ? "Procesando…" : "Procesar Venta (Doble Enter)"}
@@ -466,55 +546,62 @@ export function PosClient({ orgId, cashRegisterId, products, customers }: PosCli
             </Button>
 
             {showExtras && (
-              <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Descuento
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={discount || ""}
-                      onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Recargo
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={surcharge || ""}
-                      onChange={(e) => setSurcharge(Number(e.target.value) || 0)}
-                      placeholder="0"
-                    />
-                  </div>
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-muted/50 p-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Descuento
+                  </label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={discount || ""}
+                    onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                    placeholder="0"
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Medio de pago
+                    Recargo
                   </label>
-                  <Select
-                    value={paymentMethod}
-                    onChange={(e) =>
-                      setPaymentMethod(e.target.value as typeof paymentMethod)
-                    }
-                  >
-                    {paymentMethods.map((method) => (
-                      <option key={method.value} value={method.value}>
-                        {method.label}
-                      </option>
-                    ))}
-                  </Select>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={surcharge || ""}
+                    onChange={(e) => setSurcharge(Number(e.target.value) || 0)}
+                    placeholder="0"
+                  />
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <Dialog
+        open={showPaymentPicker}
+        onClose={() => setShowPaymentPicker(false)}
+        title="¿Cómo paga?"
+        description={`Total a cobrar: ${formatCurrency(total)}`}
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {paymentMethods.map((method) => {
+            const disabled = method.value === "fiado" && !customerId;
+            return (
+              <button
+                key={method.value}
+                type="button"
+                disabled={disabled || pending}
+                onClick={() => void processSale(method.value)}
+                className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
+                title={disabled ? "Elegí un cliente para vender fiado" : undefined}
+              >
+                <method.icon className="h-5 w-5 text-accent-foreground" />
+                {method.label}
+              </button>
+            );
+          })}
+        </div>
+      </Dialog>
     </div>
   );
 }
