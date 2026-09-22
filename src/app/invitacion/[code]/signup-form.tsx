@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +17,7 @@ export function InvitationSignupForm({ code }: { code: string }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdUsername, setCreatedUsername] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +29,45 @@ export function InvitationSignupForm({ code }: { code: string }) {
     setError(null);
     const result = await acceptInvitationAsNewUser(code, firstName, lastName, username, password);
     setPending(false);
-    if (result?.error) setError(result.error);
+    if (result?.error) {
+      setError(result.error);
+      return;
+    }
+    if (result?.username) setCreatedUsername(result.username);
+  }
+
+  async function copyUsername() {
+    if (!createdUsername) return;
+    try {
+      await navigator.clipboard.writeText(createdUsername);
+    } catch {
+      // clipboard API bloqueada: no hay mucho más que hacer.
+    }
+  }
+
+  if (createdUsername) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          ¡Listo! Anotá tu usuario — lo vas a necesitar para volver a entrar (la contraseña ya la
+          elegiste vos).
+        </p>
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-3.5 py-3">
+          <span className="text-sm text-muted-foreground">Tu usuario</span>
+          <span className="font-mono text-lg font-bold text-foreground">{createdUsername}</span>
+        </div>
+        <Button type="button" variant="outline" className="w-full" onClick={copyUsername}>
+          <Copy className="h-3.5 w-3.5" />
+          Copiar usuario
+        </Button>
+        <Link
+          href="/pos"
+          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 transition-colors hover:bg-primary-hover"
+        >
+          Continuar
+        </Link>
+      </div>
+    );
   }
 
   return (

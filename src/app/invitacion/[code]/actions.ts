@@ -12,6 +12,7 @@ import {
 
 export interface AcceptInvitationState {
   error?: string;
+  username?: string;
 }
 
 export async function acceptInvitation(code: string): Promise<AcceptInvitationState> {
@@ -35,6 +36,9 @@ export async function acceptInvitation(code: string): Promise<AcceptInvitationSt
 // (usuario#código, sin email real) y de una acepta la invitación — pensado
 // para un empleado al que invitás, no para otro dueño de negocio (ese
 // sigue registrándose con su email real desde /registro).
+// No redirige solo al terminar — el usuario final (con el #código) recién
+// se conoce acá, y la persona lo tiene que ver y anotar antes de seguir,
+// porque es lo único que le va a permitir volver a entrar.
 export async function acceptInvitationAsNewUser(
   code: string,
   firstName: string,
@@ -132,5 +136,5 @@ export async function acceptInvitationAsNewUser(
     return { error: "No pudimos aceptar la invitación." };
   }
 
-  redirect("/pos");
+  return { username: fullUsername };
 }

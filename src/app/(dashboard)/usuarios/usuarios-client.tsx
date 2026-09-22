@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Copy, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ export function UsuariosClient({
   currentUserId: string;
   siteUrl: string;
 }) {
+  const router = useRouter();
   const { showSuccess } = useToast();
   const [showInvite, setShowInvite] = useState(false);
   const [inviteRole, setInviteRole] = useState<"admin" | "vendedor">("vendedor");
@@ -73,6 +75,25 @@ export function UsuariosClient({
   const [editResult, setEditResult] = useState<{ username: string; password: string | null } | null>(
     null
   );
+
+  // El equipo puede sumar gente desde otro dispositivo (acepta una
+  // invitación, o el dueño crea un usuario interno en otra pestaña) sin que
+  // esta pantalla se entere sola. Como no hay nada abierto (diálogos) que
+  // el refresh pueda interrumpir, refrescamos solos: al volver a la
+  // pestaña y cada 10s mientras está a la vista.
+  useEffect(() => {
+    function refresh() {
+      if (document.visibilityState === "visible") router.refresh();
+    }
+    const interval = setInterval(refresh, 10000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [router]);
 
   async function handleInvite() {
     setInviting(true);
