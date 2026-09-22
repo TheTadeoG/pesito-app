@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DollarSign, Lock } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
@@ -18,6 +18,7 @@ export function OpenCajaDialog() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enterReady, setEnterReady] = useState(false);
+  const amountRef = useRef<HTMLInputElement>(null);
 
   function openDialog() {
     setEnterReady(false);
@@ -57,10 +58,14 @@ export function OpenCajaDialog() {
 
   // Evita que un Enter que llega justo al abrirse el diálogo (p. ej. el
   // mismo doble Enter que lo abrió) confirme la apertura antes de que el
-  // usuario haya podido cargar un monto real.
+  // usuario haya podido cargar un monto real. El campo ni siquiera recibe
+  // foco hasta pasado este tiempo, así ningún Enter perdido puede caer ahí.
   useEffect(() => {
     if (!open) return;
-    const timer = setTimeout(() => setEnterReady(true), ENTER_GUARD_MS);
+    const timer = setTimeout(() => {
+      setEnterReady(true);
+      amountRef.current?.focus();
+    }, ENTER_GUARD_MS);
     return () => clearTimeout(timer);
   }, [open]);
 
@@ -94,11 +99,12 @@ export function OpenCajaDialog() {
               Monto inicial (en efectivo)
             </label>
             <Input
+              ref={amountRef}
               type="number"
               min={0}
               step="0.01"
               inputMode="decimal"
-              autoFocus
+              autoComplete="off"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               onKeyDown={(e) => {

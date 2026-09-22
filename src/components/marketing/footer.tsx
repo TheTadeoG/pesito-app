@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Banknote } from "lucide-react";
+import { AnchorLink } from "@/components/marketing/anchor-link";
 
 export function Footer() {
   return (
@@ -17,12 +18,12 @@ export function Footer() {
         </p>
 
         <div className="flex gap-5 text-sm text-muted-foreground">
-          <a href="#funciones" className="hover:text-foreground">
+          <AnchorLink href="#funciones" className="hover:text-foreground">
             Funciones
-          </a>
-          <a href="#precios" className="hover:text-foreground">
+          </AnchorLink>
+          <AnchorLink href="#precios" className="hover:text-foreground">
             Precios
-          </a>
+          </AnchorLink>
           <Link href="/login" className="hover:text-foreground">
             Ingresar
           </Link>

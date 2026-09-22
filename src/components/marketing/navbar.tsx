@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AnchorLink } from "@/components/marketing/anchor-link";
 
 const links = [
   { href: "#funciones", label: "Funciones" },
@@ -22,9 +23,13 @@ export function Navbar() {
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex">
           {links.map((link) => (
-            <a key={link.href} href={link.href} className="transition-colors hover:text-foreground">
+            <AnchorLink
+              key={link.href}
+              href={link.href as `#${string}`}
+              className="transition-colors hover:text-foreground"
+            >
               {link.label}
-            </a>
+            </AnchorLink>
           ))}
         </nav>
 

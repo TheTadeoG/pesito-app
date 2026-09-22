@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PosMockup } from "@/components/marketing/pos-mockup";
+import { AnchorLink } from "@/components/marketing/anchor-link";
 
 export function Hero() {
   return (
@@ -33,12 +34,12 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <a href="#como-funciona">
+            <AnchorLink href="#como-funciona">
               <Button size="lg" variant="outline" className="w-full sm:w-auto">
                 <PlayCircle className="h-4 w-4" />
                 Ver cómo funciona
               </Button>
-            </a>
+            </AnchorLink>
           </div>
 
           <p className="mt-4 text-sm text-muted-foreground">
