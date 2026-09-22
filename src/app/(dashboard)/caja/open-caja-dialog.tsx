@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { openCaja } from "@/app/(dashboard)/caja/actions";
 
-const ENTER_GUARD_MS = 3000;
+const ENTER_GUARD_MS = 1000;
 
 export function OpenCajaDialog() {
   const router = useRouter();

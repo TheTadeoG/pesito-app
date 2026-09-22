@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { saveProduct, type ProductFormInput } from "@/app/(dashboard)/productos/actions";
+import {
+  saveProduct,
+  type ProductFormInput,
+  type SaveProductResult,
+} from "@/app/(dashboard)/productos/actions";
 import type { Product } from "@/lib/types";
 
 const units = [
@@ -23,9 +27,10 @@ interface ProductFormProps {
   open: boolean;
   onClose: () => void;
   product?: Product | null;
+  onSaved?: (product: NonNullable<SaveProductResult["product"]>) => void;
 }
 
-export function ProductForm({ open, onClose, product }: ProductFormProps) {
+export function ProductForm({ open, onClose, product, onSaved }: ProductFormProps) {
   const isEdit = Boolean(product);
   const [name, setName] = useState(product?.name ?? "");
   const [barcode, setBarcode] = useState(product?.barcode ?? "");
@@ -68,6 +73,7 @@ export function ProductForm({ open, onClose, product }: ProductFormProps) {
       return;
     }
 
+    if (result.product) onSaved?.(result.product);
     resetAndClose();
   }
 

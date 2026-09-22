@@ -14,6 +14,7 @@ import {
   createSupplierQuick,
   type PurchaseItemInput,
 } from "@/app/(dashboard)/compras/actions";
+import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 
 interface ProductLite {
   id: string;
@@ -46,6 +47,8 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [localProducts, setLocalProducts] = useState<ProductLite[]>(products);
+  const [showNewProduct, setShowNewProduct] = useState(false);
   const [supplierId, setSupplierId] = useState<string>("");
   const [supplierQuery, setSupplierQuery] = useState("");
   const [localSuppliers, setLocalSuppliers] = useState<SupplierLite[]>(suppliers);
@@ -61,7 +64,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return products
+    return localProducts
       .filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
@@ -69,7 +72,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
           p.sku?.toLowerCase() === q
       )
       .slice(0, 8);
-  }, [products, query]);
+  }, [localProducts, query]);
 
   const selectedSupplier = useMemo(
     () => localSuppliers.find((s) => s.id === supplierId) ?? null,
@@ -119,6 +122,20 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
 
   function removeLine(index: number) {
     setCart((current) => current.filter((_, i) => i !== index));
+  }
+
+  function handleProductCreated(product: {
+    id: string;
+    name: string;
+    barcode: string | null;
+    sku: string | null;
+    cost: number | null;
+    stock: number;
+    unit: string;
+  }) {
+    setLocalProducts((current) => [...current, product]);
+    addProduct(product);
+    setShowNewProduct(false);
   }
 
   async function handleCreateSupplier() {
@@ -185,37 +202,48 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
             </p>
           </CardHeader>
           <CardContent>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                ref={searchRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar producto por nombre o código..."
-                className="pl-10"
-              />
-              {results.length > 0 && (
-                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-                  {results.map((product) => (
-                    <button
-                      key={product.id}
-                      type="button"
-                      onClick={() => addProduct(product)}
-                      className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm hover:bg-muted"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium text-foreground">
-                          {product.name}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Buscar producto por nombre o código..."
+                  className="pl-10"
+                />
+                {results.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                    {results.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => addProduct(product)}
+                        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm hover:bg-muted"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium text-foreground">
+                            {product.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Stock actual: {product.stock}
+                            {product.unit} · Costo: {formatCurrency(Number(product.cost ?? 0))}
+                          </span>
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          Stock actual: {product.stock}
-                          {product.unit} · Costo: {formatCurrency(Number(product.cost ?? 0))}
-                        </span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNewProduct(true)}
+                title="Crear producto nuevo"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Producto nuevo</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -451,6 +479,12 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
           </div>
         </div>
       </Dialog>
+
+      <ProductForm
+        open={showNewProduct}
+        onClose={() => setShowNewProduct(false)}
+        onSaved={handleProductCreated}
+      />
     </div>
   );
 }

@@ -21,7 +21,19 @@ export interface ActionState {
   error?: string;
 }
 
-export async function saveProduct(input: ProductFormInput): Promise<ActionState> {
+export interface SaveProductResult extends ActionState {
+  product?: {
+    id: string;
+    name: string;
+    barcode: string | null;
+    sku: string | null;
+    cost: number | null;
+    stock: number;
+    unit: string;
+  };
+}
+
+export async function saveProduct(input: ProductFormInput): Promise<SaveProductResult> {
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
 
@@ -44,17 +56,33 @@ export async function saveProduct(input: ProductFormInput): Promise<ActionState>
   if (input.id) {
     const { error } = await supabase.from("products").update(payload).eq("id", input.id);
     if (error) return { error: "No pudimos guardar los cambios." };
-  } else {
-    const { error } = await supabase
-      .from("products")
-      .insert({ ...payload, stock: input.stock });
-    if (error) return { error: "No pudimos crear el producto." };
+
+    revalidatePath("/productos");
+    revalidatePath("/inventario");
+    revalidatePath("/pos");
+    return {};
   }
+
+  const { data, error } = await supabase
+    .from("products")
+    .insert({ ...payload, stock: input.stock })
+    .select("id, name, barcode, sku, cost, stock, unit")
+    .single();
+
+  if (error || !data) return { error: "No pudimos crear el producto." };
 
   revalidatePath("/productos");
   revalidatePath("/inventario");
   revalidatePath("/pos");
-  return {};
+  revalidatePath("/compras");
+
+  return {
+    product: {
+      ...data,
+      cost: data.cost === null ? null : Number(data.cost),
+      stock: Number(data.stock),
+    },
+  };
 }
 
 export async function toggleProductActive(id: string, active: boolean): Promise<ActionState> {
