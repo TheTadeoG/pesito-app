@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,9 +76,11 @@ export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
                   key={supplier.id}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
                 >
-                  <div className="min-w-0 flex-1">
+                  <Link href={`/proveedores/${supplier.id}`} className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="truncate font-medium text-foreground">{supplier.name}</p>
+                      <p className="truncate font-medium text-foreground hover:underline">
+                        {supplier.name}
+                      </p>
                       {supplier.balance > 0 && (
                         <Badge tone="warning">Le debés {formatCurrency(supplier.balance)}</Badge>
                       )}
@@ -86,7 +89,7 @@ export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
                       {[supplier.phone, supplier.email].filter(Boolean).join(" · ") ||
                         "Sin datos de contacto"}
                     </p>
-                  </div>
+                  </Link>
 
                   <div className="flex items-center gap-1.5">
                     {supplier.balance > 0 && (

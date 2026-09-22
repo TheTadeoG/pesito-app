@@ -576,7 +576,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                 <div className="flex items-center justify-between gap-3 px-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   <span>Producto</span>
                   <div className="flex shrink-0 items-center gap-3">
-                    <span className="w-[132px] text-center">Cantidad</span>
+                    <span className="w-[156px] text-center">Cantidad</span>
                     <span className="w-28 text-center">Costo unitario</span>
                     <span className="w-24 text-right">Subtotal</span>
                     <span className="w-7" />
@@ -629,7 +629,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                     </div>
 
                     <div className="flex shrink-0 items-center gap-3">
-                      <div className="flex w-[132px] items-center justify-center gap-1.5">
+                      <div className="flex w-[156px] items-center justify-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => changeQuantity(index, -1)}
@@ -643,7 +643,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
                           step="0.01"
                           value={line.quantity}
                           onChange={(e) => updateQuantity(index, e.target.value)}
-                          className="w-16 px-2 text-center"
+                          className="w-20 px-1.5 text-center"
                         />
                         <button
                           type="button"
