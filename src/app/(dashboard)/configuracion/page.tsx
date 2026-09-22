@@ -8,7 +8,7 @@ import { roleLabels } from "@/lib/roles";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
 import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
 import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
-import { getSubscription } from "@/lib/subscription";
+import { getSubscription, getMonthlySalesCount } from "@/lib/subscription";
 
 export default async function ConfiguracionPage() {
   const { userId, email, organization } = await requireOrgContext();
@@ -22,10 +22,15 @@ export default async function ConfiguracionPage() {
 
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
   const subscription = await getSubscription(supabase, organization.id);
+  // Sólo importa contar esto cuando el límite de ventas realmente aplica
+  // (plan gratis, sin prueba Pro activa) — evita una query de más al resto.
+  const monthlySalesCount = subscription.hasProAccess
+    ? null
+    : await getMonthlySalesCount(supabase, organization.id);
 
   return (
     <div className="max-w-2xl space-y-6">
-      <SubscriptionSection subscription={subscription} />
+      <SubscriptionSection subscription={subscription} monthlySalesCount={monthlySalesCount} />
 
       <Card>
         <CardHeader>

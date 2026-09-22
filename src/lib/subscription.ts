@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { argDateString, argMidnightUTC } from "@/lib/timezone";
 
 export type Plan = "gratis" | "esencial" | "pro" | "ia";
 
@@ -48,4 +49,27 @@ export async function getSubscription(
     hasProAccess: plan === "pro" || plan === "ia" || trialActive,
     trialActive,
   };
+}
+
+// El plan gratis, una vez pasada la prueba Pro, queda limitado a esta
+// cantidad de ventas por mes calendario — el resto de los límites por plan
+// se van a ir definiendo más adelante.
+export const FREE_PLAN_MONTHLY_SALES_LIMIT = 150;
+
+/** Ventas completadas en lo que va del mes calendario (huso Argentina). */
+export async function getMonthlySalesCount(
+  supabase: SupabaseClient<Database>,
+  orgId: string
+): Promise<number> {
+  const [year, month] = argDateString().split("-");
+  const monthStart = argMidnightUTC(`${year}-${month}-01`);
+
+  const { count } = await supabase
+    .from("sales")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .eq("status", "completada")
+    .gte("created_at", monthStart.toISOString());
+
+  return count ?? 0;
 }

@@ -21,7 +21,7 @@ export async function updateOrgPlan(orgId: string, plan: Plan): Promise<ActionSt
   await requirePlatformAdmin();
   const admin = createAdminClient();
 
-  // Al asignar un plan pago a mano, la prueba de 7 días ya no tiene
+  // Al asignar un plan pago a mano, la prueba de 14 días ya no tiene
   // sentido: se limpia para que no quede una fecha vieja dando vueltas.
   const proTrialEndsAt = plan === "gratis" ? undefined : null;
 

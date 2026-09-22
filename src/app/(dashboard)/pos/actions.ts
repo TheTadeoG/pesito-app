@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { getSubscription, getMonthlySalesCount, FREE_PLAN_MONTHLY_SALES_LIMIT } from "@/lib/subscription";
 import type { Json } from "@/lib/database.types";
 
 export interface CheckoutItemInput {
@@ -39,6 +40,20 @@ export async function checkoutSale(
   }
 
   const supabase = await createClient();
+
+  // El Plan Gratis, una vez pasada la prueba de funciones Pro, tiene un
+  // tope de ventas por mes. Se valida acá (antes de la RPC) para poder
+  // devolver un mensaje claro en vez de un error genérico de base de datos.
+  const subscription = await getSubscription(supabase, input.orgId);
+  if (!subscription.hasProAccess) {
+    const monthlySales = await getMonthlySalesCount(supabase, input.orgId);
+    if (monthlySales >= FREE_PLAN_MONTHLY_SALES_LIMIT) {
+      return {
+        error: `Llegaste al límite de ${FREE_PLAN_MONTHLY_SALES_LIMIT} ventas de este mes del Plan Gratis. Pasate a un plan pago desde Configuración para seguir vendiendo sin límite.`,
+      };
+    }
+  }
+
   const { data, error } = await supabase.rpc("checkout_sale", {
     p_org_id: input.orgId,
     p_cash_register_id: input.cashRegisterId,

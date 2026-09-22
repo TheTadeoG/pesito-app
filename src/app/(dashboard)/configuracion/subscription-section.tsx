@@ -3,18 +3,22 @@ import { Check, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatDateTime } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import type { SubscriptionInfo } from "@/lib/subscription";
-import { planOrder } from "@/lib/subscription";
-import { planDefinitions } from "@/lib/plan-features";
+import { FREE_PLAN_MONTHLY_SALES_LIMIT } from "@/lib/subscription";
+import { paidPlanDefinitions, planDefinitions } from "@/lib/plan-features";
 
-export function SubscriptionSection({ subscription }: { subscription: SubscriptionInfo }) {
+export function SubscriptionSection({
+  subscription,
+  monthlySalesCount,
+}: {
+  subscription: SubscriptionInfo;
+  // Sólo se calcula (en el server) cuando hace falta mostrarlo: plan
+  // gratis y sin prueba Pro activa.
+  monthlySalesCount: number | null;
+}) {
   const current = planDefinitions[subscription.plan];
-  // Lo próximo a lo que valdría la pena subirse: el siguiente plan en el
-  // orden (Gratis -> Esencial -> Pro -> IA). Al plan IA no le mostramos
-  // "próximo plan" porque ya es el más alto.
-  const currentIndex = planOrder.indexOf(subscription.plan);
-  const nextPlan = currentIndex < planOrder.length - 1 ? planDefinitions[planOrder[currentIndex + 1]] : null;
+  const otherPlans = paidPlanDefinitions.filter((p) => p.plan !== subscription.plan);
 
   return (
     <Card>
@@ -46,34 +50,64 @@ export function SubscriptionSection({ subscription }: { subscription: Subscripti
           ))}
         </ul>
 
-        {nextPlan && (
+        {monthlySalesCount !== null && (
           <div
-            className={cn(
-              "space-y-3 rounded-xl border px-4 py-4",
-              "border-primary/30 bg-accent"
-            )}
+            className={
+              monthlySalesCount >= FREE_PLAN_MONTHLY_SALES_LIMIT
+                ? "rounded-xl border border-danger/30 bg-danger-bg px-4 py-3 text-sm text-danger"
+                : "rounded-xl border border-border px-4 py-3 text-sm text-foreground"
+            }
           >
-            <div className="flex items-center gap-2 text-accent-foreground">
-              <Sparkles className="h-4 w-4 shrink-0" />
-              <p className="text-sm font-semibold">Qué te suma {nextPlan.name}</p>
+            <span className="font-semibold">
+              {monthlySalesCount} / {FREE_PLAN_MONTHLY_SALES_LIMIT}
+            </span>{" "}
+            ventas este mes
+            {monthlySalesCount >= FREE_PLAN_MONTHLY_SALES_LIMIT
+              ? " — llegaste al límite del Plan Gratis. Pasate a un plan pago para seguir vendiendo."
+              : "."}
+          </div>
+        )}
+
+        {otherPlans.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-foreground">
+              <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+              <p className="text-sm font-semibold">Pasarte a otro plan</p>
             </div>
-            <ul className="space-y-1.5">
-              {nextPlan.features
-                .filter((f) => !f.startsWith("Todas las funciones"))
-                .map((feature) => (
-                  <li key={feature} className="text-sm text-accent-foreground">
-                    · {feature}
-                  </li>
-                ))}
-            </ul>
-            <p className="text-xs text-accent-foreground/80">
-              {nextPlan.priceLabel} {nextPlan.period}
-            </p>
-            <a href="mailto:soporte@pesito.app?subject=Quiero pasarme al Plan Pro">
-              <Button variant="primary" size="sm">
-                Pasate a {nextPlan.name}
-              </Button>
-            </a>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {otherPlans.map((plan) => (
+                <div
+                  key={plan.plan}
+                  className="flex flex-col gap-2.5 rounded-xl border border-border p-4"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{plan.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {plan.priceLabel} {plan.period}
+                    </p>
+                  </div>
+                  <ul className="flex-1 space-y-1">
+                    {plan.features
+                      .filter((f) => !f.startsWith("Todas las funciones"))
+                      .slice(0, 4)
+                      .map((feature) => (
+                        <li key={feature} className="text-xs text-muted-foreground">
+                          · {feature}
+                        </li>
+                      ))}
+                  </ul>
+                  <a
+                    href={`mailto:soporte@pesito.app?subject=${encodeURIComponent(
+                      `Quiero pasarme al ${plan.name}`
+                    )}`}
+                  >
+                    <Button variant="outline" size="sm" className="w-full">
+                      Pasate a {plan.name}
+                    </Button>
+                  </a>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

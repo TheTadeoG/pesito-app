@@ -11,6 +11,11 @@ export interface PlanDefinition {
   features: string[];
 }
 
+// Ver también FREE_PLAN_MONTHLY_SALES_LIMIT en lib/subscription.ts, que es
+// el valor que realmente se valida al vender — éste es sólo para mostrarlo
+// en el texto de abajo sin que se desalinee.
+export const FREE_PLAN_SALES_LIMIT_LABEL = "Hasta 150 ventas por mes";
+
 // Fuente única de los planes: la usan tanto la página pública de precios
 // (marketing/pricing.tsx, marketing/structured-data.tsx) como la sección
 // de Suscripción del panel, para que nunca queden desalineados.
@@ -30,6 +35,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Clientes y cuentas corrientes (fiado)",
       "Reportes de ventas e ingresos",
       "1 usuario",
+      FREE_PLAN_SALES_LIMIT_LABEL,
     ],
   },
   esencial: {
@@ -80,8 +86,9 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
   },
 };
 
-// Planes que se muestran en la sección pública de precios (el Gratis se
-// promociona aparte, como "7 días de prueba" / "Empezar gratis").
+// Planes pagos, en el mismo orden que se muestran en la página de precios
+// y en Configuración. El Plan Gratis (planDefinitions.gratis) se maneja
+// aparte porque no tiene CTA de "pasarse" — es el punto de partida.
 export const paidPlanDefinitions: PlanDefinition[] = [
   planDefinitions.esencial,
   planDefinitions.pro,
