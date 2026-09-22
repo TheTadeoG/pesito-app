@@ -393,7 +393,8 @@ export function UsuariosClient({
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Anotá estos datos y pasáselos a tu empleado — la contraseña no se puede volver a ver
-              después de cerrar esto.
+              después de cerrar esto. Si la necesitás de nuevo, podés cambiarla cuando quieras con
+              el botón de editar (lápiz) en la lista de usuarios.
             </p>
             <div className="space-y-2 rounded-xl border border-border bg-muted/40 px-3.5 py-3">
               <div className="flex items-center justify-between text-sm">
@@ -506,7 +507,7 @@ export function UsuariosClient({
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               {editResult.password
-                ? "Anotá estos datos y pasáselos a tu empleado — la contraseña no se puede volver a ver después de cerrar esto."
+                ? "Anotá estos datos y pasáselos a tu empleado — la contraseña no se puede volver a ver después de cerrar esto, pero la podés cambiar de nuevo cuando quieras desde acá."
                 : "El usuario se actualizó. Pasáselo a tu empleado."}
             </p>
             <div className="space-y-2 rounded-xl border border-border bg-muted/40 px-3.5 py-3">
