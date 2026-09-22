@@ -1,31 +1,42 @@
-import { BarChart3, CreditCard, DollarSign, Package, Receipt, TrendingUp } from "lucide-react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
-import { paymentLabels } from "@/lib/payment-labels";
-import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
+import { daysSince, getPeriodRange, resolvePeriod } from "@/lib/report-periods";
+import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
+import { ReportesDashboard, type ReportesData } from "@/app/(dashboard)/reportes/reportes-dashboard";
+import type { SaleRow } from "@/components/dashboard/ventas-list";
 
-const PERIOD_DAYS = 30;
+const paymentLabels: Record<string, string> = {
+  efectivo: "Efectivo",
+  tarjeta: "Tarjeta",
+  transferencia: "Transferencia",
+  qr: "QR",
+  mixto: "Mixto",
+  fiado: "Fiado",
+};
 
 function dayLabel(date: Date) {
   return new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric" }).format(date);
 }
 
-export default async function ReportesPage() {
+export default async function ReportesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
+  const { period: periodParam } = await searchParams;
+  const period = resolvePeriod(periodParam);
+  const { start, label: periodLabel, groupBy } = getPeriodRange(period);
+
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
-
-  const periodStart = new Date();
-  periodStart.setDate(periodStart.getDate() - PERIOD_DAYS);
 
   const { data: salesRaw } = await supabase
     .from("sales")
     .select("id, total, payment_method, created_at, customer_id")
     .eq("org_id", organization.id)
     .eq("status", "completada")
-    .gte("created_at", periodStart.toISOString())
+    .gte("created_at", start.toISOString())
     .order("created_at", { ascending: false });
 
   const sales = (salesRaw ?? []).map((s) => ({ ...s, total: Number(s.total) }));
@@ -77,46 +88,73 @@ export default async function ReportesPage() {
 
   const paymentTotals = new Map<string, number>();
   for (const sale of sales) {
-    paymentTotals.set(sale.payment_method, (paymentTotals.get(sale.payment_method) ?? 0) + sale.total);
+    paymentTotals.set(
+      sale.payment_method,
+      (paymentTotals.get(sale.payment_method) ?? 0) + sale.total
+    );
   }
   const paymentBreakdown = Array.from(paymentTotals.entries())
-    .map(([method, total]) => ({ method, total, pct: ingresos > 0 ? (total / ingresos) * 100 : 0 }))
-    .sort((a, b) => b.total - a.total);
-  const topPaymentMethod = paymentBreakdown[0]?.method;
+    .map(([method, total]) => ({ label: paymentLabels[method] ?? method, value: total }))
+    .sort((a, b) => b.value - a.value);
 
   const byProductQty = new Map<string, { name: string; quantity: number; margin: number }>();
   for (const item of items) {
     const key = item.product_id ?? item.product_name;
     const current = byProductQty.get(key) ?? { name: item.product_name, quantity: 0, margin: 0 };
     current.quantity += item.quantity;
-    current.margin += item.subtotal - item.quantity * (item.product_id ? costById.get(item.product_id) ?? 0 : 0);
+    current.margin +=
+      item.subtotal - item.quantity * (item.product_id ? costById.get(item.product_id) ?? 0 : 0);
     byProductQty.set(key, current);
   }
   const topByQuantity = Array.from(byProductQty.values())
     .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5);
+    .slice(0, 5)
+    .map((p) => ({ name: p.name, quantity: p.quantity }));
   const topByMargin = Array.from(byProductQty.values())
     .sort((a, b) => b.margin - a.margin)
+    .slice(0, 5)
+    .map((p) => ({ name: p.name, margin: p.margin }));
+
+  const byCustomer = new Map<string, number>();
+  for (const sale of sales) {
+    if (!sale.customer_id) continue;
+    byCustomer.set(sale.customer_id, (byCustomer.get(sale.customer_id) ?? 0) + sale.total);
+  }
+  const topCustomers = Array.from(byCustomer.entries())
+    .map(([customerId, total]) => ({
+      name: customerNameById.get(customerId) ?? "Cliente eliminado",
+      total,
+    }))
+    .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - (6 - i));
-    return date;
-  });
-  const dailyTotals = days.map((date) => {
-    const next = new Date(date);
-    next.setDate(next.getDate() + 1);
-    const total = sales
-      .filter((s) => {
-        const created = new Date(s.created_at);
-        return created >= date && created < next;
-      })
-      .reduce((acc, s) => acc + s.total, 0);
-    return { date, total };
-  });
-  const maxDaily = Math.max(1, ...dailyTotals.map((d) => d.total));
+  let revenueChart;
+  if (groupBy === "hour") {
+    const hourTotals = Array.from({ length: 24 }, () => 0);
+    for (const sale of sales) {
+      const hour = new Date(sale.created_at).getHours();
+      hourTotals[hour] += sale.total;
+    }
+    revenueChart = hourTotals.map((value, hour) => ({ label: `${hour}h`, value }));
+  } else {
+    const dayCount = daysSince(start);
+    const days = Array.from({ length: dayCount }, (_, i) => {
+      const date = new Date(start);
+      date.setDate(date.getDate() + i);
+      return date;
+    });
+    revenueChart = days.map((date) => {
+      const next = new Date(date);
+      next.setDate(next.getDate() + 1);
+      const value = sales
+        .filter((s) => {
+          const created = new Date(s.created_at);
+          return created >= date && created < next;
+        })
+        .reduce((acc, s) => acc + s.total, 0);
+      return { label: dayLabel(date), value };
+    });
+  }
 
   const itemsBySale = new Map<string, string[]>();
   for (const item of items) {
@@ -136,149 +174,27 @@ export default async function ReportesPage() {
     itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
   }));
 
-  const tiles = [
-    { icon: DollarSign, label: "Ingresos (30 días)", value: formatCurrency(ingresos) },
-    { icon: TrendingUp, label: "Ganancia estimada", value: formatCurrency(gananciaEstimada) },
-    { icon: BarChart3, label: "Total de ventas", value: String(totalVentas) },
-    { icon: Receipt, label: "Ticket promedio", value: formatCurrency(ticketPromedio) },
-  ];
+  const data: ReportesData = {
+    periodLabel,
+    tiles: [
+      { icon: "dollar", label: `Ingresos (${periodLabel})`, value: formatCurrency(ingresos) },
+      { icon: "trending", label: "Ganancia estimada", value: formatCurrency(gananciaEstimada) },
+      { icon: "chart", label: "Total de ventas", value: String(totalVentas) },
+      { icon: "receipt", label: "Ticket promedio", value: formatCurrency(ticketPromedio) },
+    ],
+    revenueChart,
+    revenueChartIsHourly: groupBy === "hour",
+    paymentBreakdown,
+    topByQuantity,
+    topByMargin,
+    topCustomers,
+    saleRows,
+  };
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {tiles.map((tile) => (
-          <Card key={tile.label}>
-            <CardContent className="flex items-center gap-3 py-5">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                <tile.icon className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-xs text-muted-foreground">{tile.label}</p>
-                <p className="truncate text-xl font-bold text-foreground">{tile.value}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ingresos por día (últimos 7 días)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {ingresos === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Sin datos en el período.
-              </p>
-            ) : (
-              <div className="flex h-40 items-end justify-between gap-2">
-                {dailyTotals.map((d) => (
-                  <div key={d.date.toISOString()} className="flex flex-1 flex-col items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      {d.total > 0 ? formatCurrency(d.total) : ""}
-                    </span>
-                    <div className="flex w-full flex-1 items-end">
-                      <div
-                        className="w-full rounded-t-md bg-primary/80"
-                        style={{ height: `${Math.max(4, (d.total / maxDaily) * 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">{dayLabel(d.date)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">¿Cómo te pagan?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {paymentBreakdown.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">Sin operaciones.</p>
-            ) : (
-              <div className="space-y-3">
-                {paymentBreakdown.map((p) => (
-                  <div key={p.method}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="font-medium text-foreground">
-                        {paymentLabels[p.method] ?? p.method}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {formatCurrency(p.total)} · {p.pct.toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${p.pct}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Productos más vendidos</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {topByQuantity.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">Sin ventas.</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {topByQuantity.map((p) => (
-                  <div key={p.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
-                    <span className="truncate text-foreground">{p.name}</span>
-                    <Badge tone="accent">{p.quantity} vendidos</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Productos que más ganancia dejan</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {topByMargin.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">Sin ventas.</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {topByMargin.map((p) => (
-                  <div key={p.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
-                    <span className="truncate text-foreground">{p.name}</span>
-                    <span className="font-semibold text-success">{formatCurrency(p.margin)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Últimas ventas</CardTitle>
-          {topPaymentMethod && (
-            <span className="text-xs text-muted-foreground">
-              Medio más usado: {paymentLabels[topPaymentMethod] ?? topPaymentMethod}
-            </span>
-          )}
-        </CardHeader>
-        <CardContent className="p-0">
-          <VentasList sales={saleRows} paymentLabels={paymentLabels} />
-        </CardContent>
-      </Card>
+      <PeriodSelector period={period} />
+      <ReportesDashboard data={data} />
     </div>
   );
 }
