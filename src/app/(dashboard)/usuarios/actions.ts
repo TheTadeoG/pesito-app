@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
+import { computeCashOnHand } from "@/lib/caja";
 import {
   buildFullUsername,
   generateDiscriminator,
@@ -63,11 +64,77 @@ export async function updateMemberRole(
 }
 
 export async function removeMember(membershipId: string): Promise<ActionState> {
+  const { organization, membership } = await requireOrgContext();
+  if (!isOrgAdmin(membership.role)) {
+    return { error: "No tenés permiso para quitar usuarios." };
+  }
+
   const supabase = await createClient();
+
+  const { data: memberRow } = await supabase
+    .from("memberships")
+    .select("id, user_id, username")
+    .eq("id", membershipId)
+    .eq("org_id", organization.id)
+    .maybeSingle();
+
+  if (!memberRow) return { error: "Usuario no encontrado." };
+
+  // Si le queda una caja abierta, la cerramos antes de sacarlo del equipo:
+  // si no, esa caja queda abierta para siempre (nadie más la puede cerrar)
+  // y arruina los cálculos de efectivo disponible de ahí en adelante.
+  const { data: openRegister } = await supabase
+    .from("cash_registers")
+    .select("id, opening_amount")
+    .eq("org_id", organization.id)
+    .eq("user_id", memberRow.user_id)
+    .eq("status", "abierta")
+    .maybeSingle();
+
+  if (openRegister) {
+    const openingAmount = Number(openRegister.opening_amount);
+    const expectedAmount = await computeCashOnHand(supabase, openRegister.id, openingAmount);
+    await supabase
+      .from("cash_registers")
+      .update({
+        status: "cerrada",
+        closing_amount: expectedAmount,
+        expected_amount: expectedAmount,
+        closed_at: new Date().toISOString(),
+        notes: "Cerrada automáticamente al quitar al usuario del equipo.",
+      })
+      .eq("id", openRegister.id);
+  }
+
   const { error } = await supabase.rpc("remove_member", { p_membership_id: membershipId });
   if (error) return { error: "No pudimos quitar al usuario." };
 
+  // Cuenta interna (usuario#código, creada sólo para este equipo): si tras
+  // esto ya no le queda ninguna membresía en ningún negocio, no dejamos la
+  // cuenta viva — si no, podría loguearse igual y armarse su propio negocio
+  // desde /onboarding con el mismo usuario y contraseña que vos le diste.
+  if (memberRow.username) {
+    try {
+      const admin = createAdminClient();
+      const { data: remaining } = await admin
+        .from("memberships")
+        .select("id")
+        .eq("user_id", memberRow.user_id)
+        .limit(1);
+
+      if (!remaining || remaining.length === 0) {
+        await admin.auth.admin.deleteUser(memberRow.user_id);
+      }
+    } catch {
+      // Sin SUPABASE_SERVICE_ROLE_KEY configurada no podemos borrar la
+      // cuenta de auth; el usuario ya quedó fuera del equipo igual, que es
+      // lo importante — esto es sólo una limpieza extra.
+    }
+  }
+
   revalidatePath("/usuarios");
+  revalidatePath("/caja");
+  revalidatePath("/pos");
   return {};
 }
 

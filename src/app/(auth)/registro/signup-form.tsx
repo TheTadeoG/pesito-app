@@ -11,7 +11,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 
 const initialState: AuthActionState = {};
 
-export function SignupForm({ inviteCode }: { inviteCode?: string }) {
+export function SignupForm() {
   const [state, formAction, pending] = useActionState(signup, initialState);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,8 +34,6 @@ export function SignupForm({ inviteCode }: { inviteCode?: string }) {
 
   return (
     <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
-      {inviteCode && <input type="hidden" name="inviteCode" value={inviteCode} />}
-
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label htmlFor="firstName">Nombre</Label>
@@ -47,15 +45,13 @@ export function SignupForm({ inviteCode }: { inviteCode?: string }) {
         </div>
       </div>
 
-      {!inviteCode && (
-        <div>
-          <Label htmlFor="businessName">Nombre de tu kiosco o almacén</Label>
-          <Input id="businessName" name="businessName" placeholder="Kiosco Don José" required />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Podés cambiarlo más adelante desde Configuración.
-          </p>
-        </div>
-      )}
+      <div>
+        <Label htmlFor="businessName">Nombre de tu kiosco o almacén</Label>
+        <Input id="businessName" name="businessName" placeholder="Kiosco Don José" required />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Podés cambiarlo más adelante desde Configuración.
+        </p>
+      </div>
 
       <div>
         <Label htmlFor="phone">Teléfono</Label>
@@ -104,15 +100,12 @@ export function SignupForm({ inviteCode }: { inviteCode?: string }) {
       )}
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Creando cuenta…" : inviteCode ? "Crear cuenta y unirme" : "Crear mi cuenta gratis"}
+        {pending ? "Creando cuenta…" : "Crear mi cuenta gratis"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         ¿Ya tenés cuenta?{" "}
-        <Link
-          href={inviteCode ? `/login?next=${encodeURIComponent(`/invitacion/${inviteCode}`)}` : "/login"}
-          className="font-medium text-primary hover:underline"
-        >
+        <Link href="/login" className="font-medium text-primary hover:underline">
           Ingresá
         </Link>
       </p>

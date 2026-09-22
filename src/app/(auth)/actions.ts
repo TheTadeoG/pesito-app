@@ -52,9 +52,6 @@ export async function signup(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
-  const inviteCode = String(formData.get("inviteCode") ?? "").trim();
-  // Con invitación el negocio ya existe: no pedimos nombre de negocio y, al
-  // confirmar la cuenta, se acepta la invitación en vez de armar una nueva.
   const businessName = String(formData.get("businessName") ?? "").trim();
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
@@ -63,14 +60,7 @@ export async function signup(
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-  if (
-    !email ||
-    !password ||
-    !firstName ||
-    !lastName ||
-    !phone ||
-    (!inviteCode && !businessName)
-  ) {
+  if (!email || !password || !firstName || !lastName || !phone || !businessName) {
     return { error: "Completá todos los campos." };
   }
 
@@ -82,7 +72,6 @@ export async function signup(
     return { error: "Las contraseñas no coinciden." };
   }
 
-  const postSignupPath = inviteCode ? `/invitacion/${inviteCode}` : "/onboarding";
   const origin = (await headers()).get("origin");
   const supabase = await createClient();
 
@@ -91,12 +80,12 @@ export async function signup(
     password,
     options: {
       data: {
-        business_name: businessName || null,
+        business_name: businessName,
         phone,
         first_name: firstName,
         last_name: lastName,
       },
-      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(postSignupPath)}`,
+      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent("/onboarding")}`,
     },
   });
 
@@ -113,7 +102,7 @@ export async function signup(
     };
   }
 
-  redirect(postSignupPath);
+  redirect("/onboarding");
 }
 
 export async function signOut() {

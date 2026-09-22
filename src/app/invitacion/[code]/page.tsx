@@ -5,16 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { roleLabels } from "@/lib/roles";
 import { AcceptInvitationButton } from "@/app/invitacion/[code]/accept-button";
+import { InvitationSignupForm } from "@/app/invitacion/[code]/signup-form";
 
 export const metadata: Metadata = {
   title: "Invitación",
   robots: { index: false, follow: false },
 };
-
-const primaryLinkClass =
-  "inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 transition-colors hover:bg-primary-hover";
-const outlineLinkClass =
-  "inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted";
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -75,16 +71,17 @@ export default async function InvitacionPage({
           {user ? (
             <AcceptInvitationButton code={code} />
           ) : (
-            <div className="space-y-2">
-              <Link href={`/registro?invite=${code}`} className={primaryLinkClass}>
-                Crear cuenta y unirme
-              </Link>
-              <Link
-                href={`/login?next=${encodeURIComponent(`/invitacion/${code}`)}`}
-                className={outlineLinkClass}
-              >
-                Ya tengo cuenta
-              </Link>
+            <div className="space-y-4">
+              <InvitationSignupForm code={code} />
+              <p className="text-center text-sm text-muted-foreground">
+                ¿Ya tenés cuenta?{" "}
+                <Link
+                  href={`/login?next=${encodeURIComponent(`/invitacion/${code}`)}`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Ingresá
+                </Link>
+              </p>
             </div>
           )}
         </CardContent>

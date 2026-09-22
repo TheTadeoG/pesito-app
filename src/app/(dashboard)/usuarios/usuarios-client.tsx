@@ -110,7 +110,12 @@ export function UsuariosClient({
 
   async function handleRemove(member: MemberRow) {
     const label = member.username ?? member.email ?? "este usuario";
-    if (!confirm(`¿Quitar a ${label} del equipo?`)) return;
+    if (
+      !confirm(
+        `¿Quitar a ${label} del equipo? Si tiene una caja abierta, se cierra automáticamente.`
+      )
+    )
+      return;
     setBusyId(member.id);
     await removeMember(member.id);
     setBusyId(null);

@@ -504,7 +504,7 @@ export interface Database {
         Returns: { org_name: string; role: string; valid: boolean }[];
       };
       accept_invitation: {
-        Args: { p_code: string };
+        Args: { p_code: string; p_username?: string | null };
         Returns: string;
       };
       update_member_role: {
