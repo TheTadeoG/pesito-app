@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Minus, Package, Plus, Search, Trash2 } from "lucide-react";
+import { ImageIcon, Minus, Package, Plus, Search, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ interface ProductLite {
   cost: number | null;
   stock: number;
   unit: string;
+  image_url: string | null;
 }
 
 interface SupplierLite {
@@ -65,6 +66,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
   const [browseProducts, setBrowseProducts] = useState(false);
   const [browseSuppliers, setBrowseSuppliers] = useState(false);
   const [supplierHighlightedIndex, setSupplierHighlightedIndex] = useState(-1);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const lastEnterAt = useRef<number>(0);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -294,6 +296,7 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
       cost: number | null;
       stock: number;
       unit: string;
+      image_url: string | null;
     },
     initialStock: number
   ) {
@@ -448,75 +451,100 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
               </p>
             ) : (
               <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-3 px-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <span className="min-w-0 flex-1">Producto</span>
-                  <span className="w-[124px] text-center">Cantidad</span>
-                  <span className="w-28">Costo unitario</span>
-                  <span className="w-24 text-right">Subtotal</span>
-                  <span className="w-7" />
+                <div className="flex items-center justify-between gap-3 px-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span>Producto</span>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="w-[132px] text-center">Cantidad</span>
+                    <span className="w-28 text-center">Costo unitario</span>
+                    <span className="w-24 text-right">Subtotal</span>
+                    <span className="w-7" />
+                  </div>
                 </div>
                 {cart.map((line, index) => (
                   <div
                     key={line.product.id}
-                    className="flex flex-wrap items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border px-3.5 py-2.5"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {line.product.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Stock actual: {line.product.stock}
-                        {line.product.unit}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex min-w-0 items-center gap-2.5">
                       <button
                         type="button"
-                        onClick={() => changeQuantity(index, -1)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                        onClick={() =>
+                          line.product.image_url && setPreviewImage(line.product.image_url)
+                        }
+                        disabled={!line.product.image_url}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground"
                       >
-                        <Minus className="h-3.5 w-3.5" />
+                        {line.product.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={line.product.image_url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="h-4 w-4" />
+                        )}
                       </button>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={line.quantity}
-                        onChange={(e) => updateQuantity(index, e.target.value)}
-                        className="w-16 px-2 text-center"
-                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {line.product.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Stock actual: {line.product.stock}
+                          {line.product.unit}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-3">
+                      <div className="flex w-[132px] items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => changeQuantity(index, -1)}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={line.quantity}
+                          onChange={(e) => updateQuantity(index, e.target.value)}
+                          className="w-16 px-2 text-center"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => changeQuantity(index, 1)}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="w-28">
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={line.unitCost || ""}
+                          onChange={(e) => updateUnitCost(index, e.target.value)}
+                          placeholder="Costo unit."
+                        />
+                      </div>
+
+                      <span className="w-24 text-right text-sm font-semibold text-foreground">
+                        {formatCurrency(line.quantity * line.unitCost)}
+                      </span>
+
                       <button
                         type="button"
-                        onClick={() => changeQuantity(index, 1)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                        onClick={() => removeLine(index)}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-danger hover:bg-danger-bg"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-
-                    <div className="w-28">
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={line.unitCost || ""}
-                        onChange={(e) => updateUnitCost(index, e.target.value)}
-                        placeholder="Costo unit."
-                      />
-                    </div>
-
-                    <span className="w-24 text-right text-sm font-semibold text-foreground">
-                      {formatCurrency(line.quantity * line.unitCost)}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => removeLine(index)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-danger hover:bg-danger-bg"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
                 ))}
               </div>
@@ -707,6 +735,21 @@ export function ComprasClient({ orgId, products, suppliers }: ComprasClientProps
         onSaved={handleProductCreated}
         initialStockAsPurchase
       />
+
+      <Dialog
+        open={previewImage !== null}
+        onClose={() => setPreviewImage(null)}
+        title="Imagen del producto"
+      >
+        {previewImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewImage}
+            alt=""
+            className="mx-auto max-h-[60vh] w-full rounded-xl object-contain"
+          />
+        )}
+      </Dialog>
     </div>
   );
 }
