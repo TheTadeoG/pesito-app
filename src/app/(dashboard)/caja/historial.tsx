@@ -91,7 +91,9 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
                                 : "bg-muted text-muted-foreground"
                             )}
                           >
-                            {paymentLabels[p.method] ?? p.method}: {formatCurrency(p.total)}
+                            {paymentLabels[p.method] ?? p.method}
+                            {p.method === "fiado" ? " (pendiente de cobro)" : ""}:{" "}
+                            {formatCurrency(p.total)}
                           </span>
                         ))}
                         {row.egresosTotal > 0 && (

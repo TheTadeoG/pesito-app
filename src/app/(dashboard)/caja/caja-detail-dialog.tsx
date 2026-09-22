@@ -47,7 +47,9 @@ export function CajaDetailDialog({
             </div>
             {detail.debtPaymentsTotal > 0 && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground">+ Cobros de fiado en efectivo</span>
+                <span className="text-muted-foreground">
+                  + Clientes pagando su deuda (fiado) en efectivo
+                </span>
                 <span className="text-success">{formatCurrency(detail.debtPaymentsTotal)}</span>
               </div>
             )}
@@ -102,6 +104,7 @@ export function CajaDetailDialog({
                   <div key={row.method} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                       {paymentLabels[row.method] ?? row.method}
+                      {row.method === "fiado" && " (pendiente de cobro)"}
                     </span>
                     <span className="font-medium text-foreground">
                       {formatCurrency(row.total)}

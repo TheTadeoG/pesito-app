@@ -162,6 +162,7 @@ export function ManageCaja({
               <div key={row.method} className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
                   {paymentLabels[row.method] ?? row.method}
+                  {row.method === "fiado" && " (pendiente de cobro)"}
                 </span>
                 <span className="font-semibold text-foreground">{formatCurrency(row.total)}</span>
               </div>
