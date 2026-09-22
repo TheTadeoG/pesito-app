@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { computeCashOnHand, computePaymentBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
+import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 
 export interface ActionState {
@@ -53,6 +54,7 @@ export async function getCajaDetail(
 
   if (!register) return { error: "No encontramos la caja." };
 
+  const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
   const openingAmount = Number(register.opening_amount);
 
   const [{ data: movementsRaw }, { data: salesRaw }, expectedAmount, paymentBreakdown] =
@@ -137,7 +139,7 @@ export async function getCajaDetail(
     detail: {
       id: register.id,
       status: register.status,
-      userLabel: register.user_id === userId ? "Vos" : `Usuario ${register.user_id.slice(0, 8)}`,
+      userLabel: memberLabelFor(register.user_id, userId, memberLabelsById),
       openedAt: register.opened_at,
       closedAt: register.closed_at,
       openingAmount,

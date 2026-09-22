@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { computeCashOnHand, type PaymentBreakdownRow } from "@/lib/caja";
+import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
 import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/historial";
@@ -39,6 +40,8 @@ export default async function CajaPage() {
     ...(closedRegisters ?? []).map((r) => r.id),
   ];
 
+  const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
+
   const { data: salesForBreakdown } =
     allRegisterIds.length > 0
       ? await supabase
@@ -72,7 +75,7 @@ export default async function CajaPage() {
     .filter((r) => r.closed_at)
     .map((r) => ({
       id: r.id,
-      userLabel: r.user_id === userId ? "Vos" : `Usuario ${r.user_id.slice(0, 8)}`,
+      userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
       openedAt: r.opened_at,
       closedAt: r.closed_at as string,
       openingAmount: Number(r.opening_amount),
@@ -100,7 +103,7 @@ export default async function CajaPage() {
     const openRegisterRows: OpenRegisterRow[] = await Promise.all(
       (openRegisters ?? []).map(async (r) => ({
         id: r.id,
-        userLabel: r.user_id === userId ? "Vos" : `Usuario ${r.user_id.slice(0, 8)}`,
+        userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
         openedAt: r.opened_at,
         openingAmount: Number(r.opening_amount),
         cashOnHand: await computeCashOnHand(supabase, r.id, Number(r.opening_amount)),
@@ -142,7 +145,7 @@ export default async function CajaPage() {
         openingAmount={openingAmount}
         cashOnHand={cashOnHand}
         openedAt={register.opened_at}
-        openedByLabel={email ?? "Vos"}
+        openedByLabel={membership.username ?? email ?? "Vos"}
         paymentBreakdown={getBreakdown(register.id)}
       />
       {teamOverview}
