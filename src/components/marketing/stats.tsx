@@ -18,7 +18,7 @@ export async function Stats() {
   const tiles = [
     stats.kioscos > 0 && {
       icon: Store,
-      label: "Kioscos y almacenes usando Pesito",
+      label: "Comercios usando Pesito",
       value: `+${numberFormatter.format(stats.kioscos)}`,
     },
     stats.ventas > 0 && {

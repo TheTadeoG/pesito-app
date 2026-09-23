@@ -10,7 +10,7 @@ export function Cta() {
           Dejá el cuaderno. Pasate a Pesito hoy.
         </h2>
         <p className="max-w-md text-primary-foreground/85">
-          Registrate gratis y empezá a vender con tu kiosco organizado desde
+          Registrate gratis y empezá a vender con tu negocio organizado desde
           el primer día.
         </p>
         <Link href="/registro">

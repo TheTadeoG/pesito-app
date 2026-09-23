@@ -3,6 +3,7 @@ import { Banknote, LogOut, ShieldCheck } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Wordmark } from "@/components/marketing/wordmark";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -16,7 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Banknote className="h-5 w-5" />
           </span>
-          <span>Pesito</span>
+          <Wordmark />
           <span className="ml-1 flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">
             <ShieldCheck className="h-3.5 w-3.5" />
             Panel interno

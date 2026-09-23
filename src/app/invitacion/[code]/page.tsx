@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Banknote } from "lucide-react";
+import { Wordmark } from "@/components/marketing/wordmark";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { roleLabels } from "@/lib/roles";
@@ -20,7 +21,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
           <Banknote className="h-5 w-5" />
         </span>
-        <span className="text-lg">Pesito</span>
+        <Wordmark className="text-lg" />
       </Link>
       <div className="w-full max-w-sm">{children}</div>
     </div>

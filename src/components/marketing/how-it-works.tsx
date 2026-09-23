@@ -1,7 +1,7 @@
 const steps = [
   {
     number: "1",
-    title: "Creá tu kiosco",
+    title: "Creá tu negocio",
     description: "Te registrás con tu email, le ponés nombre a tu negocio y ya tenés tu cuenta lista.",
   },
   {

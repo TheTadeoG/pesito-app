@@ -7,9 +7,9 @@ export const faqs = [
       "Sí, Pesito funciona en la nube: necesitás una conexión a internet (wifi o datos) para cobrar ventas, actualizar el stock y ver tus reportes desde cualquier dispositivo.",
   },
   {
-    question: "¿Sirve para un kiosco chico o solo para negocios grandes?",
+    question: "¿Sirve para un negocio chico o solo para uno grande?",
     answer:
-      "Pesito está pensado primero para kioscos y almacenes de barrio: el plan gratuito te alcanza para arrancar con un solo usuario y hasta 100 productos, y podés crecer a medida que tu negocio crece.",
+      "Pesito está pensado primero para el comercio de barrio, sea cual sea tu rubro: el plan gratuito te alcanza para arrancar con un solo usuario, y podés crecer a un plan pago a medida que tu negocio crece.",
   },
   {
     question: "¿Puedo usar lector de código de barras?",

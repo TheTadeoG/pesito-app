@@ -50,7 +50,7 @@ const qualities = [
   },
   {
     icon: MessageSquareText,
-    title: "Entendemos tu kiosco",
+    title: "Entendemos tu negocio",
     description: "Hablamos de fiado, de balanza y de cierre de caja — no de \"tickets\" genéricos.",
   },
   {

@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const title = "Pesito | Sistema de punto de venta para kioscos y almacenes";
+const title = "Pesito | Sistema de punto de venta para el comercio de barrio";
 const description =
-  "Pesito es el sistema de punto de venta, inventario, clientes y caja pensado para kiosqueros y almaceneros de Argentina: simple, rápido y sin vueltas. Empezá gratis.";
+  "Pesito es el sistema de punto de venta, inventario, clientes y caja pensado para comerciantes de barrio de cualquier rubro en Argentina: simple, rápido y sin vueltas. Empezá gratis.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -26,13 +26,13 @@ export const metadata: Metadata = {
   },
   description,
   keywords: [
+    "sistema de punto de venta para comercios",
     "sistema para kiosco",
-    "punto de venta kiosco",
     "software para almacén",
+    "sistema para negocio de barrio",
     "caja registradora digital",
     "sistema POS Argentina",
-    "control de stock kiosco",
-    "software para kiosqueros",
+    "control de stock para comercios",
   ],
   applicationName: "Pesito",
   authors: [{ name: "Pesito" }],

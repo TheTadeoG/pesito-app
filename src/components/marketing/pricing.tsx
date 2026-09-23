@@ -34,7 +34,7 @@ export function Pricing() {
           Precios simples, sin letra chica
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Elegí el plan que se ajuste a tu kiosco o almacén. Probá 14 días gratis, sin tarjeta.
+          Elegí el plan que se ajuste a tu negocio. Probá 14 días gratis, sin tarjeta.
         </p>
       </div>
 

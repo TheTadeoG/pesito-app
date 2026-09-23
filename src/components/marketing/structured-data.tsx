@@ -13,7 +13,7 @@ export function StructuredData() {
       operatingSystem: "Web",
       url: siteUrl,
       description:
-        "Sistema de punto de venta, inventario, clientes y caja para kioscos y almacenes de barrio.",
+        "Sistema de punto de venta, inventario, clientes y caja para comercios de barrio de cualquier rubro.",
       offers: planOrder.map((plan) => ({
         "@type": "Offer",
         name: planDefinitions[plan].name,

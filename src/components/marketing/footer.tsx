@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Banknote } from "lucide-react";
+import { Wordmark } from "@/components/marketing/wordmark";
 
 const columns: {
   title: string;
@@ -12,6 +13,10 @@ const columns: {
       { label: "Cómo funciona", href: "#como-funciona" },
       { label: "Precios", href: "#precios" },
     ],
+  },
+  {
+    title: "Recursos",
+    links: [{ label: "Glosario", href: "/glosario" }],
   },
   {
     title: "Cuenta",
@@ -58,17 +63,17 @@ export function Footer() {
   return (
     <footer className="border-t border-border">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_repeat(4,1fr)]">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.1fr_repeat(5,1fr)]">
           <div>
             <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Banknote className="h-4 w-4" />
               </span>
-              Pesito
+              <Wordmark />
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-              Punto de venta, inventario, clientes y caja para kioscos y almacenes. Hecho en
-              Argentina para el comercio real.
+              Punto de venta, inventario, clientes y caja para el comercio de barrio. Hecho en
+              Argentina para cualquier rubro.
             </p>
           </div>
 

@@ -65,7 +65,7 @@ export function Features() {
     <section id="funciones" className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Todo lo que necesita tu kiosco, en un solo lugar
+          Todo lo que necesita tu negocio, en un solo lugar
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
           Pesito junta en una sola app lo que hoy manejás con cuaderno,

@@ -3,6 +3,7 @@ import { Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnchorLink } from "@/components/marketing/anchor-link";
+import { Wordmark } from "@/components/marketing/wordmark";
 
 const links = [
   { href: "#funciones", label: "Funciones" },
@@ -19,7 +20,7 @@ export function Navbar() {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Banknote className="h-5 w-5" />
           </span>
-          <span className="text-lg">Pesito</span>
+          <Wordmark className="text-lg" />
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex">
