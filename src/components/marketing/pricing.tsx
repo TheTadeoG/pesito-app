@@ -136,7 +136,12 @@ export function Pricing() {
                   {plan.cta}
                 </Button>
               </Link>
-              <p className="mt-2 text-center text-xs text-muted-foreground">Probá gratis 14 días</p>
+              <Link
+                href="/registro"
+                className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground hover:underline"
+              >
+                O probá gratis 14 días, sin elegir plan todavía
+              </Link>
             </div>
           );
         })}

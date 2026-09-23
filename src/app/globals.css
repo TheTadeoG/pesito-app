@@ -222,55 +222,6 @@ body {
   animation: qty-bump 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Entrada "creciendo" para los mini-dashboards de la landing (barras,
-   dona, barras de stock). A propósito puro CSS, sin gate de un estado de
-   React: arranca solo al pintarse, así una captura tomada al toque nunca
-   ve el elemento en 0 esperando un timer de JS — como mucho lo agarra a
-   mitad de la animación, nunca vacío. El valor final (alto/ancho real)
-   siempre viene ya puesto en el elemento vía inline style. */
-@keyframes grow-in-y {
-  from {
-    transform: scaleY(0);
-  }
-  to {
-    transform: scaleY(1);
-  }
-}
-
-@keyframes grow-in-x {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.animate-grow-in-y {
-  transform-origin: bottom;
-  animation: grow-in-y 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
-.animate-grow-in-x {
-  transform-origin: left;
-  animation: grow-in-x 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
-@keyframes pop-in {
-  from {
-    transform: scale(0.85);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.animate-pop-in {
-  animation: pop-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
 /* Mock de WhatsApp en la landing (Support): scrollbar propia en vez de la
    fina y gris del navegador, para que combine con el resto del mock. */
 .whatsapp-scroll {

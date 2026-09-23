@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { siteUrl } from "@/lib/utils";
+import { ScrollToTopOnNavigate } from "@/components/scroll-to-top-on-navigate";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -62,11 +63,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('pesito-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';localStorage.setItem('pesito-theme',t);}document.documentElement.dataset.theme=t;}catch(e){}`,
+            __html: `try{history.scrollRestoration='manual';}catch(e){}try{var t=localStorage.getItem('pesito-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';localStorage.setItem('pesito-theme',t);}document.documentElement.dataset.theme=t;}catch(e){}`,
           }}
         />
       </head>
       <body className="min-h-full flex flex-col">
+        <ScrollToTopOnNavigate />
         {children}
         <SpeedInsights />
       </body>

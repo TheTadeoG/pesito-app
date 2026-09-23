@@ -178,15 +178,14 @@ function ReportesSlide() {
         <div>
           <p className="text-xs text-muted-foreground">Ventas de la semana</p>
           <div className="mt-3 flex h-28 items-end justify-between gap-1.5">
-            {weeklySales.map((d, i) => (
+            {weeklySales.map((d) => (
               <div key={d.day} className="flex flex-1 flex-col items-center gap-1.5">
                 <div className="flex w-full flex-1 items-end">
                   <div
-                    className="animate-grow-in-y w-full rounded-t-md"
+                    className="w-full rounded-t-md"
                     style={{
                       height: `${Math.max(6, (d.value / maxSale) * 100)}%`,
                       background: `linear-gradient(180deg, ${PALETTE[0]}, ${PALETTE[1]})`,
-                      animationDelay: `${i * 60}ms`,
                     }}
                   />
                 </div>
@@ -199,7 +198,7 @@ function ReportesSlide() {
         <div>
           <p className="text-xs text-muted-foreground">Ventas por categoría</p>
           <div className="mt-3 flex items-center gap-5">
-            <div className="animate-pop-in relative shrink-0">
+            <div className="relative shrink-0">
               <svg width="112" height="112" viewBox="0 0 120 120" className="-rotate-90">
                 <circle
                   cx="60"
@@ -258,7 +257,7 @@ function InventarioSlide() {
         Alertas de stock
       </p>
       <div className="mt-3 space-y-3">
-        {stockAlerts.map((item, i) => {
+        {stockAlerts.map((item) => {
           const style = stockLevelStyles[item.level];
           return (
             <div key={item.name} className="flex items-center gap-3">
@@ -282,8 +281,8 @@ function InventarioSlide() {
                 </div>
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className={cn("animate-grow-in-x h-full rounded-full", style.bar)}
-                    style={{ width: `${Math.max(4, item.pct)}%`, animationDelay: `${i * 80}ms` }}
+                    className={cn("h-full rounded-full", style.bar)}
+                    style={{ width: `${Math.max(4, item.pct)}%` }}
                   />
                 </div>
               </div>
@@ -320,7 +319,7 @@ function CajaSlide() {
         </span>
         <span className="text-xl font-bold text-success">{cajaMatchPct}%</span>
       </div>
-      <div className="animate-grow-in-x mt-2 h-2.5 w-full origin-left overflow-hidden rounded-full bg-muted">
+      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
         <div
           className="h-full rounded-full bg-success"
           style={{ width: `${Math.min(100, cajaMatchPct)}%` }}
@@ -341,12 +340,8 @@ function CajaSlide() {
 
       <p className="mt-4 text-xs font-semibold text-foreground">Medios de pago</p>
       <div className="mt-2 flex h-3 w-full overflow-hidden rounded-full bg-muted">
-        {medios.map((m, i) => (
-          <div
-            key={m.label}
-            className="animate-grow-in-x"
-            style={{ width: `${m.pct}%`, background: m.color, animationDelay: `${i * 80}ms` }}
-          />
+        {medios.map((m) => (
+          <div key={m.label} style={{ width: `${m.pct}%`, background: m.color }} />
         ))}
       </div>
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
