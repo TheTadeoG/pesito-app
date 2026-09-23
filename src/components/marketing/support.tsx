@@ -117,7 +117,7 @@ export function Support() {
             al lado de la lista de la izquierda.
           */}
           <div
-            className="max-h-64 space-y-2 overflow-y-auto px-3 py-3"
+            className="whatsapp-scroll max-h-64 space-y-2 overflow-y-auto px-3 py-3"
             style={{
               backgroundColor: "#e5ded8",
               backgroundImage:
