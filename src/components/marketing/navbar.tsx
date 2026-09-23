@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote } from "lucide-react";
+import { Banknote, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnchorLink } from "@/components/marketing/anchor-link";
@@ -17,7 +17,10 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2 font-semibold text-foreground"
+        >
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Banknote className="h-5 w-5" />
           </span>
@@ -37,15 +40,18 @@ export function Navbar() {
           <InfoMenu />
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <ThemeToggle />
-          <Link href="/login">
+          <Link href="/login" aria-label="Ingresar">
             <Button variant="ghost" size="sm">
-              Ingresar
+              <LogIn className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">Ingresar</span>
             </Button>
           </Link>
           <Link href="/registro">
-            <Button size="sm">Empezar gratis</Button>
+            <Button size="sm" className="whitespace-nowrap">
+              Empezar gratis
+            </Button>
           </Link>
         </div>
       </div>

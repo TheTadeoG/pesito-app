@@ -96,56 +96,63 @@ export function Comparison() {
         </p>
       </div>
 
-      <div className="mt-12 overflow-x-auto">
-        <table className="w-full min-w-[560px] border-separate border-spacing-0">
-          <thead>
-            <tr>
-              <th className="w-[38%]" />
-              {columns.map((col) => (
-                <th key={col.id} className="px-2 pb-4 text-center align-bottom sm:px-4">
-                  <span
-                    className={cn(
-                      "inline-block text-sm font-semibold",
-                      col.id === "pesito" ? "text-primary" : "text-foreground"
-                    )}
-                  >
-                    {col.label}
-                  </span>
-                  <span className="mt-1 block text-xs text-muted-foreground">{col.price}</span>
-                  <span className="block text-[11px] text-muted-foreground/70">
-                    {col.priceSub}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={row.question}>
-                <td
-                  className={cn(
-                    "py-4 pr-4 text-sm text-foreground",
-                    i !== 0 && "border-t border-border"
-                  )}
-                >
-                  {row.question}
-                </td>
+      <p className="mt-8 text-center text-xs text-muted-foreground sm:hidden">
+        Deslizá la tabla hacia los costados para ver las 3 columnas →
+      </p>
+
+      <div className="relative mt-4 sm:mt-12">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] border-separate border-spacing-0">
+            <thead>
+              <tr>
+                <th className="w-[38%]" />
                 {columns.map((col) => (
-                  <td
-                    key={col.id}
-                    className={cn(
-                      "px-2 py-4 text-center sm:px-4",
-                      i !== 0 && "border-t border-border",
-                      col.id === "pesito" && "bg-accent/40"
-                    )}
-                  >
-                    <MarkIcon mark={row[col.id]} />
-                  </td>
+                  <th key={col.id} className="px-2 pb-4 text-center align-bottom sm:px-4">
+                    <span
+                      className={cn(
+                        "inline-block text-sm font-semibold",
+                        col.id === "pesito" ? "text-primary" : "text-foreground"
+                      )}
+                    >
+                      {col.label}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">{col.price}</span>
+                    <span className="block text-[11px] text-muted-foreground/70">
+                      {col.priceSub}
+                    </span>
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={row.question}>
+                  <td
+                    className={cn(
+                      "py-4 pr-4 text-sm text-foreground",
+                      i !== 0 && "border-t border-border"
+                    )}
+                  >
+                    {row.question}
+                  </td>
+                  {columns.map((col) => (
+                    <td
+                      key={col.id}
+                      className={cn(
+                        "px-2 py-4 text-center sm:px-4",
+                        i !== 0 && "border-t border-border",
+                        col.id === "pesito" && "bg-accent/40"
+                      )}
+                    >
+                      <MarkIcon mark={row[col.id]} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
       </div>
 
       <p className="mt-6 text-center text-xs text-muted-foreground">

@@ -106,12 +106,12 @@ function ResumenSlide() {
   return (
     <div>
       <SlideHeading icon={TrendingUp}>Resumen de hoy</SlideHeading>
-      <div className="mt-4 grid grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {summary.map((tile) => (
           <div key={tile.label} className="rounded-xl border border-border p-3">
             <tile.icon className={cn("h-4 w-4", tile.tone)} />
             <p className="mt-2 truncate text-xs text-muted-foreground">{tile.label}</p>
-            <p className={cn("truncate text-base font-bold sm:text-lg", tile.tone)}>
+            <p className={cn("text-base font-bold sm:text-lg", tile.tone)}>
               {formatCurrency(tile.value)}
             </p>
           </div>
