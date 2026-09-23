@@ -13,14 +13,12 @@ import {
   Percent,
   QrCode,
   Scale,
-  ScanLine,
   Search,
   Shuffle,
   Trash2,
   Wallet,
   X,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +103,7 @@ interface PosClientProps {
   orgId: string;
   cashRegisterId: string;
   products: ProductLite[];
+  topProducts: ProductLite[];
   customers: CustomerLite[];
   autoInvoiceByPayment: boolean;
   customPaymentMethods: string[];
@@ -114,6 +113,7 @@ export function PosClient({
   orgId,
   cashRegisterId,
   products,
+  topProducts,
   customers,
   autoInvoiceByPayment,
   customPaymentMethods,
@@ -792,25 +792,12 @@ export function PosClient({
     registerEnterForCheckout();
   }
 
+  const showResults = query.trim() || browseProducts;
+
   return (
     <div className="grid gap-6 xl:grid-cols-3">
-      <div className="space-y-6 xl:col-span-2">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <ScanLine className="h-4.5 w-4.5" />
-              </span>
-              <div>
-                <CardTitle className="text-base">Buscar Producto</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Escaneá código de barras o escriba el nombre del producto
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="rounded-card border border-border bg-card p-5 xl:col-span-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">
                 <button
                   type="button"
@@ -849,7 +836,7 @@ export function PosClient({
                   </button>
                 )}
 
-                {(query.trim() || browseProducts) && (
+                {showResults && (
                   <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
                     {results.length === 0 && (
                       <p className="px-3.5 py-3 text-sm text-muted-foreground">
@@ -969,29 +956,64 @@ export function PosClient({
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Carrito</CardTitle>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Total: {formatCurrency(total)}</span>
-              {cart.length > 0 && (
-                <Button
+        {!showResults && topProducts.length > 0 && (
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+              Más vendidos
+            </p>
+            <div className="mt-1.5 grid gap-0.5 sm:grid-cols-2">
+              {topProducts.map((product) => (
+                <button
+                  key={product.id}
                   type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={clearCart}
-                  aria-label="Vaciar carrito"
-                  title="Vaciar carrito"
+                  onClick={() => addProduct(product)}
+                  className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-muted"
                 >
-                  <Trash2 className="h-4 w-4 text-danger" />
-                </Button>
-              )}
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground">
+                    {product.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={product.image_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-3.5 w-3.5" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {product.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatCurrency(product.price)}
+                    </span>
+                  </span>
+                </button>
+              ))}
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+        )}
+
+        <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+          <span className="text-sm font-medium text-foreground">
+            Carrito
+            {itemCount > 0 && (
+              <span className="font-normal text-muted-foreground"> · {itemCount} items</span>
+            )}
+          </span>
+          {cart.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={clearCart}
+              aria-label="Vaciar carrito"
+              title="Vaciar carrito"
+            >
+              <Trash2 className="h-4 w-4 text-danger" />
+            </Button>
+          )}
+        </div>
+
+        <div className="mt-2">
             {cart.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Todavía no agregaste productos.
@@ -1110,17 +1132,11 @@ export function PosClient({
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Cliente</CardTitle>
-            <p className="text-sm text-muted-foreground">Selecciona el cliente para la venta</p>
-          </CardHeader>
-          <CardContent>
+      <div className="flex flex-col overflow-hidden rounded-card border border-border bg-card">
+        <div className="p-4">
             {selectedCustomer ? (
               <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5">
                 <span className="text-sm font-medium text-foreground">
@@ -1235,70 +1251,24 @@ export function PosClient({
                 </button>
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Resumen</CardTitle>
-            <Badge tone="accent">{itemCount} items</Badge>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
-            </div>
-            {discount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Descuento{discountMode === "percent" ? ` (${discountInput}%)` : ""}:
-                </span>
-                <span className="font-medium text-danger">-{formatCurrency(discount)}</span>
-              </div>
-            )}
-            {surcharge > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Recargo{surchargeMode === "percent" ? ` (${surchargeInput}%)` : ""}:
-                </span>
-                <span className="font-medium text-warning">+{formatCurrency(surcharge)}</span>
-              </div>
-            )}
-            <div className="flex justify-between border-t border-border pt-3 text-base">
-              <span className="font-semibold text-foreground">Total:</span>
-              <span className="text-xl font-bold text-foreground">{formatCurrency(total)}</span>
-            </div>
+        <div className="px-4">
+          <button
+            type="button"
+            onClick={() => setShowExtras((v) => !v)}
+            className="flex w-full items-center gap-2 border-t border-border py-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <Percent className="h-3.5 w-3.5" />
+            {showExtras ? "Ocultar descuento/recargo" : "Agregar descuento o recargo"}
+          </button>
 
-            {error && (
-              <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
-            )}
-
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={cart.length === 0 || pending}
-              onClick={openPaymentPicker}
-            >
-              <Banknote className="h-4 w-4" />
-              {pending ? "Procesando…" : "Procesar Venta (Doble Enter)"}
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full"
-              type="button"
-              onClick={() => setShowExtras((v) => !v)}
-            >
-              <Percent className="h-4 w-4" />
-              Agregar descuento o recargo
-            </Button>
-
-            {showExtras && (
-              <div className="space-y-1.5">
-                <p className="text-xs text-muted-foreground">
-                  Doble Enter en estos campos también confirma la venta.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
+          {showExtras && (
+            <div className="space-y-1.5 pb-4">
+              <p className="text-xs text-muted-foreground">
+                Doble Enter en estos campos también confirma la venta.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5 rounded-xl border border-danger/30 bg-danger-bg/60 p-2.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-danger">Descuento</label>
@@ -1369,11 +1339,56 @@ export function PosClient({
                     placeholder="0"
                   />
                 </div>
-                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-auto space-y-3 bg-accent p-4">
+          <div className="flex items-center justify-between">
+            <Badge tone="accent">{itemCount} items</Badge>
+          </div>
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-accent-foreground/70">Subtotal:</span>
+              <span className="font-medium text-accent-foreground">{formatCurrency(subtotal)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between">
+                <span className="text-accent-foreground/70">
+                  Descuento{discountMode === "percent" ? ` (${discountInput}%)` : ""}:
+                </span>
+                <span className="font-medium text-danger">-{formatCurrency(discount)}</span>
               </div>
             )}
-          </CardContent>
-        </Card>
+            {surcharge > 0 && (
+              <div className="flex justify-between">
+                <span className="text-accent-foreground/70">
+                  Recargo{surchargeMode === "percent" ? ` (${surchargeInput}%)` : ""}:
+                </span>
+                <span className="font-medium text-warning">+{formatCurrency(surcharge)}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-baseline justify-between border-t border-accent-foreground/15 pt-2.5">
+            <span className="text-sm font-semibold text-accent-foreground">Total</span>
+            <span className="text-2xl font-bold text-accent-foreground">{formatCurrency(total)}</span>
+          </div>
+
+          {error && (
+            <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
+          )}
+
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={cart.length === 0 || pending}
+            onClick={openPaymentPicker}
+          >
+            <Banknote className="h-4 w-4" />
+            {pending ? "Procesando…" : "Cobrar (Doble Enter)"}
+          </Button>
+        </div>
       </div>
 
       <Dialog
