@@ -1,8 +1,31 @@
 import { Receipt, ShoppingBag, Store } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { getLandingStats } from "@/lib/landing-stats";
 
 const numberFormatter = new Intl.NumberFormat("es-AR");
+
+// Números reales, pero no hace falta mostrar el dígito exacto — un "+236.000"
+// se lee mejor (y sigue siendo honesto) que un "+236.014". Si el redondeo
+// da 0 con un valor real positivo, se muestra el escalón en vez de "+0".
+function roundToStep(value: number, step: number) {
+  if (value <= 0) return 0;
+  const rounded = Math.round(value / step) * step;
+  return rounded === 0 ? step : rounded;
+}
+
+function formatRoundedCount(value: number) {
+  return `+${numberFormatter.format(roundToStep(value, 10_000))}`;
+}
+
+// Montos grandes se muestran abreviados en millones ("+1025M") en vez del
+// número completo con todos los decimales — para un total en miles de
+// millones, sigue expresándose como millones (más legible que "1,025 mil M").
+function formatAbbreviatedAmount(value: number) {
+  if (value >= 1_000_000) {
+    return `+${Math.round(value / 1_000_000)}M`;
+  }
+  return formatRoundedCount(value);
+}
 
 // Tailwind necesita ver la clase completa en el código para generarla —
 // de ahí el mapa en vez de armar `grid-cols-${n}` con un template string.
@@ -24,12 +47,12 @@ export async function Stats() {
     stats.ventas > 0 && {
       icon: ShoppingBag,
       label: "Ventas registradas",
-      value: `+${numberFormatter.format(stats.ventas)}`,
+      value: formatRoundedCount(stats.ventas),
     },
     stats.monto > 0 && {
       icon: Receipt,
       label: "Procesado con Pesito",
-      value: formatCurrency(stats.monto),
+      value: formatAbbreviatedAmount(stats.monto),
     },
   ].filter((t): t is { icon: typeof Store; label: string; value: string } => Boolean(t));
 

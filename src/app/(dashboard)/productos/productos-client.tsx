@@ -9,10 +9,12 @@ import {
   MoreVertical,
   Pencil,
   Plus,
+  Receipt,
   Search,
   Settings2,
   SlidersHorizontal,
   Trash2,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,8 @@ import type { Brand, Product, Supplier } from "@/lib/types";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 import { deleteProduct, toggleProductActive } from "@/app/(dashboard)/productos/actions";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
+import { BulkPriceIncreaseDialog } from "@/app/(dashboard)/productos/bulk-price-increase-dialog";
+import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
 
 type SupplierOption = Pick<Supplier, "id" | "name">;
 
@@ -67,6 +71,8 @@ export function ProductosClient({
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [adjusting, setAdjusting] = useState<Product | null>(null);
+  const [priceHistoryProduct, setPriceHistoryProduct] = useState<Product | null>(null);
+  const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [localBrands, setLocalBrands] = useState(brands);
   const [localSuppliers, setLocalSuppliers] = useState(suppliers);
@@ -202,6 +208,10 @@ export function ProductosClient({
           </button>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setBulkPriceOpen(true)}>
+            <TrendingUp className="h-4 w-4" />
+            Aumentar precios
+          </Button>
           <Button variant="outline" onClick={() => setShowColumns(true)}>
             <Settings2 className="h-4 w-4" />
             Filtros
@@ -379,6 +389,10 @@ export function ProductosClient({
                               <History className="h-4 w-4" />
                               Ver movimientos
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setPriceHistoryProduct(product)}>
+                              <Receipt className="h-4 w-4" />
+                              Historial de precios
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleToggleActive(product)}
                               disabled={busyId === product.id}
@@ -417,6 +431,18 @@ export function ProductosClient({
       />
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
+
+      <PriceHistoryDialog
+        product={priceHistoryProduct}
+        onClose={() => setPriceHistoryProduct(null)}
+      />
+
+      <BulkPriceIncreaseDialog
+        open={bulkPriceOpen}
+        onClose={() => setBulkPriceOpen(false)}
+        suppliers={localSuppliers}
+        products={products}
+      />
 
       <Dialog
         open={showColumns}

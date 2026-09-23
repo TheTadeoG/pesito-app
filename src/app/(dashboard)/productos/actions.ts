@@ -266,3 +266,97 @@ export async function deleteBrand(id: string): Promise<ActionState> {
   revalidatePath("/productos");
   return {};
 }
+
+export interface BulkPriceIncreaseResult extends ActionState {
+  updatedCount?: number;
+}
+
+export async function bulkIncreasePriceBySupplier(
+  supplierId: string,
+  mode: "percent" | "fixed",
+  value: number
+): Promise<BulkPriceIncreaseResult> {
+  if (!supplierId) return { error: "Elegí un proveedor." };
+  if (!value || value <= 0) return { error: "Ingresá un valor mayor a cero." };
+
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("bulk_increase_price_by_supplier", {
+    p_org_id: organization.id,
+    p_supplier_id: supplierId,
+    p_percent: mode === "percent" ? value : null,
+    p_fixed_amount: mode === "fixed" ? value : null,
+  });
+
+  if (error) return { error: "No pudimos actualizar los precios." };
+
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  return { updatedCount: data ?? 0 };
+}
+
+export interface PriceHistoryRow {
+  id: string;
+  oldPrice: number;
+  newPrice: number;
+  changedAt: string;
+  changedByLabel: string | null;
+}
+
+export async function getProductPriceHistory(productId: string): Promise<PriceHistoryRow[]> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data: rows } = await supabase
+    .from("product_price_history")
+    .select("id, old_price, new_price, changed_by, created_at")
+    .eq("org_id", organization.id)
+    .eq("product_id", productId)
+    .order("created_at", { ascending: false });
+
+  if (!rows || rows.length === 0) return [];
+
+  const userIds = Array.from(
+    new Set(rows.map((r) => r.changed_by).filter((id): id is string => Boolean(id)))
+  );
+
+  const membersByUserId = new Map<string, string>();
+  if (userIds.length > 0) {
+    const { data: members } = await supabase
+      .from("memberships")
+      .select("user_id, username, email")
+      .eq("org_id", organization.id)
+      .in("user_id", userIds);
+    for (const m of members ?? []) {
+      membersByUserId.set(m.user_id, m.username ?? m.email ?? "Alguien del equipo");
+    }
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    oldPrice: Number(r.old_price),
+    newPrice: Number(r.new_price),
+    changedAt: r.created_at,
+    changedByLabel: r.changed_by ? membersByUserId.get(r.changed_by) ?? null : null,
+  }));
+}
+
+export async function revertProductPrice(productId: string, price: number): Promise<ActionState> {
+  if (!Number.isFinite(price) || price < 0) return { error: "Precio inválido." };
+
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("products")
+    .update({ price })
+    .eq("id", productId)
+    .eq("org_id", organization.id);
+
+  if (error) return { error: "No pudimos volver a ese precio." };
+
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  return {};
+}
