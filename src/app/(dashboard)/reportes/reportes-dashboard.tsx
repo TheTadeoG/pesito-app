@@ -174,7 +174,18 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
                   <BarChart
                     data={data.revenueChart}
                     showValueLabels={!data.revenueChartIsHourly}
-                    labelEvery={data.revenueChartIsHourly ? 3 : 1}
+                    labelEvery={
+                      data.revenueChartIsHourly
+                        ? 3
+                        : // Con muchos días (30 días, este mes) mostrar la
+                          // etiqueta de cada uno amontona el eje — se
+                          // espacían para que queden legibles.
+                          data.revenueChart.length > 15
+                          ? 5
+                          : data.revenueChart.length > 7
+                            ? 2
+                            : 1
+                    }
                   />
                 )}
               </CardContent>
