@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Términos y condiciones",
   description: "Condiciones de uso del sistema de punto de venta Pesito.",
-  alternates: { canonical: "/terminos" },
-};
+  path: "/terminos",
+});
 
 export default function TerminosPage() {
   return (

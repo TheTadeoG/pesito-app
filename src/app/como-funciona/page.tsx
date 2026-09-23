@@ -1,27 +1,18 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  BarChart3,
-  ListChecks,
-  Package,
-  Receipt,
-  ShoppingCart,
-  UserPlus,
-  Wallet,
-} from "lucide-react";
+import { ArrowRight, LayoutDashboard, Package, Receipt, ShoppingCart, UserPlus } from "lucide-react";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 import { Button } from "@/components/ui/button";
 import { siteUrl } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Cómo funciona Pesito, paso a paso",
   description:
-    "Del registro a la primera venta y la facturación: los 7 pasos reales para empezar a usar Pesito en tu comercio, sin vueltas.",
-  alternates: { canonical: "/como-funciona" },
-};
+    "Del registro a la primera venta y la facturación: los 5 pasos reales para empezar a usar Pesito en tu comercio, sin vueltas.",
+  path: "/como-funciona",
+});
 
 const steps = [
   {
@@ -43,22 +34,10 @@ const steps = [
       "Desde el Punto de Venta buscás o escaneás el producto, elegís el medio de pago (efectivo, tarjeta, transferencia, QR o uno propio que hayas cargado) y cobrás. Si es en efectivo, te calcula el vuelto solo.",
   },
   {
-    icon: ListChecks,
-    title: "Controlás el stock sin hacer nada extra",
+    icon: LayoutDashboard,
+    title: "Controlás stock, fiado y reportes desde un solo lugar",
     description:
-      "Cada venta descuenta el stock automáticamente. Si un producto se queda sin unidades o baja del mínimo que definiste, te avisa — así no llegás a la góndola vacía sin enterarte antes.",
-  },
-  {
-    icon: Wallet,
-    title: "Llevás el fiado de tus clientes",
-    description:
-      "Cuando alguien te paga después, la venta queda registrada en su cuenta corriente. Ves cuánto te debe cada cliente y registrás sus pagos cuando te cancelan, sin cuaderno ni memoria.",
-  },
-  {
-    icon: BarChart3,
-    title: "Mirás cómo te fue",
-    description:
-      "Reportes de ventas, ingresos, productos más vendidos, mejores clientes y métodos de pago más usados — por el período que quieras, para saber sin adivinar si el mes te cerró bien.",
+      "El stock se descuenta solo con cada venta y te avisa si algo se queda sin unidades. El fiado de cada cliente queda en su cuenta corriente, sin cuaderno ni memoria. Y los reportes de ventas, productos y métodos de pago te dicen sin adivinar cómo te fue.",
   },
   {
     icon: Receipt,
@@ -126,7 +105,7 @@ export default function ComoFuncionaPage() {
           </ol>
 
           <div className="mt-16 flex flex-col items-center gap-4 rounded-card bg-primary px-6 py-10 text-center text-primary-foreground">
-            <h2 className="text-2xl font-bold">Empezá los 7 pasos ahora mismo</h2>
+            <h2 className="text-2xl font-bold">Empezá los 5 pasos ahora mismo</h2>
             <p className="max-w-md text-primary-foreground/85">
               El primero te lleva dos minutos y no pedimos tarjeta.
             </p>

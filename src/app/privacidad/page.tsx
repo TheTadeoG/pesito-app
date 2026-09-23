@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Política de privacidad",
   description: "Cómo Pesito recopila, usa y protege los datos de tu negocio y tus clientes.",
-  alternates: { canonical: "/privacidad" },
-};
+  path: "/privacidad",
+});
 
 export default function PrivacidadPage() {
   return (

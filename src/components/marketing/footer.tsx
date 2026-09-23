@@ -17,9 +17,10 @@ const columns: {
   {
     title: "Recursos",
     links: [
-      { label: "Los 7 pasos", href: "/como-funciona" },
+      { label: "Los 5 pasos", href: "/como-funciona" },
       { label: "Comparación", href: "/comparacion" },
-      { label: "Glosario", href: "/glosario" },
+      { label: "Diccionario", href: "/diccionario" },
+      { label: "Por rubro", href: "/pesito-para" },
     ],
   },
   {

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Check, X } from "lucide-react";
 import { Navbar } from "@/components/marketing/navbar";
@@ -6,17 +5,36 @@ import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 import { Button } from "@/components/ui/button";
 import { comparisonBlocks } from "@/lib/comparacion-data";
+import { siteUrl } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Pesito vs. otros sistemas de gestión",
   description:
     "Comparación honesta, función por función: fiado, plan gratis, medios de pago, facturación, soporte y más — qué suele faltar en otros sistemas y cómo lo resuelve Pesito.",
-  alternates: { canonical: "/comparacion" },
-};
+  path: "/comparacion",
+});
 
 export default function ComparacionPage() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Comparación de funcionalidades de Pesito",
+    url: `${siteUrl}/comparacion`,
+    itemListElement: comparisonBlocks.map((block, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: block.feature,
+      description: block.pesito,
+    })),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <Navbar />
       <main className="flex-1">
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">

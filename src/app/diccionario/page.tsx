@@ -1,29 +1,29 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 import { Button } from "@/components/ui/button";
-import { glossaryCategories } from "@/lib/glosario-data";
+import { glossaryCategories } from "@/lib/diccionario-data";
 import { siteUrl } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Glosario de términos de punto de venta y comercio",
+export const metadata = pageMetadata({
+  title: "Diccionario de términos de punto de venta y comercio",
   description:
     "Qué es una factura A, B o C, qué es el CAE, qué es fiado, arqueo de caja, margen y más de 20 términos de venta, stock y facturación explicados en criollo.",
-  alternates: { canonical: "/glosario" },
-};
+  path: "/diccionario",
+});
 
-export default function GlosarioPage() {
+export default function DiccionarioPage() {
   const allTerms = glossaryCategories.flatMap((c) => c.terms);
 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "DefinedTermSet",
-    name: "Glosario de Pesito",
+    name: "Diccionario de Pesito",
     description: metadata.description,
-    url: `${siteUrl}/glosario`,
+    url: `${siteUrl}/diccionario`,
     hasDefinedTerm: allTerms.map((t) => ({
       "@type": "DefinedTerm",
       name: t.term,
@@ -44,7 +44,7 @@ export default function GlosarioPage() {
             <BookOpen className="h-5 w-5" />
           </span>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Glosario del comercio: términos de venta, stock y facturación
+            Diccionario del comercio: términos de venta, stock y facturación
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
             Los términos que más se escuchan atrás de un mostrador, explicados sin vueltas —
