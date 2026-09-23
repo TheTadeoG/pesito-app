@@ -2,7 +2,10 @@ import { Navbar } from "@/components/marketing/navbar";
 import { Hero } from "@/components/marketing/hero";
 import { Features } from "@/components/marketing/features";
 import { HowItWorks } from "@/components/marketing/how-it-works";
+import { Comparison } from "@/components/marketing/comparison";
 import { Pricing } from "@/components/marketing/pricing";
+import { Testimonials } from "@/components/marketing/testimonials";
+import { Support } from "@/components/marketing/support";
 import { Faq } from "@/components/marketing/faq";
 import { Cta } from "@/components/marketing/cta";
 import { Footer } from "@/components/marketing/footer";
@@ -17,7 +20,10 @@ export default function LandingPage() {
         <Hero />
         <Features />
         <HowItWorks />
+        <Comparison />
         <Pricing />
+        <Testimonials />
+        <Support />
         <Faq />
         <Cta />
       </main>

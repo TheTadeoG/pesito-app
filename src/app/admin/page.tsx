@@ -6,6 +6,7 @@ import {
   CreditCard,
   Download,
   DollarSign,
+  MessageSquareQuote,
   Package,
   Receipt,
   ShoppingBag,
@@ -115,6 +116,8 @@ export default async function AdminPage() {
     { count: customersCount },
     { count: suppliersCount },
     { count: openRegistersCount },
+    { count: testimonialsCount },
+    { count: publishedTestimonialsCount },
   ] = await Promise.all([
     admin.from("organizations").select("id, name, business_type, created_at"),
     admin.from("organization_subscriptions").select("org_id, plan, pro_trial_ends_at"),
@@ -137,6 +140,11 @@ export default async function AdminPage() {
       .from("cash_registers")
       .select("id", { count: "exact", head: true })
       .eq("status", "abierta"),
+    admin.from("testimonials").select("id", { count: "exact", head: true }),
+    admin
+      .from("testimonials")
+      .select("id", { count: "exact", head: true })
+      .eq("published", true),
   ]);
 
   // auth.users no se puede leer con .from() ni siquiera con la service role;
@@ -692,6 +700,30 @@ export default async function AdminPage() {
             <div className="-mx-5 -mb-5 border-t border-border">
               <OrgPlanManager orgs={orgsForPlanManager} />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                <MessageSquareQuote className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-muted-foreground">Reseñas para la landing</p>
+                <p className="text-lg font-bold text-foreground">
+                  {publishedTestimonialsCount ?? 0}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    publicadas de {testimonialsCount ?? 0}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <Link href="/admin/resenas">
+              <Button variant="outline" size="sm">
+                Gestionar reseñas
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 

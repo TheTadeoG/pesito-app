@@ -407,6 +407,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
         Relationships: [];
       };
+      testimonials: {
+        Row: {
+          id: string;
+          name: string;
+          location: string | null;
+          business_type: string | null;
+          rating: number;
+          quote: string;
+          published: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          location?: string | null;
+          business_type?: string | null;
+          rating?: number;
+          quote: string;
+          published?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["testimonials"]["Insert"]>;
+        Relationships: [];
+      };
       customer_payments: {
         Row: {
           id: string;
