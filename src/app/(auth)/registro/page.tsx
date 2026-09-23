@@ -4,12 +4,13 @@ import { SignupForm } from "@/app/(auth)/registro/signup-form";
 import { CheckoutSummary } from "@/app/(auth)/registro/checkout-summary";
 import { planDefinitions } from "@/lib/plan-features";
 import type { Plan } from "@/lib/subscription";
+import { siteUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Creá tu cuenta gratis",
   description:
     "Registrate gratis en Pesito y empezá a manejar el punto de venta, el stock y la caja de tu kiosco o almacén en minutos.",
-  alternates: { canonical: "/registro" },
+  alternates: { canonical: "/registro", languages: { "es-AR": `${siteUrl}/registro` } },
 };
 
 const CHECKOUT_PLANS = ["esencial", "pro", "ia"] as const;

@@ -38,7 +38,14 @@ export const metadata: Metadata = {
   applicationName: "Pesito",
   authors: [{ name: "Pesito" }],
   robots: { index: true, follow: true },
-  alternates: { canonical: "/" },
+  // Autoreferencia de idioma/región — no hay otras versiones de idioma
+  // del sitio, pero declararlo igual ayuda a buscadores a confirmar que
+  // el contenido es en español de Argentina.
+  alternates: { canonical: "/", languages: { "es-AR": siteUrl } },
+  // Evita que Safari/Chrome mobile conviertan automáticamente números de
+  // teléfono, direcciones o emails sueltos del texto en links tocables
+  // con su propio estilo — no lo necesitamos en ningún lado del sitio.
+  formatDetection: { telephone: false, address: false, email: false },
   openGraph: {
     type: "website",
     locale: "es_AR",

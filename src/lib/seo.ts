@@ -22,7 +22,11 @@ export function pageMetadata({
   return {
     title,
     description,
-    alternates: { canonical: path },
+    // Next.js no mezcla "alternates" entre el layout raíz y cada página:
+    // el que define la página pisa el del layout entero, así que el
+    // hreflang autoreferenciado del layout raíz se perdía en cualquier
+    // página que use este helper. Se repite acá para que quede en todas.
+    alternates: { canonical: path, languages: { "es-AR": url } },
     openGraph: {
       type: "website",
       locale: "es_AR",
