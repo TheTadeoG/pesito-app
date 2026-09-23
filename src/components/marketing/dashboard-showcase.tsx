@@ -15,6 +15,15 @@ import {
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
+// Versión corta ($18k en vez de $18.400) para que el monto entre arriba
+// de cada barra sin desbordar en una columna angosta.
+function formatCompactCurrency(value: number) {
+  if (value >= 1000) {
+    return `$${Math.round(value / 1000)}k`;
+  }
+  return formatCurrency(value);
+}
+
 // Paleta categórica ya validada (misma que DonutChart, ver ese archivo) —
 // se reutiliza acá para que los mockups de la landing luzcan coherentes
 // con los gráficos reales de adentro del sistema.
@@ -149,6 +158,8 @@ const DONUT_GAP = 3;
 
 function ReportesSlide() {
   const maxSale = Math.max(...weeklySales.map((d) => d.value));
+  const weekTotal = weeklySales.reduce((acc, d) => acc + d.value, 0);
+  const bestDay = weeklySales.reduce((best, d) => (d.value > best.value ? d : best), weeklySales[0]);
   const total = categorySales.reduce((acc, c) => acc + c.value, 0);
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
@@ -177,9 +188,21 @@ function ReportesSlide() {
       <div className="mt-4 grid gap-6 sm:grid-cols-2">
         <div>
           <p className="text-xs text-muted-foreground">Ventas de la semana</p>
-          <div className="mt-3 flex h-28 items-stretch justify-between gap-1.5">
+          <p className="text-sm font-semibold text-foreground">
+            {formatCurrency(weekTotal)}{" "}
+            <span className="font-normal text-muted-foreground">en 7 días</span>
+          </p>
+          <div className="mt-3 flex h-32 items-stretch justify-between gap-1">
             {weeklySales.map((d) => (
-              <div key={d.day} className="flex flex-1 flex-col items-center gap-1.5">
+              <div key={d.day} className="flex flex-1 flex-col items-center gap-1">
+                <span
+                  className={cn(
+                    "text-[9px] font-semibold",
+                    d.day === bestDay.day ? "text-success" : "text-muted-foreground"
+                  )}
+                >
+                  {formatCompactCurrency(d.value)}
+                </span>
                 <div className="flex w-full flex-1 items-end">
                   <div
                     className="w-full rounded-t-md"
@@ -189,7 +212,16 @@ function ReportesSlide() {
                     }}
                   />
                 </div>
-                <span className="text-[10px] text-muted-foreground">{d.day}</span>
+                <span
+                  className={cn(
+                    "text-[10px]",
+                    d.day === bestDay.day
+                      ? "font-semibold text-success"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {d.day}
+                </span>
               </div>
             ))}
           </div>
