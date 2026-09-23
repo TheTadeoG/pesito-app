@@ -77,7 +77,15 @@ export default function TerminosPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-foreground">7. Contacto</h2>
+              <h2 className="text-lg font-semibold text-foreground">7. Marca registrada</h2>
+              <p className="mt-2 text-muted-foreground">
+                Pesito® es una marca registrada. Su uso no autorizado está sujeto a las leyes de
+                propiedad industrial vigentes.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-foreground">8. Contacto</h2>
               <p className="mt-2 text-muted-foreground">
                 Ante cualquier consulta, escribinos a{" "}
                 <a href="mailto:soporte@pesito.app" className="text-primary hover:underline">

@@ -101,6 +101,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Pesito · Todos los derechos reservados</p>
+          <p>Pesito® es una marca registrada</p>
         </div>
       </div>
     </footer>
