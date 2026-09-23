@@ -117,6 +117,11 @@ export function Pricing() {
                 {annual ? "por mes · facturado anual, IVA incl." : "por mes · IVA incl."}
               </p>
               {annual && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {formatCurrency(annualMonthlyPrice * 12)} facturados una vez al año
+                </p>
+              )}
+              {annual && (
                 <p className="mt-0.5 text-xs font-medium text-success">
                   Ahorrás {formatCurrency(monthlyPrice * 12 - annualMonthlyPrice * 12)} al año
                 </p>

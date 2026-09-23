@@ -48,7 +48,12 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
             <span className="text-sm text-muted-foreground">por mes</span>
           </div>
           {annual && (
-            <p className="mt-1 text-xs font-medium text-success">
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formatCurrency(annualMonthlyPrice * 12)} facturados una vez al año
+            </p>
+          )}
+          {annual && (
+            <p className="mt-0.5 text-xs font-medium text-success">
               Ahorrás {formatCurrency(monthlyPrice * 12 - annualMonthlyPrice * 12)} al año pagando
               anual
             </p>
