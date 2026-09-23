@@ -185,19 +185,19 @@ function ReportesSlide() {
     <div>
       <SlideHeading icon={BarChart3}>Reportes</SlideHeading>
 
-      <div className="mt-4 grid gap-6 sm:grid-cols-2">
+      <div className="mt-6 grid gap-8 sm:grid-cols-2">
         <div>
-          <p className="text-xs text-muted-foreground">Ventas de la semana</p>
-          <p className="text-sm font-semibold text-foreground">
+          <p className="text-sm text-muted-foreground">Ventas de la semana</p>
+          <p className="text-lg font-semibold text-foreground">
             {formatCurrency(weekTotal)}{" "}
-            <span className="font-normal text-muted-foreground">en 7 días</span>
+            <span className="text-sm font-normal text-muted-foreground">en 7 días</span>
           </p>
-          <div className="mt-3 flex h-32 items-stretch justify-between gap-1">
+          <div className="mt-5 flex h-44 items-stretch justify-between gap-1.5">
             {weeklySales.map((d) => (
-              <div key={d.day} className="flex flex-1 flex-col items-center gap-1">
+              <div key={d.day} className="flex flex-1 flex-col items-center gap-1.5">
                 <span
                   className={cn(
-                    "text-[9px] font-semibold",
+                    "text-[11px] font-semibold",
                     d.day === bestDay.day ? "text-success" : "text-muted-foreground"
                   )}
                 >
@@ -214,7 +214,7 @@ function ReportesSlide() {
                 </div>
                 <span
                   className={cn(
-                    "text-[10px]",
+                    "text-xs",
                     d.day === bestDay.day
                       ? "font-semibold text-success"
                       : "text-muted-foreground"
@@ -228,17 +228,17 @@ function ReportesSlide() {
         </div>
 
         <div>
-          <p className="text-xs text-muted-foreground">Ventas por categoría</p>
-          <div className="mt-3 flex items-center gap-5">
+          <p className="text-sm text-muted-foreground">Ventas por categoría</p>
+          <div className="mt-5 flex items-center gap-6">
             <div className="relative shrink-0">
-              <svg width="112" height="112" viewBox="0 0 120 120" className="-rotate-90">
+              <svg width="150" height="150" viewBox="0 0 120 120" className="-rotate-90">
                 <circle
                   cx="60"
                   cy="60"
                   r={radius}
                   fill="none"
                   stroke="var(--color-muted)"
-                  strokeWidth="14"
+                  strokeWidth="15"
                 />
                 {segments.map((s) => (
                   <circle
@@ -248,7 +248,7 @@ function ReportesSlide() {
                     r={radius}
                     fill="none"
                     stroke={s.color}
-                    strokeWidth="14"
+                    strokeWidth="15"
                     strokeLinecap="round"
                     strokeDasharray={`${s.dash} ${circumference - s.dash}`}
                     strokeDashoffset={s.dashOffset}
@@ -256,7 +256,7 @@ function ReportesSlide() {
                 ))}
               </svg>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   Total
                 </span>
                 <span className="text-[13px] font-bold text-foreground">

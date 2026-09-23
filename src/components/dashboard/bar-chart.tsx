@@ -37,11 +37,17 @@ export function BarChart({
               </span>
             )}
             <div className="flex w-full flex-1 items-end border-b border-border">
-              {d.value > 0 && (
+              {d.value > 0 ? (
                 <div
                   className="w-full rounded-t-md bg-primary/80"
                   style={{ height: `${heightPct}%` }}
                 />
+              ) : (
+                // Sin esto, un día en $0 no dibuja nada — en un período con
+                // varios días así (recién arrancando, o un rango largo con
+                // poca actividad) el gráfico se lee como roto/vacío en vez
+                // de "estos días no hubo ventas". Una marca plana lo aclara.
+                <div className="h-[3px] w-full rounded-full bg-border" />
               )}
             </div>
             <span className="text-[10px] text-muted-foreground">
