@@ -1,4 +1,4 @@
-import { Mail, MessageSquareText, ShieldCheck, UserRound } from "lucide-react";
+import { CheckCheck, MessageCircle, MessageSquareText, ShieldCheck, UserRound } from "lucide-react";
 
 const qualities = [
   {
@@ -12,9 +12,9 @@ const qualities = [
     description: "Hablamos de fiado, de balanza y de cierre de caja — no de \"tickets\" genéricos.",
   },
   {
-    icon: Mail,
-    title: "Directo por mail",
-    description: "Escribís a soporte@pesito.app y listo. Sin pasar por un chat automático.",
+    icon: MessageCircle,
+    title: "Directo por WhatsApp",
+    description: "Nos escribís como a cualquier contacto, sin bajar otra app ni pasar por un bot.",
   },
   {
     icon: ShieldCheck,
@@ -33,7 +33,7 @@ export function Support() {
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
             No tenemos un ejército de soporte — todavía. Lo que sí tenemos es un equipo chico que
-            lee cada mail y contesta en persona.
+            lee cada mensaje y contesta en persona.
           </p>
 
           <ul className="mt-10 space-y-6">
@@ -51,25 +51,59 @@ export function Support() {
           </ul>
         </div>
 
-        <div className="rounded-card border border-border bg-card p-6">
-          <p className="text-xs font-medium text-muted-foreground">
-            Así te ayudamos, en la práctica:
-          </p>
-          <div className="mt-4 space-y-3">
-            <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-muted px-4 py-2.5 text-sm text-foreground">
-              Se me trabó el cierre de caja, ¿qué hago?
-            </div>
-            <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-primary/20 bg-accent px-4 py-2.5 text-sm text-accent-foreground">
-              <p className="mb-1 text-xs font-semibold text-primary">Pesito</p>
-              Fijate si te quedó una venta sin confirmar en el carrito, eso traba el cierre. Si no
-              es eso, mandame el mensaje exacto y lo vemos juntos ahora.
+        {/*
+          Colores fijos de WhatsApp (no los tokens de la app): es un mock
+          de esa app puntual, no una pantalla de Pesito, así que se ve
+          igual sin importar si el resto de la página está en modo claro
+          u oscuro — como una captura. Sin el logo de WhatsApp, para no
+          dar a entender una alianza oficial que no existe.
+        */}
+        <div className="overflow-hidden rounded-card border border-border shadow-lg shadow-black/5">
+          <div className="flex items-center gap-3 bg-[#075E54] px-4 py-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
+              P
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white">Pesito</p>
+              <p className="text-xs text-white/70">En línea</p>
             </div>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Ejemplo de cómo respondemos, no una captura real de un caso.
-          </p>
+
+          <div
+            className="space-y-2.5 px-4 py-5"
+            style={{
+              backgroundColor: "#e5ded8",
+              backgroundImage:
+                "radial-gradient(circle at 20% 20%, rgba(0,0,0,0.02) 0%, transparent 40%)",
+            }}
+          >
+            <div className="ml-auto max-w-[82%] rounded-lg rounded-tr-none bg-[#dcf8c6] px-3 py-2 text-sm text-[#111b21] shadow-sm">
+              Se me trabó el cierre de caja, ¿qué hago?
+              <span className="mt-1 flex items-center justify-end gap-1 text-[10px] text-[#667781]">
+                14:32
+                <CheckCheck className="h-3 w-3 text-[#53bdeb]" />
+              </span>
+            </div>
+            <div className="max-w-[82%] rounded-lg rounded-tl-none bg-white px-3 py-2 text-sm text-[#111b21] shadow-sm">
+              Fijate si te quedó una venta sin confirmar en el carrito, eso traba el cierre. Si no
+              es eso, contame qué mensaje te tira y lo vemos ahora.
+              <span className="mt-1 block text-right text-[10px] text-[#667781]">14:34</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-[#f0f0f0] px-3 py-2.5">
+            <div className="flex-1 rounded-full bg-white px-4 py-2 text-sm text-[#8696a0]">
+              Escribí un mensaje…
+            </div>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#075E54] text-white">
+              <MessageCircle className="h-4 w-4" />
+            </span>
+          </div>
         </div>
       </div>
+      <p className="mx-auto mt-4 max-w-5xl text-center text-xs text-muted-foreground lg:text-right">
+        Ejemplo de cómo respondemos por WhatsApp, no una captura real de una consulta.
+      </p>
     </section>
   );
 }
