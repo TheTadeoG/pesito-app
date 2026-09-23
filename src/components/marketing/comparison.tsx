@@ -1,4 +1,5 @@
-import { Check, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planDefinitions } from "@/lib/plan-features";
 
@@ -149,6 +150,15 @@ export function Comparison() {
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
         Comparación general, hecha por Pesito. No apunta a una marca puntual.
+      </p>
+      <p className="mt-4 text-center">
+        <Link
+          href="/comparacion"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          Ver la comparación completa, función por función
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </p>
     </section>
   );

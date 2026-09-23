@@ -18,6 +18,7 @@ const columns: {
     title: "Recursos",
     links: [
       { label: "Los 7 pasos", href: "/como-funciona" },
+      { label: "Comparación", href: "/comparacion" },
       { label: "Glosario", href: "/glosario" },
     ],
   },
