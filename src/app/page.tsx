@@ -10,6 +10,7 @@ import { Faq } from "@/components/marketing/faq";
 import { Cta } from "@/components/marketing/cta";
 import { Footer } from "@/components/marketing/footer";
 import { StructuredData } from "@/components/marketing/structured-data";
+import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 
 export default function LandingPage() {
   return (
@@ -28,6 +29,7 @@ export default function LandingPage() {
         <Cta />
       </main>
       <Footer />
+      <WhatsappFloatButton />
     </>
   );
 }
