@@ -100,19 +100,19 @@ export function Support() {
           u oscuro — como una captura. Sin el logo de WhatsApp, para no
           dar a entender una alianza oficial que no existe.
         */}
-        <div className="overflow-hidden rounded-card border border-border shadow-lg shadow-black/5">
-          <div className="flex items-center gap-3 bg-[#075E54] px-4 py-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
+        <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-2xl border border-border shadow-lg shadow-black/5">
+          <div className="flex items-center gap-2 bg-[#075E54] px-3 py-2">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-white">
               P
             </span>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">Pesito</p>
-              <p className="text-xs text-white/70">En línea</p>
+              <p className="text-xs font-semibold text-white">Pesito</p>
+              <p className="text-[10px] text-white/70">En línea</p>
             </div>
           </div>
 
           <div
-            className="space-y-2 px-4 py-5"
+            className="space-y-1.5 px-2.5 py-3"
             style={{
               backgroundColor: "#e5ded8",
               backgroundImage:
@@ -123,27 +123,27 @@ export function Support() {
               <div
                 key={i}
                 className={cn(
-                  "max-w-[82%] rounded-lg px-3 py-2 text-sm text-[#111b21] shadow-sm",
+                  "max-w-[85%] rounded-md px-2 py-1 text-[11px] leading-snug text-[#111b21] shadow-sm",
                   msg.from === "user"
                     ? "ml-auto rounded-tr-none bg-[#dcf8c6]"
                     : "rounded-tl-none bg-white"
                 )}
               >
                 {msg.text}
-                <span className="mt-1 flex items-center justify-end gap-1 text-[10px] text-[#667781]">
+                <span className="mt-0.5 flex items-center justify-end gap-0.5 text-[8px] text-[#667781]">
                   {msg.time}
-                  {msg.from === "user" && <CheckCheck className="h-3 w-3 text-[#53bdeb]" />}
+                  {msg.from === "user" && <CheckCheck className="h-2.5 w-2.5 text-[#53bdeb]" />}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="flex items-center gap-2 bg-[#f0f0f0] px-3 py-2.5">
-            <div className="flex-1 rounded-full bg-white px-4 py-2 text-sm text-[#8696a0]">
+          <div className="flex items-center gap-1.5 bg-[#f0f0f0] px-2 py-1.5">
+            <div className="flex-1 rounded-full bg-white px-3 py-1.5 text-[11px] text-[#8696a0]">
               Escribí un mensaje…
             </div>
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#075E54] text-white">
-              <MessageCircle className="h-4 w-4" />
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#075E54] text-white">
+              <MessageCircle className="h-3 w-3" />
             </span>
           </div>
         </div>
