@@ -85,24 +85,26 @@ export function Pricing() {
                   : "border border-border"
               )}
             >
-              {plan.badge &&
-                (plan.highlighted ? (
-                  <span className="absolute -top-3.5 left-1/2 w-fit -translate-x-1/2 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/30">
+              {plan.badge && plan.highlighted && (
+                <span className="absolute -top-3.5 left-1/2 w-fit -translate-x-1/2 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/30">
+                  {plan.badge}
+                </span>
+              )}
+              <div className="flex items-center gap-2">
+                <h3
+                  className={cn(
+                    "text-lg font-semibold text-foreground",
+                    plan.highlighted && "mt-1"
+                  )}
+                >
+                  {plan.name}
+                </h3>
+                {plan.badge && !plan.highlighted && (
+                  <span className="w-fit shrink-0 rounded-full bg-success-bg px-2.5 py-0.5 text-[10px] font-semibold text-success">
                     {plan.badge}
                   </span>
-                ) : (
-                  <span className="mb-3 w-fit rounded-full bg-success-bg px-3 py-1 text-xs font-semibold text-success">
-                    {plan.badge}
-                  </span>
-                ))}
-              <h3
-                className={cn(
-                  "text-lg font-semibold text-foreground",
-                  plan.highlighted && "mt-1"
                 )}
-              >
-                {plan.name}
-              </h3>
+              </div>
               <div className="mt-2 flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold text-foreground">
                   {formatCurrency(displayedPrice)}
