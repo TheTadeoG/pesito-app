@@ -1,8 +1,8 @@
-import { Check, Minus, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planDefinitions } from "@/lib/plan-features";
 
-type Mark = "yes" | "no" | "partial";
+type Mark = "yes" | "no";
 
 interface Row {
   question: string;
@@ -11,10 +11,9 @@ interface Row {
   otros: Mark;
 }
 
-// Comparación honesta: donde la respuesta no es un sí/no limpio, se marca
-// "depende" en vez de forzarlo a favor nuestro. Ninguna fila inventa un
-// dato que no podamos sostener (por eso no hay tiempos de respuesta ni
-// precios de terceros específicos).
+// Ninguna fila inventa un dato que no podamos sostener (por eso no hay
+// tiempos de respuesta ni precios de terceros específicos). Sólo sí/no:
+// nada de un tercer estado "depende" que complica la lectura rápida.
 const rows: Row[] = [
   {
     question: "¿Podés arrancar sin pagar nada?",
@@ -31,20 +30,20 @@ const rows: Row[] = [
   {
     question: "¿Lleva la cuenta de quién te debe (fiado)?",
     pesito: "yes",
-    excel: "partial",
+    excel: "no",
     otros: "no",
   },
   {
     question: "¿Funciona desde el celu, sin instalar nada?",
     pesito: "yes",
-    excel: "partial",
-    otros: "partial",
+    excel: "no",
+    otros: "no",
   },
   {
     question: "¿Te contesta una persona cuando escribís?",
     pesito: "yes",
     excel: "no",
-    otros: "partial",
+    otros: "no",
   },
 ];
 
@@ -69,9 +68,6 @@ const columns = [
   },
 ];
 
-// Un color por estado (no sólo el ícono): "no" y "depende" antes
-// compartían el mismo gris apagado y sólo cambiaba la forma del ícono,
-// costaba distinguirlos de un vistazo y se perdían en fondo claro.
 function MarkIcon({ mark }: { mark: Mark }) {
   if (mark === "yes") {
     return (
@@ -80,19 +76,9 @@ function MarkIcon({ mark }: { mark: Mark }) {
       </span>
     );
   }
-  if (mark === "no") {
-    return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-danger-bg text-danger">
-        <X className="h-3.5 w-3.5" strokeWidth={3} />
-      </span>
-    );
-  }
   return (
-    <span
-      className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-warning-bg text-warning"
-      title="Depende"
-    >
-      <Minus className="h-3.5 w-3.5" strokeWidth={3} />
+    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-danger-bg text-danger">
+      <X className="h-3.5 w-3.5" strokeWidth={3} />
     </span>
   );
 }
