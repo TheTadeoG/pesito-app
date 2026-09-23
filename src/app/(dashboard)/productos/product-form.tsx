@@ -30,6 +30,132 @@ const units = [
 
 const MAX_IMAGE_MB = 5;
 
+// Alícuotas de IVA vigentes en Argentina — sólo para la calculadora de
+// abajo, no se persiste en el producto: lo único que se guarda siempre es
+// el valor final (precio o costo), igual que antes de tener este ayudante.
+const IVA_RATES = [
+  { value: "21", label: "21%" },
+  { value: "10.5", label: "10,5%" },
+  { value: "27", label: "27%" },
+  { value: "0", label: "Exento / 0%" },
+];
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
+
+// Ayudante opcional para no tener que sacar cuentas a mano: mostrás el
+// precio final como siempre, o desplegás la calculadora y cargás el
+// precio sin IVA — el final se recalcula solo según la alícuota elegida.
+function PriceWithIvaField({
+  id,
+  label,
+  value,
+  onChange,
+  required,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+}) {
+  const [showIva, setShowIva] = useState(false);
+  const [ivaRate, setIvaRate] = useState("21");
+  const [net, setNet] = useState("");
+
+  function recalcFromNet(nextNet: string) {
+    setNet(nextNet);
+    const n = Number(nextNet);
+    if (nextNet.trim() === "" || Number.isNaN(n)) {
+      onChange("");
+      return;
+    }
+    onChange(String(round2(n * (1 + Number(ivaRate) / 100))));
+  }
+
+  function recalcFromFinal(nextFinal: string) {
+    onChange(nextFinal);
+    const f = Number(nextFinal);
+    if (nextFinal.trim() === "" || Number.isNaN(f)) {
+      setNet("");
+      return;
+    }
+    setNet(String(round2(f / (1 + Number(ivaRate) / 100))));
+  }
+
+  function handleRateChange(nextRate: string) {
+    setIvaRate(nextRate);
+    // El final es lo que en verdad se guarda, así que cambiar la
+    // alícuota recalcula el neto mostrado, nunca al revés.
+    const f = Number(value);
+    if (value.trim() !== "" && !Number.isNaN(f)) {
+      setNet(String(round2(f / (1 + Number(nextRate) / 100))));
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id}>{label}</Label>
+        <button
+          type="button"
+          onClick={() => setShowIva((v) => !v)}
+          className="text-xs font-medium text-primary hover:underline"
+        >
+          {showIva ? "Ocultar IVA" : "Calcular con IVA"}
+        </button>
+      </div>
+
+      {showIva ? (
+        <div className="mt-1.5 space-y-2 rounded-xl border border-border bg-muted/40 p-3">
+          <Select value={ivaRate} onChange={(e) => handleRateChange(e.target.value)}>
+            {IVA_RATES.map((r) => (
+              <option key={r.value} value={r.value}>
+                Alícuota {r.label}
+              </option>
+            ))}
+          </Select>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="mb-1 text-[11px] text-muted-foreground">Sin IVA</p>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                value={net}
+                onChange={(e) => recalcFromNet(e.target.value)}
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-[11px] text-muted-foreground">Final (con IVA)</p>
+              <Input
+                id={id}
+                type="number"
+                min={0}
+                step="0.01"
+                value={value}
+                onChange={(e) => recalcFromFinal(e.target.value)}
+                required={required}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <Input
+          id={id}
+          type="number"
+          min={0}
+          step="0.01"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+        />
+      )}
+    </div>
+  );
+}
+
 type BrandOption = Pick<Brand, "id" | "name">;
 
 type SupplierOption = Pick<Supplier, "id" | "name">;
@@ -409,29 +535,14 @@ export function ProductForm({
         </p>
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="p-price">Precio de venta</Label>
-            <Input
-              id="p-price"
-              type="number"
-              min={0}
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="p-cost">Costo (opcional)</Label>
-            <Input
-              id="p-cost"
-              type="number"
-              min={0}
-              step="0.01"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-            />
-          </div>
+          <PriceWithIvaField
+            id="p-price"
+            label="Precio de venta"
+            value={price}
+            onChange={setPrice}
+            required
+          />
+          <PriceWithIvaField id="p-cost" label="Costo (opcional)" value={cost} onChange={setCost} />
         </div>
         {priceBelowCost && (
           <p className="-mt-2 rounded-xl bg-danger-bg px-3 py-2 text-xs font-medium text-danger">
