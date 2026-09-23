@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Receipt } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -24,13 +24,6 @@ const plans = paidPlanDefinitions.map((def) => ({
   cta: `Activar ${def.name}`,
   highlighted: def.plan === "pro",
 }));
-
-const invoiceTiers = [
-  { label: "500 fact/mes", price: "$10.000/mes" },
-  { label: "1.000 fact/mes", price: "$20.000/mes" },
-  { label: "2.000 fact/mes", price: "$40.000/mes" },
-  { label: "4.000 fact/mes", price: "$80.000/mes" },
-];
 
 export function Pricing() {
   const [annual, setAnnual] = useState(false);
@@ -167,41 +160,8 @@ export function Pricing() {
         })}
       </div>
 
-      <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-4 rounded-card border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-            <Receipt className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Facturación electrónica</p>
-            <p className="text-xs text-muted-foreground">Facturas A, B y C con CAE automático.</p>
-          </div>
-        </div>
-
-        <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
-          {invoiceTiers.map((tier) => (
-            <div
-              key={tier.label}
-              className="rounded-xl border border-border px-3 py-2 text-center"
-            >
-              <p className="text-xs font-semibold text-foreground">{tier.label}</p>
-              <p className="text-xs text-muted-foreground">{tier.price}</p>
-            </div>
-          ))}
-        </div>
-
-        <Link href="/registro" className="shrink-0">
-          <Button variant="primary" className="w-full sm:w-auto">
-            Activar con facturación
-          </Button>
-        </Link>
-      </div>
-
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        ¿Cadenas o franquicias con varias sucursales?{" "}
-        <Link href="/soporte" className="font-medium text-primary hover:underline">
-          Hablemos
-        </Link>
+      <p className="mt-8 text-center text-sm text-muted-foreground">
+        ¿Cadenas o franquicias con varias sucursales? Escribinos por WhatsApp.
       </p>
     </section>
   );

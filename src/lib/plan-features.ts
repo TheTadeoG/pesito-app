@@ -45,11 +45,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     priceLabel: "$17.000",
     period: "por mes · IVA incl.",
     badge: null,
-    features: [
-      "Todas las funciones del Plan Gratis +",
-      "Hasta 2 usuarios",
-      "Facturación de ARCA (costo adicional)",
-    ],
+    features: ["Todas las funciones del Plan Gratis +", "Hasta 2 usuarios"],
   },
   pro: {
     plan: "pro",
@@ -64,7 +60,6 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Múltiples cajas y usuarios simultáneos",
       "Historial completo de caja (aperturas, cierres, diferencias)",
       "Hasta 10 usuarios",
-      "Facturación de ARCA (costo adicional)",
       "Soporte prioritario",
     ],
   },
@@ -80,7 +75,6 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Recomendaciones de reposición con IA",
       "Detección de productos de baja rotación",
       "Precios sugeridos automáticamente",
-      "Facturación de ARCA (costo adicional)",
       "Soporte prioritario 24/7",
     ],
   },
