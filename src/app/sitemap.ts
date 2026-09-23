@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/utils";
 import { rubroPages } from "@/lib/pesito-para-data";
+import { blogPosts } from "@/lib/blog-data";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -19,6 +20,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     { url: `${siteUrl}/como-funciona`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${siteUrl}/comparacion`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${siteUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
+    ...blogPosts.map((p) => ({
+      url: `${siteUrl}/blog/${p.slug}`,
+      lastModified: new Date(p.publishedAt),
+      changeFrequency: "yearly" as const,
+      priority: 0.5,
+    })),
     { url: `${siteUrl}/privacidad`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
     { url: `${siteUrl}/terminos`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];
