@@ -12,6 +12,7 @@ import {
   Percent,
   QrCode,
   Scale,
+  ScanLine,
   Search,
   Shuffle,
   Trash2,
@@ -743,10 +744,17 @@ export function PosClient({
       <div className="space-y-6 xl:col-span-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Buscar Producto</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Escaneá código de barras o escriba el nombre del producto
-            </p>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ScanLine className="h-4.5 w-4.5" />
+              </span>
+              <div>
+                <CardTitle className="text-base">Buscar Producto</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Escaneá código de barras o escriba el nombre del producto
+                </p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -854,27 +862,37 @@ export function PosClient({
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Button
+              <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => searchRef.current?.focus()}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-foreground transition-colors hover:bg-card sm:px-3"
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-4 w-4 text-primary" />
                   <span className="hidden sm:inline">Consultar Precio</span>
-                </Button>
-                <Button type="button" variant="outline" disabled title="Próximamente">
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  title="Próximamente"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors disabled:opacity-50 sm:px-3"
+                >
                   <Scale className="h-4 w-4" />
                   <span className="hidden sm:inline">Balanza</span>
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setShowManualAmount((v) => !v)}
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors sm:px-3",
+                    showManualAmount
+                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                      : "text-foreground hover:bg-card"
+                  )}
                 >
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Agregar Monto</span>
-                </Button>
+                </button>
               </div>
             </div>
 
