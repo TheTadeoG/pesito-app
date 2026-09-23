@@ -1,4 +1,46 @@
 import { CheckCheck, MessageCircle, MessageSquareText, ShieldCheck, UserRound } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface ChatMessage {
+  from: "user" | "pesito";
+  text: string;
+  time: string;
+}
+
+// Tres consultas típicas de un día cualquiera, resueltas una atrás de la
+// otra — no un solo ida y vuelta perfecto, que se siente más de folleto
+// que de chat real.
+const conversation: ChatMessage[] = [
+  { from: "user", text: "Holaa, se me trabó el cierre de caja 😩", time: "14:02" },
+  {
+    from: "pesito",
+    text: "Hola! Fijate si te quedó una venta sin confirmar en el carrito, eso traba el cierre.",
+    time: "14:03",
+  },
+  { from: "user", text: "Sí, era eso. Ya cerró, gracias!", time: "14:05" },
+  {
+    from: "user",
+    text: "Che, aparte cargué mal el precio de una gaseosa, ¿la puedo corregir?",
+    time: "14:06",
+  },
+  {
+    from: "pesito",
+    text: "Sí, andá a Productos, buscala y tocá el lápiz para editar. Se actualiza al toque.",
+    time: "14:07",
+  },
+  { from: "user", text: "Buenísimo", time: "14:08" },
+  {
+    from: "user",
+    text: "Una última: un cliente me pagó la mitad del fiado, ¿cómo lo anoto?",
+    time: "14:10",
+  },
+  {
+    from: "pesito",
+    text: 'Entrá a su ficha en Clientes y tocá "Registrar pago". Le baja la deuda y queda en el historial.',
+    time: "14:11",
+  },
+  { from: "user", text: "Sos un capo, quedó todo solucionado 🙌", time: "14:12" },
+];
 
 const qualities = [
   {
@@ -70,25 +112,30 @@ export function Support() {
           </div>
 
           <div
-            className="space-y-2.5 px-4 py-5"
+            className="space-y-2 px-4 py-5"
             style={{
               backgroundColor: "#e5ded8",
               backgroundImage:
                 "radial-gradient(circle at 20% 20%, rgba(0,0,0,0.02) 0%, transparent 40%)",
             }}
           >
-            <div className="ml-auto max-w-[82%] rounded-lg rounded-tr-none bg-[#dcf8c6] px-3 py-2 text-sm text-[#111b21] shadow-sm">
-              Se me trabó el cierre de caja, ¿qué hago?
-              <span className="mt-1 flex items-center justify-end gap-1 text-[10px] text-[#667781]">
-                14:32
-                <CheckCheck className="h-3 w-3 text-[#53bdeb]" />
-              </span>
-            </div>
-            <div className="max-w-[82%] rounded-lg rounded-tl-none bg-white px-3 py-2 text-sm text-[#111b21] shadow-sm">
-              Fijate si te quedó una venta sin confirmar en el carrito, eso traba el cierre. Si no
-              es eso, contame qué mensaje te tira y lo vemos ahora.
-              <span className="mt-1 block text-right text-[10px] text-[#667781]">14:34</span>
-            </div>
+            {conversation.map((msg, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "max-w-[82%] rounded-lg px-3 py-2 text-sm text-[#111b21] shadow-sm",
+                  msg.from === "user"
+                    ? "ml-auto rounded-tr-none bg-[#dcf8c6]"
+                    : "rounded-tl-none bg-white"
+                )}
+              >
+                {msg.text}
+                <span className="mt-1 flex items-center justify-end gap-1 text-[10px] text-[#667781]">
+                  {msg.time}
+                  {msg.from === "user" && <CheckCheck className="h-3 w-3 text-[#53bdeb]" />}
+                </span>
+              </div>
+            ))}
           </div>
 
           <div className="flex items-center gap-2 bg-[#f0f0f0] px-3 py-2.5">
