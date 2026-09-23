@@ -36,7 +36,7 @@ export const faqs = [
 
 export function Faq() {
   return (
-    <section id="preguntas-frecuentes" className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+    <section id="preguntas-frecuentes" className="scroll-mt-20 mx-auto max-w-3xl px-4 py-20 sm:px-6">
       <div className="text-center">
         <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           Preguntas frecuentes

@@ -1,4 +1,7 @@
-const PALETTE = ["#059669", "#2563eb", "#d97706", "#7c3aed", "#db2777", "#64748b"];
+// Paleta categórica validada con el script de la skill de dataviz (chroma
+// floor + separación CVD) contra las superficies reales de la app, claro y
+// oscuro — el slot 6 gris (#64748b) no pasaba el piso de chroma.
+const PALETTE = ["#059669", "#2563eb", "#d97706", "#7c3aed", "#db2777", "#a16207"];
 
 export interface DonutSlice {
   label: string;
