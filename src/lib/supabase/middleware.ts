@@ -3,7 +3,28 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
 import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
 
-const PUBLIC_PATHS = ["/", "/login", "/registro", "/auth", "/invitacion"];
+// Rutas públicas: landing + todo lo de "Recursos" (SEO/GEO, pensado para
+// alguien que todavía no nos conoce y no tiene por qué estar logueado) más
+// los archivos que leen los crawlers. Sin esto, el matcher de abajo corre
+// en TODAS las rutas y cualquiera de éstas termina mandando a /login.
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/registro",
+  "/auth",
+  "/invitacion",
+  "/blog",
+  "/como-funciona",
+  "/comparacion",
+  "/diccionario",
+  "/pesito-para",
+  "/preguntas-frecuentes",
+  "/privacidad",
+  "/terminos",
+  "/opengraph-image",
+  "/sitemap.xml",
+  "/robots.txt",
+];
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;
