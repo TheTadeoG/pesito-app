@@ -363,7 +363,7 @@ const slides = [
   { id: "caja", label: "Caja", Component: CajaSlide },
 ];
 
-const AUTO_ADVANCE_MS = 10000;
+const AUTO_ADVANCE_MS = 15000;
 
 export function DashboardShowcase() {
   const [active, setActive] = useState(0);
