@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
+  CircleDollarSign,
   CreditCard,
   ImageIcon,
   Landmark,
@@ -58,26 +59,41 @@ type CartItem =
   | { kind: "product"; product: ProductLite; quantity: number }
   | { kind: "manual"; id: string; label: string; amount: number };
 
-type PaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "qr" | "mixto" | "fiado";
+// El `(string & {})` mantiene el autocompletado de los valores fijos sin
+// dejar de aceptar el nombre de un medio de pago personalizado de la
+// organización (ver Configuración > Medios de pago).
+type PaymentMethod =
+  | "efectivo"
+  | "tarjeta"
+  | "transferencia"
+  | "qr"
+  | "mixto"
+  | "fiado"
+  | (string & {});
 
-const paymentMethods: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
+const baseMethods: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { value: "efectivo", label: "Efectivo", icon: Banknote },
   { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
   { value: "transferencia", label: "Transferencia", icon: Landmark },
   { value: "qr", label: "QR", icon: QrCode },
-  { value: "mixto", label: "Mixto", icon: Shuffle },
-  { value: "fiado", label: "Fiado", icon: Wallet },
 ];
 
-type CombinableMethod = "efectivo" | "tarjeta" | "transferencia" | "qr" | "fiado";
+function paymentMethodsWithCustom(customMethods: string[]) {
+  return [
+    ...baseMethods,
+    ...customMethods.map((name) => ({ value: name, label: name, icon: CircleDollarSign })),
+    { value: "mixto", label: "Mixto", icon: Shuffle },
+    { value: "fiado", label: "Fiado", icon: Wallet },
+  ];
+}
 
-const combinableMethods: { value: CombinableMethod; label: string; icon: typeof Banknote }[] = [
-  { value: "efectivo", label: "Efectivo", icon: Banknote },
-  { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
-  { value: "transferencia", label: "Transferencia", icon: Landmark },
-  { value: "qr", label: "QR", icon: QrCode },
-  { value: "fiado", label: "Fiado", icon: Wallet },
-];
+function combinableMethodsWithCustom(customMethods: string[]) {
+  return [
+    ...baseMethods,
+    ...customMethods.map((name) => ({ value: name, label: name, icon: CircleDollarSign })),
+    { value: "fiado", label: "Fiado", icon: Wallet },
+  ];
+}
 
 function paymentMethodForLines(lines: PaymentLineInput[]): PaymentMethod {
   const nonZero = lines.filter((l) => l.amount > 0);
@@ -91,6 +107,7 @@ interface PosClientProps {
   products: ProductLite[];
   customers: CustomerLite[];
   autoInvoiceByPayment: boolean;
+  customPaymentMethods: string[];
 }
 
 export function PosClient({
@@ -99,7 +116,16 @@ export function PosClient({
   products,
   customers,
   autoInvoiceByPayment,
+  customPaymentMethods,
 }: PosClientProps) {
+  const paymentMethods = useMemo(
+    () => paymentMethodsWithCustom(customPaymentMethods),
+    [customPaymentMethods]
+  );
+  const combinableMethods = useMemo(
+    () => combinableMethodsWithCustom(customPaymentMethods),
+    [customPaymentMethods]
+  );
   const router = useRouter();
   const { showSuccess, showWarning } = useToast();
   const [query, setQuery] = useState("");
@@ -180,12 +206,16 @@ export function PosClient({
   const [cashReceived, setCashReceived] = useState("");
   const [showMixedStep, setShowMixedStep] = useState(false);
   const [showFiadoStep, setShowFiadoStep] = useState(false);
-  const [mixedAmounts, setMixedAmounts] = useState<Record<CombinableMethod, string>>({
-    efectivo: "",
-    tarjeta: "",
-    transferencia: "",
-    qr: "",
-    fiado: "",
+  const [mixedAmounts, setMixedAmounts] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {
+      efectivo: "",
+      tarjeta: "",
+      transferencia: "",
+      qr: "",
+      fiado: "",
+    };
+    for (const name of customPaymentMethods) initial[name] = "";
+    return initial;
   });
   const [manualLabel, setManualLabel] = useState("");
   const [manualAmount, setManualAmount] = useState("");
@@ -239,9 +269,7 @@ export function PosClient({
     0
   );
 
-  const mixedEntries: PaymentLineInput[] = (
-    Object.entries(mixedAmounts) as [CombinableMethod, string][]
-  )
+  const mixedEntries: PaymentLineInput[] = Object.entries(mixedAmounts)
     .map(([method, raw]) => ({ method, amount: Number(raw) || 0 }))
     .filter((p) => p.amount > 0);
   const mixedTotalAssigned = mixedEntries.reduce((acc, p) => acc + p.amount, 0);

@@ -42,5 +42,7 @@ export function resolveInvoiceType(
     return customerInvoiceType as InvoiceType;
   }
   if (!autoByPayment) return "consumidor_final";
-  return defaultInvoiceTypeByPayment[paymentMethod] ?? "consumidor_final";
+  // Un medio no listado acá es uno personalizado de la organización (ej:
+  // "Mercado Pago"): se trata como tarjeta/transferencia, no como efectivo.
+  return defaultInvoiceTypeByPayment[paymentMethod] ?? "factura_b";
 }

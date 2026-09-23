@@ -30,19 +30,25 @@ export default async function ProveedorDetailPage({
 
   const supplier = { ...supplierRaw, balance: Number(supplierRaw.balance) };
 
-  const [{ data: purchasesRaw }, { data: paymentsRaw }] = await Promise.all([
-    supabase
-      .from("purchases")
-      .select("id, total, notes, status, created_at, account_amount")
-      .eq("org_id", organization.id)
-      .eq("supplier_id", id)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("supplier_payments")
-      .select("id, amount, method, created_at")
-      .eq("supplier_id", id)
-      .order("created_at", { ascending: false }),
-  ]);
+  const [{ data: purchasesRaw }, { data: paymentsRaw }, { data: customPaymentMethods }] =
+    await Promise.all([
+      supabase
+        .from("purchases")
+        .select("id, total, notes, status, created_at, account_amount")
+        .eq("org_id", organization.id)
+        .eq("supplier_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("supplier_payments")
+        .select("id, amount, method, created_at")
+        .eq("supplier_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("payment_methods")
+        .select("name")
+        .eq("org_id", organization.id)
+        .order("created_at"),
+    ]);
 
   const purchases = (purchasesRaw ?? []).map((p) => ({
     ...p,
@@ -125,7 +131,10 @@ export default async function ProveedorDetailPage({
         Volver a Proveedores
       </Link>
 
-      <ProveedorDetailClient supplier={supplier} />
+      <ProveedorDetailClient
+        supplier={supplier}
+        customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map((tile) => (

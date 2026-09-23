@@ -13,7 +13,13 @@ import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import { deleteSupplier } from "@/app/(dashboard)/proveedores/actions";
 
-export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
+export function ProveedoresClient({
+  suppliers,
+  customPaymentMethods = [],
+}: {
+  suppliers: Supplier[];
+  customPaymentMethods?: string[];
+}) {
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
@@ -135,7 +141,11 @@ export function ProveedoresClient({ suppliers }: { suppliers: Supplier[] }) {
         onClose={() => setFormOpen(false)}
         supplier={editing}
       />
-      <SupplierPaymentDialog supplier={paying} onClose={() => setPaying(null)} />
+      <SupplierPaymentDialog
+        supplier={paying}
+        onClose={() => setPaying(null)}
+        customPaymentMethods={customPaymentMethods}
+      />
     </div>
   );
 }

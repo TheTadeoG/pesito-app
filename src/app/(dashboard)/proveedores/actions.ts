@@ -59,7 +59,7 @@ export async function deleteSupplier(id: string): Promise<ActionState> {
 export async function registerSupplierPayment(
   id: string,
   amount: number,
-  method: "efectivo" | "tarjeta" | "transferencia" | "qr"
+  method: string
 ): Promise<ActionState> {
   if (!amount || amount <= 0) return { error: "Ingresá un monto válido." };
 

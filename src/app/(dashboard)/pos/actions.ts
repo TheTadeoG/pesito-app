@@ -14,7 +14,9 @@ export interface CheckoutItemInput {
 }
 
 export interface PaymentLineInput {
-  method: "efectivo" | "tarjeta" | "transferencia" | "qr" | "fiado";
+  // Puede ser un medio fijo o el nombre de un medio personalizado cargado
+  // por la organización (Configuración > Medios de pago).
+  method: string;
   amount: number;
 }
 
@@ -22,7 +24,7 @@ export interface CheckoutInput {
   orgId: string;
   cashRegisterId: string;
   customerId: string | null;
-  paymentMethod: "efectivo" | "tarjeta" | "transferencia" | "qr" | "mixto" | "fiado";
+  paymentMethod: string;
   discount: number;
   surcharge: number;
   invoiceType: "consumidor_final" | "factura_a" | "factura_b" | "factura_c";

@@ -12,12 +12,15 @@ export interface PurchaseItemInput {
   unit_cost: number;
 }
 
+// Puede ser un medio fijo o el nombre de un medio personalizado cargado por
+// la organización (Configuración > Medios de pago).
 export type PurchasePaymentMethod =
   | "efectivo"
   | "tarjeta"
   | "transferencia"
   | "qr"
-  | "cuenta_corriente";
+  | "cuenta_corriente"
+  | (string & {});
 
 export interface PurchasePaymentInput {
   method: PurchasePaymentMethod;

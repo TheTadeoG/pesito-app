@@ -68,6 +68,12 @@ export default async function ClienteDetailPage({
 
   const payments = (paymentsRaw ?? []).map((p) => ({ ...p, amount: Number(p.amount) }));
 
+  const { data: customPaymentMethods } = await supabase
+    .from("payment_methods")
+    .select("name")
+    .eq("org_id", organization.id)
+    .order("created_at");
+
   const movements: CuentaCorrienteMovement[] = [
     ...completedSales
       .filter((s) => (fiadoBySale.get(s.id) ?? 0) > 0)
@@ -124,7 +130,10 @@ export default async function ClienteDetailPage({
         Volver a Clientes
       </Link>
 
-      <ClienteDetailClient customer={customer} />
+      <ClienteDetailClient
+        customer={customer}
+        customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map((tile) => (

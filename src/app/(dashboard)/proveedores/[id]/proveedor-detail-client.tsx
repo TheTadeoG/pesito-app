@@ -11,7 +11,13 @@ import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import type { Supplier } from "@/lib/types";
 
-export function ProveedorDetailClient({ supplier }: { supplier: Supplier }) {
+export function ProveedorDetailClient({
+  supplier,
+  customPaymentMethods = [],
+}: {
+  supplier: Supplier;
+  customPaymentMethods?: string[];
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -65,6 +71,7 @@ export function ProveedorDetailClient({ supplier }: { supplier: Supplier }) {
           setPaying(false);
           router.refresh();
         }}
+        customPaymentMethods={customPaymentMethods}
       />
     </>
   );

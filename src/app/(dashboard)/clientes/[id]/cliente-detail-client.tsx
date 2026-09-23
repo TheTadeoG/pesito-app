@@ -11,7 +11,13 @@ import { CustomerForm } from "@/app/(dashboard)/clientes/customer-form";
 import { PaymentDialog } from "@/app/(dashboard)/clientes/payment-dialog";
 import type { Customer } from "@/lib/types";
 
-export function ClienteDetailClient({ customer }: { customer: Customer }) {
+export function ClienteDetailClient({
+  customer,
+  customPaymentMethods = [],
+}: {
+  customer: Customer;
+  customPaymentMethods?: string[];
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -65,6 +71,7 @@ export function ClienteDetailClient({ customer }: { customer: Customer }) {
           setPaying(false);
           router.refresh();
         }}
+        customPaymentMethods={customPaymentMethods}
       />
     </>
   );

@@ -25,28 +25,30 @@ export default async function PosPage() {
     return <OpenCajaPrompt />;
   }
 
-  const [{ data: products }, { data: customers }, { data: salesRaw }] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, name, barcode, sku, price, stock, min_stock, unit, image_url")
-      .eq("org_id", organization.id)
-      .eq("active", true)
-      .order("name")
-      .limit(500),
-    supabase
-      .from("customers")
-      .select("id, name, invoice_type, balance")
-      .eq("org_id", organization.id)
-      .order("name")
-      .limit(300),
-    supabase
-      .from("sales")
-      .select("id, total, payment_method, invoice_type, created_at, customer_id")
-      .eq("cash_register_id", openRegister.id)
-      .eq("status", "completada")
-      .order("created_at", { ascending: false })
-      .limit(RECENT_SALES_LIMIT),
-  ]);
+  const [{ data: products }, { data: customers }, { data: salesRaw }, { data: customPaymentMethods }] =
+    await Promise.all([
+      supabase
+        .from("products")
+        .select("id, name, barcode, sku, price, stock, min_stock, unit, image_url")
+        .eq("org_id", organization.id)
+        .eq("active", true)
+        .order("name")
+        .limit(500),
+      supabase
+        .from("customers")
+        .select("id, name, invoice_type, balance")
+        .eq("org_id", organization.id)
+        .order("name")
+        .limit(300),
+      supabase
+        .from("sales")
+        .select("id, total, payment_method, invoice_type, created_at, customer_id")
+        .eq("cash_register_id", openRegister.id)
+        .eq("status", "completada")
+        .order("created_at", { ascending: false })
+        .limit(RECENT_SALES_LIMIT),
+      supabase.from("payment_methods").select("name").eq("org_id", organization.id).order("created_at"),
+    ]);
 
   const sales = (salesRaw ?? []).map((s) => ({ ...s, total: Number(s.total) }));
   const saleIds = sales.map((s) => s.id);
@@ -99,6 +101,7 @@ export default async function PosPage() {
         products={(products ?? []).map((p) => ({ ...p, price: Number(p.price), stock: Number(p.stock) }))}
         customers={(customers ?? []).map((c) => ({ ...c, balance: Number(c.balance) }))}
         autoInvoiceByPayment={organization.auto_invoice_by_payment}
+        customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
       />
 
       <Card>

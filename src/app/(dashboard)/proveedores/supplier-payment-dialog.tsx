@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Banknote, CreditCard, Landmark, QrCode } from "lucide-react";
+import { Banknote, CircleDollarSign, CreditCard, Landmark, QrCode } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,25 +10,31 @@ import { registerSupplierPayment } from "@/app/(dashboard)/proveedores/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import type { Supplier } from "@/lib/types";
 
-type PaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "qr";
+type PaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "qr" | (string & {});
 
-const methods: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
-  { value: "efectivo", label: "Efectivo", icon: Banknote },
-  { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
-  { value: "transferencia", label: "Transferencia", icon: Landmark },
-  { value: "qr", label: "QR", icon: QrCode },
-];
+function methodsWithCustom(customMethods: string[]) {
+  return [
+    { value: "efectivo", label: "Efectivo", icon: Banknote },
+    { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
+    { value: "transferencia", label: "Transferencia", icon: Landmark },
+    { value: "qr", label: "QR", icon: QrCode },
+    ...customMethods.map((name) => ({ value: name, label: name, icon: CircleDollarSign })),
+  ];
+}
 
 export function SupplierPaymentDialog({
   supplier,
   onClose,
+  customPaymentMethods = [],
 }: {
   supplier: Supplier | null;
   onClose: () => void;
+  customPaymentMethods?: string[];
 }) {
   const { showSuccess } = useToast();
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("efectivo");
+  const methods = methodsWithCustom(customPaymentMethods);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

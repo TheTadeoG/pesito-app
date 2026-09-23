@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
+  CircleDollarSign,
   CreditCard,
   ImageIcon,
   Landmark,
@@ -55,26 +56,40 @@ interface CartLine {
   unitCost: number;
 }
 
-const paymentMethodOptions: {
+function paymentMethodOptionsWithCustom(customMethods: string[]): {
   value: PurchasePaymentMethod;
   label: string;
   icon: typeof Banknote;
-}[] = [
-  { value: "efectivo", label: "Efectivo", icon: Banknote },
-  { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
-  { value: "transferencia", label: "Transferencia", icon: Landmark },
-  { value: "qr", label: "QR", icon: QrCode },
-  { value: "cuenta_corriente", label: "Cuenta corriente", icon: Wallet },
-];
+}[] {
+  return [
+    { value: "efectivo", label: "Efectivo", icon: Banknote },
+    { value: "tarjeta", label: "Tarjeta", icon: CreditCard },
+    { value: "transferencia", label: "Transferencia", icon: Landmark },
+    { value: "qr", label: "QR", icon: QrCode },
+    ...customMethods.map((name) => ({ value: name, label: name, icon: CircleDollarSign })),
+    { value: "cuenta_corriente", label: "Cuenta corriente", icon: Wallet },
+  ];
+}
 
 interface ComprasClientProps {
   orgId: string;
   products: ProductLite[];
   suppliers: SupplierLite[];
   hasOpenCaja: boolean;
+  customPaymentMethods: string[];
 }
 
-export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: ComprasClientProps) {
+export function ComprasClient({
+  orgId,
+  products,
+  suppliers,
+  hasOpenCaja,
+  customPaymentMethods,
+}: ComprasClientProps) {
+  const paymentMethodOptions = useMemo(
+    () => paymentMethodOptionsWithCustom(customPaymentMethods),
+    [customPaymentMethods]
+  );
   const router = useRouter();
   const { showSuccess } = useToast();
   const [query, setQuery] = useState("");
@@ -108,12 +123,16 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
   const [notes, setNotes] = useState("");
   const [splitPayment, setSplitPayment] = useState(false);
   const [singleMethod, setSingleMethod] = useState<PurchasePaymentMethod | null>(null);
-  const [mixedAmounts, setMixedAmounts] = useState<Record<PurchasePaymentMethod, string>>({
-    efectivo: "",
-    tarjeta: "",
-    transferencia: "",
-    qr: "",
-    cuenta_corriente: "",
+  const [mixedAmounts, setMixedAmounts] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {
+      efectivo: "",
+      tarjeta: "",
+      transferencia: "",
+      qr: "",
+      cuenta_corriente: "",
+    };
+    for (const name of customPaymentMethods) initial[name] = "";
+    return initial;
   });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,9 +170,7 @@ export function ComprasClient({ orgId, products, suppliers, hasOpenCaja }: Compr
   const total = cart.reduce((acc, line) => acc + line.quantity * line.unitCost, 0);
   const itemCount = cart.reduce((acc, line) => acc + line.quantity, 0);
 
-  const mixedEntries: PurchasePaymentInput[] = (
-    Object.entries(mixedAmounts) as [PurchasePaymentMethod, string][]
-  )
+  const mixedEntries: PurchasePaymentInput[] = Object.entries(mixedAmounts)
     .map(([method, raw]) => ({ method, amount: Number(raw) || 0 }))
     .filter((p) => p.amount > 0);
   const mixedTotalAssigned = mixedEntries.reduce((acc, p) => acc + p.amount, 0);

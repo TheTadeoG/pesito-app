@@ -13,7 +13,13 @@ import { CustomerForm } from "@/app/(dashboard)/clientes/customer-form";
 import { PaymentDialog } from "@/app/(dashboard)/clientes/payment-dialog";
 import { deleteCustomer } from "@/app/(dashboard)/clientes/actions";
 
-export function ClientesClient({ customers }: { customers: Customer[] }) {
+export function ClientesClient({
+  customers,
+  customPaymentMethods = [],
+}: {
+  customers: Customer[];
+  customPaymentMethods?: string[];
+}) {
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
@@ -139,7 +145,11 @@ export function ClientesClient({ customers }: { customers: Customer[] }) {
         onClose={() => setFormOpen(false)}
         customer={editing}
       />
-      <PaymentDialog customer={paying} onClose={() => setPaying(null)} />
+      <PaymentDialog
+        customer={paying}
+        onClose={() => setPaying(null)}
+        customPaymentMethods={customPaymentMethods}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { roleLabels } from "@/lib/roles";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
 import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
 import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
+import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
 import { getSubscription, getMonthlySalesCount } from "@/lib/subscription";
 
 export default async function ConfiguracionPage() {
@@ -17,6 +18,12 @@ export default async function ConfiguracionPage() {
   const { data: memberships } = await supabase
     .from("memberships")
     .select("id, user_id, role, email, username, created_at")
+    .eq("org_id", organization.id)
+    .order("created_at");
+
+  const { data: paymentMethods } = await supabase
+    .from("payment_methods")
+    .select("id, name")
     .eq("org_id", organization.id)
     .order("created_at");
 
@@ -47,6 +54,18 @@ export default async function ConfiguracionPage() {
           </div>
 
           <AutoInvoiceToggle initialEnabled={organization.auto_invoice_by_payment} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Medios de pago</CardTitle>
+          <CardDescription>
+            Agregá los que uses además de los de siempre (ej: Mercado Pago, Talo).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaymentMethodsManager methods={paymentMethods ?? []} />
         </CardContent>
       </Card>
 
