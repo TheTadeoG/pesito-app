@@ -2,7 +2,6 @@ import { Navbar } from "@/components/marketing/navbar";
 import { Hero } from "@/components/marketing/hero";
 import { Stats } from "@/components/marketing/stats";
 import { Features } from "@/components/marketing/features";
-import { DashboardPreview } from "@/components/marketing/dashboard-preview";
 import { DashboardShowcase } from "@/components/marketing/dashboard-showcase";
 import { HowItWorks } from "@/components/marketing/how-it-works";
 import { Comparison } from "@/components/marketing/comparison";
@@ -25,7 +24,6 @@ export default function LandingPage() {
         <DashboardShowcase />
         <Stats />
         <Features />
-        <DashboardPreview />
         <HowItWorks />
         <Comparison />
         <Pricing />

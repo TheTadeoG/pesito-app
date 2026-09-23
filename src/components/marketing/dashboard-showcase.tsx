@@ -1,10 +1,46 @@
-import { AlertTriangle, BarChart3, Package, Wallet } from "lucide-react";
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  ShieldCheck,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // Paleta categórica ya validada (misma que DonutChart, ver ese archivo) —
 // se reutiliza acá para que los mockups de la landing luzcan coherentes
 // con los gráficos reales de adentro del sistema.
 const PALETTE = ["#059669", "#2563eb", "#d97706", "#7c3aed", "#db2777"];
+
+// Números de ejemplo, no datos reales de ningún negocio — se aclara abajo.
+// Coherentes entre sí (ganancia = ventas - costo) para que se sienta un
+// panel real, no una lista de números sueltos.
+const summary = [
+  { label: "Ventas de hoy", value: 284500, icon: TrendingUp, tone: "text-foreground" },
+  { label: "Costo de lo vendido", value: 171200, icon: ArrowDownRight, tone: "text-danger" },
+  { label: "Ganancia", value: 113300, icon: ArrowUpRight, tone: "text-success" },
+];
+
+const topProducts = [
+  { name: "Coca-Cola 2.25L", quantity: 18 },
+  { name: "Pan lactal", quantity: 14 },
+  { name: "Alfajor triple", quantity: 12 },
+  { name: "Cigarrillos 20u", quantity: 9 },
+];
+
+const topDebtors = [
+  { name: "Fernando R.", amount: 8200 },
+  { name: "Lucía M.", amount: 5400 },
+  { name: "Roberto G.", amount: 3150 },
+];
 
 const weeklySales = [
   { day: "Lun", value: 18400 },
@@ -39,6 +75,7 @@ const stockLevelStyles = {
 
 const cajaEsperado = 184500;
 const cajaContado = 184200;
+const cajaDiferencia = cajaContado - cajaEsperado;
 const cajaMatchPct = Math.round((cajaContado / cajaEsperado) * 1000) / 10;
 const medios = [
   { label: "Efectivo", pct: 58, color: PALETTE[0] },
@@ -47,27 +84,95 @@ const medios = [
   { label: "QR", pct: 6, color: PALETTE[3] },
 ];
 
-function ReportesCard() {
+function SlideHeading({ icon: Icon, children }: { icon: typeof BarChart3; children: string }) {
+  return (
+    <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      {children}
+    </p>
+  );
+}
+
+function ResumenSlide() {
+  return (
+    <div>
+      <SlideHeading icon={TrendingUp}>Resumen de hoy</SlideHeading>
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        {summary.map((tile) => (
+          <div key={tile.label} className="rounded-xl border border-border p-3">
+            <tile.icon className={cn("h-4 w-4", tile.tone)} />
+            <p className="mt-2 truncate text-xs text-muted-foreground">{tile.label}</p>
+            <p className={cn("truncate text-base font-bold sm:text-lg", tile.tone)}>
+              {formatCurrency(tile.value)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <div>
+          <p className="text-xs font-semibold text-foreground">Productos más vendidos</p>
+          <ul className="mt-2.5 space-y-2">
+            {topProducts.map((p) => (
+              <li key={p.name} className="flex items-center justify-between text-sm">
+                <span className="truncate text-foreground">{p.name}</span>
+                <span className="shrink-0 text-muted-foreground">{p.quantity} u.</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+            <Wallet className="h-3.5 w-3.5 text-warning" />
+            Clientes que más deben
+          </p>
+          <ul className="mt-2.5 space-y-2">
+            {topDebtors.map((c) => (
+              <li key={c.name} className="flex items-center justify-between text-sm">
+                <span className="truncate text-foreground">{c.name}</span>
+                <span className="shrink-0 font-medium text-warning">
+                  {formatCurrency(c.amount)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Dona con separación real entre segmentos (2px de "hueco" en vez de que
+// se toquen) y un total al centro — sin eso, un anillo grueso con colores
+// pegados uno al lado del otro se lee como un borrón, no como datos.
+const DONUT_GAP = 3;
+
+function ReportesSlide() {
   const maxSale = Math.max(...weeklySales.map((d) => d.value));
-  const totalCategorySales = categorySales.reduce((acc, c) => acc + c.value, 0);
-  const donutRadius = 55;
-  const circumference = 2 * Math.PI * donutRadius;
+  const total = categorySales.reduce((acc, c) => acc + c.value, 0);
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius;
 
   const segments = categorySales.reduce<
-    Array<{ label: string; value: number; dash: number; dashOffset: number; color: string }>
+    Array<{ label: string; value: number; dash: number; dashOffset: number; color: string; pct: number }>
   >((acc, c, i) => {
-    const fraction = c.value / totalCategorySales;
-    const dash = fraction * circumference;
-    const offsetSoFar = acc.reduce((sum, s) => sum + s.dash, 0);
-    return [...acc, { ...c, dash, dashOffset: -offsetSoFar, color: PALETTE[i % PALETTE.length] }];
+    const rawDash = (c.value / total) * circumference;
+    const offsetSoFar = acc.reduce((sum, s) => sum + s.dash + DONUT_GAP, 0);
+    return [
+      ...acc,
+      {
+        ...c,
+        dash: Math.max(0, rawDash - DONUT_GAP),
+        dashOffset: -offsetSoFar,
+        color: PALETTE[i % PALETTE.length],
+        pct: Math.round((c.value / total) * 100),
+      },
+    ];
   }, []);
 
   return (
-    <div className="rounded-card border border-border bg-card p-5 shadow-lg shadow-black/5 sm:p-6">
-      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-        Reportes
-      </p>
+    <div>
+      <SlideHeading icon={BarChart3}>Reportes</SlideHeading>
 
       <div className="mt-4 grid gap-6 sm:grid-cols-2">
         <div>
@@ -94,39 +199,46 @@ function ReportesCard() {
         <div>
           <p className="text-xs text-muted-foreground">Ventas por categoría</p>
           <div className="mt-3 flex items-center gap-5">
-            <svg
-              width="110"
-              height="110"
-              viewBox="0 0 120 120"
-              className="animate-pop-in -rotate-90 shrink-0"
-            >
-              <circle
-                cx="60"
-                cy="60"
-                r={donutRadius}
-                fill="none"
-                stroke="var(--color-muted)"
-                strokeWidth="16"
-              />
-              {segments.map((s) => (
+            <div className="animate-pop-in relative shrink-0">
+              <svg width="112" height="112" viewBox="0 0 120 120" className="-rotate-90">
                 <circle
-                  key={s.label}
                   cx="60"
                   cy="60"
-                  r={donutRadius}
+                  r={radius}
                   fill="none"
-                  stroke={s.color}
-                  strokeWidth="16"
-                  strokeDasharray={`${s.dash} ${circumference - s.dash}`}
-                  strokeDashoffset={s.dashOffset}
+                  stroke="var(--color-muted)"
+                  strokeWidth="14"
                 />
-              ))}
-            </svg>
+                {segments.map((s) => (
+                  <circle
+                    key={s.label}
+                    cx="60"
+                    cy="60"
+                    r={radius}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth="14"
+                    strokeLinecap="round"
+                    strokeDasharray={`${s.dash} ${circumference - s.dash}`}
+                    strokeDashoffset={s.dashOffset}
+                  />
+                ))}
+              </svg>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                  Total
+                </span>
+                <span className="text-[13px] font-bold text-foreground">
+                  {formatCurrency(total)}
+                </span>
+              </div>
+            </div>
             <div className="min-w-0 space-y-1.5">
               {segments.map((s) => (
                 <div key={s.label} className="flex items-center gap-1.5 text-xs">
                   <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
                   <span className="truncate text-foreground">{s.label}</span>
+                  <span className="shrink-0 text-muted-foreground">{s.pct}%</span>
                 </div>
               ))}
             </div>
@@ -137,13 +249,10 @@ function ReportesCard() {
   );
 }
 
-function InventarioCard() {
+function InventarioSlide() {
   return (
-    <div className="rounded-card border border-border bg-card p-5 shadow-lg shadow-black/5 sm:p-6">
-      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <Package className="h-4 w-4 text-muted-foreground" />
-        Inventario
-      </p>
+    <div>
+      <SlideHeading icon={Package}>Inventario</SlideHeading>
       <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
         <AlertTriangle className="h-3.5 w-3.5 text-warning" />
         Alertas de stock
@@ -186,45 +295,48 @@ function InventarioCard() {
   );
 }
 
-function CajaCard() {
-  const ringRadius = 46;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const ringDash = (cajaMatchPct / 100) * ringCircumference;
+// Un anillo casi lleno (99.8%) se lee como un círculo sólido, no como un
+// medidor — por eso acá el indicador principal es una barra horizontal
+// (mismo lenguaje visual que el stock y los medios de pago de al lado) y
+// se suma la diferencia en pesos, que es el dato que en verdad importa al
+// cuadrar caja.
+function CajaSlide() {
+  const diffLabel =
+    cajaDiferencia === 0
+      ? "Cuadra justo"
+      : cajaDiferencia > 0
+        ? `+${formatCurrency(cajaDiferencia)} de sobrante`
+        : `${formatCurrency(cajaDiferencia)} de faltante`;
+  const diffTone = cajaDiferencia === 0 ? "text-success" : "text-warning";
 
   return (
-    <div className="rounded-card border border-border bg-card p-5 shadow-lg shadow-black/5 sm:p-6">
-      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <Wallet className="h-4 w-4 text-muted-foreground" />
-        Caja
-      </p>
+    <div>
+      <SlideHeading icon={Wallet}>Caja</SlideHeading>
 
-      <div className="mt-4 flex items-center gap-5">
-        <svg width="100" height="100" viewBox="0 0 110 110" className="animate-pop-in -rotate-90 shrink-0">
-          <circle cx="55" cy="55" r={ringRadius} fill="none" stroke="var(--color-muted)" strokeWidth="10" />
-          <circle
-            cx="55"
-            cy="55"
-            r={ringRadius}
-            fill="none"
-            stroke="var(--color-success)"
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray={`${ringDash} ${ringCircumference - ringDash}`}
-          />
-        </svg>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+          <ShieldCheck className="h-4 w-4 text-success" />
+          Coincidencia de caja
+        </span>
+        <span className="text-xl font-bold text-success">{cajaMatchPct}%</span>
+      </div>
+      <div className="animate-grow-in-x mt-2 h-2.5 w-full origin-left overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-success"
+          style={{ width: `${Math.min(100, cajaMatchPct)}%` }}
+        />
+      </div>
+      <p className={cn("mt-1.5 text-xs font-medium", diffTone)}>{diffLabel}</p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-border p-3 text-sm">
         <div>
-          <p className="text-2xl font-bold text-success">{cajaMatchPct}%</p>
-          <p className="text-xs text-muted-foreground">Caja cuadrada</p>
+          <p className="text-xs text-muted-foreground">Esperado</p>
+          <p className="font-semibold text-foreground">{formatCurrency(cajaEsperado)}</p>
         </div>
-      </div>
-
-      <div className="mt-4 flex items-baseline justify-between text-sm">
-        <span className="text-muted-foreground">Esperado</span>
-        <span className="font-semibold text-foreground">{formatCurrency(cajaEsperado)}</span>
-      </div>
-      <div className="mt-1.5 flex items-baseline justify-between text-sm">
-        <span className="text-muted-foreground">Contado</span>
-        <span className="font-semibold text-foreground">{formatCurrency(cajaContado)}</span>
+        <div>
+          <p className="text-xs text-muted-foreground">Contado</p>
+          <p className="font-semibold text-foreground">{formatCurrency(cajaContado)}</p>
+        </div>
       </div>
 
       <p className="mt-4 text-xs font-semibold text-foreground">Medios de pago</p>
@@ -249,7 +361,42 @@ function CajaCard() {
   );
 }
 
+const slides = [
+  { id: "resumen", label: "Resumen", Component: ResumenSlide },
+  { id: "reportes", label: "Reportes", Component: ReportesSlide },
+  { id: "inventario", label: "Inventario", Component: InventarioSlide },
+  { id: "caja", label: "Caja", Component: CajaSlide },
+];
+
+const AUTO_ADVANCE_MS = 5000;
+
 export function DashboardShowcase() {
+  const [active, setActive] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startAutoplay = useCallback(() => {
+    intervalRef.current = setInterval(() => {
+      setActive((prev) => (prev + 1) % slides.length);
+    }, AUTO_ADVANCE_MS);
+  }, []);
+
+  useEffect(() => {
+    startAutoplay();
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [startAutoplay]);
+
+  function goTo(index: number) {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setActive(index);
+    startAutoplay();
+  }
+
+  function step(delta: number) {
+    goTo((active + delta + slides.length) % slides.length);
+  }
+
   return (
     <section className="mx-auto max-w-5xl px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
@@ -257,21 +404,61 @@ export function DashboardShowcase() {
           Mirá cómo se ve tu negocio en Pesito
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Ventas, stock y caja, siempre a la vista — así lucen Reportes, Inventario y Caja una vez
-          que cargás tu negocio.
+          Ventas, stock y caja, siempre a la vista — sin tener que sumarlo vos a mano.
         </p>
       </div>
 
-      <div className="mx-auto mt-10 max-w-3xl space-y-6">
-        <ReportesCard />
-        <div className="grid gap-6 sm:grid-cols-2">
-          <InventarioCard />
-          <CajaCard />
+      <div className="mx-auto mt-10 max-w-3xl">
+        <div className="relative">
+          <div className="overflow-hidden rounded-card border border-border bg-card shadow-lg shadow-black/5">
+            <div
+              className="flex transition-transform duration-500 ease-out"
+              style={{ transform: `translateX(-${active * 100}%)` }}
+            >
+              {slides.map(({ id, Component }) => (
+                <div key={id} className="w-full shrink-0 p-5 sm:p-6">
+                  <Component />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => step(-1)}
+            aria-label="Diapositiva anterior"
+            className="absolute left-0 top-1/2 hidden -translate-x-4 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card p-2 text-muted-foreground shadow-md transition-colors hover:text-foreground sm:flex"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => step(1)}
+            aria-label="Siguiente diapositiva"
+            className="absolute right-0 top-1/2 hidden translate-x-4 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card p-2 text-muted-foreground shadow-md transition-colors hover:text-foreground sm:flex"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {slides.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Ver ${s.label}`}
+              className={cn(
+                "h-2 rounded-full transition-all",
+                active === i ? "w-6 bg-primary" : "w-2 bg-border hover:bg-muted-foreground/40"
+              )}
+            />
+          ))}
         </div>
       </div>
 
       <p className="mx-auto mt-4 max-w-3xl text-center text-xs text-muted-foreground">
-        Números de ejemplo, no de un negocio real — así se ve tu propio negocio una vez que cargás
+        Números de ejemplo, no de un negocio real — así ves tus propios pesitos una vez que cargás
         tus ventas.
       </p>
     </section>
