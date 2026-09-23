@@ -1,29 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import { acceptCookieConsent, useCookieBannerVisible } from "@/lib/cookie-consent";
 
+// Tarjetita chica en la esquina en vez de una barra de ancho completo: no
+// tapa contenido, no compite con el botón de WhatsApp (queda en la esquina
+// opuesta) y no se siente invasivo, sobre todo en celular.
 export function CookieConsent() {
   const visible = useCookieBannerVisible();
 
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p className="text-sm text-muted-foreground">
-          Usamos una cookie para mantener tu sesión iniciada y guardamos tu preferencia de tema en
-          el navegador. No usamos cookies de publicidad ni de seguimiento entre sitios.{" "}
-          <Link href="/privacidad" className="text-primary hover:underline">
-            Más info
-          </Link>
-          .
-        </p>
-        <Button size="sm" onClick={acceptCookieConsent} className="shrink-0 self-start sm:self-auto">
-          Entendido
-        </Button>
-      </div>
+    <div className="fixed bottom-4 left-4 z-50 w-56 rounded-xl border border-border bg-card/95 p-3 text-xs shadow-lg backdrop-blur sm:bottom-5 sm:left-5">
+      <button
+        type="button"
+        onClick={acceptCookieConsent}
+        aria-label="Cerrar aviso de cookies"
+        className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+      <p className="pr-4 leading-relaxed text-muted-foreground">
+        Usamos cookies esenciales, sin publicidad ni seguimiento.{" "}
+        <Link href="/privacidad" className="text-primary hover:underline">
+          Más info
+        </Link>
+      </p>
     </div>
   );
 }
