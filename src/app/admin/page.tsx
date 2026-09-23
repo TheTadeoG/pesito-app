@@ -23,6 +23,7 @@ import {
 import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { OrgPlanManager } from "@/app/admin/org-plan-manager";
+import { LandingStatsManager } from "@/app/admin/landing-stats-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,7 @@ export default async function AdminPage() {
     { count: openRegistersCount },
     { count: testimonialsCount },
     { count: publishedTestimonialsCount },
+    { data: landingStatsRow },
   ] = await Promise.all([
     admin.from("organizations").select("id, name, business_type, created_at"),
     admin.from("organization_subscriptions").select("org_id, plan, pro_trial_ends_at"),
@@ -145,6 +147,7 @@ export default async function AdminPage() {
       .from("testimonials")
       .select("id", { count: "exact", head: true })
       .eq("published", true),
+    admin.from("landing_stats").select("*").eq("id", "main").maybeSingle(),
   ]);
 
   // auth.users no se puede leer con .from() ni siquiera con la service role;
@@ -724,6 +727,21 @@ export default async function AdminPage() {
                 Gestionar reseñas
               </Button>
             </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Contador de uso real (landing)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <LandingStatsManager
+              initial={{
+                kioscosOffset: landingStatsRow?.kioscos_offset ?? 0,
+                ventasOffset: landingStatsRow?.ventas_offset ?? 0,
+                montoOffset: Number(landingStatsRow?.monto_offset ?? 0),
+              }}
+            />
           </CardContent>
         </Card>
 

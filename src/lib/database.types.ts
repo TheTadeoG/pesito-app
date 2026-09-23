@@ -407,6 +407,24 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
         Relationships: [];
       };
+      landing_stats: {
+        Row: {
+          id: string;
+          kioscos_offset: number;
+          ventas_offset: number;
+          monto_offset: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          kioscos_offset?: number;
+          ventas_offset?: number;
+          monto_offset?: number;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["landing_stats"]["Insert"]>;
+        Relationships: [];
+      };
       payment_methods: {
         Row: {
           id: string;

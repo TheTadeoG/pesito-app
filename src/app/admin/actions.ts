@@ -37,3 +37,44 @@ export async function updateOrgPlan(orgId: string, plan: Plan): Promise<ActionSt
   revalidatePath("/admin");
   return { success: true };
 }
+
+/**
+ * Offsets del contador de uso real de la landing (Stats): se suman a lo
+ * que el sistema ya cuenta (organizaciones, ventas) para poder incluir
+ * números reales que todavía no están cargados ahí. Misma razón que
+ * updateOrgPlan para usar la service role: landing_stats no tiene
+ * policies de insert/update para anon/authenticated.
+ */
+export async function updateLandingStatsOffsets(input: {
+  kioscosOffset: number;
+  ventasOffset: number;
+  montoOffset: number;
+}): Promise<ActionState> {
+  await requirePlatformAdmin();
+
+  if (
+    !Number.isFinite(input.kioscosOffset) ||
+    !Number.isFinite(input.ventasOffset) ||
+    !Number.isFinite(input.montoOffset) ||
+    input.kioscosOffset < 0 ||
+    input.ventasOffset < 0 ||
+    input.montoOffset < 0
+  ) {
+    return { error: "Los valores tienen que ser números positivos." };
+  }
+
+  const admin = createAdminClient();
+
+  const { error } = await admin.from("landing_stats").upsert({
+    id: "main",
+    kioscos_offset: Math.round(input.kioscosOffset),
+    ventas_offset: Math.round(input.ventasOffset),
+    monto_offset: input.montoOffset,
+  });
+
+  if (error) return { error: "No pudimos guardar los valores." };
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+  return { success: true };
+}
