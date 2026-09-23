@@ -103,7 +103,6 @@ interface PosClientProps {
   orgId: string;
   cashRegisterId: string;
   products: ProductLite[];
-  topProducts: ProductLite[];
   customers: CustomerLite[];
   autoInvoiceByPayment: boolean;
   customPaymentMethods: string[];
@@ -113,7 +112,6 @@ export function PosClient({
   orgId,
   cashRegisterId,
   products,
-  topProducts,
   customers,
   autoInvoiceByPayment,
   customPaymentMethods,
@@ -956,41 +954,6 @@ export function PosClient({
                 </Button>
               </div>
             )}
-
-        {!showResults && topProducts.length > 0 && (
-          <div className="mt-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-              Más vendidos
-            </p>
-            <div className="mt-1.5 grid gap-0.5 sm:grid-cols-2">
-              {topProducts.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => addProduct(product)}
-                  className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-muted"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground">
-                    {product.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={product.image_url} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <ImageIcon className="h-3.5 w-3.5" />
-                    )}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-foreground">
-                      {product.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatCurrency(product.price)}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
           <span className="text-sm font-medium text-foreground">
