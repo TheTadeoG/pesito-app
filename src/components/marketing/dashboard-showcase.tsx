@@ -177,7 +177,7 @@ function ReportesSlide() {
       <div className="mt-4 grid gap-6 sm:grid-cols-2">
         <div>
           <p className="text-xs text-muted-foreground">Ventas de la semana</p>
-          <div className="mt-3 flex h-28 items-end justify-between gap-1.5">
+          <div className="mt-3 flex h-28 items-stretch justify-between gap-1.5">
             {weeklySales.map((d) => (
               <div key={d.day} className="flex flex-1 flex-col items-center gap-1.5">
                 <div className="flex w-full flex-1 items-end">
