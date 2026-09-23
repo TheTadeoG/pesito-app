@@ -11,7 +11,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 
 const initialState: AuthActionState = {};
 
-export function SignupForm() {
+export function SignupForm({ submitLabel = "Crear mi cuenta gratis" }: { submitLabel?: string }) {
   const [state, formAction, pending] = useActionState(signup, initialState);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -100,7 +100,7 @@ export function SignupForm() {
       )}
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Creando cuenta…" : "Crear mi cuenta gratis"}
+        {pending ? "Creando cuenta…" : submitLabel}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">

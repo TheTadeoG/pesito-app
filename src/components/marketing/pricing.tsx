@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
-import { paidPlanDefinitions } from "@/lib/plan-features";
+import { ANNUAL_DISCOUNT, paidPlanDefinitions } from "@/lib/plan-features";
 
 // A propósito, un solo acento (el plan recomendado) en vez de un color por
 // plan: acá el visitante todavía no sabe qué es "Pro" o "IA", así que 3
@@ -13,9 +13,9 @@ import { paidPlanDefinitions } from "@/lib/plan-features";
 // sistema de colores por plan (dorado/violeta) se usa dentro de la app
 // (Configuración), donde el usuario ya conoce esos planes y el color sí
 // funciona como señal — ver lib/plan-visuals.tsx.
-const ANNUAL_DISCOUNT = 0.2;
 
 const plans = paidPlanDefinitions.map((def) => ({
+  plan: def.plan,
   name: def.name,
   price: def.price,
   badge: def.badge,
@@ -131,7 +131,7 @@ export function Pricing() {
                 ))}
               </ul>
 
-              <Link href="/registro" className="mt-7">
+              <Link href={`/registro?plan=${plan.plan}&anual=${annual ? "1" : "0"}`} className="mt-7">
                 <Button variant={plan.highlighted ? "primary" : "outline"} className="w-full">
                   {plan.cta}
                 </Button>

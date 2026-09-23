@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </span>
         <Wordmark className="text-lg" />
       </Link>
-      <div className="w-full max-w-sm">{children}</div>
+      <div className="w-full max-w-4xl">{children}</div>
     </div>
   );
 }

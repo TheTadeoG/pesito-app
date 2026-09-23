@@ -1,5 +1,10 @@
 import type { Plan } from "@/lib/subscription";
 
+// Descuento del ciclo anual sobre el precio mensual — usado tanto en la
+// página de precios de la landing como en el checkout de /registro, para
+// que el monto mostrado en los dos lugares nunca se desalinee.
+export const ANNUAL_DISCOUNT = 0.2;
+
 export interface PlanDefinition {
   plan: Plan;
   name: string;

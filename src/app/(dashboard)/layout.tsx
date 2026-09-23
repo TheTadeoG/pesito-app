@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { computeCashOnHand } from "@/lib/caja";
@@ -9,6 +10,7 @@ import { Topbar } from "@/components/dashboard/topbar";
 import { CommercialDatesBanner } from "@/components/dashboard/commercial-dates-banner";
 import { ProTrialBanner } from "@/components/dashboard/pro-trial-banner";
 import { ToastProvider } from "@/components/toast/toast-provider";
+import { WelcomeModal } from "@/components/dashboard/welcome-modal";
 import { getUpcomingCommercialDates } from "@/lib/commercial-dates";
 import { argDateString } from "@/lib/timezone";
 import { getSubscription } from "@/lib/subscription";
@@ -65,6 +67,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <ToastProvider>
+      <Suspense fallback={null}>
+        <WelcomeModal />
+      </Suspense>
       <div className="flex min-h-screen bg-background">
         <Sidebar
           orgName={organization.name}

@@ -54,5 +54,5 @@ export async function createKiosco(
     return { error: "No pudimos crear tu cuenta. Intentá de nuevo." };
   }
 
-  redirect("/pos");
+  redirect("/pos?bienvenida=1");
 }

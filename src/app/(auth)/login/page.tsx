@@ -16,7 +16,7 @@ export default async function LoginPage({
   const { next } = await searchParams;
 
   return (
-    <Card>
+    <Card className="mx-auto w-full max-w-sm">
       <CardHeader>
         <CardTitle>Ingresá a tu kiosco</CardTitle>
         <CardDescription>Accedé con el email y la contraseña de tu cuenta.</CardDescription>
