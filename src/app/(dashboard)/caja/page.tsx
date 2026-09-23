@@ -15,10 +15,20 @@ import {
   TeamCajasOverview,
   DeudasFiadoOverview,
   CuentasPorPagarOverview,
+  RecurringDiscrepanciesOverview,
   type OpenRegisterRow,
   type DebtorRow,
   type CreditorRow,
+  type RecurringDiscrepancyRow,
 } from "@/app/(dashboard)/caja/team-overview";
+
+// Un cierre cuenta como "faltante" recién a partir de esta diferencia, para
+// no marcar diferencias chicas de vuelto/redondeo como si fuera un patrón.
+const FALTANTE_THRESHOLD = 100;
+// De los últimos closes considerados por usuario (ver RECENT_CLOSES_PER_USER
+// más abajo), a partir de qué proporción con faltante se avisa al manager.
+const FALTANTE_RATIO_ALERT = 0.6;
+const RECENT_CLOSES_PER_USER = 5;
 
 export default async function CajaPage() {
   const { userId, email, organization, membership } = await requireOrgContext();
@@ -88,26 +98,40 @@ export default async function CajaPage() {
 
   let teamOverview: ReactNode = null;
   if (isManager) {
-    const [{ data: openRegisters }, { data: debtorCustomers }, { data: creditorSuppliers }] =
-      await Promise.all([
-        supabase
-          .from("cash_registers")
-          .select("id, user_id, opening_amount, opened_at")
-          .eq("org_id", organization.id)
-          .eq("status", "abierta"),
-        supabase
-          .from("customers")
-          .select("id, name, balance")
-          .eq("org_id", organization.id)
-          .gt("balance", 0)
-          .order("balance", { ascending: false }),
-        supabase
-          .from("suppliers")
-          .select("id, name, balance")
-          .eq("org_id", organization.id)
-          .gt("balance", 0)
-          .order("balance", { ascending: false }),
-      ]);
+    const [
+      { data: openRegisters },
+      { data: debtorCustomers },
+      { data: creditorSuppliers },
+      { data: recentClosedRegisters },
+    ] = await Promise.all([
+      supabase
+        .from("cash_registers")
+        .select("id, user_id, opening_amount, opened_at")
+        .eq("org_id", organization.id)
+        .eq("status", "abierta"),
+      supabase
+        .from("customers")
+        .select("id, name, balance")
+        .eq("org_id", organization.id)
+        .gt("balance", 0)
+        .order("balance", { ascending: false }),
+      supabase
+        .from("suppliers")
+        .select("id, name, balance")
+        .eq("org_id", organization.id)
+        .gt("balance", 0)
+        .order("balance", { ascending: false }),
+      // Más historial que closedRegisters (acotado a 20 para la lista
+      // visible): acá hace falta suficiente por usuario para detectar un
+      // patrón, no sólo los últimos cierres del equipo en general.
+      supabase
+        .from("cash_registers")
+        .select("id, user_id, expected_amount, closing_amount, closed_at")
+        .eq("org_id", organization.id)
+        .eq("status", "cerrada")
+        .order("closed_at", { ascending: false })
+        .limit(150),
+    ]);
 
     const openRegisterRows: OpenRegisterRow[] = await Promise.all(
       (openRegisters ?? []).map(async (r) => ({
@@ -133,6 +157,33 @@ export default async function CajaPage() {
     }));
     const totalOwed = creditors.reduce((acc, c) => acc + c.balance, 0);
 
+    const closesByUser = new Map<string, { expected: number; closing: number }[]>();
+    for (const r of recentClosedRegisters ?? []) {
+      const list = closesByUser.get(r.user_id) ?? [];
+      if (list.length < RECENT_CLOSES_PER_USER) {
+        list.push({ expected: Number(r.expected_amount ?? 0), closing: Number(r.closing_amount ?? 0) });
+      }
+      closesByUser.set(r.user_id, list);
+    }
+
+    const recurringDiscrepancies: RecurringDiscrepancyRow[] = Array.from(closesByUser.entries())
+      .map(([userIdKey, closes]) => {
+        const faltantes = closes.filter((c) => c.closing - c.expected < -FALTANTE_THRESHOLD);
+        const totalFaltante = faltantes.reduce((acc, c) => acc + (c.expected - c.closing), 0);
+        return {
+          userId: userIdKey,
+          userLabel: memberLabelFor(userIdKey, userId, memberLabelsById),
+          faltanteCount: faltantes.length,
+          consideredCount: closes.length,
+          totalFaltante,
+        };
+      })
+      .filter(
+        (row) =>
+          row.consideredCount >= 3 && row.faltanteCount / row.consideredCount >= FALTANTE_RATIO_ALERT
+      )
+      .sort((a, b) => b.totalFaltante - a.totalFaltante);
+
     teamOverview = (
       <>
         <TeamCajasOverview rows={openRegisterRows} />
@@ -140,6 +191,7 @@ export default async function CajaPage() {
           <DeudasFiadoOverview totalDebt={totalDebt} debtors={debtors} />
           <CuentasPorPagarOverview totalDebt={totalOwed} creditors={creditors} />
         </div>
+        <RecurringDiscrepanciesOverview rows={recurringDiscrepancies} />
       </>
     );
   }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, HandCoins, LockOpen, Users } from "lucide-react";
+import { AlertCircle, AlertTriangle, HandCoins, LockOpen, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -22,6 +22,54 @@ export interface CreditorRow {
   id: string;
   name: string;
   balance: number;
+}
+
+export interface RecurringDiscrepancyRow {
+  userId: string;
+  userLabel: string;
+  faltanteCount: number;
+  consideredCount: number;
+  totalFaltante: number;
+}
+
+// Un faltante suelto pasa — el problema es cuando se repite. Se muestra
+// sólo a owner/admin (ver caja/page.tsx), igual que el resto de esta
+// vista de equipo, para no señalar a nadie frente al resto del personal.
+export function RecurringDiscrepanciesOverview({ rows }: { rows: RecurringDiscrepancyRow[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <AlertTriangle className="h-4 w-4 text-danger" />
+          Faltantes recurrentes
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {rows.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+            Nadie tiene faltantes seguidos en sus últimos cierres.
+          </p>
+        ) : (
+          <div className="divide-y divide-border">
+            {rows.map((row) => (
+              <div key={row.userId} className="flex items-center justify-between gap-3 px-5 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{row.userLabel}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {row.faltanteCount} de sus últimos {row.consideredCount} cierres tuvieron
+                    faltante
+                  </p>
+                </div>
+                <span className="shrink-0 font-semibold text-danger">
+                  -{formatCurrency(row.totalFaltante)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export function TeamCajasOverview({ rows }: { rows: OpenRegisterRow[] }) {
