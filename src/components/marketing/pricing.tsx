@@ -39,30 +39,35 @@ export function Pricing() {
         </p>
       </div>
 
-      <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-3">
+      <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-3 lg:items-start">
         {plans.map((plan) => (
           <div
             key={plan.name}
             className={cn(
-              "flex flex-col rounded-card border p-7",
+              "relative flex flex-col rounded-card bg-card p-7",
               plan.highlighted
-                ? "border-primary bg-card shadow-xl shadow-primary/10"
-                : "border-border bg-card"
+                ? "border-2 border-primary shadow-2xl shadow-primary/20 lg:-translate-y-3"
+                : "border border-border"
             )}
           >
-            {plan.badge && (
-              <span
-                className={cn(
-                  "mb-3 w-fit rounded-full px-3 py-1 text-xs font-semibold",
-                  plan.highlighted
-                    ? "bg-primary/10 text-primary"
-                    : "bg-success-bg text-success"
-                )}
-              >
-                {plan.badge}
-              </span>
-            )}
-            <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
+            {plan.badge &&
+              (plan.highlighted ? (
+                <span className="absolute -top-3.5 left-1/2 w-fit -translate-x-1/2 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/30">
+                  {plan.badge}
+                </span>
+              ) : (
+                <span className="mb-3 w-fit rounded-full bg-success-bg px-3 py-1 text-xs font-semibold text-success">
+                  {plan.badge}
+                </span>
+              ))}
+            <h3
+              className={cn(
+                "text-lg font-semibold text-foreground",
+                plan.highlighted && "mt-1"
+              )}
+            >
+              {plan.name}
+            </h3>
             <div className="mt-2 flex items-baseline gap-1.5">
               <span className="text-3xl font-bold text-foreground">{plan.price}</span>
             </div>
