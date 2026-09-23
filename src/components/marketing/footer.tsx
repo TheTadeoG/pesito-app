@@ -16,7 +16,10 @@ const columns: {
   },
   {
     title: "Recursos",
-    links: [{ label: "Glosario", href: "/glosario" }],
+    links: [
+      { label: "Los 7 pasos", href: "/como-funciona" },
+      { label: "Glosario", href: "/glosario" },
+    ],
   },
   {
     title: "Cuenta",
