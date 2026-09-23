@@ -43,18 +43,26 @@ export async function Stats() {
       icon: Store,
       label: "Comercios usando Pesito",
       value: `+${numberFormatter.format(stats.kioscos)}`,
+      tone: "text-foreground",
     },
     stats.ventas > 0 && {
       icon: ShoppingBag,
       label: "Ventas registradas",
       value: formatRoundedCount(stats.ventas),
+      tone: "text-foreground",
     },
+    // Verde porque son pesitos — mismo criterio que "Ganancia" en el
+    // mini-dashboard de más abajo (texto grande y en negrita, no la
+    // palabra suelta en un renglón chico: ahí se pierde y confunde).
     stats.monto > 0 && {
       icon: Receipt,
       label: "Pesitos procesados",
       value: formatAbbreviatedAmount(stats.monto),
+      tone: "text-success",
     },
-  ].filter((t): t is { icon: typeof Store; label: string; value: string } => Boolean(t));
+  ].filter(
+    (t): t is { icon: typeof Store; label: string; value: string; tone: string } => Boolean(t)
+  );
 
   // Sin datos reales ni offset cargado: mejor no mostrar nada que un
   // "+0" poco creíble — mismo criterio que Testimonials sin reseñas.
@@ -74,7 +82,7 @@ export async function Stats() {
               <tile.icon className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-xl font-bold text-foreground">{tile.value}</p>
+              <p className={cn("truncate text-xl font-bold", tile.tone)}>{tile.value}</p>
               <p className="truncate text-xs text-muted-foreground">{tile.label}</p>
             </div>
           </div>
