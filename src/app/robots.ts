@@ -5,7 +5,9 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/login", "/registro"],
+      // Todo lo que no está explícitamente bloqueado abajo se permite
+      // por default — no hace falta listar cada página pública nueva acá.
+      allow: "/",
       disallow: [
         "/pos",
         "/compras",
