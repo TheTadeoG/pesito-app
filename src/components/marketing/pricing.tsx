@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
-import { whatsappLink } from "@/lib/whatsapp";
 import { paidPlanDefinitions } from "@/lib/plan-features";
 
 // A propósito, un solo acento (el plan recomendado) en vez de un color por
@@ -132,29 +131,12 @@ export function Pricing() {
                 ))}
               </ul>
 
-              {annual ? (
-                <a
-                  href={whatsappLink(
-                    `Hola! Quiero contratar el ${plan.name} con facturación anual.`
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-7"
-                >
-                  <Button variant={plan.highlighted ? "primary" : "outline"} className="w-full">
-                    {plan.cta} por WhatsApp
-                  </Button>
-                </a>
-              ) : (
-                <Link href="/registro" className="mt-7">
-                  <Button variant={plan.highlighted ? "primary" : "outline"} className="w-full">
-                    {plan.cta}
-                  </Button>
-                </Link>
-              )}
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                {annual ? "Coordinamos el pago anual por WhatsApp" : "Probá gratis 14 días"}
-              </p>
+              <Link href="/registro" className="mt-7">
+                <Button variant={plan.highlighted ? "primary" : "outline"} className="w-full">
+                  {plan.cta}
+                </Button>
+              </Link>
+              <p className="mt-2 text-center text-xs text-muted-foreground">Probá gratis 14 días</p>
             </div>
           );
         })}
