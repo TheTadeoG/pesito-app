@@ -47,11 +47,15 @@ export function BarChart({
                 // varios días así (recién arrancando, o un rango largo con
                 // poca actividad) el gráfico se lee como roto/vacío en vez
                 // de "estos días no hubo ventas". Una marca plana lo aclara.
-                <div className="h-[3px] w-full rounded-full bg-border" />
+                <div className="h-1 w-full rounded-full bg-muted-foreground/30" />
               )}
             </div>
             <span className="text-[10px] text-muted-foreground">
-              {i % labelEvery === 0 ? d.label : ""}
+              {/* Un día con venta real siempre muestra su fecha, sin
+                  importar el paso de labelEvery — si no, en un período
+                  largo y disperso la barra real termina "flotando" sin
+                  ninguna etiqueta cerca mientras el eje marca días vacíos. */}
+              {i % labelEvery === 0 || d.value > 0 ? d.label : ""}
             </span>
           </div>
         );
