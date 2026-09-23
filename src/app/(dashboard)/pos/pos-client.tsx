@@ -106,6 +106,7 @@ export function PosClient({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [qtyBump, setQtyBump] = useState<Record<string, number>>({});
   const [cartRestored, setCartRestored] = useState(false);
   const cartStorageKey = `pesito-pos-cart-${cashRegisterId}`;
 
@@ -282,6 +283,7 @@ export function PosClient({
 
   function changeQuantity(index: number, delta: number) {
     let blocked: ProductLite | null = null;
+    let bumpedKey: string | null = null;
     setCart((current) =>
       current
         .map((item, i) => {
@@ -291,6 +293,7 @@ export function PosClient({
             blocked = item.product;
             return item;
           }
+          if (delta > 0) bumpedKey = `p-${item.product.id}`;
           return { ...item, quantity: nextQuantity };
         })
         .filter((item) => item.kind !== "product" || item.quantity > 0)
@@ -298,6 +301,28 @@ export function PosClient({
     if (blocked) {
       const product: ProductLite = blocked;
       showWarning("No hay más stock", `Sólo quedan ${product.stock} unidades de "${product.name}".`);
+    }
+    if (bumpedKey) {
+      const key = bumpedKey;
+      setQtyBump((current) => ({ ...current, [key]: (current[key] ?? 0) + 1 }));
+    }
+  }
+
+  // Sin funcionalidad nueva, sólo un detalle divertido: el numerito "pega
+  // un salto" y se va tiñendo de verde a medida que sumás unidades, hasta
+  // "combo" a partir de la 5ta — ahí se queda, no sigue escalando.
+  function qtyTintClass(quantity: number) {
+    switch (Math.min(quantity, 5)) {
+      case 1:
+        return "";
+      case 2:
+        return "bg-primary/10 text-primary";
+      case 3:
+        return "bg-primary/20 text-primary";
+      case 4:
+        return "bg-primary/30 text-primary";
+      default:
+        return "bg-primary text-primary-foreground shadow-sm shadow-primary/30";
     }
   }
 
@@ -1024,7 +1049,13 @@ export function PosClient({
                           >
                             <Minus className="h-3.5 w-3.5" />
                           </button>
-                          <span className="w-5 text-center text-sm font-medium">
+                          <span
+                            key={qtyBump[`p-${item.product.id}`] ?? 0}
+                            className={cn(
+                              "flex h-6 w-6 animate-qty-bump items-center justify-center rounded-md text-center text-sm font-semibold",
+                              qtyTintClass(item.quantity)
+                            )}
+                          >
                             {item.quantity}
                           </span>
                           <button

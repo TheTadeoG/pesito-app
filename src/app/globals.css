@@ -205,3 +205,19 @@ body {
 .animate-toast-progress {
   animation: toast-progress 3.2s linear forwards;
 }
+
+@keyframes qty-bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-qty-bump {
+  animation: qty-bump 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
