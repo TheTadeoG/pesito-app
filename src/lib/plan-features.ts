@@ -41,8 +41,8 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
   esencial: {
     plan: "esencial",
     name: "Plan Esencial",
-    price: 20000,
-    priceLabel: "$20.000",
+    price: 17000,
+    priceLabel: "$17.000",
     period: "por mes · IVA incl.",
     badge: null,
     features: [
@@ -54,8 +54,8 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
   pro: {
     plan: "pro",
     name: "Plan Pro",
-    price: 35000,
-    priceLabel: "$35.000",
+    price: 30000,
+    priceLabel: "$30.000",
     period: "por mes · IVA incl.",
     badge: "Más elegido",
     features: [
@@ -71,8 +71,8 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
   ia: {
     plan: "ia",
     name: "Plan IA",
-    price: 40000,
-    priceLabel: "$40.000",
+    price: 35000,
+    priceLabel: "$35.000",
     period: "por mes · IVA incl.",
     badge: "Nuevo",
     features: [
