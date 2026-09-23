@@ -48,7 +48,18 @@ export default function PrivacidadPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-foreground">4. Tus derechos</h2>
+              <h2 className="text-lg font-semibold text-foreground">4. Cookies y almacenamiento local</h2>
+              <p className="mt-2 text-muted-foreground">
+                Usamos una cookie técnica de sesión (de Supabase) para mantenerte logueado, y
+                guardamos tu preferencia de tema (claro/oscuro) en el almacenamiento local de tu
+                navegador, no en una cookie. Vercel Speed Insights mide el rendimiento del sitio de
+                forma anónima, sin identificarte a vos ni a tus clientes. No usamos cookies de
+                publicidad ni de seguimiento entre sitios.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-foreground">5. Tus derechos</h2>
               <p className="mt-2 text-muted-foreground">
                 Podés pedir la exportación o eliminación de tu cuenta y tus datos en cualquier momento
                 escribiendo a{" "}
@@ -60,7 +71,7 @@ export default function PrivacidadPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-foreground">5. Cambios a esta política</h2>
+              <h2 className="text-lg font-semibold text-foreground">6. Cambios a esta política</h2>
               <p className="mt-2 text-muted-foreground">
                 Si actualizamos esta política de forma relevante, te avisamos por email o dentro de la
                 aplicación antes de que entre en vigencia.
@@ -68,7 +79,7 @@ export default function PrivacidadPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-foreground">6. Contacto</h2>
+              <h2 className="text-lg font-semibold text-foreground">7. Contacto</h2>
               <p className="mt-2 text-muted-foreground">
                 Ante cualquier consulta sobre privacidad, escribinos a{" "}
                 <a href="mailto:soporte@pesito.app" className="text-primary hover:underline">
