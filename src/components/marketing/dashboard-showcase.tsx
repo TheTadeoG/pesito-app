@@ -280,58 +280,12 @@ function ReportesSlide() {
   );
 }
 
-function InventarioSlide() {
-  return (
-    <div>
-      <SlideHeading icon={Package}>Inventario</SlideHeading>
-      <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-        Alertas de stock
-      </p>
-      <div className="mt-3 space-y-3">
-        {stockAlerts.map((item) => {
-          const style = stockLevelStyles[item.level];
-          return (
-            <div key={item.name} className="flex items-center gap-3">
-              <span className="relative flex h-2 w-2 shrink-0">
-                {item.level === "critico" && (
-                  <span
-                    className={cn(
-                      "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-                      style.dot
-                    )}
-                  />
-                )}
-                <span className={cn("relative inline-flex h-2 w-2 rounded-full", style.dot)} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm text-foreground">{item.name}</span>
-                  <span className={cn("shrink-0 text-xs font-semibold", style.text)}>
-                    {style.label}
-                  </span>
-                </div>
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={cn("h-full rounded-full", style.bar)}
-                    style={{ width: `${Math.max(4, item.pct)}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// Un anillo casi lleno (99.8%) se lee como un círculo sólido, no como un
-// medidor — por eso acá el indicador principal es una barra horizontal
-// (mismo lenguaje visual que el stock y los medios de pago de al lado) y
-// se suma la diferencia en pesos, que es el dato que en verdad importa al
-// cuadrar caja.
-function CajaSlide() {
+// Inventario y Caja se unen en una sola diapositiva: cada uno por separado
+// tiene mucho menos contenido que Reportes, así que el slider (que estira
+// todas las diapositivas a la altura de la más alta) las dejaba con un
+// hueco enorme abajo — sobre todo en celular, donde cada sección ya apila
+// vertical y no hay una segunda columna que "rellene" el ancho.
+function InventarioCajaSlide() {
   const diffLabel =
     cajaDiferencia === 0
       ? "Cuadra justo"
@@ -341,48 +295,95 @@ function CajaSlide() {
   const diffTone = cajaDiferencia === 0 ? "text-success" : "text-warning";
 
   return (
-    <div>
-      <SlideHeading icon={Wallet}>Caja</SlideHeading>
-
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-          <ShieldCheck className="h-4 w-4 text-success" />
-          Coincidencia de caja
-        </span>
-        <span className="text-xl font-bold text-success">{cajaMatchPct}%</span>
-      </div>
-      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-success"
-          style={{ width: `${Math.min(100, cajaMatchPct)}%` }}
-        />
-      </div>
-      <p className={cn("mt-1.5 text-xs font-medium", diffTone)}>{diffLabel}</p>
-
-      <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-border p-3 text-sm">
-        <div>
-          <p className="text-xs text-muted-foreground">Esperado</p>
-          <p className="font-semibold text-foreground">{formatCurrency(cajaEsperado)}</p>
+    <div className="grid gap-8 sm:grid-cols-2">
+      <div>
+        <SlideHeading icon={Package}>Inventario</SlideHeading>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+          Alertas de stock
+        </p>
+        <div className="mt-3 space-y-3">
+          {stockAlerts.map((item) => {
+            const style = stockLevelStyles[item.level];
+            return (
+              <div key={item.name} className="flex items-center gap-3">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  {item.level === "critico" && (
+                    <span
+                      className={cn(
+                        "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+                        style.dot
+                      )}
+                    />
+                  )}
+                  <span className={cn("relative inline-flex h-2 w-2 rounded-full", style.dot)} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-sm text-foreground">{item.name}</span>
+                    <span className={cn("shrink-0 text-xs font-semibold", style.text)}>
+                      {style.label}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={cn("h-full rounded-full", style.bar)}
+                      style={{ width: `${Math.max(4, item.pct)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Contado</p>
-          <p className="font-semibold text-foreground">{formatCurrency(cajaContado)}</p>
-        </div>
       </div>
 
-      <p className="mt-4 text-xs font-semibold text-foreground">Medios de pago</p>
-      <div className="mt-2 flex h-3 w-full overflow-hidden rounded-full bg-muted">
-        {medios.map((m) => (
-          <div key={m.label} style={{ width: `${m.pct}%`, background: m.color }} />
-        ))}
-      </div>
-      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-        {medios.map((m) => (
-          <span key={m.label} className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: m.color }} />
-            {m.label} {m.pct}%
+      <div>
+        <SlideHeading icon={Wallet}>Caja</SlideHeading>
+
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+            <ShieldCheck className="h-4 w-4 text-success" />
+            Coincidencia de caja
           </span>
-        ))}
+          <span className="text-xl font-bold text-success">{cajaMatchPct}%</span>
+        </div>
+        <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-success"
+            style={{ width: `${Math.min(100, cajaMatchPct)}%` }}
+          />
+        </div>
+        <p className={cn("mt-1.5 text-xs font-medium", diffTone)}>{diffLabel}</p>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-border p-3 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground">Esperado</p>
+            <p className="font-semibold text-foreground">{formatCurrency(cajaEsperado)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Contado</p>
+            <p className="font-semibold text-foreground">{formatCurrency(cajaContado)}</p>
+          </div>
+        </div>
+
+        <p className="mt-4 text-xs font-semibold text-foreground">Medios de pago</p>
+        <div className="mt-2 flex h-3 w-full overflow-hidden rounded-full bg-muted">
+          {medios.map((m) => (
+            <div key={m.label} style={{ width: `${m.pct}%`, background: m.color }} />
+          ))}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+          {medios.map((m) => (
+            <span
+              key={m.label}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground"
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: m.color }} />
+              {m.label} {m.pct}%
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -391,8 +392,7 @@ function CajaSlide() {
 const slides = [
   { id: "resumen", label: "Resumen", Component: ResumenSlide },
   { id: "reportes", label: "Reportes", Component: ReportesSlide },
-  { id: "inventario", label: "Inventario", Component: InventarioSlide },
-  { id: "caja", label: "Caja", Component: CajaSlide },
+  { id: "inventario-caja", label: "Inventario y caja", Component: InventarioCajaSlide },
 ];
 
 const AUTO_ADVANCE_MS = 15000;
