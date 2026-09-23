@@ -84,8 +84,8 @@ export function DashboardPreview() {
 
       <p className="mx-auto mt-4 flex max-w-3xl items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
         <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-        Números de ejemplo, no de un negocio real — así se ve tu propio panel una vez que cargás
-        tus ventas.
+        Números de ejemplo, no de un negocio real — así ves tus propios pesitos una vez que
+        cargás tus ventas.
       </p>
     </section>
   );

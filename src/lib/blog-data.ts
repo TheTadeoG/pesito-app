@@ -24,7 +24,7 @@ export const blogPosts: BlogPost[] = [
     sections: [
       {
         paragraphs: [
-          "Poner precio \"a ojo\" es de las formas más comunes de perder plata en un comercio chico, y casi nunca se nota en el momento — se nota a fin de mes, cuando la caja no da lo que debería dar. Armar bien la lista de precios no es complicado, pero sí hay que hacerlo con un método, no con el primer número que suena bien.",
+          "Poner precio \"a ojo\" es de las formas más comunes de perder pesitos en un comercio chico, y casi nunca se nota en el momento — se nota a fin de mes, cuando la caja no da lo que debería dar. Armar bien la lista de precios no es complicado, pero sí hay que hacerlo con un método, no con el primer número que suena bien.",
         ],
       },
       {

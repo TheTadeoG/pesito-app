@@ -22,9 +22,9 @@ function formatRoundedCount(value: number) {
 // millones, sigue expresándose como millones (más legible que "1,025 mil M").
 function formatAbbreviatedAmount(value: number) {
   if (value >= 1_000_000) {
-    return `+${Math.round(value / 1_000_000)}M`;
+    return `+$${Math.round(value / 1_000_000)}M`;
   }
-  return formatRoundedCount(value);
+  return `+$${numberFormatter.format(roundToStep(value, 10_000))}`;
 }
 
 // Tailwind necesita ver la clase completa en el código para generarla —
@@ -51,7 +51,7 @@ export async function Stats() {
     },
     stats.monto > 0 && {
       icon: Receipt,
-      label: "Procesado con Pesito",
+      label: "Pesitos procesados",
       value: formatAbbreviatedAmount(stats.monto),
     },
   ].filter((t): t is { icon: typeof Store; label: string; value: string } => Boolean(t));

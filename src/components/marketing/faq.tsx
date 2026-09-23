@@ -41,7 +41,7 @@ export function Faq() {
           Preguntas frecuentes
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Lo que más nos preguntan los kiosqueros y almaceneros.
+          Lo que más nos preguntan los comerciantes de barrio.
         </p>
       </div>
 
