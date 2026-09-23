@@ -69,27 +69,30 @@ const columns = [
   },
 ];
 
+// Un color por estado (no sólo el ícono): "no" y "depende" antes
+// compartían el mismo gris apagado y sólo cambiaba la forma del ícono,
+// costaba distinguirlos de un vistazo y se perdían en fondo claro.
 function MarkIcon({ mark }: { mark: Mark }) {
   if (mark === "yes") {
     return (
       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-success-bg text-success">
-        <Check className="h-3.5 w-3.5" />
+        <Check className="h-3.5 w-3.5" strokeWidth={3} />
       </span>
     );
   }
   if (mark === "no") {
     return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <X className="h-3.5 w-3.5" />
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-danger-bg text-danger">
+        <X className="h-3.5 w-3.5" strokeWidth={3} />
       </span>
     );
   }
   return (
     <span
-      className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground"
+      className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-warning-bg text-warning"
       title="Depende"
     >
-      <Minus className="h-3.5 w-3.5" />
+      <Minus className="h-3.5 w-3.5" strokeWidth={3} />
     </span>
   );
 }
