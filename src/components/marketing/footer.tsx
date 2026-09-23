@@ -22,6 +22,7 @@ const columns: {
       { label: "Comparación", href: "/comparacion" },
       { label: "Diccionario", href: "/diccionario" },
       { label: "Por rubro", href: "/pesito-para" },
+      { label: "Preguntas frecuentes", href: "/preguntas-frecuentes" },
     ],
   },
   {
@@ -34,7 +35,6 @@ const columns: {
   {
     title: "Soporte",
     links: [
-      { label: "Preguntas frecuentes", href: "#preguntas-frecuentes" },
       { label: "Contacto", href: "mailto:soporte@pesito.app", external: true },
     ],
   },

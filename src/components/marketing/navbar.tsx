@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnchorLink } from "@/components/marketing/anchor-link";
 import { Wordmark } from "@/components/marketing/wordmark";
+import { InfoMenu } from "@/components/marketing/info-menu";
 
 const links = [
   { href: "#funciones", label: "Funciones" },
@@ -33,6 +34,7 @@ export function Navbar() {
               {link.label}
             </AnchorLink>
           ))}
+          <InfoMenu />
         </nav>
 
         <div className="flex items-center gap-2">

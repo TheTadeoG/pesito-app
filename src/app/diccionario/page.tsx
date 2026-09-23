@@ -28,6 +28,7 @@ export default function DiccionarioPage() {
       "@type": "DefinedTerm",
       name: t.term,
       description: t.definition,
+      url: `${siteUrl}/diccionario/${t.slug}`,
     })),
   };
 
@@ -74,7 +75,11 @@ export default function DiccionarioPage() {
                       id={t.slug}
                       className="scroll-mt-20 rounded-card border border-border bg-card p-5"
                     >
-                      <dt className="font-semibold text-foreground">{t.term}</dt>
+                      <dt className="font-semibold text-foreground">
+                        <Link href={`/diccionario/${t.slug}`} className="hover:underline">
+                          {t.term}
+                        </Link>
+                      </dt>
                       <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
                         {t.definition}
                       </dd>
@@ -83,6 +88,14 @@ export default function DiccionarioPage() {
                           {t.pesito}
                         </dd>
                       )}
+                      <dd className="mt-3">
+                        <Link
+                          href={`/diccionario/${t.slug}`}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Ver página completa
+                        </Link>
+                      </dd>
                     </div>
                   ))}
                 </dl>

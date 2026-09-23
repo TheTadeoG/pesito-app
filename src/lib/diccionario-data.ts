@@ -184,3 +184,13 @@ export const glossaryCategories: GlossaryCategory[] = [
     ],
   },
 ];
+
+// Cada slug de término es único entre categorías (se valida a mano al
+// agregar uno nuevo), así que alcanza con buscarlo en el flatMap.
+export function findGlossaryTerm(slug: string): { category: GlossaryCategory; term: GlossaryTerm } | null {
+  for (const category of glossaryCategories) {
+    const term = category.terms.find((t) => t.slug === slug);
+    if (term) return { category, term };
+  }
+  return null;
+}

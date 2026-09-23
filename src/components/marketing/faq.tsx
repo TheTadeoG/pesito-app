@@ -1,4 +1,5 @@
-import { ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ChevronDown } from "lucide-react";
 
 export const faqs = [
   {
@@ -58,6 +59,16 @@ export function Faq() {
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{faq.answer}</p>
           </details>
         ))}
+      </div>
+
+      <div className="mt-6 text-center">
+        <Link
+          href="/preguntas-frecuentes"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          Ver todas las preguntas
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </section>
   );

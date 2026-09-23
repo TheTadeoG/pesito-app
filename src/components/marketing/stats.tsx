@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Receipt, ShoppingBag, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLandingStats } from "@/lib/landing-stats";
@@ -35,34 +36,42 @@ const gridColsByCount: Record<number, string> = {
   3: "sm:grid-cols-3",
 };
 
+interface Tile {
+  icon: typeof Store;
+  label: ReactNode;
+  value: string;
+  tone: string;
+}
+
 export async function Stats() {
   const stats = await getLandingStats();
 
-  const tiles = [
-    stats.kioscos > 0 && {
-      icon: Store,
-      label: "Comercios usando Pesito",
-      value: `+${numberFormatter.format(stats.kioscos)}`,
-      tone: "text-foreground",
-    },
-    stats.ventas > 0 && {
-      icon: ShoppingBag,
-      label: "Ventas registradas",
-      value: formatRoundedCount(stats.ventas),
-      tone: "text-foreground",
-    },
-    // Verde porque son pesitos — mismo criterio que "Ganancia" en el
-    // mini-dashboard de más abajo (texto grande y en negrita, no la
-    // palabra suelta en un renglón chico: ahí se pierde y confunde).
-    stats.monto > 0 && {
-      icon: Receipt,
-      label: "Pesitos procesados",
-      value: formatAbbreviatedAmount(stats.monto),
-      tone: "text-success",
-    },
-  ].filter(
-    (t): t is { icon: typeof Store; label: string; value: string; tone: string } => Boolean(t)
-  );
+  const tiles: Tile[] = (
+    [
+      stats.kioscos > 0 && {
+        icon: Store,
+        label: "Comercios usando Pesito",
+        value: `+${numberFormatter.format(stats.kioscos)}`,
+        tone: "text-foreground",
+      },
+      stats.ventas > 0 && {
+        icon: ShoppingBag,
+        label: "Ventas registradas",
+        value: formatRoundedCount(stats.ventas),
+        tone: "text-foreground",
+      },
+      stats.monto > 0 && {
+        icon: Receipt,
+        label: (
+          <>
+            <span className="font-bold text-success">Pesitos</span> procesados
+          </>
+        ),
+        value: formatAbbreviatedAmount(stats.monto),
+        tone: "text-foreground",
+      },
+    ] as (Tile | false)[]
+  ).filter((t): t is Tile => Boolean(t));
 
   // Sin datos reales ni offset cargado: mejor no mostrar nada que un
   // "+0" poco creíble — mismo criterio que Testimonials sin reseñas.
@@ -77,7 +86,7 @@ export async function Stats() {
         )}
       >
         {tiles.map((tile) => (
-          <div key={tile.label} className="flex items-center gap-3">
+          <div key={tile.value} className="flex items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
               <tile.icon className="h-5 w-5" />
             </span>

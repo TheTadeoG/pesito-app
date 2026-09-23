@@ -26,6 +26,7 @@ export default function ComparacionPage() {
       position: i + 1,
       name: block.feature,
       description: block.pesito,
+      url: `${siteUrl}/comparacion/${block.slug}`,
     })),
   };
 
@@ -55,8 +56,14 @@ export default function ComparacionPage() {
                 id={block.slug}
                 className="scroll-mt-20 overflow-hidden rounded-card border border-border bg-card"
               >
-                <div className="border-b border-border px-6 py-4">
+                <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
                   <h2 className="text-lg font-semibold text-foreground">{block.feature}</h2>
+                  <Link
+                    href={`/comparacion/${block.slug}`}
+                    className="shrink-0 text-xs font-medium text-primary hover:underline"
+                  >
+                    Ver página completa
+                  </Link>
                 </div>
                 <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                   <div className="p-6">
