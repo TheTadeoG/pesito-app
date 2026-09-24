@@ -357,7 +357,7 @@ export function ComprasClient({
       window.removeEventListener("paste", handleWindowPaste);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showNewProduct, showNewSupplier, cart.length, supplierId]);
+  }, [showNewProduct, showNewSupplier, cart.length, supplierId, singleMethod, splitPayment, mixedAmounts]);
 
   function changeQuantity(index: number, delta: number) {
     setCart((current) =>
@@ -837,6 +837,7 @@ export function ComprasClient({
                       qr: "",
                       cuenta_corriente: "",
                     });
+                    setError(null);
                   }}
                   className="text-xs font-medium text-primary hover:underline"
                 >
@@ -862,12 +863,13 @@ export function ComprasClient({
                           disabled={disabled}
                           title={disabled ? "Abrí tu caja para pagar en efectivo" : undefined}
                           value={mixedAmounts[m.value]}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setMixedAmounts((current) => ({
                               ...current,
                               [m.value]: e.target.value,
-                            }))
-                          }
+                            }));
+                            setError(null);
+                          }}
                           onKeyDown={handlePaymentAmountKeyDown}
                           placeholder="0.00"
                         />
@@ -903,7 +905,10 @@ export function ComprasClient({
                         type="button"
                         disabled={disabled}
                         title={disabled ? "Abrí tu caja para pagar en efectivo" : undefined}
-                        onClick={() => setSingleMethod(m.value)}
+                        onClick={() => {
+                          setSingleMethod(m.value);
+                          setError(null);
+                        }}
                         className={cn(
                           "flex flex-col items-center gap-1 rounded-xl border px-1.5 py-2.5 text-center text-[11px] font-medium transition-colors",
                           disabled
