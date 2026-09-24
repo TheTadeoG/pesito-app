@@ -64,8 +64,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     firstName || (membership.username ? membership.username.split("#")[0] : null) || null;
   const greetingName = greetingNameRaw ? capitalizeWords(greetingNameRaw) : null;
   const roleLabel = roleLabels[membership.role] ?? membership.role;
-  const memberDisplayName = greetingName || membership.username || email || null;
-  const memberLabel = memberDisplayName ? `${memberDisplayName} · ${roleLabel}` : roleLabel;
+  const memberName = greetingName || membership.username || email || "";
 
   return (
     <ToastProvider>
@@ -75,7 +74,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-h-screen bg-background">
         <Sidebar
           orgName={organization.name}
-          memberLabel={memberLabel}
+          memberName={memberName}
+          roleLabel={roleLabel}
           role={membership.role}
           cashRegister={cashRegister}
         />

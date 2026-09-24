@@ -10,7 +10,8 @@ import { VenderCard } from "@/components/dashboard/vender-card";
 
 interface SidebarProps {
   orgName: string;
-  memberLabel: string;
+  memberName: string;
+  roleLabel: string;
   role: string;
   cashRegister: {
     openedAt: string;
@@ -19,7 +20,7 @@ interface SidebarProps {
   } | null;
 }
 
-export function Sidebar({ orgName, memberLabel, role, cashRegister }: SidebarProps) {
+export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: SidebarProps) {
   const pathname = usePathname();
   const canSeeAdminItems = isOrgAdmin(role);
 
@@ -31,7 +32,10 @@ export function Sidebar({ orgName, memberLabel, role, cashRegister }: SidebarPro
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">{orgName}</p>
-          <p className="truncate text-xs text-muted-foreground">{memberLabel}</p>
+          <p className="flex min-w-0 items-baseline gap-1 text-xs text-muted-foreground">
+            {memberName && <span className="truncate">{memberName}</span>}
+            <span className="shrink-0">{memberName ? `· ${roleLabel}` : roleLabel}</span>
+          </p>
         </div>
       </div>
 
