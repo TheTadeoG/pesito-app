@@ -74,6 +74,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
+      // El script de abajo pone data-theme antes de que React hidrate.
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} h-full antialiased`}
     >
       <head>
