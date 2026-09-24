@@ -1,5 +1,7 @@
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { createClient } from "@/lib/supabase/server";
 
 export interface CashBreakdown {
   openingAmount: number;
@@ -140,6 +142,25 @@ export async function computeCashOnHand(
   const breakdown = await computeCashBreakdown(supabase, cashRegisterId, openingAmount);
   return sumCashBreakdown(breakdown);
 }
+
+/**
+ * Versión cacheada por request de computeCashOnHand, para lectura (no usar
+ * en acciones que necesitan el valor recién escrito). La clave del caché es
+ * la caja registradora en sí (cashRegisterId), no el usuario ni el negocio
+ * — sigue siendo correcta si en el futuro varios vendedores comparten una
+ * misma caja o hay varias sucursales, cada una con sus propias cajas.
+ *
+ * El layout del dashboard y la página de Caja calculan el efectivo en caja
+ * del mismo registro dentro del mismo request; sin esto, el fan-out de 6-8
+ * consultas de computeCashBreakdown se disparaba dos (o tres) veces por
+ * navegación.
+ */
+export const getCachedCashOnHand = cache(
+  async (cashRegisterId: string, openingAmount: number): Promise<number> => {
+    const supabase = await createClient();
+    return computeCashOnHand(supabase, cashRegisterId, openingAmount);
+  }
+);
 
 export interface PaymentBreakdownRow {
   method: string;

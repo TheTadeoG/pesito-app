@@ -3,7 +3,7 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import {
   computeCashBreakdown,
-  computeCashOnHand,
+  getCachedCashOnHand,
   computePaymentBreakdown,
   type PaymentBreakdownRow,
 } from "@/lib/caja";
@@ -139,7 +139,7 @@ export default async function CajaPage() {
         userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
         openedAt: r.opened_at,
         openingAmount: Number(r.opening_amount),
-        cashOnHand: await computeCashOnHand(supabase, r.id, Number(r.opening_amount)),
+        cashOnHand: await getCachedCashOnHand(r.id, Number(r.opening_amount)),
       }))
     );
 
@@ -207,7 +207,7 @@ export default async function CajaPage() {
   }
 
   const openingAmount = Number(register.opening_amount);
-  const cashOnHand = await computeCashOnHand(supabase, register.id, openingAmount);
+  const cashOnHand = await getCachedCashOnHand(register.id, openingAmount);
 
   return (
     <div className="space-y-6">

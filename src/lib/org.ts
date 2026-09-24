@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Membership, Organization } from "@/lib/types";
@@ -12,10 +13,16 @@ export interface CurrentOrgContext {
 
 /**
  * Resolves the signed-in user and their active organization for dashboard
- * pages. Redirects to /login or /onboarding when either is missing, so
- * callers can assume both exist.
+ * pages. Redirects to /login o /onboarding cuando falta alguno.
+ *
+ * Envuelta en cache() de React: el layout del dashboard y la página que
+ * renderiza adentro llaman esto por separado, así que sin memoizar por
+ * request se repetía el mismo auth.getUser() + join a memberships dos
+ * veces en cada navegación. cache() lo deja en una sola consulta real
+ * por request — nunca se comparte entre requests distintos, así que no
+ * hay riesgo de servir un usuario/organización vieja.
  */
-export async function requireOrgContext(): Promise<CurrentOrgContext> {
+export const requireOrgContext = cache(async (): Promise<CurrentOrgContext> => {
   const supabase = await createClient();
 
   const {
@@ -50,4 +57,4 @@ export async function requireOrgContext(): Promise<CurrentOrgContext> {
     organization: organizations,
     membership: membershipRow,
   };
-}
+});

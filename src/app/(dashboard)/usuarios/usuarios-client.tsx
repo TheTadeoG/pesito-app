@@ -80,12 +80,15 @@ export function UsuariosClient({
   // invitación, o el dueño crea un usuario interno en otra pestaña) sin que
   // esta pantalla se entere sola. Como no hay nada abierto (diálogos) que
   // el refresh pueda interrumpir, refrescamos solos: al volver a la
-  // pestaña y cada 10s mientras está a la vista.
+  // pestaña (visibilitychange/focus, que ya cubre el caso típico de "volví
+  // a esta tab") y cada 60s como red de contención mientras queda abierta
+  // en primer plano — no hace falta cada 10s para algo que cambia con poca
+  // frecuencia (alguien se suma al equipo).
   useEffect(() => {
     function refresh() {
       if (document.visibilityState === "visible") router.refresh();
     }
-    const interval = setInterval(refresh, 10000);
+    const interval = setInterval(refresh, 60000);
     document.addEventListener("visibilitychange", refresh);
     window.addEventListener("focus", refresh);
     return () => {

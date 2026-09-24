@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
-import { computeCashOnHand } from "@/lib/caja";
+import { getCachedCashOnHand } from "@/lib/caja";
 import { roleLabels } from "@/lib/roles";
 import { capitalizeWords } from "@/lib/utils";
 import { Sidebar } from "@/components/dashboard/sidebar";
@@ -23,15 +23,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { userId, email, firstName, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
 
-  const subscription = await getSubscription(supabase, organization.id);
-
-  const { data: openRegister } = await supabase
-    .from("cash_registers")
-    .select("id, opening_amount, opened_at")
-    .eq("org_id", organization.id)
-    .eq("user_id", userId)
-    .eq("status", "abierta")
-    .maybeSingle();
+  // Independientes entre sí (ninguna depende del resultado de la otra):
+  // van en paralelo en vez de una atrás de la otra.
+  const [subscription, { data: openRegister }] = await Promise.all([
+    getSubscription(supabase, organization.id),
+    supabase
+      .from("cash_registers")
+      .select("id, opening_amount, opened_at")
+      .eq("org_id", organization.id)
+      .eq("user_id", userId)
+      .eq("status", "abierta")
+      .maybeSingle(),
+  ]);
 
   let cashRegister = null;
   if (openRegister) {
@@ -39,7 +42,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     cashRegister = {
       openedAt: openRegister.opened_at,
       openingAmount,
-      cashTotal: await computeCashOnHand(supabase, openRegister.id, openingAmount),
+      cashTotal: await getCachedCashOnHand(openRegister.id, openingAmount),
     };
   }
 
