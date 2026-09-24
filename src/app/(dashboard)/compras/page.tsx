@@ -6,7 +6,12 @@ import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purch
 
 const RECENT_PURCHASES_LIMIT = 20;
 
-export default async function ComprasPage() {
+export default async function ComprasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ producto?: string }>;
+}) {
+  const { producto: preselectedProductId } = await searchParams;
   const { userId, organization } = await requireOrgContext();
   const supabase = await createClient();
 
@@ -103,6 +108,7 @@ export default async function ComprasPage() {
         suppliers={(suppliers ?? []).map((s) => ({ ...s, balance: Number(s.balance) }))}
         hasOpenCaja={Boolean(openRegister)}
         customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
+        preselectedProductId={preselectedProductId ?? null}
       />
 
       <Card>

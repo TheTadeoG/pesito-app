@@ -27,11 +27,18 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuItem, FilterPanel } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  FilterPanel,
+} from "@/components/ui/dropdown-menu";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Brand, Product, Supplier } from "@/lib/types";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
-import { deleteProduct, toggleProductActive } from "@/app/(dashboard)/productos/actions";
+import {
+  deleteProduct,
+  toggleProductActive,
+} from "@/app/(dashboard)/productos/actions";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
@@ -51,7 +58,9 @@ const COLUMNS = [
 
 type ColumnId = (typeof COLUMNS)[number]["id"];
 const ALL_COLUMN_IDS = COLUMNS.map((c) => c.id);
-const DEFAULT_COLUMNS: ColumnId[] = ALL_COLUMN_IDS.filter((id) => id !== "supplier");
+const DEFAULT_COLUMNS: ColumnId[] = ALL_COLUMN_IDS.filter(
+  (id) => id !== "supplier",
+);
 const COLUMNS_STORAGE_KEY = "pesito-productos-columns";
 
 type SortKey = "name" | ColumnId;
@@ -78,7 +87,10 @@ function SortHeader({
   const active = currentKey === sortKeyValue;
   return (
     <th
-      className={cn("px-3 py-2.5 font-semibold first:px-4", align === "right" && "text-right")}
+      className={cn(
+        "px-3 py-2.5 font-semibold first:px-4",
+        align === "right" && "text-right",
+      )}
       title={title}
     >
       <button
@@ -87,7 +99,7 @@ function SortHeader({
         className={cn(
           "inline-flex items-center gap-1 hover:text-foreground",
           align === "right" && "flex-row-reverse",
-          active && "text-foreground"
+          active && "text-foreground",
         )}
       >
         {label}
@@ -109,7 +121,8 @@ function SortHeader({
 const isLowStock = (p: Product) => p.active && p.stock <= p.min_stock;
 
 // Mismo criterio que el aviso "estarías vendiendo a pérdida" del alta/edición.
-const isSellingAtLoss = (p: Product) => p.active && p.cost !== null && p.cost > p.price;
+const isSellingAtLoss = (p: Product) =>
+  p.active && p.cost !== null && p.cost > p.price;
 
 export function ProductosClient({
   products,
@@ -136,15 +149,23 @@ export function ProductosClient({
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [adjusting, setAdjusting] = useState<Product | null>(null);
-  const [priceHistoryProduct, setPriceHistoryProduct] = useState<Product | null>(null);
+  const [priceHistoryProduct, setPriceHistoryProduct] =
+    useState<Product | null>(null);
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
   const [bulkCostOpen, setBulkCostOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Activar/desactivar se ve al toque en vez de esperar el viaje al server +
+  // la revalidación de la página — se corrige solo si la acción falla.
+  const [activeOverrides, setActiveOverrides] = useState<
+    Record<string, boolean>
+  >({});
   const [localBrands, setLocalBrands] = useState(brands);
   const [localSuppliers, setLocalSuppliers] = useState(suppliers);
   const [formKey, setFormKey] = useState(0);
-  const [columns, setColumns] = useState<Set<ColumnId>>(new Set(DEFAULT_COLUMNS));
+  const [columns, setColumns] = useState<Set<ColumnId>>(
+    new Set(DEFAULT_COLUMNS),
+  );
   const [showColumns, setShowColumns] = useState(false);
 
   useEffect(() => {
@@ -153,7 +174,13 @@ export function ProductosClient({
       if (raw) {
         const stored: string[] = JSON.parse(raw);
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setColumns(new Set(stored.filter((id): id is ColumnId => ALL_COLUMN_IDS.includes(id as ColumnId))));
+        setColumns(
+          new Set(
+            stored.filter((id): id is ColumnId =>
+              ALL_COLUMN_IDS.includes(id as ColumnId),
+            ),
+          ),
+        );
       }
     } catch {
       // ignore malformed/blocked localStorage
@@ -166,7 +193,10 @@ export function ProductosClient({
       if (next.has(id)) next.delete(id);
       else next.add(id);
       try {
-        window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(Array.from(next)));
+        window.localStorage.setItem(
+          COLUMNS_STORAGE_KEY,
+          JSON.stringify(Array.from(next)),
+        );
       } catch {
         // ignore
       }
@@ -178,7 +208,7 @@ export function ProductosClient({
 
   const supplierNameById = useMemo(
     () => new Map(localSuppliers.map((s) => [s.id, s.name])),
-    [localSuppliers]
+    [localSuppliers],
   );
 
   // products.brand es texto libre: puede haber marcas en productos que no
@@ -190,16 +220,23 @@ export function ProductosClient({
     return Array.from(names).sort((a, b) => a.localeCompare(b, "es"));
   }, [localBrands, products, brandFilter]);
 
-  const lowStockProducts = useMemo(() => products.filter(isLowStock), [products]);
+  const lowStockProducts = useMemo(
+    () => products.filter(isLowStock),
+    [products],
+  );
   const lowStockCount = lowStockProducts.length;
-  const lossProducts = useMemo(() => products.filter(isSellingAtLoss), [products]);
+  const lossProducts = useMemo(
+    () => products.filter(isSellingAtLoss),
+    [products],
+  );
   const alertsCount = lowStockCount + lossProducts.length;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
       if (brandFilter && p.brand !== brandFilter) return false;
-      if (supplierFilter && p.default_supplier_id !== supplierFilter) return false;
+      if (supplierFilter && p.default_supplier_id !== supplierFilter)
+        return false;
       if (activeFilter === "active" && !p.active) return false;
       if (activeFilter === "inactive" && p.active) return false;
       if (noBarcodeOnly && p.barcode) return false;
@@ -239,7 +276,9 @@ export function ProductosClient({
         return (p.brand ?? "").toLowerCase();
       case "supplier":
         return (
-          p.default_supplier_id ? supplierNameById.get(p.default_supplier_id) ?? "" : ""
+          p.default_supplier_id
+            ? (supplierNameById.get(p.default_supplier_id) ?? "")
+            : ""
         ).toLowerCase();
       case "sku":
         return (p.sku ?? "").toLowerCase();
@@ -262,7 +301,8 @@ export function ProductosClient({
     return [...filtered].sort((a, b) => {
       const va = getSortValue(a, sortKey);
       const vb = getSortValue(b, sortKey);
-      if (typeof va === "string" && typeof vb === "string") return va.localeCompare(vb, "es") * dir;
+      if (typeof va === "string" && typeof vb === "string")
+        return va.localeCompare(vb, "es") * dir;
       return ((va as number) - (vb as number)) * dir;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -292,16 +332,28 @@ export function ProductosClient({
   }
 
   async function handleDelete(product: Product) {
-    if (!confirm(`¿Borrar "${product.name}"? Esta acción no se puede deshacer.`)) return;
+    if (
+      !confirm(`¿Borrar "${product.name}"? Esta acción no se puede deshacer.`)
+    )
+      return;
     setBusyId(product.id);
     await deleteProduct(product.id);
     setBusyId(null);
   }
 
   async function handleToggleActive(product: Product) {
+    const nextActive = !product.active;
+    setActiveOverrides((current) => ({ ...current, [product.id]: nextActive }));
     setBusyId(product.id);
-    await toggleProductActive(product.id, !product.active);
+    const result = await toggleProductActive(product.id, nextActive);
     setBusyId(null);
+    if (result.error) {
+      setActiveOverrides((current) => {
+        const next = { ...current };
+        delete next[product.id];
+        return next;
+      });
+    }
   }
 
   return (
@@ -338,11 +390,13 @@ export function ProductosClient({
               "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-sm font-medium transition-colors",
               alertsCount > 0
                 ? "border-danger/40 bg-danger-bg text-danger"
-                : "border-border bg-card text-muted-foreground hover:text-foreground"
+                : "border-border bg-card text-muted-foreground hover:text-foreground",
             )}
           >
             <Bell className="h-4 w-4" />
-            {alertsCount > 0 && <span className="font-semibold">{alertsCount}</span>}
+            {alertsCount > 0 && (
+              <span className="font-semibold">{alertsCount}</span>
+            )}
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -412,7 +466,9 @@ export function ProductosClient({
                 <Select
                   id="pf-active"
                   value={activeFilter}
-                  onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
+                  onChange={(e) =>
+                    setActiveFilter(e.target.value as ActiveFilter)
+                  }
                 >
                   <option value="all">Todos</option>
                   <option value="active">Sólo activos</option>
@@ -565,149 +621,212 @@ export function ProductosClient({
                         align="right"
                       />
                     )}
-                    <th className="px-4 py-2.5 text-right font-semibold">Acciones</th>
+                    <th className="px-4 py-2.5 text-right font-semibold">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {sorted.map((product) => (
-                    <tr
-                      key={product.id}
-                      className={cn(
-                        "align-middle hover:bg-muted/30",
-                        !product.active && "opacity-60"
-                      )}
-                    >
-                      <td className="px-4 py-2.5">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground">
-                            {product.image_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={product.image_url}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <ImageIcon className="h-4 w-4" />
-                            )}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className="truncate font-medium text-foreground">{product.name}</p>
-                              {!product.active && <Badge>Inactivo</Badge>}
+                  {sorted.map((product) => {
+                    // El override optimista hace que el estado se vea al
+                    // toque al activar/desactivar, sin esperar el viaje al
+                    // server — ver handleToggleActive.
+                    const isActive =
+                      activeOverrides[product.id] ?? product.active;
+                    return (
+                      <tr
+                        key={product.id}
+                        className="align-middle hover:bg-muted/30"
+                      >
+                        <td
+                          className={cn(
+                            "px-4 py-2.5",
+                            !isActive && "opacity-60",
+                          )}
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground">
+                              {product.image_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={product.image_url}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <ImageIcon className="h-4 w-4" />
+                              )}
+                            </span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="truncate font-medium text-foreground">
+                                  {product.name}
+                                </p>
+                                {!isActive && <Badge>Inactivo</Badge>}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      {showColumn("brand") && (
-                        <td className="px-3 py-2.5 text-muted-foreground">
-                          {product.brand || "—"}
                         </td>
-                      )}
-                      {showColumn("supplier") && (
-                        <td className="px-3 py-2.5 text-muted-foreground">
-                          {(product.default_supplier_id &&
-                            supplierNameById.get(product.default_supplier_id)) ||
-                            "—"}
-                        </td>
-                      )}
-                      {showColumn("sku") && (
-                        <td className="px-3 py-2.5 text-muted-foreground">{product.sku || "—"}</td>
-                      )}
-                      {showColumn("barcode") && (
-                        <td className="px-3 py-2.5 text-muted-foreground">
-                          {product.barcode || "—"}
-                        </td>
-                      )}
-                      {showColumn("cost") && (
-                        <td className="px-3 py-2.5 text-right text-muted-foreground">
-                          {product.cost ? formatCurrency(product.cost) : "—"}
-                        </td>
-                      )}
-                      {showColumn("price") && (
-                        <td className="px-3 py-2.5 text-right font-semibold text-foreground">
-                          {formatCurrency(product.price)}
-                        </td>
-                      )}
-                      {showColumn("stock") && (
-                        <td className="px-3 py-2.5 text-right">
-                          <span
+                        {showColumn("brand") && (
+                          <td
                             className={cn(
-                              "font-medium",
-                              product.stock <= product.min_stock
-                                ? "text-danger"
-                                : "text-foreground"
+                              "px-3 py-2.5 text-muted-foreground",
+                              !isActive && "opacity-60",
                             )}
                           >
-                            {product.stock}
+                            {product.brand || "—"}
+                          </td>
+                        )}
+                        {showColumn("supplier") && (
+                          <td
+                            className={cn(
+                              "px-3 py-2.5 text-muted-foreground",
+                              !isActive && "opacity-60",
+                            )}
+                          >
+                            {(product.default_supplier_id &&
+                              supplierNameById.get(
+                                product.default_supplier_id,
+                              )) ||
+                              "—"}
+                          </td>
+                        )}
+                        {showColumn("sku") && (
+                          <td
+                            className={cn(
+                              "px-3 py-2.5 text-muted-foreground",
+                              !isActive && "opacity-60",
+                            )}
+                          >
+                            {product.sku || "—"}
+                          </td>
+                        )}
+                        {showColumn("barcode") && (
+                          <td
+                            className={cn(
+                              "px-3 py-2.5 text-muted-foreground",
+                              !isActive && "opacity-60",
+                            )}
+                          >
+                            {product.barcode || "—"}
+                          </td>
+                        )}
+                        {showColumn("cost") && (
+                          <td
+                            className={cn(
+                              "px-3 py-2.5 text-right text-muted-foreground",
+                              !isActive && "opacity-60",
+                            )}
+                          >
+                            {product.cost ? formatCurrency(product.cost) : "—"}
+                          </td>
+                        )}
+                        {showColumn("price") && (
+                          <td
+                            className={cn(
+                              "px-3 py-2.5 text-right font-semibold text-foreground",
+                              !isActive && "opacity-60",
+                            )}
+                          >
+                            {formatCurrency(product.price)}
+                          </td>
+                        )}
+                        {showColumn("stock") && (
+                          <td
+                            className={cn(
+                              "px-3 py-2.5 text-right",
+                              !isActive && "opacity-60",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "font-medium",
+                                product.stock <= product.min_stock
+                                  ? "text-danger"
+                                  : "text-foreground",
+                              )}
+                            >
+                              {product.stock}
+                              {product.unit}
+                            </span>
+                          </td>
+                        )}
+                        {showColumn("minStock") && (
+                          <td
+                            className={cn(
+                              "px-3 py-2.5 text-right text-muted-foreground",
+                              !isActive && "opacity-60",
+                            )}
+                          >
+                            {product.min_stock}
                             {product.unit}
-                          </span>
-                        </td>
-                      )}
-                      {showColumn("minStock") && (
-                        <td className="px-3 py-2.5 text-right text-muted-foreground">
-                          {product.min_stock}
-                          {product.unit}
-                        </td>
-                      )}
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => openEdit(product)}
-                            aria-label="Editar"
-                            title="Editar"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <DropdownMenu
-                            trigger={
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                aria-label="Más acciones"
-                                title="Más acciones"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            }
-                          >
-                            <DropdownMenuItem onClick={() => setAdjusting(product)}>
-                              <SlidersHorizontal className="h-4 w-4" />
-                              Ajustar stock
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(`/productos?tab=stock&producto=${product.id}`)
+                          </td>
+                        )}
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openEdit(product)}
+                              aria-label="Editar"
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu
+                              trigger={
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  aria-label="Más acciones"
+                                  title="Más acciones"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
                               }
                             >
-                              <History className="h-4 w-4" />
-                              Ver movimientos
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPriceHistoryProduct(product)}>
-                              <Receipt className="h-4 w-4" />
-                              Historial de precios
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleToggleActive(product)}
-                              disabled={busyId === product.id}
-                            >
-                              {product.active ? "Desactivar" : "Activar"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(product)}
-                              disabled={busyId === product.id}
-                              danger
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Borrar
-                            </DropdownMenuItem>
-                          </DropdownMenu>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                              <DropdownMenuItem
+                                onClick={() => setAdjusting(product)}
+                              >
+                                <SlidersHorizontal className="h-4 w-4" />
+                                Ajustar stock
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  router.push(
+                                    `/productos?tab=stock&producto=${product.id}`,
+                                  )
+                                }
+                              >
+                                <History className="h-4 w-4" />
+                                Ver movimientos
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setPriceHistoryProduct(product)}
+                              >
+                                <Receipt className="h-4 w-4" />
+                                Historial de precios
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleToggleActive(product)}
+                                disabled={busyId === product.id}
+                              >
+                                {isActive ? "Desactivar" : "Activar"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(product)}
+                                disabled={busyId === product.id}
+                                danger
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Borrar
+                              </DropdownMenuItem>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -722,8 +841,12 @@ export function ProductosClient({
         product={editing}
         brands={localBrands}
         suppliers={localSuppliers}
-        onBrandCreated={(brand) => setLocalBrands((current) => [...current, brand])}
-        onSupplierCreated={(supplier) => setLocalSuppliers((current) => [...current, supplier])}
+        onBrandCreated={(brand) =>
+          setLocalBrands((current) => [...current, brand])
+        }
+        onSupplierCreated={(supplier) =>
+          setLocalSuppliers((current) => [...current, supplier])
+        }
       />
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
@@ -752,10 +875,17 @@ export function ProductosClient({
                     className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {product.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        Stock: <span className="font-medium text-danger">{product.stock}{product.unit}</span>
-                        {" · "}Mínimo: {product.min_stock}{product.unit}
+                        Stock:{" "}
+                        <span className="font-medium text-danger">
+                          {product.stock}
+                          {product.unit}
+                        </span>
+                        {" · "}Mínimo: {product.min_stock}
+                        {product.unit}
                       </p>
                     </div>
                     <Button
@@ -792,9 +922,14 @@ export function ProductosClient({
                     className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {product.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        Costo: <span className="font-medium text-danger">{formatCurrency(product.cost ?? 0)}</span>
+                        Costo:{" "}
+                        <span className="font-medium text-danger">
+                          {formatCurrency(product.cost ?? 0)}
+                        </span>
                         {" · "}Precio: {formatCurrency(product.price)}
                       </p>
                     </div>

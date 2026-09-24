@@ -77,6 +77,8 @@ interface ComprasClientProps {
   suppliers: SupplierLite[];
   hasOpenCaja: boolean;
   customPaymentMethods: string[];
+  // Viene de tocar "Comprar" en el aviso de stock bajo de Productos.
+  preselectedProductId?: string | null;
 }
 
 export function ComprasClient({
@@ -85,6 +87,7 @@ export function ComprasClient({
   suppliers,
   hasOpenCaja,
   customPaymentMethods,
+  preselectedProductId,
 }: ComprasClientProps) {
   const paymentMethodOptions = useMemo(
     () => paymentMethodOptionsWithCustom(customPaymentMethods),
@@ -208,6 +211,16 @@ export function ComprasClient({
     setHighlightedIndex(-1);
     searchRef.current?.focus();
   }
+
+  useEffect(() => {
+    if (!preselectedProductId) return;
+    const product = localProducts.find((p) => p.id === preselectedProductId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (product) addProduct(product);
+    // Se limpia el query param para que un refresh no vuelva a agregarlo.
+    router.replace("/compras");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselectedProductId]);
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {

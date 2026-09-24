@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Boxes, DollarSign, PackagePlus, Search, SlidersHorizontal, X } from "lucide-react";
+import { Boxes, DollarSign, PackagePlus, Search, ShoppingCart, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -219,23 +219,37 @@ export function StockTab({
               Ningún producto está por debajo de su stock mínimo.
             </p>
           ) : (
-            <div className="divide-y divide-border">
+            // Una línea por producto (en vez de dos) y altura acotada con
+            // scroll interno — con muchos productos bajo mínimo, esta
+            // tarjeta no debe empujar todo lo demás hacia abajo. El CTA es
+            // "Comprar", no "Ajustar": lo que falta se resuelve reponiendo
+            // mercadería, no corrigiendo el número a mano.
+            <div className="max-h-72 divide-y divide-border overflow-y-auto">
               {lowStock.map((product) => (
                 <div
                   key={product.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+                  className="flex items-center justify-between gap-3 px-5 py-2"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Stock: <span className="font-medium text-danger">{product.stock}{product.unit}</span>
-                      {" · "}Mínimo: {product.min_stock}{product.unit}
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => setAdjusting(product)}>
-                    <SlidersHorizontal className="h-3.5 w-3.5" />
-                    Ajustar
-                  </Button>
+                  <p className="truncate text-sm">
+                    <span className="font-medium text-foreground">{product.name}</span>
+                    <span className="text-muted-foreground">
+                      {" — "}
+                      <span className="font-medium text-danger">
+                        {product.stock}
+                        {product.unit}
+                      </span>
+                      {" / mín. "}
+                      {product.min_stock}
+                      {product.unit}
+                    </span>
+                  </p>
+                  <Link
+                    href={`/compras?producto=${product.id}`}
+                    className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                  >
+                    <ShoppingCart className="h-3.5 w-3.5" />
+                    Comprar
+                  </Link>
                 </div>
               ))}
             </div>
