@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +15,16 @@ interface DialogProps {
 }
 
 export function Dialog({ open, onClose, title, description, children, className }: DialogProps) {
+  // Portal a document.body: si no, el fondo semitransparente queda anidado
+  // adentro del árbol de quien abre el diálogo (ej. el sidebar), y algunos
+  // navegadores pintan un header con "sticky" + blur por encima igual,
+  // aunque tenga menor z-index — se ve como si el header no se oscureciera.
+  // open sólo se vuelve true por una interacción del usuario (nunca en el
+  // render inicial del servidor), así que document ya existe acá.
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div
         className={cn(
@@ -41,6 +48,7 @@ export function Dialog({ open, onClose, title, description, children, className 
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
