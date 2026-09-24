@@ -22,7 +22,7 @@ import { BarChart, type BarChartDatum } from "@/components/dashboard/bar-chart";
 import { DonutChart } from "@/components/dashboard/donut-chart";
 import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 
 const WIDGETS = [
@@ -91,6 +91,27 @@ const tileIcons = {
   chart: BarChart3,
   receipt: Receipt,
 };
+
+// Variación propia del "chip con flechita" típico de otros dashboards:
+// mismo tono suave que ya usamos en toda la app para diferencias
+// (sobrante/faltante de caja), con el ícono de tendencia en vez de una
+// flecha diagonal genérica.
+function TrendBadge({ deltaPct }: { deltaPct: number }) {
+  const positive = deltaPct >= 0;
+  const Icon = positive ? TrendingUp : TrendingDown;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xl font-bold",
+        positive ? "bg-success-bg text-success" : "bg-danger-bg text-danger"
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {positive ? "+" : ""}
+      {deltaPct.toFixed(0)}%
+    </span>
+  );
+}
 
 export function ReportesDashboard({ data }: { data: ReportesData }) {
   const [visible, setVisible] = useState<Set<WidgetId>>(new Set(ALL_WIDGET_IDS));
@@ -423,20 +444,13 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
                   <TrendingDown className="h-4 w-4 text-muted-foreground" />
                   <CardTitle className="text-base">Comparación con el período anterior</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-1">
+                <CardContent className="space-y-2">
                   {data.periodComparison.deltaPct === null ? (
                     <p className="text-sm text-muted-foreground">
                       No hubo ventas en el período anterior para comparar.
                     </p>
                   ) : (
-                    <p
-                      className={`text-2xl font-bold ${
-                        data.periodComparison.deltaPct >= 0 ? "text-success" : "text-danger"
-                      }`}
-                    >
-                      {data.periodComparison.deltaPct >= 0 ? "+" : ""}
-                      {data.periodComparison.deltaPct.toFixed(0)}%
-                    </p>
+                    <TrendBadge deltaPct={data.periodComparison.deltaPct} />
                   )}
                   <p className="text-xs text-muted-foreground">
                     Período anterior: {formatCurrency(data.periodComparison.ingresos)}
