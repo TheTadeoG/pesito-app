@@ -9,8 +9,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Package,
+  Scale,
   ShieldCheck,
+  Store,
   TrendingUp,
+  Trophy,
   Wallet,
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -91,6 +94,18 @@ const medios = [
   { label: "Tarjeta", pct: 27, color: PALETTE[1] },
   { label: "Transferencia", pct: 9, color: PALETTE[2] },
   { label: "QR", pct: 6, color: PALETTE[3] },
+];
+
+const cajaPorEmpleado = [
+  { name: "Rocío D.", faltante: 0 },
+  { name: "Juan P.", faltante: 850 },
+  { name: "Mica G.", faltante: 220 },
+];
+
+const sucursales = [
+  { name: "Local Centro", ventas: 412000, ganancia: 156000 },
+  { name: "Local Norte", ventas: 298000, ganancia: 101000 },
+  { name: "Local Sur", ventas: 187000, ganancia: 58000 },
 ];
 
 function SlideHeading({ icon: Icon, children }: { icon: typeof BarChart3; children: string }) {
@@ -389,10 +404,74 @@ function InventarioCajaSlide() {
   );
 }
 
+// Mismo motivo que InventarioCajaSlide: cada mitad por separado tiene poco
+// contenido, así que se juntan en una sola diapositiva de dos columnas.
+function EquipoSucursalesSlide() {
+  const topSucursal = sucursales[0];
+
+  return (
+    <div className="grid gap-8 sm:grid-cols-2">
+      <div>
+        <SlideHeading icon={Scale}>Caja por empleado</SlideHeading>
+        <p className="mt-3 text-xs text-muted-foreground">Faltantes del mes, por vendedor</p>
+        <ul className="mt-3 space-y-3">
+          {cajaPorEmpleado.map((e) => (
+            <li key={e.name} className="flex items-center justify-between text-sm">
+              <span className="truncate text-foreground">{e.name}</span>
+              {e.faltante > 0 ? (
+                <span className="shrink-0 font-semibold text-danger">
+                  -{formatCurrency(e.faltante)}
+                </span>
+              ) : (
+                <span className="shrink-0 text-xs font-medium text-success">Cuadra perfecto</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <SlideHeading icon={Store}>Sucursales</SlideHeading>
+        <p className="mt-3 text-xs text-muted-foreground">Quién vende y gana más este mes</p>
+        <ul className="mt-3 space-y-2">
+          {sucursales.map((s, i) => (
+            <li
+              key={s.name}
+              className={cn(
+                "rounded-xl border p-3",
+                s.name === topSucursal.name ? "border-success bg-success-bg" : "border-border"
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
+                  {s.name === topSucursal.name && (
+                    <Trophy className="h-3.5 w-3.5 shrink-0 text-success" />
+                  )}
+                  <span className="truncate">{s.name}</span>
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground">#{i + 1}</span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  Ventas <span className="font-semibold text-foreground">{formatCurrency(s.ventas)}</span>
+                </span>
+                <span>
+                  Ganancia <span className="font-semibold text-success">{formatCurrency(s.ganancia)}</span>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 const slides = [
   { id: "resumen", label: "Resumen", Component: ResumenSlide },
   { id: "reportes", label: "Reportes", Component: ReportesSlide },
   { id: "inventario-caja", label: "Inventario y caja", Component: InventarioCajaSlide },
+  { id: "equipo-sucursales", label: "Equipo y sucursales", Component: EquipoSucursalesSlide },
 ];
 
 const AUTO_ADVANCE_MS = 15000;
