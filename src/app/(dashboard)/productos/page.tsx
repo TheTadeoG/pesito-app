@@ -27,7 +27,7 @@ export default async function ProductosPage({
       tab === "stock"
         ? Promise.resolve({ data: [] })
         : supabase.from("brands").select("*").eq("org_id", organization.id).order("name"),
-      tab === "productos"
+      tab === "productos" || tab === "stock"
         ? supabase.from("suppliers").select("id, name").eq("org_id", organization.id).order("name")
         : Promise.resolve({ data: [] }),
       tab === "stock"
@@ -77,6 +77,7 @@ export default async function ProductosPage({
         key={focusedProduct?.id ?? "all"}
         products={activeProducts}
         movements={normalizedMovements}
+        suppliers={suppliers ?? []}
         focusedProduct={
           focusedProduct ? { id: focusedProduct.id, name: focusedProduct.name } : null
         }
