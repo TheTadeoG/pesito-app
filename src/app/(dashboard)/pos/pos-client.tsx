@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
+  Check,
+  ChevronsUpDown,
   CircleDollarSign,
   CreditCard,
   ImageIcon,
@@ -1070,41 +1072,34 @@ export function PosClient({
         </div>
       </div>
 
-      <div className="flex flex-col overflow-hidden rounded-card border border-border bg-card">
+      <div className="flex flex-col overflow-hidden rounded-card border border-border bg-card xl:sticky xl:top-6 xl:self-start">
         <div className="p-4">
-            {selectedCustomer ? (
-              <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5">
-                <span className="text-sm font-medium text-foreground">
-                  {selectedCustomer.name}
-                  {selectedCustomer.balance > 0 && (
-                    <span className="ml-1.5 text-xs font-normal text-danger">
-                      (debe {formatCurrency(selectedCustomer.balance)})
-                    </span>
+            {!showCustomerSearch ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerQuery("");
+                  setBrowseCustomers(true);
+                  setShowCustomerSearch(true);
+                }}
+                className="flex w-full items-center justify-between gap-2 rounded-xl border border-border px-3.5 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted/40"
+              >
+                <span className="truncate text-sm font-medium text-foreground">
+                  {selectedCustomer ? (
+                    <>
+                      {selectedCustomer.name}
+                      {selectedCustomer.balance > 0 && (
+                        <span className="ml-1.5 text-xs font-normal text-danger">
+                          (debe {formatCurrency(selectedCustomer.balance)})
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    "Consumidor Final"
                   )}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCustomerId("");
-                    setCustomerQuery("");
-                    setShowCustomerSearch(false);
-                  }}
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  Cambiar
-                </button>
-              </div>
-            ) : !showCustomerSearch ? (
-              <div className="flex items-center justify-between rounded-xl border border-border px-3.5 py-2.5">
-                <span className="text-sm font-medium text-foreground">Consumidor Final</span>
-                <button
-                  type="button"
-                  onClick={() => setShowCustomerSearch(true)}
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  Cambiar
-                </button>
-              </div>
+                <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
             ) : (
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -1131,6 +1126,29 @@ export function PosClient({
                   />
                   {(customerQuery.trim() || browseCustomers) && (
                     <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                      {!customerQuery.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomerId("");
+                            setCustomerQuery("");
+                            setBrowseCustomers(false);
+                            setShowCustomerSearch(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm",
+                            !customerId ? "bg-accent" : "hover:bg-muted"
+                          )}
+                        >
+                          <Check
+                            className={cn(
+                              "h-4 w-4 shrink-0 text-primary",
+                              customerId && "invisible"
+                            )}
+                          />
+                          <span>Consumidor Final</span>
+                        </button>
+                      )}
                       {customerResults.length === 0 && (
                         <p className="px-3.5 py-2.5 text-sm text-muted-foreground">
                           {customerQuery.trim()
@@ -1149,7 +1167,15 @@ export function PosClient({
                             index === customerHighlightedIndex ? "bg-accent" : "hover:bg-muted"
                           )}
                         >
-                          <span className="truncate">{customer.name}</span>
+                          <span className="flex min-w-0 items-center gap-2">
+                            <Check
+                              className={cn(
+                                "h-4 w-4 shrink-0 text-primary",
+                                customer.id !== customerId && "invisible"
+                              )}
+                            />
+                            <span className="truncate">{customer.name}</span>
+                          </span>
                           {customer.balance > 0 && (
                             <span className="shrink-0 text-xs text-danger">
                               debe {formatCurrency(customer.balance)}
@@ -1188,15 +1214,59 @@ export function PosClient({
             )}
         </div>
 
-        <div className="border-t border-border px-4 py-3">
+        <div className="mt-auto space-y-3 border-t border-border bg-muted/40 p-4">
+          <div className="flex items-center justify-between">
+            <Badge>{itemCount} items</Badge>
+          </div>
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal:</span>
+              <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Descuento{discountMode === "percent" ? ` (${discountInput}%)` : ""}:
+                </span>
+                <span className="font-medium text-danger">-{formatCurrency(discount)}</span>
+              </div>
+            )}
+            {surcharge > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Recargo{surchargeMode === "percent" ? ` (${surchargeInput}%)` : ""}:
+                </span>
+                <span className="font-medium text-warning">+{formatCurrency(surcharge)}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-baseline justify-between border-t border-border pt-2.5">
+            <span className="text-sm font-semibold text-foreground">Total</span>
+            <span className="text-2xl font-bold text-primary">{formatCurrency(total)}</span>
+          </div>
+
+          {error && (
+            <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
+          )}
+
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={cart.length === 0 || pending}
+            onClick={openPaymentPicker}
+          >
+            <Banknote className="h-4 w-4" />
+            {pending ? "Procesando…" : "Cobrar (Doble Enter)"}
+          </Button>
+
           <button
             type="button"
             onClick={() => setShowExtras((v) => !v)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
+              "mx-auto flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
               showExtras
                 ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-border text-foreground hover:bg-muted"
+                : "border-border bg-card text-foreground hover:bg-muted"
             )}
           >
             <Percent className="h-3.5 w-3.5" />
@@ -1204,7 +1274,7 @@ export function PosClient({
           </button>
 
           {showExtras && (
-            <div className="space-y-1.5 pb-4">
+            <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground">
                 Doble Enter en estos campos también confirma la venta.
               </p>
@@ -1282,52 +1352,6 @@ export function PosClient({
               </div>
             </div>
           )}
-        </div>
-
-        <div className="mt-auto space-y-3 border-t border-border bg-muted/40 p-4">
-          <div className="flex items-center justify-between">
-            <Badge>{itemCount} items</Badge>
-          </div>
-          <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
-            </div>
-            {discount > 0 && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Descuento{discountMode === "percent" ? ` (${discountInput}%)` : ""}:
-                </span>
-                <span className="font-medium text-danger">-{formatCurrency(discount)}</span>
-              </div>
-            )}
-            {surcharge > 0 && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Recargo{surchargeMode === "percent" ? ` (${surchargeInput}%)` : ""}:
-                </span>
-                <span className="font-medium text-warning">+{formatCurrency(surcharge)}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex items-baseline justify-between border-t border-border pt-2.5">
-            <span className="text-sm font-semibold text-foreground">Total</span>
-            <span className="text-2xl font-bold text-primary">{formatCurrency(total)}</span>
-          </div>
-
-          {error && (
-            <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
-          )}
-
-          <Button
-            className="w-full"
-            size="lg"
-            disabled={cart.length === 0 || pending}
-            onClick={openPaymentPicker}
-          >
-            <Banknote className="h-4 w-4" />
-            {pending ? "Procesando…" : "Cobrar (Doble Enter)"}
-          </Button>
         </div>
       </div>
 
