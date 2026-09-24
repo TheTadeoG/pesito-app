@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
+  Bell,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
@@ -108,6 +109,9 @@ function SortHeader({
 // Mismo criterio que el contador de la pestaña Stock (sólo productos activos).
 const isLowStock = (p: Product) => p.active && p.stock <= p.min_stock;
 
+// Mismo criterio que el aviso "estarías vendiendo a pérdida" del alta/edición.
+const isSellingAtLoss = (p: Product) => p.active && p.cost !== null && p.cost > p.price;
+
 export function ProductosClient({
   products,
   brands,
@@ -136,6 +140,7 @@ export function ProductosClient({
   const [priceHistoryProduct, setPriceHistoryProduct] = useState<Product | null>(null);
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
   const [bulkCostOpen, setBulkCostOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [localBrands, setLocalBrands] = useState(brands);
   const [localSuppliers, setLocalSuppliers] = useState(suppliers);
@@ -186,7 +191,10 @@ export function ProductosClient({
     return Array.from(names).sort((a, b) => a.localeCompare(b, "es"));
   }, [localBrands, products, brandFilter]);
 
-  const lowStockCount = useMemo(() => products.filter(isLowStock).length, [products]);
+  const lowStockProducts = useMemo(() => products.filter(isLowStock), [products]);
+  const lowStockCount = lowStockProducts.length;
+  const lossProducts = useMemo(() => products.filter(isSellingAtLoss), [products]);
+  const alertsCount = lowStockCount + lossProducts.length;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -336,6 +344,20 @@ export function ProductosClient({
             <AlertTriangle className="h-4 w-4" />
             Stock bajo
             {lowStockCount > 0 && <span className="font-semibold">({lowStockCount})</span>}
+          </button>
+          <button
+            type="button"
+            onClick={() => setAlertsOpen(true)}
+            title="Alertas: stock bajo y productos vendiendo a pérdida"
+            className={cn(
+              "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-sm font-medium transition-colors",
+              alertsCount > 0
+                ? "border-danger/40 bg-danger-bg text-danger"
+                : "border-border bg-card text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Bell className="h-4 w-4" />
+            {alertsCount > 0 && <span className="font-semibold">{alertsCount}</span>}
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -701,6 +723,95 @@ export function ProductosClient({
       />
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
+
+      <Dialog
+        open={alertsOpen}
+        onClose={() => setAlertsOpen(false)}
+        title="Alertas"
+        description="Productos que conviene revisar."
+      >
+        <div className="space-y-5">
+          <div>
+            <p className="mb-2 text-sm font-semibold text-foreground">
+              Stock bajo
+              {lowStockProducts.length > 0 && ` (${lowStockProducts.length})`}
+            </p>
+            {lowStockProducts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Ningún producto está por debajo de su stock mínimo.
+              </p>
+            ) : (
+              <div className="divide-y divide-border rounded-xl border border-border">
+                {lowStockProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Stock: <span className="font-medium text-danger">{product.stock}{product.unit}</span>
+                        {" · "}Mínimo: {product.min_stock}{product.unit}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAdjusting(product);
+                        setAlertsOpen(false);
+                      }}
+                    >
+                      <SlidersHorizontal className="h-3.5 w-3.5" />
+                      Ajustar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm font-semibold text-foreground">
+              Vendiendo a pérdida
+              {lossProducts.length > 0 && ` (${lossProducts.length})`}
+            </p>
+            {lossProducts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Ningún producto tiene el costo por encima del precio de venta.
+              </p>
+            ) : (
+              <div className="divide-y divide-border rounded-xl border border-border">
+                {lossProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Costo: <span className="font-medium text-danger">{formatCurrency(product.cost ?? 0)}</span>
+                        {" · "}Precio: {formatCurrency(product.price)}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        openEdit(product);
+                        setAlertsOpen(false);
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </Dialog>
 
       <PriceHistoryDialog
         product={priceHistoryProduct}

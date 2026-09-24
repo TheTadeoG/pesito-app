@@ -205,43 +205,6 @@ export function StockTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <Boxes className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Unidades en stock</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-foreground">{formatQty(valuation.totalUnits)}</p>
-            <p className="text-xs text-muted-foreground">
-              En {products.length} producto{products.length === 1 ? "" : "s"} activo
-              {products.length === 1 ? "" : "s"}.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Valorización de stock</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Al costo</p>
-              <p className="text-xl font-bold text-foreground">{formatCurrency(valuation.totalCost)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">A precio de venta</p>
-              <p className="text-xl font-bold text-foreground">{formatCurrency(valuation.totalPrice)}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ValuationBreakdownCard title="Valorización por marca" rows={valuation.byBrand} />
-        <ValuationBreakdownCard title="Valorización por proveedor" rows={valuation.bySupplier} />
-      </div>
-
       <Card className={lowStock.length > 0 ? "border-danger/30 bg-danger-bg/40" : undefined}>
         <CardHeader>
           <CardTitle className="text-base">
@@ -399,6 +362,43 @@ export function StockTab({
           )}
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <Boxes className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Unidades en stock</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-foreground">{formatQty(valuation.totalUnits)}</p>
+            <p className="text-xs text-muted-foreground">
+              En {products.length} producto{products.length === 1 ? "" : "s"} activo
+              {products.length === 1 ? "" : "s"}.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Valorización de stock</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Al costo</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(valuation.totalCost)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">A precio de venta</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(valuation.totalPrice)}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ValuationBreakdownCard title="Valorización por marca" rows={valuation.byBrand} />
+        <ValuationBreakdownCard title="Valorización por proveedor" rows={valuation.bySupplier} />
+      </div>
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
 
