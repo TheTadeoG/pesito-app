@@ -61,6 +61,12 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: 
                     <Link
                       key={item.href}
                       href={item.href}
+                      // Sin esto, Next.js prefetchea los ~14 links del menú
+                      // apenas se monta el sidebar (todos entran en el
+                      // viewport de una) — cada uno dispara el layout del
+                      // dashboard (auth + suscripción + caja) de nuevo, aun
+                      // sin que nadie haya clickeado nada.
+                      prefetch={false}
                       className={cn(
                         "flex items-center justify-between rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
                         active
