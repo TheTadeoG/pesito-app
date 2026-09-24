@@ -5,8 +5,14 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { saveCustomer, type CustomerFormInput } from "@/app/(dashboard)/clientes/actions";
 import { invoiceTypes, type InvoiceType } from "@/lib/invoice-labels";
+import {
+  phoneCountries,
+  splitPhoneCountry,
+  type PhoneCountry,
+} from "@/lib/phone-countries";
 import type { Customer } from "@/lib/types";
 
 interface CustomerFormProps {
@@ -18,7 +24,10 @@ interface CustomerFormProps {
 export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
   const isEdit = Boolean(customer);
   const [name, setName] = useState(customer?.name ?? "");
-  const [phone, setPhone] = useState(customer?.phone ?? "");
+  const [razonSocial, setRazonSocial] = useState(customer?.razon_social ?? "");
+  const initialPhone = splitPhoneCountry(customer?.phone ?? "");
+  const [phoneCountry, setPhoneCountry] = useState<PhoneCountry>(initialPhone.country);
+  const [phoneNumber, setPhoneNumber] = useState(initialPhone.number);
   const [email, setEmail] = useState(customer?.email ?? "");
   const [document, setDocument] = useState(customer?.document ?? "");
   const [notes, setNotes] = useState(customer?.notes ?? "");
@@ -36,7 +45,8 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
     const input: CustomerFormInput = {
       id: customer?.id,
       name,
-      phone,
+      razonSocial,
+      phone: phoneNumber.trim() ? `${phoneCountry.dialCode} ${phoneNumber.trim()}` : "",
       email,
       document,
       notes,
@@ -63,18 +73,73 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label htmlFor="c-name">Nombre</Label>
-          <Input id="c-name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <Label htmlFor="c-name" required>
+            Nombre
+          </Label>
+          <Input
+            id="c-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ej: Juan Pérez"
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="c-razon-social">Razón social</Label>
+          <Input
+            id="c-razon-social"
+            value={razonSocial}
+            onChange={(e) => setRazonSocial(e.target.value)}
+            placeholder="Ej: Almacén San Martín S.R.L."
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Sólo si factura con una razón social distinta a este nombre.
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="c-phone">Teléfono</Label>
-            <Input id="c-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <div className="flex gap-1.5">
+              {/* Select/Input siempre traen w-full de base (cn() acá es
+                  clsx puro, sin tailwind-merge, así que una clase w-* propia
+                  no le gana) — se lo acota envolviéndolo en un contenedor de
+                  ancho fijo en vez de pisar la clase en el propio elemento. */}
+              <div className="w-28 shrink-0">
+                <Select
+                  value={phoneCountry.code}
+                  onChange={(e) => {
+                    const next = phoneCountries.find((c) => c.code === e.target.value);
+                    if (next) setPhoneCountry(next);
+                  }}
+                  className="px-2"
+                  aria-label="Código de país"
+                >
+                  {phoneCountries.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.dialCode}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <Input
+                id="c-phone"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Ej: 11 2345-6789"
+                className="min-w-0 flex-1"
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="c-doc">DNI / CUIT</Label>
-            <Input id="c-doc" value={document} onChange={(e) => setDocument(e.target.value)} />
+            <Input
+              id="c-doc"
+              value={document}
+              onChange={(e) => setDocument(e.target.value)}
+              placeholder="Ej: 20-12345678-9"
+            />
           </div>
         </div>
 
@@ -85,6 +150,7 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="Ej: juan.perez@gmail.com"
           />
         </div>
 
@@ -110,7 +176,12 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
 
         <div>
           <Label htmlFor="c-notes">Notas</Label>
-          <Input id="c-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Input
+            id="c-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Ej: Paga los viernes"
+          />
         </div>
 
         {error && (

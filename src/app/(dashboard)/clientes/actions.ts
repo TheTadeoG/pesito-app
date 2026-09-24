@@ -11,6 +11,7 @@ export interface ActionState {
 export interface CustomerFormInput {
   id?: string;
   name: string;
+  razonSocial: string;
   phone: string;
   email: string;
   document: string;
@@ -29,6 +30,7 @@ export async function saveCustomer(input: CustomerFormInput): Promise<ActionStat
   const payload = {
     org_id: organization.id,
     name: input.name.trim(),
+    razon_social: input.razonSocial.trim() || null,
     phone: input.phone.trim() || null,
     email: input.email.trim() || null,
     document: input.document.trim() || null,

@@ -32,7 +32,9 @@ export function CashCalculator({ onUseTotal }: { onUseTotal: (total: number) => 
   return (
     <div className="space-y-3 rounded-xl border border-border p-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-foreground">Contá cuánto tenés de cada billete</p>
+        <p className="text-xs font-semibold text-foreground">
+          Contá cuánto tenés de cada billete y moneda
+        </p>
         <button
           type="button"
           onClick={() => setOpen(false)}

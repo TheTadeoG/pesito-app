@@ -43,7 +43,9 @@ export function KioscoForm({ initialName = "" }: { initialName?: string }) {
         }}
       >
         <div>
-          <Label htmlFor="name">Nombre de tu negocio</Label>
+          <Label htmlFor="name" required>
+            Nombre de tu negocio
+          </Label>
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Kiosco Don José" autoFocus required />
         </div>
 

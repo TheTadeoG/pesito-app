@@ -56,7 +56,9 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label htmlFor="s-name">Nombre</Label>
+          <Label htmlFor="s-name" required>
+            Nombre
+          </Label>
           <Input id="s-name" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
 

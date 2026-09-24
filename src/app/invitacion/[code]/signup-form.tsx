@@ -77,7 +77,9 @@ export function InvitationSignupForm({ code }: { code: string }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="inv-firstName">Nombre</Label>
+          <Label htmlFor="inv-firstName" required>
+            Nombre
+          </Label>
           <Input
             id="inv-firstName"
             value={firstName}
@@ -87,7 +89,9 @@ export function InvitationSignupForm({ code }: { code: string }) {
           />
         </div>
         <div>
-          <Label htmlFor="inv-lastName">Apellido</Label>
+          <Label htmlFor="inv-lastName" required>
+            Apellido
+          </Label>
           <Input
             id="inv-lastName"
             value={lastName}
@@ -99,7 +103,9 @@ export function InvitationSignupForm({ code }: { code: string }) {
       </div>
 
       <div>
-        <Label htmlFor="inv-username">Usuario</Label>
+        <Label htmlFor="inv-username" required>
+          Usuario
+        </Label>
         <Input
           id="inv-username"
           value={username}
@@ -114,7 +120,9 @@ export function InvitationSignupForm({ code }: { code: string }) {
       </div>
 
       <div>
-        <Label htmlFor="inv-password">Contraseña</Label>
+        <Label htmlFor="inv-password" required>
+          Contraseña
+        </Label>
         <PasswordInput
           id="inv-password"
           value={password}
@@ -126,7 +134,9 @@ export function InvitationSignupForm({ code }: { code: string }) {
       </div>
 
       <div>
-        <Label htmlFor="inv-confirmPassword">Repetí la contraseña</Label>
+        <Label htmlFor="inv-confirmPassword" required>
+          Repetí la contraseña
+        </Label>
         <PasswordInput
           id="inv-confirmPassword"
           value={confirmPassword}

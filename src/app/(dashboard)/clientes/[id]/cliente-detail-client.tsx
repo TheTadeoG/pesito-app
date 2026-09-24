@@ -33,6 +33,9 @@ export function ClienteDetailClient({
                 <Badge tone="warning">Debe {formatCurrency(customer.balance)}</Badge>
               )}
             </div>
+            {customer.razon_social && (
+              <p className="text-sm text-muted-foreground">{customer.razon_social}</p>
+            )}
             <p className="mt-1 text-sm text-muted-foreground">
               {[customer.phone, customer.email, customer.document].filter(Boolean).join(" · ") ||
                 "Sin datos de contacto"}

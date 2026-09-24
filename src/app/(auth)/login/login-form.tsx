@@ -18,7 +18,9 @@ export function LoginForm({ next }: { next?: string }) {
       <input type="hidden" name="next" value={next ?? ""} />
 
       <div>
-        <Label htmlFor="identifier">Email o usuario</Label>
+        <Label htmlFor="identifier" required>
+          Email o usuario
+        </Label>
         <Input
           id="identifier"
           name="identifier"
@@ -30,7 +32,9 @@ export function LoginForm({ next }: { next?: string }) {
       </div>
 
       <div>
-        <Label htmlFor="password">Contraseña</Label>
+        <Label htmlFor="password" required>
+          Contraseña
+        </Label>
         <PasswordInput
           id="password"
           name="password"

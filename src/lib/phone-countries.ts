@@ -23,3 +23,19 @@ export const phoneCountries: PhoneCountry[] = [
 ];
 
 export const defaultPhoneCountry = phoneCountries[0];
+
+/** Separa un teléfono guardado ("+598 99 123 456") en país + resto del número. */
+export function splitPhoneCountry(phone: string): { country: PhoneCountry; number: string } {
+  const trimmed = phone.trim();
+  if (!trimmed) return { country: defaultPhoneCountry, number: "" };
+
+  const match = phoneCountries.find(
+    (c) => trimmed === c.dialCode || trimmed.startsWith(`${c.dialCode} `)
+  );
+  if (match) {
+    return { country: match, number: trimmed.slice(match.dialCode.length).trim() };
+  }
+  // Teléfono viejo guardado sin código reconocido: se deja como está en el
+  // campo de número, con Argentina como país por defecto.
+  return { country: defaultPhoneCountry, number: trimmed };
+}

@@ -226,7 +226,9 @@ export function TestimonialsManager({ testimonials }: { testimonials: Testimonia
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="t-name">Nombre</Label>
+              <Label htmlFor="t-name" required>
+                Nombre
+              </Label>
               <Input
                 id="t-name"
                 value={form.name}
@@ -275,7 +277,9 @@ export function TestimonialsManager({ testimonials }: { testimonials: Testimonia
           </div>
 
           <div>
-            <Label htmlFor="t-quote">Reseña</Label>
+            <Label htmlFor="t-quote" required>
+              Reseña
+            </Label>
             <textarea
               id="t-quote"
               value={form.quote}

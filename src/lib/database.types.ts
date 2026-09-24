@@ -166,6 +166,7 @@ export interface Database {
           id: string;
           org_id: string;
           name: string;
+          razon_social: string | null;
           phone: string | null;
           email: string | null;
           document: string | null;
@@ -178,6 +179,7 @@ export interface Database {
           id?: string;
           org_id: string;
           name: string;
+          razon_social?: string | null;
           phone?: string | null;
           email?: string | null;
           document?: string | null;

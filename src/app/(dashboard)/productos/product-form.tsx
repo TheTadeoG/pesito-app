@@ -104,7 +104,9 @@ function PriceWithIvaField({
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={id}>{label}</Label>
+        <Label htmlFor={id} required={required}>
+          {label}
+        </Label>
         <button
           type="button"
           onClick={() => setShowIva((v) => !v)}
@@ -440,7 +442,9 @@ export function ProductForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="p-name">Nombre</Label>
+            <Label htmlFor="p-name" required>
+              Nombre
+            </Label>
             <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>

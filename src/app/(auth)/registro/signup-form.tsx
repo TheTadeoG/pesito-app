@@ -36,17 +36,23 @@ export function SignupForm({ submitLabel = "Crear mi cuenta gratis" }: { submitL
     <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="firstName">Nombre</Label>
+          <Label htmlFor="firstName" required>
+            Nombre
+          </Label>
           <Input id="firstName" name="firstName" autoComplete="given-name" required />
         </div>
         <div>
-          <Label htmlFor="lastName">Apellido</Label>
+          <Label htmlFor="lastName" required>
+            Apellido
+          </Label>
           <Input id="lastName" name="lastName" autoComplete="family-name" required />
         </div>
       </div>
 
       <div>
-        <Label htmlFor="businessName">Nombre de tu kiosco o almacén</Label>
+        <Label htmlFor="businessName" required>
+          Nombre de tu kiosco o almacén
+        </Label>
         <Input id="businessName" name="businessName" placeholder="Kiosco Don José" required />
         <p className="mt-1 text-xs text-muted-foreground">
           Podés cambiarlo más adelante desde Configuración.
@@ -54,17 +60,23 @@ export function SignupForm({ submitLabel = "Crear mi cuenta gratis" }: { submitL
       </div>
 
       <div>
-        <Label htmlFor="phone">Teléfono</Label>
+        <Label htmlFor="phone" required>
+          Teléfono
+        </Label>
         <PhoneInput id="phone" name="phone" required />
       </div>
 
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" required>
+          Email
+        </Label>
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </div>
 
       <div>
-        <Label htmlFor="password">Contraseña</Label>
+        <Label htmlFor="password" required>
+          Contraseña
+        </Label>
         <PasswordInput
           id="password"
           name="password"
@@ -77,7 +89,9 @@ export function SignupForm({ submitLabel = "Crear mi cuenta gratis" }: { submitL
       </div>
 
       <div>
-        <Label htmlFor="confirmPassword">Repetí la contraseña</Label>
+        <Label htmlFor="confirmPassword" required>
+          Repetí la contraseña
+        </Label>
         <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
