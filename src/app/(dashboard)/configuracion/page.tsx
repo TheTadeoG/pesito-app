@@ -10,107 +10,131 @@ import { AccountIds } from "@/app/(dashboard)/configuracion/account-ids";
 import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
 import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
+import { ConfiguracionTabs, type ConfiguracionTab } from "@/app/(dashboard)/configuracion/configuracion-tabs";
 import { getSubscription, getMonthlySalesCount, getPlanHistory } from "@/lib/subscription";
 
-export default async function ConfiguracionPage() {
+function parseTab(value: string | undefined): ConfiguracionTab {
+  return value === "plan" ? "plan" : "negocio";
+}
+
+export default async function ConfiguracionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab: tabParam } = await searchParams;
+  const tab = parseTab(tabParam);
   const { userId, email, organization } = await requireOrgContext();
   const supabase = await createClient();
 
-  const { data: memberships } = await supabase
-    .from("memberships")
-    .select("id, user_id, role, email, username, created_at")
-    .eq("org_id", organization.id)
-    .order("created_at");
-
-  const { data: paymentMethods } = await supabase
-    .from("payment_methods")
-    .select("id, name")
-    .eq("org_id", organization.id)
-    .order("created_at");
-
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
-  const subscription = await getSubscription(supabase, organization.id);
-  // Sólo importa contar esto cuando el límite de ventas realmente aplica
-  // (plan gratis, sin prueba Pro activa) — evita una query de más al resto.
-  const monthlySalesCount = subscription.hasProAccess
-    ? null
-    : await getMonthlySalesCount(supabase, organization.id);
-  const planHistory = await getPlanHistory(supabase, organization.id);
+
+  if (tab === "plan") {
+    const subscription = await getSubscription(supabase, organization.id);
+    // Sólo importa contar esto cuando el límite de ventas realmente aplica
+    // (plan gratis, sin prueba Pro activa) — evita una query de más al resto.
+    const monthlySalesCount = subscription.hasProAccess
+      ? null
+      : await getMonthlySalesCount(supabase, organization.id);
+    const planHistory = await getPlanHistory(supabase, organization.id);
+
+    return (
+      <div className="space-y-6">
+        <ConfiguracionTabs active={tab} />
+        <SubscriptionSection
+          subscription={subscription}
+          monthlySalesCount={monthlySalesCount}
+          planHistory={planHistory}
+        />
+      </div>
+    );
+  }
+
+  const [{ data: memberships }, { data: paymentMethods }] = await Promise.all([
+    supabase
+      .from("memberships")
+      .select("id, user_id, role, email, username, created_at")
+      .eq("org_id", organization.id)
+      .order("created_at"),
+    supabase
+      .from("payment_methods")
+      .select("id, name")
+      .eq("org_id", organization.id)
+      .order("created_at"),
+  ]);
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <SubscriptionSection
-        subscription={subscription}
-        monthlySalesCount={monthlySalesCount}
-        planHistory={planHistory}
-      />
+    <div className="space-y-6">
+      <ConfiguracionTabs active={tab} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tu negocio</CardTitle>
-          <CardDescription>Estos datos se usan en todo el sistema.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <OrgNameForm initialName={organization.name} />
+      <div className="max-w-2xl space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Tu negocio</CardTitle>
+            <CardDescription>Estos datos se usan en todo el sistema.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <OrgNameForm initialName={organization.name} />
 
-          <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-            <Badge tone="accent">{businessType?.label ?? "Otro"}</Badge>
-            <Badge>Moneda: {organization.currency}</Badge>
-            <Badge>#{organization.org_code}</Badge>
-          </div>
+            <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+              <Badge tone="accent">{businessType?.label ?? "Otro"}</Badge>
+              <Badge>Moneda: {organization.currency}</Badge>
+              <Badge>#{organization.org_code}</Badge>
+            </div>
 
-          <AutoInvoiceToggle initialEnabled={organization.auto_invoice_by_payment} />
-        </CardContent>
-      </Card>
+            <AutoInvoiceToggle initialEnabled={organization.auto_invoice_by_payment} />
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Medios de pago</CardTitle>
-          <CardDescription>
-            Agregá los que uses además de los de siempre (ej: Mercado Pago, Talo).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PaymentMethodsManager methods={paymentMethods ?? []} />
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Medios de pago</CardTitle>
+            <CardDescription>
+              Agregá los que uses además de los de siempre (ej: Mercado Pago, Talo).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PaymentMethodsManager methods={paymentMethods ?? []} />
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Mi cuenta</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-foreground">{email}</p>
-          <AccountIds orgCode={organization.org_code} />
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Mi cuenta</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-foreground">{email}</p>
+            <AccountIds orgCode={organization.org_code} />
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Equipo</CardTitle>
-          <CardDescription>Quiénes tienen acceso a este negocio.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="divide-y divide-border">
-            {(memberships ?? []).map((m) => (
-              <div key={m.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                <span className="text-foreground">
-                  {m.username ?? m.email ?? "Sin email"}
-                  {m.user_id === userId && (
-                    <span className="ml-1.5 text-xs text-muted-foreground">(vos)</span>
-                  )}
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">
-                    Desde {formatDateTime(m.created_at)}
+        <Card>
+          <CardHeader>
+            <CardTitle>Equipo</CardTitle>
+            <CardDescription>Quiénes tienen acceso a este negocio.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-border">
+              {(memberships ?? []).map((m) => (
+                <div key={m.id} className="flex items-center justify-between px-5 py-3 text-sm">
+                  <span className="text-foreground">
+                    {m.username ?? m.email ?? "Sin email"}
+                    {m.user_id === userId && (
+                      <span className="ml-1.5 text-xs text-muted-foreground">(vos)</span>
+                    )}
                   </span>
-                  <Badge tone="accent">{roleLabels[m.role] ?? m.role}</Badge>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground">
+                      Desde {formatDateTime(m.created_at)}
+                    </span>
+                    <Badge tone="accent">{roleLabels[m.role] ?? m.role}</Badge>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
