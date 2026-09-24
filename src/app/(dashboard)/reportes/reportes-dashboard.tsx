@@ -66,7 +66,13 @@ export interface LossProductRow {
 
 export interface ReportesData {
   periodLabel: string;
-  tiles: { label: string; value: string; icon: "dollar" | "trending" | "chart" | "receipt" }[];
+  tiles: {
+    label: string;
+    value: string;
+    icon: "dollar" | "trending" | "chart" | "receipt";
+    // Variación vs. el período anterior — sólo se completa con acceso Pro.
+    deltaPct: number | null;
+  }[];
   revenueChart: BarChartDatum[];
   revenueChartIsHourly: boolean;
   paymentBreakdown: { label: string; value: number }[];
@@ -96,17 +102,18 @@ const tileIcons = {
 // mismo tono suave que ya usamos en toda la app para diferencias
 // (sobrante/faltante de caja), con el ícono de tendencia en vez de una
 // flecha diagonal genérica.
-function TrendBadge({ deltaPct }: { deltaPct: number }) {
+function TrendBadge({ deltaPct, size = "md" }: { deltaPct: number; size?: "sm" | "md" }) {
   const positive = deltaPct >= 0;
   const Icon = positive ? TrendingUp : TrendingDown;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xl font-bold",
-        positive ? "bg-success-bg text-success" : "bg-danger-bg text-danger"
+        "inline-flex items-center rounded-full font-bold",
+        positive ? "bg-success-bg text-success" : "bg-danger-bg text-danger",
+        size === "sm" ? "gap-1 px-2 py-0.5 text-xs" : "gap-1.5 px-3 py-1 text-xl"
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className={size === "sm" ? "h-3 w-3" : "h-4 w-4"} />
       {positive ? "+" : ""}
       {deltaPct.toFixed(0)}%
     </span>
@@ -168,7 +175,10 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-xs text-muted-foreground">{tile.label}</p>
-                    <p className="truncate text-xl font-bold text-foreground">{tile.value}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-xl font-bold text-foreground">{tile.value}</p>
+                      {tile.deltaPct !== null && <TrendBadge deltaPct={tile.deltaPct} size="sm" />}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -194,7 +204,11 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
                 ) : (
                   <BarChart
                     data={data.revenueChart}
-                    showValueLabels={!data.revenueChartIsHourly}
+                    // Con muchas barras (30 días, este mes) los montos de
+                    // días consecutivos con ventas se pisan entre sí — a
+                    // partir de ahí se apoya en el tooltip al pasar el
+                    // mouse, igual que ya hace la vista por hora.
+                    showValueLabels={!data.revenueChartIsHourly && data.revenueChart.length <= 15}
                     labelEvery={
                       data.revenueChartIsHourly
                         ? 3

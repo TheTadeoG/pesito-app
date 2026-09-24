@@ -32,7 +32,12 @@ export function BarChart({
         return (
           <div
             key={`${d.label}-${i}`}
-            className="group relative flex flex-1 flex-col items-center gap-1.5"
+            // min-w-0 es lo que evita que este item se salga del contenedor:
+            // por default un flex item no encoge por debajo del ancho de su
+            // contenido (el texto de la fecha), así que con 30+ columnas la
+            // fila entera terminaba desbordando la tarjeta y las barras
+            // quedaban corridas respecto de las fechas del eje.
+            className="group relative flex min-w-0 flex-1 flex-col items-center gap-1.5"
           >
             {/* Tooltip al pasar el mouse: reemplaza la vieja regla de mostrar
                 la fecha de cualquier día con venta aunque no le tocara turno

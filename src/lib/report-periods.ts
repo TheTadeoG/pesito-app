@@ -46,7 +46,19 @@ export function getPeriodRange(period: ReportPeriod): PeriodRange {
   return { start, label: "en los últimos 30 días", groupBy: "day" };
 }
 
-/** Number of calendar days from `start` through today, inclusive. */
+/**
+ * Number of calendar days from `start` through today, inclusive.
+ *
+ * Compara contra la medianoche de "hoy" (no contra `Date.now()`): usar la
+ * hora exacta hacía que el redondeo dependiera de qué hora era cuando se
+ * pedía el reporte — a la tarde ya redondeaba para arriba y sumaba un día
+ * de más (el gráfico terminaba mostrando "mañana" en vez de hoy, corriendo
+ * todas las barras un lugar respecto de sus fechas en el eje).
+ */
 export function daysSince(start: Date): number {
-  return Math.max(1, Math.round((Date.now() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1);
+  const todayMidnight = argMidnightUTC(argDateString());
+  return Math.max(
+    1,
+    Math.round((todayMidnight.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1
+  );
 }

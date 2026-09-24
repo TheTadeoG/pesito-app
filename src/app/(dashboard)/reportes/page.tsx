@@ -310,34 +310,108 @@ export default async function ReportesPage({
   );
 
   // Reporte Pro: comparación contra el período anterior de la misma
-  // duración (p. ej. últimos 7 días vs los 7 días previos).
+  // duración (p. ej. últimos 7 días vs los 7 días previos). De acá también
+  // salen las flechitas de tendencia de los indicadores principales.
   let periodComparison: { ingresos: number; deltaPct: number | null } | null = null;
+  let tileDeltas: {
+    ingresosPct: number | null;
+    gananciaPct: number | null;
+    ventasPct: number | null;
+    ticketPct: number | null;
+  } | null = null;
   if (subscription.hasProAccess) {
     // eslint-disable-next-line react-hooks/purity
     const durationMs = Date.now() - start.getTime();
     const previousStart = new Date(start.getTime() - durationMs);
     const { data: previousSalesRaw } = await supabase
       .from("sales")
-      .select("total")
+      .select("id, total")
       .eq("org_id", organization.id)
       .eq("status", "completada")
       .gte("created_at", previousStart.toISOString())
       .lt("created_at", start.toISOString());
 
-    const previousIngresos = (previousSalesRaw ?? []).reduce((acc, s) => acc + Number(s.total), 0);
+    const previousSales = (previousSalesRaw ?? []).map((s) => ({ ...s, total: Number(s.total) }));
+    const previousIngresos = previousSales.reduce((acc, s) => acc + s.total, 0);
+    const previousVentas = previousSales.length;
+    const previousTicket = previousVentas > 0 ? previousIngresos / previousVentas : 0;
+
+    const previousSaleIds = previousSales.map((s) => s.id);
+    const { data: previousItemsRaw } =
+      previousSaleIds.length > 0
+        ? await supabase
+            .from("sale_items")
+            .select("product_id, quantity")
+            .in("sale_id", previousSaleIds)
+        : { data: [] };
+
+    // El período anterior puede haber vendido productos que no aparecen en
+    // el actual — completar el costo de esos para poder estimar su margen.
+    const missingProductIds = Array.from(
+      new Set(
+        (previousItemsRaw ?? [])
+          .map((i) => i.product_id)
+          .filter((id): id is string => id !== null && !costById.has(id))
+      )
+    );
+    if (missingProductIds.length > 0) {
+      const { data: extraProductsRaw } = await supabase
+        .from("products")
+        .select("id, cost")
+        .in("id", missingProductIds);
+      for (const p of extraProductsRaw ?? []) {
+        costById.set(p.id, Number(p.cost ?? 0));
+      }
+    }
+
+    const previousCosto = (previousItemsRaw ?? []).reduce(
+      (acc, i) => acc + Number(i.quantity) * (i.product_id ? costById.get(i.product_id) ?? 0 : 0),
+      0
+    );
+    const previousGanancia = previousIngresos - previousCosto;
+
+    const pct = (current: number, previous: number) =>
+      previous > 0 ? ((current - previous) / previous) * 100 : null;
+
     periodComparison = {
       ingresos: previousIngresos,
-      deltaPct: previousIngresos > 0 ? ((ingresos - previousIngresos) / previousIngresos) * 100 : null,
+      deltaPct: pct(ingresos, previousIngresos),
+    };
+    tileDeltas = {
+      ingresosPct: pct(ingresos, previousIngresos),
+      gananciaPct: pct(gananciaEstimada, previousGanancia),
+      ventasPct: pct(totalVentas, previousVentas),
+      ticketPct: pct(ticketPromedio, previousTicket),
     };
   }
 
   const data: ReportesData = {
     periodLabel,
     tiles: [
-      { icon: "dollar", label: `Ingresos (${periodLabel})`, value: formatCurrency(ingresos) },
-      { icon: "trending", label: "Ganancia estimada", value: formatCurrency(gananciaEstimada) },
-      { icon: "chart", label: "Total de ventas", value: String(totalVentas) },
-      { icon: "receipt", label: "Ticket promedio", value: formatCurrency(ticketPromedio) },
+      {
+        icon: "dollar",
+        label: `Ingresos (${periodLabel})`,
+        value: formatCurrency(ingresos),
+        deltaPct: tileDeltas?.ingresosPct ?? null,
+      },
+      {
+        icon: "trending",
+        label: "Ganancia estimada",
+        value: formatCurrency(gananciaEstimada),
+        deltaPct: tileDeltas?.gananciaPct ?? null,
+      },
+      {
+        icon: "chart",
+        label: "Total de ventas",
+        value: String(totalVentas),
+        deltaPct: tileDeltas?.ventasPct ?? null,
+      },
+      {
+        icon: "receipt",
+        label: "Ticket promedio",
+        value: formatCurrency(ticketPromedio),
+        deltaPct: tileDeltas?.ticketPct ?? null,
+      },
     ],
     revenueChart,
     revenueChartIsHourly: groupBy === "hour",
