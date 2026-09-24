@@ -31,12 +31,23 @@ function IdRow({ label, value }: { label: string; value: string }) {
 }
 
 // Para soporte técnico: poder identificar sin ambigüedad a qué usuario y a
-// qué negocio se refiere alguien que escribe pidiendo ayuda.
-export function AccountIds({ userId, orgId }: { userId: string; orgId: string }) {
+// qué negocio se refiere alguien que escribe pidiendo ayuda. El número de
+// negocio es el que conviene dictar/tipear a mano; los UUID completos son
+// para cuando soporte necesita buscar algo puntual en la base.
+export function AccountIds({
+  userId,
+  orgId,
+  orgNumber,
+}: {
+  userId: string;
+  orgId: string;
+  orgNumber: number;
+}) {
   return (
     <div className="space-y-3 border-t border-border pt-4">
-      <IdRow label="ID de usuario" value={userId} />
-      <IdRow label="ID de negocio" value={orgId} />
+      <IdRow label="Negocio N°" value={String(orgNumber)} />
+      <IdRow label="ID de usuario (completo)" value={userId} />
+      <IdRow label="ID de negocio (completo)" value={orgId} />
     </div>
   );
 }

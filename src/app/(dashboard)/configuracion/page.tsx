@@ -51,7 +51,7 @@ export default async function ConfiguracionPage() {
           <div className="flex flex-wrap gap-2 border-t border-border pt-4">
             <Badge tone="accent">{businessType?.label ?? "Otro"}</Badge>
             <Badge>Moneda: {organization.currency}</Badge>
-            <Badge>ID: #{organization.id.slice(0, 5)}</Badge>
+            <Badge>Negocio N° {organization.org_number}</Badge>
           </div>
 
           <AutoInvoiceToggle initialEnabled={organization.auto_invoice_by_payment} />
@@ -76,7 +76,7 @@ export default async function ConfiguracionPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-foreground">{email}</p>
-          <AccountIds userId={userId} orgId={organization.id} />
+          <AccountIds userId={userId} orgId={organization.id} orgNumber={organization.org_number} />
         </CardContent>
       </Card>
 

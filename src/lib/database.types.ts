@@ -18,6 +18,7 @@ export interface Database {
           currency: string;
           phone: string | null;
           auto_invoice_by_payment: boolean;
+          org_number: number;
           created_at: string;
         };
         Insert: {
@@ -28,6 +29,7 @@ export interface Database {
           currency?: string;
           phone?: string | null;
           auto_invoice_by_payment?: boolean;
+          org_number?: number;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["organizations"]["Insert"]>;
