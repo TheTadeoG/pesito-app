@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Banknote } from "lucide-react";
 import { navSections } from "@/lib/nav";
 import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
+import { LogoIcon } from "@/components/marketing/logo-icon";
 import { VenderCard } from "@/components/dashboard/vender-card";
 
 interface SidebarProps {
@@ -27,9 +27,7 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
       <div className="flex h-16 items-center gap-2 border-b border-border px-5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Banknote className="h-5 w-5" />
-        </span>
+        <LogoIcon />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">{orgName}</p>
           <p className="flex min-w-0 items-baseline gap-1 text-xs text-muted-foreground">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { Banknote } from "lucide-react";
+import { LogoIcon } from "@/components/marketing/logo-icon";
 import { Wordmark } from "@/components/marketing/wordmark";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,9 +18,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
       <Link href="/" className="mb-8 flex items-center gap-2 font-semibold text-foreground">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Banknote className="h-5 w-5" />
-        </span>
+        <LogoIcon />
         <Wordmark className="text-lg" />
       </Link>
       <div className="w-full max-w-sm">{children}</div>

@@ -61,6 +61,7 @@
   --color-sidebar-active-foreground: var(--color-sidebar-active-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-fredoka: var(--font-fredoka);
   --radius-card: 1rem;
 }
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fredoka, Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { siteUrl } from "@/lib/utils";
 import { ScrollToTopOnNavigate } from "@/components/scroll-to-top-on-navigate";
@@ -13,6 +13,14 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Sólo para la marca (el wordmark "pesito"), no para el resto de la UI —
+// ver Wordmark en components/marketing/wordmark.tsx.
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  weight: "700",
   subsets: ["latin"],
 });
 
@@ -66,7 +74,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} h-full antialiased`}
     >
       <head>
         <script

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Banknote, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { navSections } from "@/lib/nav";
+import { LogoIcon } from "@/components/marketing/logo-icon";
 import { cn } from "@/lib/utils";
 
 export function MobileNav({ orgName }: { orgName: string }) {
@@ -32,9 +33,7 @@ export function MobileNav({ orgName }: { orgName: string }) {
           <div className="relative flex h-full w-72 flex-col bg-sidebar shadow-xl">
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <span className="flex items-center gap-2 font-semibold text-foreground">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Banknote className="h-4 w-4" />
-                </span>
+                <LogoIcon className="h-8 w-8" />
                 {orgName}
               </span>
               <button

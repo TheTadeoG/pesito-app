@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote } from "lucide-react";
+import { LogoIcon } from "@/components/marketing/logo-icon";
 import { Wordmark } from "@/components/marketing/wordmark";
 
 const columns: {
@@ -72,9 +72,7 @@ export function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.1fr_repeat(5,1fr)]">
           <div>
             <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Banknote className="h-4 w-4" />
-              </span>
+              <LogoIcon className="h-8 w-8" />
               <Wordmark />
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">

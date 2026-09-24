@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Banknote, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnchorLink } from "@/components/marketing/anchor-link";
+import { LogoIcon } from "@/components/marketing/logo-icon";
 import { Wordmark } from "@/components/marketing/wordmark";
 import { InfoMenu } from "@/components/marketing/info-menu";
 
@@ -21,9 +22,7 @@ export function Navbar() {
           href="/"
           className="flex shrink-0 items-center gap-2 font-semibold text-foreground"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Banknote className="h-5 w-5" />
-          </span>
+          <LogoIcon />
           <Wordmark className="text-lg" />
         </Link>
 
