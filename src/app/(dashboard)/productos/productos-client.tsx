@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle,
   Bell,
   ChevronDown,
   ChevronUp,
@@ -229,7 +228,8 @@ export function ProductosClient({
     (supplierFilter ? 1 : 0) +
     (activeFilter !== "all" ? 1 : 0) +
     (noBarcodeOnly ? 1 : 0) +
-    (noCostOnly ? 1 : 0);
+    (noCostOnly ? 1 : 0) +
+    (lowStockOnly ? 1 : 0);
 
   function getSortValue(p: Product, key: SortKey): string | number {
     switch (key) {
@@ -332,21 +332,6 @@ export function ProductosClient({
           </Select>
           <button
             type="button"
-            onClick={() => setLowStockOnly((v) => !v)}
-            aria-pressed={lowStockOnly}
-            className={cn(
-              "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-sm font-medium transition-colors",
-              lowStockOnly
-                ? "border-danger/40 bg-danger-bg text-danger"
-                : "border-border bg-card text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <AlertTriangle className="h-4 w-4" />
-            Stock bajo
-            {lowStockCount > 0 && <span className="font-semibold">({lowStockCount})</span>}
-          </button>
-          <button
-            type="button"
             onClick={() => setAlertsOpen(true)}
             title="Alertas: stock bajo y productos vendiendo a pérdida"
             className={cn(
@@ -397,6 +382,7 @@ export function ProductosClient({
                       setActiveFilter("all");
                       setNoBarcodeOnly(false);
                       setNoCostOnly(false);
+                      setLowStockOnly(false);
                     }}
                     className="text-xs font-medium text-primary hover:underline"
                   >
@@ -435,6 +421,18 @@ export function ProductosClient({
               </div>
 
               <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
+                <span className="text-foreground">
+                  Stock bajo
+                  {lowStockCount > 0 && ` (${lowStockCount})`}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={lowStockOnly}
+                  onChange={(e) => setLowStockOnly(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+              </label>
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
                 <span className="text-foreground">Sin código de barras</span>
                 <input
                   type="checkbox"
@@ -467,7 +465,13 @@ export function ProductosClient({
             <p className="px-5 py-14 text-center text-sm text-muted-foreground">
               {products.length === 0
                 ? "Todavía no cargaste productos. Creá el primero."
-                : lowStockOnly && !query.trim() && !brandFilter && extraFilterCount === 0
+                : lowStockOnly &&
+                    !query.trim() &&
+                    !brandFilter &&
+                    !supplierFilter &&
+                    activeFilter === "all" &&
+                    !noBarcodeOnly &&
+                    !noCostOnly
                   ? "Ningún producto está por debajo de su stock mínimo."
                   : "No encontramos productos con esos filtros."}
             </p>
