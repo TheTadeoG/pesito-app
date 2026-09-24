@@ -5,6 +5,13 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type DialogSize = "md" | "lg";
+
+const sizeClasses: Record<DialogSize, string> = {
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+};
+
 interface DialogProps {
   open: boolean;
   onClose: () => void;
@@ -12,9 +19,18 @@ interface DialogProps {
   description?: string;
   children: ReactNode;
   className?: string;
+  size?: DialogSize;
 }
 
-export function Dialog({ open, onClose, title, description, children, className }: DialogProps) {
+export function Dialog({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  className,
+  size = "md",
+}: DialogProps) {
   // Portal a document.body: si no, el fondo semitransparente queda anidado
   // adentro del árbol de quien abre el diálogo (ej. el sidebar), y algunos
   // navegadores pintan un header con "sticky" + blur por encima igual,
@@ -28,7 +44,8 @@ export function Dialog({ open, onClose, title, description, children, className 
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div
         className={cn(
-          "relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-card border border-border bg-card p-6 shadow-2xl",
+          "relative max-h-[90vh] w-full overflow-y-auto rounded-card border border-border bg-card p-6 shadow-2xl",
+          sizeClasses[size],
           className
         )}
       >

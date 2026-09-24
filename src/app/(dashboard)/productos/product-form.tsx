@@ -60,9 +60,16 @@ function PriceWithIvaField({
   onChange: (v: string) => void;
   required?: boolean;
 }) {
-  const [showIva, setShowIva] = useState(false);
+  const [showIva, setShowIva] = useState(true);
   const [ivaRate, setIvaRate] = useState("21");
-  const [net, setNet] = useState("");
+  // Al editar un producto ya cargado, "value" trae el precio final desde
+  // el arranque — sin este cálculo inicial, "Sin IVA" quedaría vacío
+  // mientras "Final" ya muestra el precio, como si faltara completar algo.
+  const [net, setNet] = useState(() => {
+    const f = Number(value);
+    if (value.trim() === "" || Number.isNaN(f)) return "";
+    return String(round2(f / (1 + 21 / 100)));
+  });
 
   function recalcFromNet(nextNet: string) {
     setNet(nextNet);
@@ -369,6 +376,7 @@ export function ProductForm({
       onClose={resetAndClose}
       title={isEdit ? "Editar producto" : "Nuevo producto"}
       description={isEdit ? product?.name : "Sumá un producto a tu catálogo."}
+      size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex items-start gap-3">
@@ -552,7 +560,7 @@ export function ProductForm({
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label htmlFor="p-stock">
+            <Label htmlFor="p-stock" className="flex min-h-9 items-end">
               {initialStockAsPurchase ? "Cantidad a recibir" : "Stock inicial (opcional)"}
             </Label>
             <Input
@@ -565,7 +573,9 @@ export function ProductForm({
             />
           </div>
           <div>
-            <Label htmlFor="p-min">Stock mínimo (opcional)</Label>
+            <Label htmlFor="p-min" className="flex min-h-9 items-end">
+              Stock mínimo (opcional)
+            </Label>
             <Input
               id="p-min"
               type="number"
@@ -575,7 +585,9 @@ export function ProductForm({
             />
           </div>
           <div>
-            <Label htmlFor="p-unit">Cómo lo vendés</Label>
+            <Label htmlFor="p-unit" className="flex min-h-9 items-end">
+              Cómo lo vendés
+            </Label>
             <Select id="p-unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
               {units.map((u) => (
                 <option key={u.value} value={u.value}>
