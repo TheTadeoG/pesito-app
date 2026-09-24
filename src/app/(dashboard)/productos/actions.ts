@@ -47,6 +47,14 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     return { error: "El producto necesita un nombre." };
   }
 
+  if (input.stock < 0) {
+    return { error: "El stock inicial no puede ser negativo." };
+  }
+
+  if (input.minStock < 0) {
+    return { error: "El stock mínimo no puede ser negativo." };
+  }
+
   const payload = {
     org_id: organization.id,
     name: input.name.trim(),

@@ -567,6 +567,7 @@ export function ProductForm({
               id="p-stock"
               type="number"
               step="0.01"
+              min={0}
               value={stock}
               onChange={(e) => setStock(e.target.value)}
               disabled={isEdit}
@@ -580,6 +581,7 @@ export function ProductForm({
               id="p-min"
               type="number"
               step="0.01"
+              min={0}
               value={minStock}
               onChange={(e) => setMinStock(e.target.value)}
             />
