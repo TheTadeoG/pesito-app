@@ -26,14 +26,14 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: 
 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
-      <div className="flex h-16 items-center gap-2 border-b border-border px-5">
-        <Wordmark className="text-xl" />
-        <div className="min-w-0 border-l border-border pl-2.5">
+      <div className="flex items-start gap-2 border-b border-border px-5 py-4">
+        <Wordmark className="mt-0.5 shrink-0 text-xl" />
+        <div className="min-w-0 space-y-0.5 border-l border-border pl-2.5">
           <p className="truncate text-sm font-semibold text-foreground">{orgName}</p>
-          <p className="flex min-w-0 items-baseline gap-1 text-xs text-muted-foreground">
-            {memberName && <span className="truncate">{memberName}</span>}
-            <span className="shrink-0">{memberName ? `· ${roleLabel}` : roleLabel}</span>
-          </p>
+          {memberName && (
+            <p className="truncate text-xs text-muted-foreground">{memberName}</p>
+          )}
+          <p className="text-xs text-muted-foreground">{roleLabel}</p>
         </div>
       </div>
 
