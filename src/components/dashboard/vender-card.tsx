@@ -46,7 +46,7 @@ export function VenderCard({ cashRegister }: VenderCardProps) {
         <button
           type="button"
           onClick={() => setOpenDialog(true)}
-          className="block w-full rounded-xl border border-border bg-background/60 p-3.5 text-left transition-colors hover:border-primary/40 hover:bg-muted/60"
+          className="block w-full rounded-xl border border-border bg-background/60 p-3.5 text-left transition-colors hover:border-primary/50 hover:bg-primary/10"
         >
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
