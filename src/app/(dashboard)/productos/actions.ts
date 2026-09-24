@@ -271,25 +271,33 @@ export interface BulkPriceIncreaseResult extends ActionState {
   updatedCount?: number;
 }
 
-export async function bulkIncreasePriceBySupplier(
-  supplierId: string,
+// Agrupa por proveedor por defecto o por marca (uno de los dos) — usado
+// tanto para "Aumentar precios" como para "Aumentar costos".
+export async function bulkIncreaseField(
+  field: "price" | "cost",
+  groupBy: { supplierId: string } | { brand: string },
   mode: "percent" | "fixed",
   value: number
 ): Promise<BulkPriceIncreaseResult> {
-  if (!supplierId) return { error: "Elegí un proveedor." };
   if (!value || value <= 0) return { error: "Ingresá un valor mayor a cero." };
 
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
 
-  const { data, error } = await supabase.rpc("bulk_increase_price_by_supplier", {
+  const { data, error } = await supabase.rpc("bulk_increase_field", {
     p_org_id: organization.id,
-    p_supplier_id: supplierId,
+    p_field: field,
+    p_supplier_id: "supplierId" in groupBy ? groupBy.supplierId : null,
+    p_brand: "brand" in groupBy ? groupBy.brand : null,
     p_percent: mode === "percent" ? value : null,
     p_fixed_amount: mode === "fixed" ? value : null,
   });
 
-  if (error) return { error: "No pudimos actualizar los precios." };
+  if (error) {
+    return {
+      error: field === "price" ? "No pudimos actualizar los precios." : "No pudimos actualizar los costos.",
+    };
+  }
 
   revalidatePath("/productos");
   revalidatePath("/pos");

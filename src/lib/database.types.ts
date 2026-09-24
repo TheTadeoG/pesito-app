@@ -139,6 +139,28 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["product_price_history"]["Insert"]>;
         Relationships: [];
       };
+      product_cost_history: {
+        Row: {
+          id: string;
+          org_id: string;
+          product_id: string;
+          old_cost: number;
+          new_cost: number;
+          changed_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          product_id: string;
+          old_cost: number;
+          new_cost: number;
+          changed_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["product_cost_history"]["Insert"]>;
+        Relationships: [];
+      };
       customers: {
         Row: {
           id: string;
@@ -684,6 +706,17 @@ export interface Database {
         Args: {
           p_org_id: string;
           p_supplier_id: string;
+          p_percent?: number | null;
+          p_fixed_amount?: number | null;
+        };
+        Returns: number;
+      };
+      bulk_increase_field: {
+        Args: {
+          p_org_id: string;
+          p_field: string;
+          p_supplier_id?: string | null;
+          p_brand?: string | null;
           p_percent?: number | null;
           p_fixed_amount?: number | null;
         };
