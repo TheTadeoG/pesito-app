@@ -226,6 +226,7 @@ export function PosClient({
   const [customerHighlightedIndex, setCustomerHighlightedIndex] = useState(-1);
   const lastEnterAt = useRef<number>(0);
   const searchRef = useRef<HTMLInputElement>(null);
+  const customerPanelRef = useRef<HTMLDivElement>(null);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -735,6 +736,25 @@ export function PosClient({
     total,
   ]);
 
+  // Tocar afuera del selector de cliente lo cierra, igual que "Cancelar" —
+  // si no, el buscador queda desplegado tapando el resto del panel. Se
+  // ignora mientras el diálogo de "cliente nuevo" está abierto, porque ese
+  // formulario vive fuera de este contenedor y ya tiene su propio backdrop.
+  useEffect(() => {
+    if (!showCustomerSearch) return;
+
+    function handlePointerDown(e: MouseEvent) {
+      if (showNewCustomer) return;
+      if (customerPanelRef.current?.contains(e.target as Node)) return;
+      setCustomerQuery("");
+      setBrowseCustomers(false);
+      setShowCustomerSearch(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [showCustomerSearch, showNewCustomer]);
+
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
       if (results.length === 0) return;
@@ -1073,7 +1093,7 @@ export function PosClient({
       </div>
 
       <div className="flex flex-col overflow-hidden rounded-card border border-border bg-card xl:sticky xl:top-6 xl:self-start">
-        <div className="p-4">
+        <div ref={customerPanelRef} className="p-4">
             {!showCustomerSearch ? (
               <button
                 type="button"

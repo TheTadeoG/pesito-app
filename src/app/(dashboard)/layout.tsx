@@ -60,10 +60,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     daysUntil: d.daysUntil,
   }));
 
-  const memberLabel = `Empresa #${organization.id.slice(0, 5)} · ${roleLabels[membership.role] ?? membership.role}`;
   const greetingNameRaw =
     firstName || (membership.username ? membership.username.split("#")[0] : null) || null;
   const greetingName = greetingNameRaw ? capitalizeWords(greetingNameRaw) : null;
+  const roleLabel = roleLabels[membership.role] ?? membership.role;
+  const memberDisplayName = greetingName || membership.username || email || null;
+  const memberLabel = memberDisplayName ? `${memberDisplayName} · ${roleLabel}` : roleLabel;
 
   return (
     <ToastProvider>
