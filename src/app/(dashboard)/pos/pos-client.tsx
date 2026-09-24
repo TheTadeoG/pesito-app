@@ -334,24 +334,6 @@ export function PosClient({
     }
   }
 
-  // Sin funcionalidad nueva, sólo un detalle divertido: el numerito "pega
-  // un salto" y se va tiñendo de verde a medida que sumás unidades, hasta
-  // "combo" a partir de la 5ta — ahí se queda, no sigue escalando.
-  function qtyTintClass(quantity: number) {
-    switch (Math.min(quantity, 5)) {
-      case 1:
-        return "";
-      case 2:
-        return "bg-primary/10 text-primary";
-      case 3:
-        return "bg-primary/20 text-primary";
-      case 4:
-        return "bg-primary/30 text-primary";
-      default:
-        return "bg-primary text-primary-foreground shadow-sm shadow-primary/30";
-    }
-  }
-
   function removeItem(index: number) {
     setCart((current) => current.filter((_, i) => i !== index));
   }
@@ -1064,10 +1046,7 @@ export function PosClient({
                           </button>
                           <span
                             key={qtyBump[`p-${item.product.id}`] ?? 0}
-                            className={cn(
-                              "flex h-6 w-6 animate-qty-bump items-center justify-center rounded-md text-center text-sm font-semibold",
-                              qtyTintClass(item.quantity)
-                            )}
+                            className="flex h-6 w-6 animate-qty-bump items-center justify-center rounded-md text-center text-sm font-semibold text-foreground"
                           >
                             {item.quantity}
                           </span>
@@ -1216,11 +1195,16 @@ export function PosClient({
             )}
         </div>
 
-        <div className="px-4">
+        <div className="border-t border-border px-4 py-3">
           <button
             type="button"
             onClick={() => setShowExtras((v) => !v)}
-            className="flex w-full items-center gap-2 border-t border-border py-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
+              showExtras
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border text-foreground hover:bg-muted"
+            )}
           >
             <Percent className="h-3.5 w-3.5" />
             {showExtras ? "Ocultar descuento/recargo" : "Agregar descuento o recargo"}
@@ -1307,18 +1291,18 @@ export function PosClient({
           )}
         </div>
 
-        <div className="mt-auto space-y-3 bg-accent p-4">
+        <div className="mt-auto space-y-3 border-t border-border bg-muted/40 p-4">
           <div className="flex items-center justify-between">
-            <Badge tone="accent">{itemCount} items</Badge>
+            <Badge>{itemCount} items</Badge>
           </div>
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between">
-              <span className="text-accent-foreground/70">Subtotal:</span>
-              <span className="font-medium text-accent-foreground">{formatCurrency(subtotal)}</span>
+              <span className="text-muted-foreground">Subtotal:</span>
+              <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between">
-                <span className="text-accent-foreground/70">
+                <span className="text-muted-foreground">
                   Descuento{discountMode === "percent" ? ` (${discountInput}%)` : ""}:
                 </span>
                 <span className="font-medium text-danger">-{formatCurrency(discount)}</span>
@@ -1326,16 +1310,16 @@ export function PosClient({
             )}
             {surcharge > 0 && (
               <div className="flex justify-between">
-                <span className="text-accent-foreground/70">
+                <span className="text-muted-foreground">
                   Recargo{surchargeMode === "percent" ? ` (${surchargeInput}%)` : ""}:
                 </span>
                 <span className="font-medium text-warning">+{formatCurrency(surcharge)}</span>
               </div>
             )}
           </div>
-          <div className="flex items-baseline justify-between border-t border-accent-foreground/15 pt-2.5">
-            <span className="text-sm font-semibold text-accent-foreground">Total</span>
-            <span className="text-2xl font-bold text-accent-foreground">{formatCurrency(total)}</span>
+          <div className="flex items-baseline justify-between border-t border-border pt-2.5">
+            <span className="text-sm font-semibold text-foreground">Total</span>
+            <span className="text-2xl font-bold text-primary">{formatCurrency(total)}</span>
           </div>
 
           {error && (
