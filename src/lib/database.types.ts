@@ -431,6 +431,26 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
         Relationships: [];
       };
+      plan_history: {
+        Row: {
+          id: string;
+          org_id: string;
+          from_plan: "gratis" | "esencial" | "pro" | "ia";
+          to_plan: "gratis" | "esencial" | "pro" | "ia";
+          changed_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          from_plan: "gratis" | "esencial" | "pro" | "ia";
+          to_plan: "gratis" | "esencial" | "pro" | "ia";
+          changed_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["plan_history"]["Insert"]>;
+        Relationships: [];
+      };
       landing_stats: {
         Row: {
           id: string;

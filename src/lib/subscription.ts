@@ -51,6 +51,32 @@ export async function getSubscription(
   };
 }
 
+export interface PlanHistoryEntry {
+  id: string;
+  fromPlan: Plan;
+  toPlan: Plan;
+  createdAt: string;
+}
+
+/** Cambios de plan reales (no de pagos, que no existen sin pasarela conectada). */
+export async function getPlanHistory(
+  supabase: SupabaseClient<Database>,
+  orgId: string
+): Promise<PlanHistoryEntry[]> {
+  const { data } = await supabase
+    .from("plan_history")
+    .select("id, from_plan, to_plan, created_at")
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: false });
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    fromPlan: row.from_plan,
+    toPlan: row.to_plan,
+    createdAt: row.created_at,
+  }));
+}
+
 // El plan gratis, una vez pasada la prueba Pro, queda limitado a esta
 // cantidad de ventas por mes calendario — el resto de los límites por plan
 // se van a ir definiendo más adelante.

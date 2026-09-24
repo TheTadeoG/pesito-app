@@ -10,7 +10,7 @@ import { AccountIds } from "@/app/(dashboard)/configuracion/account-ids";
 import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
 import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
-import { getSubscription, getMonthlySalesCount } from "@/lib/subscription";
+import { getSubscription, getMonthlySalesCount, getPlanHistory } from "@/lib/subscription";
 
 export default async function ConfiguracionPage() {
   const { userId, email, organization } = await requireOrgContext();
@@ -35,10 +35,15 @@ export default async function ConfiguracionPage() {
   const monthlySalesCount = subscription.hasProAccess
     ? null
     : await getMonthlySalesCount(supabase, organization.id);
+  const planHistory = await getPlanHistory(supabase, organization.id);
 
   return (
     <div className="max-w-2xl space-y-6">
-      <SubscriptionSection subscription={subscription} monthlySalesCount={monthlySalesCount} />
+      <SubscriptionSection
+        subscription={subscription}
+        monthlySalesCount={monthlySalesCount}
+        planHistory={planHistory}
+      />
 
       <Card>
         <CardHeader>

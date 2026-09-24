@@ -18,8 +18,15 @@ export interface ActionState {
  * ningún miembro de un negocio pueda subirse su propio plan.
  */
 export async function updateOrgPlan(orgId: string, plan: Plan): Promise<ActionState> {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
   const admin = createAdminClient();
+
+  const { data: current } = await admin
+    .from("organization_subscriptions")
+    .select("plan")
+    .eq("org_id", orgId)
+    .maybeSingle();
+  const previousPlan = current?.plan ?? "gratis";
 
   // Al asignar un plan pago a mano, la prueba de 14 días ya no tiene
   // sentido: se limpia para que no quede una fecha vieja dando vueltas.
@@ -33,6 +40,14 @@ export async function updateOrgPlan(orgId: string, plan: Plan): Promise<ActionSt
     );
 
   if (error) return { error: "No pudimos guardar el cambio de plan." };
+
+  // Historial real (no de pagos, que no existen sin pasarela): queda
+  // para mostrarle al negocio cuándo cambió de plan.
+  if (previousPlan !== plan) {
+    await admin
+      .from("plan_history")
+      .insert({ org_id: orgId, from_plan: previousPlan, to_plan: plan, changed_by: userId });
+  }
 
   revalidatePath("/admin");
   return { success: true };
