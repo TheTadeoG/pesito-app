@@ -73,7 +73,7 @@ export function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
               <LogoIcon className="h-8 w-8" />
-              <Wordmark />
+              <Wordmark className="text-xl" />
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
               Punto de venta, inventario, clientes y caja para el comercio de barrio. Hecho en
