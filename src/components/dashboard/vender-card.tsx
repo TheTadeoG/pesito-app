@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Lock, LockOpen, Settings2 } from "lucide-react";
+import { Banknote, Lock, Settings2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { OpenCajaFormDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
@@ -16,7 +16,7 @@ function elapsed(openedAt: string) {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-interface CajaWidgetProps {
+interface VenderCardProps {
   cashRegister: {
     openedAt: string;
     openingAmount: number;
@@ -24,7 +24,11 @@ interface CajaWidgetProps {
   } | null;
 }
 
-export function CajaWidget({ cashRegister }: CajaWidgetProps) {
+// Bloque destacado arriba del nav: funde el acceso a Punto de Venta con el
+// estado de caja, porque vender es lo que un kiosquero hace todo el día —
+// no compite por atención con el resto del menú como un ítem más. Ver o
+// cerrar la caja en detalle sigue en su propio ítem de nav ("Caja").
+export function VenderCard({ cashRegister }: VenderCardProps) {
   const [time, setTime] = useState(() =>
     cashRegister ? elapsed(cashRegister.openedAt) : "0:00:00"
   );
@@ -36,22 +40,18 @@ export function CajaWidget({ cashRegister }: CajaWidgetProps) {
     return () => clearInterval(id);
   }, [cashRegister]);
 
-  // Con la caja cerrada, tocar acá abre el diálogo directo — no hace
-  // falta pasar primero por /caja para llegar al mismo formulario. Con la
-  // caja abierta, sí tiene sentido ir a /caja: ahí está el detalle real
-  // (efectivo, desglose por medio de pago) para cerrarla o revisarla.
   if (!cashRegister) {
     return (
       <>
         <button
           type="button"
           onClick={() => setOpenDialog(true)}
-          className="block w-full rounded-xl border border-border bg-background/60 p-3 text-left transition-colors hover:border-primary/40"
+          className="block w-full rounded-xl border border-border bg-background/60 p-3.5 text-left transition-colors hover:border-primary/40"
         >
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+            <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-              Mi Caja
+              Vender
             </span>
             <Badge tone="default">Cerrada</Badge>
           </div>
@@ -67,19 +67,21 @@ export function CajaWidget({ cashRegister }: CajaWidgetProps) {
 
   return (
     <Link
-      href="/caja"
-      className="block rounded-xl border border-border bg-background/60 p-3 transition-colors hover:border-primary/40"
+      href="/pos"
+      className="block rounded-xl bg-primary p-3.5 text-primary-foreground shadow-sm shadow-primary/20 transition-colors hover:bg-primary-hover"
     >
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-          <LockOpen className="h-3.5 w-3.5 text-success" />
-          Mi Caja
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <Banknote className="h-4 w-4" />
+          Vender
         </span>
-        <Badge tone="success">Abierta</Badge>
+        <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-semibold text-white">
+          Abierta
+        </span>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">Mi efectivo</p>
-      <p className="text-lg font-bold text-foreground">{formatCurrency(cashRegister.cashTotal)}</p>
-      <p className="mt-1 text-xs text-muted-foreground">Abierta {time}</p>
+      <p className="mt-2 text-xs text-primary-foreground/80">
+        {formatCurrency(cashRegister.cashTotal)} en caja · {time}
+      </p>
     </Link>
   );
 }

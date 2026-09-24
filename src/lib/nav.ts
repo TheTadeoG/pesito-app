@@ -11,6 +11,7 @@ import {
   TrendingDown,
   Users,
   UserCog,
+  Wallet,
 } from "lucide-react";
 
 export interface NavItem {
@@ -32,6 +33,7 @@ export const navSections: NavSection[] = [
     title: "Operación",
     items: [
       { href: "/pos", label: "Punto de Venta", icon: ShoppingCart },
+      { href: "/caja", label: "Caja", icon: Wallet },
       { href: "/compras", label: "Compras", icon: ShoppingBag },
     ],
   },

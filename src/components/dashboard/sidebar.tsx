@@ -6,7 +6,7 @@ import { Banknote } from "lucide-react";
 import { navSections } from "@/lib/nav";
 import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
-import { CajaWidget } from "@/components/dashboard/caja-widget";
+import { VenderCard } from "@/components/dashboard/vender-card";
 
 interface SidebarProps {
   orgName: string;
@@ -35,9 +35,15 @@ export function Sidebar({ orgName, memberLabel, role, cashRegister }: SidebarPro
         </div>
       </div>
 
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+      <div className="p-3">
+        <VenderCard cashRegister={cashRegister} />
+      </div>
+
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-2">
         {navSections.map((section) => {
-          const items = section.items.filter((item) => !item.adminOnly || canSeeAdminItems);
+          const items = section.items.filter(
+            (item) => item.href !== "/pos" && (!item.adminOnly || canSeeAdminItems)
+          );
           if (items.length === 0) return null;
           return (
             <div key={section.title}>
@@ -75,10 +81,6 @@ export function Sidebar({ orgName, memberLabel, role, cashRegister }: SidebarPro
           );
         })}
       </nav>
-
-      <div className="border-t border-border p-3">
-        <CajaWidget cashRegister={cashRegister} />
-      </div>
     </aside>
   );
 }
