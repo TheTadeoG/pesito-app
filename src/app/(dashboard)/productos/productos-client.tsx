@@ -7,6 +7,8 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
+  Columns3,
+  Filter,
   History,
   ImageIcon,
   MoreVertical,
@@ -14,7 +16,6 @@ import {
   Plus,
   Receipt,
   Search,
-  Settings2,
   SlidersHorizontal,
   Trash2,
   TrendingUp,
@@ -26,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuItem, FilterPanel } from "@/components/ui/dropdown-menu";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Brand, Product, Supplier } from "@/lib/types";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
@@ -347,10 +348,90 @@ export function ProductosClient({
             Aumentar costos
           </Button>
           <Button variant="outline" onClick={() => setShowColumns(true)}>
-            <Settings2 className="h-4 w-4" />
-            Filtros
-            {extraFilterCount > 0 && <span className="font-semibold">({extraFilterCount})</span>}
+            <Columns3 className="h-4 w-4" />
+            Columnas
           </Button>
+          <FilterPanel
+            trigger={
+              <Button variant="outline">
+                <Filter className="h-4 w-4" />
+                Filtros
+                {extraFilterCount > 0 && (
+                  <span className="font-semibold">({extraFilterCount})</span>
+                )}
+              </Button>
+            }
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Filtrar por
+                </p>
+                {extraFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSupplierFilter("");
+                      setActiveFilter("all");
+                      setNoBarcodeOnly(false);
+                      setNoCostOnly(false);
+                    }}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Limpiar filtros
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="pf-supplier">Proveedor</Label>
+                <Select
+                  id="pf-supplier"
+                  value={supplierFilter}
+                  onChange={(e) => setSupplierFilter(e.target.value)}
+                >
+                  <option value="">Todos los proveedores</option>
+                  {localSuppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="pf-active">Estado</Label>
+                <Select
+                  id="pf-active"
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
+                >
+                  <option value="all">Todos</option>
+                  <option value="active">Sólo activos</option>
+                  <option value="inactive">Sólo inactivos</option>
+                </Select>
+              </div>
+
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
+                <span className="text-foreground">Sin código de barras</span>
+                <input
+                  type="checkbox"
+                  checked={noBarcodeOnly}
+                  onChange={(e) => setNoBarcodeOnly(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+              </label>
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
+                <span className="text-foreground">Sin costo cargado</span>
+                <input
+                  type="checkbox"
+                  checked={noCostOnly}
+                  onChange={(e) => setNoCostOnly(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+              </label>
+            </div>
+          </FilterPanel>
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Nuevo producto
@@ -647,99 +728,24 @@ export function ProductosClient({
       <Dialog
         open={showColumns}
         onClose={() => setShowColumns(false)}
-        title="Filtros"
-        description="Filtrá la tabla y elegí qué columnas ver. Se guarda en este dispositivo."
+        title="Columnas de la tabla"
+        description="Elegí qué columnas ver. Se guarda en este dispositivo."
       >
-        <div className="space-y-5">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Filtrar por
-              </p>
-              {extraFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSupplierFilter("");
-                    setActiveFilter("all");
-                    setNoBarcodeOnly(false);
-                    setNoCostOnly(false);
-                  }}
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  Limpiar filtros
-                </button>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="pf-supplier">Proveedor</Label>
-              <Select
-                id="pf-supplier"
-                value={supplierFilter}
-                onChange={(e) => setSupplierFilter(e.target.value)}
-              >
-                <option value="">Todos los proveedores</option>
-                {localSuppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="pf-active">Estado</Label>
-              <Select
-                id="pf-active"
-                value={activeFilter}
-                onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
-              >
-                <option value="all">Todos</option>
-                <option value="active">Sólo activos</option>
-                <option value="inactive">Sólo inactivos</option>
-              </Select>
-            </div>
-
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
-              <span className="text-foreground">Sin código de barras</span>
+        <div className="space-y-2">
+          {COLUMNS.map((col) => (
+            <label
+              key={col.id}
+              className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm"
+            >
+              <span className="text-foreground">{col.label}</span>
               <input
                 type="checkbox"
-                checked={noBarcodeOnly}
-                onChange={(e) => setNoBarcodeOnly(e.target.checked)}
+                checked={showColumn(col.id)}
+                onChange={() => toggleColumn(col.id)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
-              <span className="text-foreground">Sin costo cargado</span>
-              <input
-                type="checkbox"
-                checked={noCostOnly}
-                onChange={(e) => setNoCostOnly(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-            </label>
-          </div>
-
-          <div className="space-y-2 border-t border-border pt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Columnas visibles
-            </p>
-            {COLUMNS.map((col) => (
-              <label
-                key={col.id}
-                className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm"
-              >
-                <span className="text-foreground">{col.label}</span>
-                <input
-                  type="checkbox"
-                  checked={showColumn(col.id)}
-                  onChange={() => toggleColumn(col.id)}
-                  className="h-4 w-4 accent-primary"
-                />
-              </label>
-            ))}
-          </div>
+          ))}
         </div>
       </Dialog>
     </div>

@@ -40,6 +40,39 @@ export function DropdownMenu({ trigger, align = "right", children }: DropdownMen
   );
 }
 
+// Como DropdownMenu, pero pensado para alojar controles interactivos
+// (selects, checkboxes) en vez de una lista de acciones: a diferencia de
+// DropdownMenu, un click adentro NO lo cierra — sólo clickear afuera.
+export function FilterPanel({ trigger, align = "right", children }: DropdownMenuProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <div onClick={() => setOpen((v) => !v)}>{trigger}</div>
+      {open && (
+        <div
+          className={cn(
+            "absolute z-30 mt-1 max-h-[70vh] w-80 overflow-y-auto rounded-xl border border-border bg-card p-4 shadow-lg",
+            align === "right" ? "right-0" : "left-0"
+          )}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DropdownMenuItem({
   onClick,
   children,
