@@ -37,7 +37,7 @@ function OpenCajaFormContent({ onClose }: { onClose: () => void }) {
     showSuccess("¡Caja abierta!", `Monto inicial: ${formatCurrency(Number(amount) || 0)}`);
     setAmount("");
     onClose();
-    router.refresh();
+    router.push("/pos");
   }
 
   async function handleSubmit(e: React.FormEvent) {
