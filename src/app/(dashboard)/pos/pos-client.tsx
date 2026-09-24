@@ -885,33 +885,26 @@ export function PosClient({
               <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
                 <button
                   type="button"
-                  onClick={() => searchRef.current?.focus()}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-foreground transition-colors hover:bg-card sm:px-3"
-                >
-                  <Search className="h-4 w-4 text-primary" />
-                  <span className="hidden sm:inline">Consultar Precio</span>
-                </button>
-                <button
-                  type="button"
                   disabled
-                  title="Próximamente"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors disabled:opacity-50 sm:px-3"
+                  title="Balanza (próximamente)"
+                  aria-label="Balanza (próximamente)"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors disabled:opacity-50"
                 >
                   <Scale className="h-4 w-4" />
-                  <span className="hidden sm:inline">Balanza</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowManualAmount((v) => !v)}
+                  title="Agregar monto manual"
+                  aria-label="Agregar monto manual"
                   className={cn(
-                    "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors sm:px-3",
+                    "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
                     showManualAmount
                       ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                       : "text-foreground hover:bg-card"
                   )}
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Agregar Monto</span>
                 </button>
               </div>
             </div>
