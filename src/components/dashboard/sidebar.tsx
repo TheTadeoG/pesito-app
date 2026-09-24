@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { navSections } from "@/lib/nav";
+import { usePathname, useSearchParams } from "next/navigation";
+import { navSections, isNavItemActive } from "@/lib/nav";
 import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/marketing/wordmark";
@@ -22,6 +22,8 @@ interface SidebarProps {
 
 export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
   const canSeeAdminItems = isOrgAdmin(role);
 
   return (
@@ -54,7 +56,7 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: 
               </p>
               <div className="mt-2 space-y-0.5">
                 {items.map((item) => {
-                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  const active = isNavItemActive(item, pathname, tabParam);
                   return (
                     <Link
                       key={item.href}

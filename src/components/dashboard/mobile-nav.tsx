@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { navSections } from "@/lib/nav";
+import { navSections, isNavItemActive } from "@/lib/nav";
 import { Wordmark } from "@/components/marketing/wordmark";
 import { cn } from "@/lib/utils";
 
 export function MobileNav({ orgName }: { orgName: string }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
 
   return (
     <>
@@ -56,8 +58,7 @@ export function MobileNav({ orgName }: { orgName: string }) {
                   </p>
                   <div className="mt-2 space-y-0.5">
                     {section.items.map((item) => {
-                      const active =
-                        pathname === item.href || pathname.startsWith(`${item.href}/`);
+                      const active = isNavItemActive(item, pathname, tabParam);
                       return (
                         <Link
                           key={item.href}
