@@ -277,16 +277,27 @@ export function PosClient({
   const mixedRemaining = total - mixedTotalAssigned;
   const mixedFiadoAmount = Number(mixedAmounts.fiado) || 0;
 
+  function warnNoStock(product: ProductLite) {
+    showWarning("Sin stock", `No se pudo agregar "${product.name}" porque no tiene stock.`);
+  }
+
+  function warnAllInCart(product: ProductLite) {
+    showWarning(
+      "Ya está todo en el carrito",
+      `Ya agregamos todas las unidades en stock de "${product.name}".`
+    );
+  }
+
   function addProduct(product: ProductLite) {
     setError(null);
-    let blocked = false;
+    let blocked: "no-stock" | "all-in-cart" | null = null;
     setCart((current) => {
       const existing = current.find(
         (item) => item.kind === "product" && item.product.id === product.id
       );
       if (existing && existing.kind === "product") {
         if (existing.quantity + 1 > product.stock) {
-          blocked = true;
+          blocked = "all-in-cart";
           return current;
         }
         return current.map((item) =>
@@ -296,13 +307,17 @@ export function PosClient({
         );
       }
       if (product.stock < 1) {
-        blocked = true;
+        blocked = "no-stock";
         return current;
       }
       return [...current, { kind: "product", product, quantity: 1 }];
     });
-    if (blocked) {
-      showWarning("No hay más stock", `Sólo quedan ${product.stock} unidades de "${product.name}".`);
+    if (blocked === "no-stock") {
+      warnNoStock(product);
+      return;
+    }
+    if (blocked === "all-in-cart") {
+      warnAllInCart(product);
       return;
     }
     setQuery("");
@@ -328,8 +343,7 @@ export function PosClient({
         .filter((item) => item.kind !== "product" || item.quantity > 0)
     );
     if (blocked) {
-      const product: ProductLite = blocked;
-      showWarning("No hay más stock", `Sólo quedan ${product.stock} unidades de "${product.name}".`);
+      warnAllInCart(blocked);
     }
     if (bumpedKey) {
       const key = bumpedKey;
