@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { navSections } from "@/lib/nav";
 import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
-import { LogoIcon } from "@/components/marketing/logo-icon";
+import { Wordmark } from "@/components/marketing/wordmark";
 import { VenderCard } from "@/components/dashboard/vender-card";
 
 interface SidebarProps {
@@ -27,8 +27,8 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
       <div className="flex h-16 items-center gap-2 border-b border-border px-5">
-        <LogoIcon />
-        <div className="min-w-0">
+        <Wordmark className="text-xl" />
+        <div className="min-w-0 border-l border-border pl-2.5">
           <p className="truncate text-sm font-semibold text-foreground">{orgName}</p>
           <p className="flex min-w-0 items-baseline gap-1 text-xs text-muted-foreground">
             {memberName && <span className="truncate">{memberName}</span>}

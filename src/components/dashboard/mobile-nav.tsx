@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { navSections } from "@/lib/nav";
-import { LogoIcon } from "@/components/marketing/logo-icon";
+import { Wordmark } from "@/components/marketing/wordmark";
 import { cn } from "@/lib/utils";
 
 export function MobileNav({ orgName }: { orgName: string }) {
@@ -33,8 +33,10 @@ export function MobileNav({ orgName }: { orgName: string }) {
           <div className="relative flex h-full w-72 flex-col bg-sidebar shadow-xl">
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <span className="flex items-center gap-2 font-semibold text-foreground">
-                <LogoIcon className="h-8 w-8" />
-                {orgName}
+                <Wordmark className="text-lg" />
+                <span className="truncate border-l border-border pl-2 text-sm font-medium text-muted-foreground">
+                  {orgName}
+                </span>
               </span>
               <button
                 type="button"
