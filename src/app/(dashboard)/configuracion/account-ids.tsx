@@ -10,7 +10,7 @@ function IdRow({ label, value }: { label: string; value: string }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(value);
-      showSuccess("¡Copiado!");
+      showSuccess(`¡${label} copiado!`);
     } catch {
       // clipboard API bloqueada (permisos/http): no hay mucho más que hacer.
     }

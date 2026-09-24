@@ -18,6 +18,7 @@ export function InvitationSignupForm({ code }: { code: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdUsername, setCreatedUsername] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,6 +41,8 @@ export function InvitationSignupForm({ code }: { code: string }) {
     if (!createdUsername) return;
     try {
       await navigator.clipboard.writeText(createdUsername);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
     } catch {
       // clipboard API bloqueada: no hay mucho más que hacer.
     }
@@ -58,7 +61,7 @@ export function InvitationSignupForm({ code }: { code: string }) {
         </div>
         <Button type="button" variant="outline" className="w-full" onClick={copyUsername}>
           <Copy className="h-3.5 w-3.5" />
-          Copiar usuario
+          {copied ? "¡Usuario copiado!" : "Copiar usuario"}
         </Button>
         <Link
           href="/pos"

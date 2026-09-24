@@ -442,7 +442,8 @@ export function UsuariosClient({
               className="w-full"
               onClick={() =>
                 copyText(
-                  `Usuario: ${directCreated.username}\nContraseña: ${directCreated.password}`
+                  `Usuario: ${directCreated.username}\nContraseña: ${directCreated.password}`,
+                  "¡Usuario y contraseña copiados!"
                 )
               }
             >
@@ -565,7 +566,8 @@ export function UsuariosClient({
                 copyText(
                   editResult.password
                     ? `Usuario: ${editResult.username}\nContraseña: ${editResult.password}`
-                    : `Usuario: ${editResult.username}`
+                    : `Usuario: ${editResult.username}`,
+                  editResult.password ? "¡Usuario y contraseña copiados!" : "¡Usuario copiado!"
                 )
               }
             >
