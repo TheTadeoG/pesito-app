@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { navSections, isNavItemActive } from "@/lib/nav";
 import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: SidebarProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -65,8 +66,12 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: 
                       // apenas se monta el sidebar (todos entran en el
                       // viewport de una) — cada uno dispara el layout del
                       // dashboard (auth + suscripción + caja) de nuevo, aun
-                      // sin que nadie haya clickeado nada.
+                      // sin que nadie haya clickeado nada. En cambio, se
+                      // precarga sólo el que el mouse está tocando (abajo):
+                      // sigue sintiéndose instantáneo al clickear, sin pagar
+                      // por los otros 13 que nadie pidió.
                       prefetch={false}
+                      onMouseEnter={() => router.prefetch(item.href)}
                       className={cn(
                         "flex items-center justify-between rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
                         active
