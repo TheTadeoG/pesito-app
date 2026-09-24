@@ -480,9 +480,13 @@ export function ComprasClient({
 
     showSuccess(
       "¡Compra registrada!",
-      accountAmount > 0
-        ? `${formatCurrency(total)} · ${formatCurrency(accountAmount)} a cuenta corriente`
-        : `${formatCurrency(total)} · ${itemCount} unidades`
+      accountAmount === 0
+        ? `${formatCurrency(total)} · ${itemCount} unidades`
+        : accountAmount === total
+          ? // Si todo quedó a cuenta corriente, mostrar el mismo importe dos
+            // veces no aporta nada — se aclara que fue el total, no una parte.
+            `${formatCurrency(total)} a cuenta corriente · ${itemCount} unidades`
+          : `${formatCurrency(total)} · ${formatCurrency(accountAmount)} a cuenta corriente`
     );
     setCart([]);
     setSupplierId("");
