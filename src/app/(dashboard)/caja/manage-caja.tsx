@@ -136,7 +136,7 @@ export function ManageCaja({
           <p className="text-xs text-muted-foreground">
             Abierta el {formatDateTime(openedAt)} · {openedByLabel}
           </p>
-          <div className="mt-2 flex flex-wrap justify-center gap-2">
+          <div className="mt-2 grid w-full max-w-sm grid-cols-2 gap-2">
             <Button onClick={() => router.push("/pos")}>
               <ShoppingCart className="h-4 w-4" />
               Vender (Enter)
