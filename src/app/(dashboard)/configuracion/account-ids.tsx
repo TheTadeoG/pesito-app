@@ -30,24 +30,14 @@ function IdRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// Para soporte técnico: poder identificar sin ambigüedad a qué usuario y a
-// qué negocio se refiere alguien que escribe pidiendo ayuda. El código de
-// negocio es el que conviene dictar/tipear a mano; los UUID completos son
-// para cuando soporte necesita buscar algo puntual en la base.
-export function AccountIds({
-  userId,
-  orgId,
-  orgCode,
-}: {
-  userId: string;
-  orgId: string;
-  orgCode: string;
-}) {
+// Para soporte técnico: el dato que conviene compartir al pedir ayuda,
+// para identificar sin ambigüedad a qué negocio se refiere. Para
+// identificar a una persona puntual del equipo ya alcanza con su nombre
+// de usuario o email (son únicos en toda la app).
+export function AccountIds({ orgCode }: { orgCode: string }) {
   return (
-    <div className="space-y-3 border-t border-border pt-4">
+    <div className="border-t border-border pt-4">
       <IdRow label="Código de negocio" value={`#${orgCode}`} />
-      <IdRow label="ID de usuario (completo)" value={userId} />
-      <IdRow label="ID de negocio (completo)" value={orgId} />
     </div>
   );
 }

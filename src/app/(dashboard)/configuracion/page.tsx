@@ -76,7 +76,7 @@ export default async function ConfiguracionPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-foreground">{email}</p>
-          <AccountIds userId={userId} orgId={organization.id} orgCode={organization.org_code} />
+          <AccountIds orgCode={organization.org_code} />
         </CardContent>
       </Card>
 
