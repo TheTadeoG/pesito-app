@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
 import { roleLabels } from "@/lib/roles";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
+import { AccountIds } from "@/app/(dashboard)/configuracion/account-ids";
 import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
 import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
@@ -73,8 +74,9 @@ export default async function ConfiguracionPage() {
         <CardHeader>
           <CardTitle>Mi cuenta</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="text-sm text-foreground">{email}</p>
+          <AccountIds userId={userId} orgId={organization.id} />
         </CardContent>
       </Card>
 
