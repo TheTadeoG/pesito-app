@@ -1,12 +1,7 @@
 import type { ReactNode } from "react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
-import {
-  computeCashBreakdown,
-  getCachedCashOnHand,
-  computePaymentBreakdown,
-  type PaymentBreakdownRow,
-} from "@/lib/caja";
+import { getCashRegisterSummaries, sumCashBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
 import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
@@ -35,7 +30,17 @@ export default async function CajaPage() {
   const supabase = await createClient();
   const isManager = membership.role === "owner" || membership.role === "admin";
 
-  const [{ data: register }, { data: closedRegisters }] = await Promise.all([
+  // Todo lo que no depende de otra consulta va en paralelo; después, el
+  // efectivo y el desglose de todas las cajas en una sola consulta.
+  const [
+    { data: register },
+    { data: closedRegisters },
+    memberLabelsById,
+    { data: openRegisters },
+    { data: debtorCustomers },
+    { data: creditorSuppliers },
+    { data: recentClosedRegisters },
+  ] = await Promise.all([
     supabase
       .from("cash_registers")
       .select("id, opening_amount, opened_at")
@@ -50,98 +55,87 @@ export default async function CajaPage() {
       .eq("status", "cerrada")
       .order("closed_at", { ascending: false })
       .limit(20),
+    getMemberLabelsById(supabase, organization.id),
+    isManager
+      ? supabase
+          .from("cash_registers")
+          .select("id, user_id, opening_amount, opened_at")
+          .eq("org_id", organization.id)
+          .eq("status", "abierta")
+      : Promise.resolve({ data: null }),
+    isManager
+      ? supabase
+          .from("customers")
+          .select("id, name, balance")
+          .eq("org_id", organization.id)
+          .gt("balance", 0)
+          .order("balance", { ascending: false })
+      : Promise.resolve({ data: null }),
+    isManager
+      ? supabase
+          .from("suppliers")
+          .select("id, name, balance")
+          .eq("org_id", organization.id)
+          .gt("balance", 0)
+          .order("balance", { ascending: false })
+      : Promise.resolve({ data: null }),
+    // Más historial que closedRegisters (acotado a 20 para la lista
+    // visible): acá hace falta suficiente por usuario para detectar un
+    // patrón, no sólo los últimos cierres del equipo en general.
+    isManager
+      ? supabase
+          .from("cash_registers")
+          .select("id, user_id, expected_amount, closing_amount, closed_at")
+          .eq("org_id", organization.id)
+          .eq("status", "cerrada")
+          .order("closed_at", { ascending: false })
+          .limit(150)
+      : Promise.resolve({ data: null }),
   ]);
 
-  const allRegisterIds = [
-    ...(register ? [register.id] : []),
-    ...(closedRegisters ?? []).map((r) => r.id),
-  ];
-
-  const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
-
-  const breakdownByRegister = new Map<string, PaymentBreakdownRow[]>(
-    await Promise.all(
-      allRegisterIds.map(
-        async (id): Promise<[string, PaymentBreakdownRow[]]> => [
-          id,
-          await computePaymentBreakdown(supabase, id),
-        ]
-      )
-    )
-  );
+  const summaries = await getCashRegisterSummaries(supabase, [
+    ...(register ? [register] : []),
+    ...(closedRegisters ?? []),
+    ...(openRegisters ?? []),
+  ].map((r) => ({ id: r.id, openingAmount: Number(r.opening_amount) })));
 
   function getBreakdown(registerId: string): PaymentBreakdownRow[] {
-    return breakdownByRegister.get(registerId) ?? [];
+    return summaries.get(registerId)?.payments ?? [];
+  }
+
+  function getCashOnHand(registerId: string, openingAmount: number): number {
+    const summary = summaries.get(registerId);
+    return summary ? sumCashBreakdown(summary.cash) : openingAmount;
   }
 
   const closedRows = (closedRegisters ?? []).filter((r) => r.closed_at);
-  const egresosByRegister = new Map<string, number>(
-    await Promise.all(
-      closedRows.map(async (r): Promise<[string, number]> => {
-        const b = await computeCashBreakdown(supabase, r.id, Number(r.opening_amount));
-        return [r.id, b.retirosTotal + b.cashPurchasesTotal + b.supplierPaymentsTotal];
-      })
-    )
-  );
 
-  const historialRows: CajaHistorialRow[] = closedRows.map((r) => ({
-    id: r.id,
-    userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
-    openedAt: r.opened_at,
-    closedAt: r.closed_at as string,
-    openingAmount: Number(r.opening_amount),
-    expectedAmount: Number(r.expected_amount ?? 0),
-    closingAmount: Number(r.closing_amount ?? 0),
-    egresosTotal: egresosByRegister.get(r.id) ?? 0,
-    paymentBreakdown: getBreakdown(r.id),
-  }));
+  const historialRows: CajaHistorialRow[] = closedRows.map((r) => {
+    const cash = summaries.get(r.id)?.cash;
+    return {
+      id: r.id,
+      userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
+      openedAt: r.opened_at,
+      closedAt: r.closed_at as string,
+      openingAmount: Number(r.opening_amount),
+      expectedAmount: Number(r.expected_amount ?? 0),
+      closingAmount: Number(r.closing_amount ?? 0),
+      egresosTotal: cash
+        ? cash.retirosTotal + cash.cashPurchasesTotal + cash.supplierPaymentsTotal
+        : 0,
+      paymentBreakdown: getBreakdown(r.id),
+    };
+  });
 
   let teamOverview: ReactNode = null;
   if (isManager) {
-    const [
-      { data: openRegisters },
-      { data: debtorCustomers },
-      { data: creditorSuppliers },
-      { data: recentClosedRegisters },
-    ] = await Promise.all([
-      supabase
-        .from("cash_registers")
-        .select("id, user_id, opening_amount, opened_at")
-        .eq("org_id", organization.id)
-        .eq("status", "abierta"),
-      supabase
-        .from("customers")
-        .select("id, name, balance")
-        .eq("org_id", organization.id)
-        .gt("balance", 0)
-        .order("balance", { ascending: false }),
-      supabase
-        .from("suppliers")
-        .select("id, name, balance")
-        .eq("org_id", organization.id)
-        .gt("balance", 0)
-        .order("balance", { ascending: false }),
-      // Más historial que closedRegisters (acotado a 20 para la lista
-      // visible): acá hace falta suficiente por usuario para detectar un
-      // patrón, no sólo los últimos cierres del equipo en general.
-      supabase
-        .from("cash_registers")
-        .select("id, user_id, expected_amount, closing_amount, closed_at")
-        .eq("org_id", organization.id)
-        .eq("status", "cerrada")
-        .order("closed_at", { ascending: false })
-        .limit(150),
-    ]);
-
-    const openRegisterRows: OpenRegisterRow[] = await Promise.all(
-      (openRegisters ?? []).map(async (r) => ({
-        id: r.id,
-        userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
-        openedAt: r.opened_at,
-        openingAmount: Number(r.opening_amount),
-        cashOnHand: await getCachedCashOnHand(r.id, Number(r.opening_amount)),
-      }))
-    );
+    const openRegisterRows: OpenRegisterRow[] = (openRegisters ?? []).map((r) => ({
+      id: r.id,
+      userLabel: memberLabelFor(r.user_id, userId, memberLabelsById),
+      openedAt: r.opened_at,
+      openingAmount: Number(r.opening_amount),
+      cashOnHand: getCashOnHand(r.id, Number(r.opening_amount)),
+    }));
 
     const debtors: DebtorRow[] = (debtorCustomers ?? []).map((c) => ({
       id: c.id,
@@ -207,7 +201,7 @@ export default async function CajaPage() {
   }
 
   const openingAmount = Number(register.opening_amount);
-  const cashOnHand = await getCachedCashOnHand(register.id, openingAmount);
+  const cashOnHand = getCashOnHand(register.id, openingAmount);
 
   return (
     <div className="space-y-6">

@@ -29,7 +29,145 @@ export function sumCashBreakdown(b: CashBreakdown): number {
   );
 }
 
+export interface CashRegisterSummary {
+  cash: CashBreakdown;
+  payments: PaymentBreakdownRow[];
+}
+
+function emptySummary(openingAmount: number): CashRegisterSummary {
+  return {
+    cash: {
+      openingAmount,
+      salesCashTotal: 0,
+      debtPaymentsTotal: 0,
+      ingresosTotal: 0,
+      retirosTotal: 0,
+      supplierPaymentsTotal: 0,
+      cashPurchasesTotal: 0,
+    },
+    payments: [],
+  };
+}
+
+/**
+ * Efectivo y desglose por medio de pago de varias cajas con una sola
+ * consulta (función SQL cash_register_summaries, migración 0038). Antes se
+ * hacían 3 a 8 consultas por caja y la página de Caja llegaba a ~194.
+ *
+ * Una caja que el usuario no puede ver vuelve en cero (igual que antes, que
+ * las consultas filtradas por RLS volvían vacías). Si la función todavía no
+ * existe en la base (código desplegado antes que la migración) o falla, se
+ * calcula como antes, caja por caja.
+ */
+export async function getCashRegisterSummaries(
+  supabase: SupabaseClient<Database>,
+  registers: readonly { id: string; openingAmount: number }[]
+): Promise<Map<string, CashRegisterSummary>> {
+  const result = new Map<string, CashRegisterSummary>();
+  const openingById = new Map(registers.map((r) => [r.id, r.openingAmount]));
+  if (openingById.size === 0) return result;
+
+  const { data, error } = await supabase.rpc("cash_register_summaries", {
+    p_register_ids: Array.from(openingById.keys()),
+  });
+
+  if (error || !data) {
+    console.error("cash_register_summaries falló, se calcula caja por caja:", error?.message);
+    await Promise.all(
+      Array.from(openingById.entries()).map(async ([id, openingAmount]) => {
+        const [cash, payments] = await Promise.all([
+          legacyCashBreakdown(supabase, id, openingAmount),
+          legacyPaymentBreakdown(supabase, id),
+        ]);
+        result.set(id, { cash, payments });
+      })
+    );
+    return result;
+  }
+
+  for (const [id, openingAmount] of openingById) {
+    result.set(id, emptySummary(openingAmount));
+  }
+  for (const row of data) {
+    const openingAmount = openingById.get(row.cash_register_id);
+    if (openingAmount === undefined) continue;
+    const payments = (Array.isArray(row.payment_breakdown) ? row.payment_breakdown : []) as {
+      method: string;
+      total: number | string;
+    }[];
+    result.set(row.cash_register_id, {
+      cash: {
+        openingAmount,
+        salesCashTotal: Number(row.sales_cash),
+        debtPaymentsTotal: Number(row.debt_payments),
+        ingresosTotal: Number(row.ingresos),
+        retirosTotal: Number(row.retiros),
+        supplierPaymentsTotal: Number(row.supplier_payments),
+        cashPurchasesTotal: Number(row.cash_purchases),
+      },
+      payments: payments
+        .map((p) => ({ method: p.method, total: Number(p.total) }))
+        .sort((a, b) => b.total - a.total),
+    });
+  }
+  return result;
+}
+
+export async function getCashRegisterSummary(
+  supabase: SupabaseClient<Database>,
+  cashRegisterId: string,
+  openingAmount: number
+): Promise<CashRegisterSummary> {
+  const summaries = await getCashRegisterSummaries(supabase, [
+    { id: cashRegisterId, openingAmount },
+  ]);
+  return summaries.get(cashRegisterId) ?? emptySummary(openingAmount);
+}
+
 export async function computeCashBreakdown(
+  supabase: SupabaseClient<Database>,
+  cashRegisterId: string,
+  openingAmount: number
+): Promise<CashBreakdown> {
+  return (await getCashRegisterSummary(supabase, cashRegisterId, openingAmount)).cash;
+}
+
+export async function computeCashOnHand(
+  supabase: SupabaseClient<Database>,
+  cashRegisterId: string,
+  openingAmount: number
+): Promise<number> {
+  const breakdown = await computeCashBreakdown(supabase, cashRegisterId, openingAmount);
+  return sumCashBreakdown(breakdown);
+}
+
+/**
+ * Versión cacheada por request de computeCashOnHand, para lectura (no usar
+ * en acciones que necesitan el valor recién escrito). La clave del caché es
+ * la caja registradora en sí (cashRegisterId), no el usuario ni el negocio
+ * — sigue siendo correcta si en el futuro varios vendedores comparten una
+ * misma caja o hay varias sucursales, cada una con sus propias cajas.
+ *
+ * El layout del dashboard calcula el efectivo en caja en cada navegación;
+ * con esto, si algo más lo pide para la misma caja en el mismo request, no
+ * se vuelve a consultar.
+ */
+export const getCachedCashOnHand = cache(
+  async (cashRegisterId: string, openingAmount: number): Promise<number> => {
+    const supabase = await createClient();
+    return computeCashOnHand(supabase, cashRegisterId, openingAmount);
+  }
+);
+
+export interface PaymentBreakdownRow {
+  method: string;
+  total: number;
+}
+
+// Cálculo anterior, caja por caja. Sólo se usa si falla
+// cash_register_summaries (por ejemplo, si la migración 0038 todavía no se
+// aplicó). Se puede borrar una vez aplicada en producción.
+async function legacyCashBreakdown(
   supabase: SupabaseClient<Database>,
   cashRegisterId: string,
   openingAmount: number
@@ -134,40 +272,8 @@ export async function computeCashBreakdown(
   };
 }
 
-export async function computeCashOnHand(
-  supabase: SupabaseClient<Database>,
-  cashRegisterId: string,
-  openingAmount: number
-): Promise<number> {
-  const breakdown = await computeCashBreakdown(supabase, cashRegisterId, openingAmount);
-  return sumCashBreakdown(breakdown);
-}
 
-/**
- * Versión cacheada por request de computeCashOnHand, para lectura (no usar
- * en acciones que necesitan el valor recién escrito). La clave del caché es
- * la caja registradora en sí (cashRegisterId), no el usuario ni el negocio
- * — sigue siendo correcta si en el futuro varios vendedores comparten una
- * misma caja o hay varias sucursales, cada una con sus propias cajas.
- *
- * El layout del dashboard y la página de Caja calculan el efectivo en caja
- * del mismo registro dentro del mismo request; sin esto, el fan-out de 6-8
- * consultas de computeCashBreakdown se disparaba dos (o tres) veces por
- * navegación.
- */
-export const getCachedCashOnHand = cache(
-  async (cashRegisterId: string, openingAmount: number): Promise<number> => {
-    const supabase = await createClient();
-    return computeCashOnHand(supabase, cashRegisterId, openingAmount);
-  }
-);
-
-export interface PaymentBreakdownRow {
-  method: string;
-  total: number;
-}
-
-export async function computePaymentBreakdown(
+async function legacyPaymentBreakdown(
   supabase: SupabaseClient<Database>,
   cashRegisterId: string
 ): Promise<PaymentBreakdownRow[]> {
