@@ -41,9 +41,19 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 - Después de cobrar en el POS, la primera página que se abre fuera del POS se refresca una vez (`RefreshAfterSale` + `markSaleCompleted` en `src/lib/cash-events.ts`). El POS sigue sin refrescarse.
 - Textos del panel: "negocio" en vez de "kiosco" en Configuración, Recomendaciones y Soporte. La web pública y el registro siguen nombrando kioscos a propósito.
 
+## Hecho: landing y auditoría de PageSpeed
+
+- Landing: el hero y el título de Precios remarcan que se empieza gratis; Precios muestra solo los planes pagos (a pedido). Sección nueva "¿Te aumentó el proveedor?" sobre aumentos masivos por proveedor o marca, y fila en la comparación.
+- `/llms.txt` (se genera al compilar desde los mismos datos que el sitemap). `/.well-known/*` es pública: si no existe da 404 en vez de mandar a /login.
+- Accesibilidad: nombres en botones de ícono, mockup del POS sin botones falsos, áreas táctiles de 24 px.
+- PageSpeed (2026-09-25): móvil 98 / 96 / 100 / 100 / 3 de 3; ordenador 100 / 96 / 100 / 100 / 3 de 3. Los avisos de "JavaScript antiguo" y "JavaScript que no se usa" son del propio Next.js; `inlineCss` se descartó (experimental y global).
+- Historial de precios: el botón y el email ya no se cortan.
+
 ## Pendiente
 
-Nada de la lista anterior. Falta revisar la lista de ideas que se habló en otra conversación (no quedó guardada en el repo).
+- Speed Index en móvil: 3,8 s (naranja), el resto en verde.
+- Accesibilidad 96: ver qué aviso queda.
+- Revisar la lista de ideas que se habló en otra conversación (no quedó guardada en el repo).
 
 ## Cómo reproducir la simulación
 
