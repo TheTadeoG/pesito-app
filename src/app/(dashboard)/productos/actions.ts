@@ -33,6 +33,7 @@ export interface SaveProductResult extends ActionState {
     barcode: string | null;
     sku: string | null;
     cost: number | null;
+    price: number;
     stock: number;
     min_stock: number;
     unit: string;
@@ -84,7 +85,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
   const { data, error } = await supabase
     .from("products")
     .insert({ ...payload, stock: input.stock })
-    .select("id, name, barcode, sku, cost, stock, min_stock, unit, image_url")
+    .select("id, name, barcode, sku, cost, price, stock, min_stock, unit, image_url")
     .single();
 
   if (error || !data) return { error: "No pudimos crear el producto." };
@@ -97,6 +98,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     product: {
       ...data,
       cost: data.cost === null ? null : Number(data.cost),
+      price: Number(data.price),
       stock: Number(data.stock),
       min_stock: Number(data.min_stock),
     },

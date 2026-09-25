@@ -38,6 +38,7 @@ interface ProductLite {
   barcode: string | null;
   sku: string | null;
   cost: number | null;
+  price: number;
   stock: number;
   min_stock: number;
   unit: string;
@@ -54,6 +55,17 @@ interface CartLine {
   product: ProductLite;
   quantity: number;
   unitCost: number;
+  // Nuevo precio de venta a guardar con la compra; "" = no se cambia.
+  newPrice: string;
+}
+
+// Precio que mantiene el margen actual (precio / costo) con el costo nuevo,
+// redondeado a pesos. null si no hay costo anterior con qué comparar.
+function priceKeepingMargin(line: CartLine): number | null {
+  const oldCost = line.product.cost;
+  if (!oldCost || oldCost <= 0 || line.unitCost <= 0) return null;
+  if (line.unitCost === oldCost) return null;
+  return Math.round((line.product.price * line.unitCost) / oldCost);
 }
 
 function paymentMethodOptionsWithCustom(customMethods: string[]): {
@@ -203,7 +215,7 @@ export function ComprasClient({
       }
       return [
         ...current,
-        { product, quantity: initialQuantity, unitCost: Number(product.cost ?? 0) },
+        { product, quantity: initialQuantity, unitCost: Number(product.cost ?? 0), newPrice: "" },
       ];
     });
     setQuery("");
@@ -398,6 +410,12 @@ export function ComprasClient({
     );
   }
 
+  function updateNewPrice(index: number, value: string) {
+    setCart((current) =>
+      current.map((line, i) => (i === index ? { ...line, newPrice: value } : line))
+    );
+  }
+
   function removeLine(index: number) {
     setCart((current) => current.filter((_, i) => i !== index));
   }
@@ -415,6 +433,7 @@ export function ComprasClient({
       barcode: string | null;
       sku: string | null;
       cost: number | null;
+      price: number;
       stock: number;
       min_stock: number;
       unit: string;
@@ -476,12 +495,21 @@ export function ComprasClient({
       unit_cost: line.unitCost,
     }));
 
+    const priceUpdates = cart
+      .filter((line) => line.newPrice.trim() !== "")
+      .map((line) => ({ productId: line.product.id, price: Number(line.newPrice) }))
+      .filter((u, i, all) => Number.isFinite(u.price) && u.price >= 0 && all.findIndex((x) => x.productId === u.productId) === i);
+    const changedPrices = priceUpdates.filter(
+      (u) => u.price !== cart.find((line) => line.product.id === u.productId)?.product.price
+    );
+
     const result = await registerPurchase({
       orgId,
       supplierId: supplierId || null,
       notes,
       items,
       payments,
+      priceUpdates: changedPrices,
     });
 
     setPending(false);
@@ -501,6 +529,16 @@ export function ComprasClient({
             `${formatCurrency(total)} a cuenta corriente · ${itemCount} unidades`
           : `${formatCurrency(total)} · ${formatCurrency(accountAmount)} a cuenta corriente`
     );
+    if (result.priceUpdateErrors) {
+      setError(
+        `La compra se registró, pero no pudimos actualizar ${result.priceUpdateErrors} precio${result.priceUpdateErrors === 1 ? "" : "s"} de venta. Cambialo${result.priceUpdateErrors === 1 ? "" : "s"} desde Productos.`
+      );
+    } else if (changedPrices.length > 0) {
+      showSuccess(
+        "Precios de venta actualizados",
+        `${changedPrices.length} producto${changedPrices.length === 1 ? "" : "s"}`
+      );
+    }
     setCart([]);
     setSupplierId("");
     setSupplierQuery("");
@@ -627,11 +665,19 @@ export function ComprasClient({
                     <span className="w-7" />
                   </div>
                 </div>
-                {cart.map((line, index) => (
+                {cart.map((line, index) => {
+                  const suggestedPrice = priceKeepingMargin(line);
+                  const newPriceNumber = Number(line.newPrice);
+                  const newPriceSet = line.newPrice.trim() !== "" && Number.isFinite(newPriceNumber);
+                  const sellsAtLoss = newPriceSet
+                    ? newPriceNumber < line.unitCost
+                    : line.product.price < line.unitCost;
+                  return (
                   <div
                     key={line.product.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border px-3.5 py-2.5"
+                    className="rounded-xl border border-border px-3.5 py-2.5"
                   >
+                  <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2.5">
                       <button
                         type="button"
@@ -717,13 +763,53 @@ export function ComprasClient({
                       <button
                         type="button"
                         onClick={() => removeLine(index)}
+                        aria-label="Quitar de la compra"
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-danger hover:bg-danger-bg"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                ))}
+
+                  {/* Precio de venta: se puede actualizar con la compra. */}
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-dashed border-border pt-2 text-xs">
+                    <span className="text-muted-foreground">
+                      Precio de venta:{" "}
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(line.product.price)}
+                      </span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">Nuevo:</span>
+                      <div className="w-28">
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={line.newPrice}
+                          onChange={(e) => updateNewPrice(index, e.target.value)}
+                          placeholder="Sin cambios"
+                          aria-label={`Nuevo precio de venta de ${line.product.name}`}
+                        />
+                      </div>
+                    </div>
+                    {suggestedPrice !== null && String(suggestedPrice) !== line.newPrice && (
+                      <button
+                        type="button"
+                        onClick={() => updateNewPrice(index, String(suggestedPrice))}
+                        className="rounded-full bg-accent px-2.5 py-1 font-medium text-accent-foreground hover:opacity-90"
+                        title="Sube el precio de venta en la misma proporción que el costo"
+                      >
+                        Mantener margen: {formatCurrency(suggestedPrice)}
+                      </button>
+                    )}
+                    {sellsAtLoss && line.unitCost > 0 && (
+                      <span className="font-medium text-danger">Venderías a pérdida</span>
+                    )}
+                  </div>
+                  </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

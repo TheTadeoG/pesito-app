@@ -26,7 +26,7 @@ export default async function ComprasPage({
     fetchAll((from, to) =>
       supabase
         .from("products")
-        .select("id, name, barcode, sku, cost, stock, min_stock, unit, image_url")
+        .select("id, name, barcode, sku, cost, price, stock, min_stock, unit, image_url")
         .eq("org_id", organization.id)
         .eq("active", true)
         .order("name")
@@ -107,6 +107,7 @@ export default async function ComprasPage({
         products={products.map((p) => ({
           ...p,
           cost: p.cost === null ? null : Number(p.cost),
+          price: Number(p.price),
           stock: Number(p.stock),
         }))}
         suppliers={(suppliers ?? []).map((s) => ({ ...s, balance: Number(s.balance) }))}

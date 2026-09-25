@@ -33,11 +33,14 @@ export interface RegisterPurchaseInput {
   notes: string;
   items: PurchaseItemInput[];
   payments: PurchasePaymentInput[];
+  // Precios de venta a actualizar junto con la compra (sólo los que el
+  // usuario cambió). El historial de precios los registra solo (trigger).
+  priceUpdates?: { productId: string; price: number }[];
 }
 
 export async function registerPurchase(
   input: RegisterPurchaseInput
-): Promise<{ error?: string; purchaseId?: string }> {
+): Promise<{ error?: string; purchaseId?: string; priceUpdateErrors?: number }> {
   if (input.items.length === 0) {
     return { error: "Agregá al menos un producto a la compra." };
   }
@@ -80,13 +83,33 @@ export async function registerPurchase(
     return { error: error.message || "No pudimos registrar la compra." };
   }
 
+  // La compra ya quedó registrada: si falla algún precio se avisa, pero no
+  // se deshace la compra.
+  const priceUpdates = (input.priceUpdates ?? []).filter(
+    (u) => Number.isFinite(u.price) && u.price >= 0
+  );
+  let priceUpdateErrors = 0;
+  if (priceUpdates.length > 0) {
+    const results = await Promise.all(
+      priceUpdates.map((u) =>
+        supabase
+          .from("products")
+          .update({ price: u.price })
+          .eq("id", u.productId)
+          .eq("org_id", input.orgId)
+      )
+    );
+    priceUpdateErrors = results.filter((r) => r.error).length;
+    revalidatePath("/pos");
+  }
+
   revalidatePath("/compras");
   revalidatePath("/productos");
   revalidatePath("/reportes");
   revalidatePath("/proveedores");
   revalidatePath("/caja");
 
-  return { purchaseId: data ?? undefined };
+  return { purchaseId: data ?? undefined, priceUpdateErrors };
 }
 
 export interface PurchaseDetailItem {
