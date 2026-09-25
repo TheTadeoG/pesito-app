@@ -100,6 +100,13 @@ Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; 
 - `/en-vivo` ahora muestra primero el negocio (vendido, ventas, ticket, cajas abiertas, vs ayer), después una tarjeta por sucursal (totales, ticket, cajas abiertas, vs ayer, "la que más vende hoy") y adentro sus vendedores: lo vendido en esa sucursal hoy y sus cajas de esa sucursal (abierta: hace cuánto, efectivo, vendido en la caja; cerradas hoy: horario, vendido y faltante/sobrante). Un vendedor que trabajó en dos sucursales aparece en las dos con lo suyo de cada una. Abajo, ventas por hora y últimas ventas del negocio.
 - Migración 0044 (**falta aplicar en producción, después de la 0043**): `live_overview` suma por caja lo vendido y, en las cerradas hoy, sucursal, apertura y monto de cierre. Sin 0044 la pantalla anda igual pero sin "vendió $X" por caja (y las cajas cerradas quedan en la sucursal asignada de la persona).
 
+## Hecho: landing, planes, preguntas y blog (SEO/GEO)
+
+- Precios: tarjeta del Plan Gratis + cada plan pago con "Todo lo del Plan X, y además"; aviso de 14 días de Pro; lo del Plan IA que no existe aparece como "Pronto" (campo `soon` en `plan-features`).
+- Arreglo: el tope de 150 ventas/mes ya no aplica al Plan Esencial (`hasMonthlySalesLimit` en `lib/subscription.ts`).
+- Preguntas: `src/lib/faq-data.ts` (23 en 6 temas; la landing muestra 8). Blog: 10 artículos, autor "Tadeo, de Pesito", `seoTitle` para títulos cortos en Google.
+- Pendiente de negocio (no es código): los límites de usuarios por plan (1/2/10) se anuncian pero la app no los controla; "Soporte prioritario 24/7" del Plan IA es una promesa comercial.
+
 ## Skills del proyecto (`.agents/skills`, con acceso en `.claude/skills`)
 
 Instaladas con `npx skills add` (quedan en `skills-lock.json`). Además de las que ya estaban (docx, pdf, pptx, xlsx, frontend-design, webapp-testing, mcp-builder, skill-creator, find-skills):
