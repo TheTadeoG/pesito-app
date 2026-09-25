@@ -18,6 +18,7 @@ export type PlanFeature =
   | "productBundles"
   | "productVariants"
   | "productImport"
+  | "costImport"
   | "promotions"
   | "scales"
   | "onlineCatalog"
@@ -43,6 +44,7 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   productBundles: "esencial",
   productVariants: "esencial",
   productImport: "esencial",
+  costImport: "pro",
   promotions: "pro",
   scales: "pro",
   onlineCatalog: "pro",
@@ -69,6 +71,7 @@ export const featureLabels: Record<PlanFeature, string> = {
   productBundles: "Los combos y kits",
   productVariants: "Los talles y colores",
   productImport: "La carga masiva de productos con Excel",
+  costImport: "La importación de costos desde Excel",
   promotions: "Las ofertas y promociones",
   scales: "Las balanzas conectadas",
   onlineCatalog: "El catálogo online",

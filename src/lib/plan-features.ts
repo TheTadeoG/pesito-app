@@ -79,6 +79,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     ],
     soon: [
       "Control por usuario: su stock, caja y diferencias",
+      "Importar costos desde Excel",
       "Inventarios físicos",
       "Balanzas conectadas",
       "Carteles de precios para imprimir",
@@ -196,6 +197,10 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       {
         label: "Carga masiva de productos desde Excel",
         values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+      },
+      {
+        label: "Importar costos desde Excel (la lista del proveedor)",
+        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
       },
       { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromEsencial },
       { label: "Historial de movimientos de stock", values: fromEsencial },
