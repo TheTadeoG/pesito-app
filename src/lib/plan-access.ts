@@ -21,6 +21,7 @@ export type PlanFeature =
   | "scales"
   | "onlineCatalog"
   | "priceSigns"
+  | "physicalInventory"
   | "aiReports"
   | "priceSuggestions"
   | "marketAnalysis"
@@ -36,13 +37,14 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   liveView: "pro",
   teamReports: "esencial",
   cashHistory: "pro",
-  branches: "pro",
+  branches: "ia",
   productBundles: "esencial",
   productVariants: "esencial",
   promotions: "pro",
   scales: "pro",
   onlineCatalog: "pro",
   priceSigns: "pro",
+  physicalInventory: "pro",
   aiReports: "ia",
   priceSuggestions: "ia",
   marketAnalysis: "ia",
@@ -66,6 +68,7 @@ export const featureLabels: Record<PlanFeature, string> = {
   scales: "Las balanzas conectadas",
   onlineCatalog: "El catálogo online",
   priceSigns: "Los carteles de precios para imprimir",
+  physicalInventory: "Los inventarios físicos",
   aiReports: "Los reportes avanzados con IA",
   priceSuggestions: "La sugerencia de precios",
   marketAnalysis: "El análisis de competidores y del mercado",
@@ -83,7 +86,7 @@ export interface PlanLimits {
 export const planLimits: Record<Plan, PlanLimits> = {
   gratis: { users: 1, openRegisters: 1, branches: 1 },
   esencial: { users: 2, openRegisters: 2, branches: 1 },
-  pro: { users: 6, openRegisters: 6, branches: 2 },
+  pro: { users: 6, openRegisters: 6, branches: 1 },
   ia: { users: 6, openRegisters: 6, branches: 2 },
 };
 

@@ -14,6 +14,7 @@ import { isOrgAdmin } from "@/lib/roles";
 import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
 import { ConfiguracionTabs, type ConfiguracionTab } from "@/app/(dashboard)/configuracion/configuracion-tabs";
+import { canUse } from "@/lib/plan-access";
 import {
   getSubscription,
   getMonthlySalesCount,
@@ -120,7 +121,7 @@ export default async function ConfiguracionPage({
             <CardContent>
               <BranchesManager
                 branches={branchContext.branches}
-                hasProAccess={subscription.hasProAccess}
+                canAddBranches={canUse(subscription, "branches")}
               />
             </CardContent>
           </Card>

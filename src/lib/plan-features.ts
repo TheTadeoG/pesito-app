@@ -55,7 +55,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: [
       "Todas las funciones del Plan Gratis +",
       "Ventas ilimitadas",
-      "Control de stock y reposición",
+      "Control de stock, alertas y reposición",
       "Cuentas corrientes de clientes y proveedores",
       "Control de caja por empleado",
       "Hasta 2 usuarios y 2 cajas",
@@ -73,17 +73,16 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Todas las funciones del Plan Esencial +",
       "Aumentos masivos de precios en segundos",
       "Reportes avanzados",
-      "Mirá tu negocio en vivo",
-      "Hasta 2 sucursales",
+      "Mirá tu negocio en vivo, desde casa, en tu celular",
       "Hasta 6 usuarios y 6 cajas",
       "Soporte prioritario",
     ],
     soon: [
+      "Inventarios físicos",
       "Balanzas conectadas",
       "Carteles de precios para imprimir",
       "1 catálogo online",
       "Ofertas y promociones",
-      "Ganancias por sucursal",
     ],
   },
   ia: {
@@ -93,8 +92,13 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     priceLabel: "$28.000",
     period: "por mes · IVA incl.",
     badge: "Nuevo",
-    features: ["Todas las funciones del Plan Pro +", "Soporte prioritario 24/7"],
+    features: [
+      "Todas las funciones del Plan Pro +",
+      "Hasta 2 sucursales, cada una con su stock",
+      "Soporte prioritario 24/7",
+    ],
     soon: [
+      "Ganancias por sucursal",
       "Reportes avanzados con IA",
       "Sugerencia de precios",
       "Análisis de competencia y mercado",
@@ -133,6 +137,7 @@ export interface ComparisonRow {
 
 const everyPlan: Record<Plan, ComparisonValue> = { gratis: true, esencial: true, pro: true, ia: true };
 const fromEsencial: Record<Plan, ComparisonValue> = { gratis: false, esencial: true, pro: true, ia: true };
+const onlyIa: Record<Plan, ComparisonValue> = { gratis: false, esencial: false, pro: false, ia: true };
 const fromPro: Record<Plan, ComparisonValue> = { gratis: false, esencial: false, pro: true, ia: true };
 
 // Tabla de /comparar-planes, agrupada por tema. Tiene que decir lo mismo que
@@ -147,7 +152,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       },
       { label: "Usuarios", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
       { label: "Cajas", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
-      { label: "Sucursales", values: { gratis: "1", esencial: "1", pro: "2", ia: "2" } },
+      { label: "Sucursales", values: { gratis: "1", esencial: "1", pro: "1", ia: "2" } },
     ],
   },
   {
@@ -189,11 +194,15 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Stock que se actualiza con cada venta y compra", values: everyPlan },
       { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromEsencial },
       { label: "Historial de movimientos de stock", values: fromEsencial },
+      {
+        label: "Inventarios físicos: contás y el stock se ajusta solo",
+        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+      },
       { label: "Compras a proveedores", values: everyPlan },
       { label: "Historial de precios de cada producto", values: everyPlan },
       { label: "Cuenta corriente con proveedores", values: fromEsencial },
       { label: "Aumentos masivos de precios y costos, con deshacer", values: fromPro },
-      { label: "Pases de mercadería entre sucursales", values: fromPro },
+      { label: "Pases de mercadería entre sucursales", values: onlyIa },
     ],
   },
   {
@@ -214,7 +223,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Comparación con el período anterior", values: fromPro },
       {
         label: "Ganancias separadas por sucursal",
-        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, esencial: false, pro: false, ia: "Pronto" },
       },
     ],
   },

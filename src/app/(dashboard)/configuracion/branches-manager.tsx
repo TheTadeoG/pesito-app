@@ -16,10 +16,10 @@ interface BranchRow {
 
 export function BranchesManager({
   branches,
-  hasProAccess,
+  canAddBranches,
 }: {
   branches: BranchRow[];
-  hasProAccess: boolean;
+  canAddBranches: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [newName, setNewName] = useState("");
@@ -97,7 +97,7 @@ export function BranchesManager({
         ))}
       </ul>
 
-      {hasProAccess ? (
+      {canAddBranches ? (
         <form onSubmit={add} className="flex gap-2">
           <Input
             value={newName}
@@ -112,7 +112,7 @@ export function BranchesManager({
         </form>
       ) : (
         <p className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-          Sumar más sucursales es del plan Pro.{" "}
+          Sumar más sucursales es del Plan IA.{" "}
           <Link href="/configuracion?tab=plan" prefetch={false} className="font-medium text-primary underline">
             Ver planes
           </Link>

@@ -290,7 +290,7 @@ export const blogPosts: BlogPost[] = [
           "Los ajustes a mano (rotura, vencido, conteo) se registran con el motivo, y el historial de movimientos muestra cada entrada y salida.",
           "Ves el stock valorizado: cuánta plata tenés parada en mercadería, al costo y al precio de venta.",
           "Productos por unidad o por peso, con la cantidad exacta en kilos (en todos los planes).",
-          "Si tenés varias sucursales (Plan Pro), cada una lleva su propio stock y podés pasar mercadería de una a otra.",
+          "Si tenés varias sucursales (Plan IA), cada una lleva su propio stock y podés pasar mercadería de una a otra.",
         ],
       },
     ],
@@ -419,7 +419,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         heading: "Cómo lo resolvés con Pesito",
-        paragraphs: ["Las sucursales están en el Plan Pro, que incluye hasta 2 (si tenés más, escribinos):"],
+        paragraphs: ["Las sucursales están en el Plan IA, que incluye hasta 2 (si tenés más, escribinos):"],
         list: [
           "Cada sucursal tiene su propio stock y sus cajas; vender descuenta del local de la caja.",
           "A cada vendedor le asignás su sucursal; vos cambiás de sucursal desde el menú.",

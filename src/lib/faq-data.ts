@@ -27,11 +27,11 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Qué pasa cuando terminan los 14 días de prueba?",
         answer:
-          "Seguís en el Plan Gratis automáticamente: no se te cobra nada y no perdés ningún dato. Lo único que deja de estar disponible son las funciones del Plan Pro (por ejemplo, los aumentos masivos, los reportes avanzados, En vivo o las sucursales), hasta que elijas un plan pago.",
+          "Seguís en el Plan Gratis automáticamente: no se te cobra nada y no perdés ningún dato. Lo único que deja de estar disponible son las funciones del Plan Pro (por ejemplo, los aumentos masivos, los reportes avanzados o En vivo), hasta que elijas un plan pago.",
       },
       {
         question: "¿Qué diferencia hay entre los planes?",
-        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo, hasta 2 sucursales con su propio stock y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar productos con variantes (talles y colores), combos y kits; el Pro, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones; y el IA, reportes avanzados con IA, sugerencia de precios y análisis de competidores y del mercado. Pagando anual tenés un 20% de descuento.`,
+        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma hasta 2 sucursales con su propio stock, soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar productos con variantes (talles y colores), combos y kits; el Pro, inventarios físicos, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones; y el IA, ganancias por sucursal, reportes avanzados con IA, sugerencia de precios y análisis de competidores y del mercado. Pagando anual tenés un 20% de descuento.`,
       },
       {
         question: "¿Necesito instalar algo?",
@@ -122,7 +122,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Sirve si tengo varias sucursales?",
-        answer: `Sí, con el ${pro.name}, que incluye hasta 2 sucursales. Cada sucursal tiene su propio stock y sus cajas, cada vendedor trabaja en la suya y podés pasar mercadería de una sucursal a otra. Desde En vivo ves cuánto vende cada una en el momento. Si tenés más sucursales, escribinos por WhatsApp.`,
+        answer: `Sí, con el ${ia.name}, que incluye hasta 2 sucursales. Cada sucursal tiene su propio stock y sus cajas, cada vendedor trabaja en la suya y podés pasar mercadería de una sucursal a otra. Desde En vivo ves cuánto vende cada una en el momento. Si tenés más sucursales, escribinos por WhatsApp.`,
       },
       {
         question: "¿Cómo sé si falta plata en la caja?",
