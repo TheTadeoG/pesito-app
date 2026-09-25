@@ -29,7 +29,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { resolveInvoiceType } from "@/lib/invoice-labels";
 import { suggestBilletes } from "@/lib/billetes";
 import { useToast } from "@/components/toast/toast-provider";
-import { emitCashDelta } from "@/lib/cash-events";
+import { emitCashDelta, markSaleCompleted } from "@/lib/cash-events";
 import {
   checkoutSale,
   createCustomerQuick,
@@ -493,6 +493,7 @@ export function PosClient({
       };
     });
     if (result.recentSales) onSaleCompleted(result.recentSales);
+    markSaleCompleted();
     emitCashDelta(
       payments
         ? payments.filter((p) => p.method === "efectivo").reduce((acc, p) => acc + p.amount, 0)
