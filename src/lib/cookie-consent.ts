@@ -9,9 +9,11 @@ const COOKIE_CONSENT_EVENT = "pesito-cookie-consent-changed";
 // Páginas de adentro del sistema (ya logueado): quien llegó hasta ahí ya
 // aceptó al crear la cuenta, mostrar el cartel ahí sería molesto. Se
 // excluye por prefijo (lista acotada) en vez de listar cada página
-// pública nueva, que sigue creciendo.
+// pública nueva, que sigue creciendo. Al sumar una pantalla al panel,
+// agregarla acá (si no, el cartel aparece tapando el menú lateral).
 const HIDDEN_PREFIXES = [
   "/pos",
+  "/en-vivo",
   "/caja",
   "/clientes",
   "/compras",
