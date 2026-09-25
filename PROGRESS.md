@@ -26,6 +26,28 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 5. **Usuarios**: el texto del alta dice "otro kiosco" aunque el rubro sea otro.
 6. **Contra conocida del PR #2**: después de vender, Caja/Reportes/Productos pueden mostrar datos de hasta 30 s atrás si se vuelve a ellos enseguida (`staleTimes` en `next.config.ts`).
 
+## Ideas pendientes (funcionalidad, no relacionadas a performance)
+
+Estas no están en ninguna consulta a la base ni en Vercel — son ideas de producto anotadas y no arrancadas. La lista completa con más detalle vive en la tarea de cada sesión (`TaskList`), pero eso es local a cada sesión, así que quedan resumidas acá para que cualquier sesión nueva las vea:
+
+- Compras: actualizar el precio de venta al registrar una compra.
+- Tour interactivo de onboarding (primera venta guiada).
+- Modal de confirmación post-venta con opción de imprimir ticket.
+- Reportes con tabs (Resumen/Ventas/Productos/Métodos de pago/Historial).
+- Más toggles en Configuración → Sistema.
+- Modal de ayuda de atajos de teclado en el POS.
+- Sistema de "temas" visuales seleccionables (Neobrutalismo, Terminal, Fintech pop, etc.).
+- Facturación electrónica ARCA/AFIP (pausado, falta definir proveedor).
+
+### Sucursales / multi-usuario (a futuro)
+
+- Resumen por sucursal y cajas de cada sucursal.
+- Reportes por sucursal, por caja y por vendedor.
+- Cambiar de sucursal desde el header del sidebar (dueños).
+- Cierres automáticos de caja por horario + recordatorios de cierre.
+- Sugerencia de compra automática (stock para X días, por proveedor/marca/producto).
+- Preguntar el objetivo del usuario en el onboarding.
+
 ## Cómo reproducir la simulación
 
 1. `npx supabase init`
