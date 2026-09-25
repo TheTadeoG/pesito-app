@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
@@ -30,6 +30,7 @@ import { resolveInvoiceType } from "@/lib/invoice-labels";
 import { suggestBilletes } from "@/lib/billetes";
 import { useToast } from "@/components/toast/toast-provider";
 import { emitCashDelta, markSaleCompleted } from "@/lib/cash-events";
+import { SaleDoneDialog, type SaleReceipt } from "@/app/(dashboard)/pos/sale-done-dialog";
 import {
   checkoutSale,
   createCustomerQuick,
@@ -105,6 +106,8 @@ function paymentMethodForLines(lines: PaymentLineInput[]): PaymentMethod {
 
 interface PosClientProps {
   orgId: string;
+  // Encabezado del ticket.
+  orgName: string;
   cashRegisterId: string;
   products: ProductLite[];
   customers: CustomerLite[];
@@ -115,6 +118,7 @@ interface PosClientProps {
 
 export function PosClient({
   orgId,
+  orgName,
   cashRegisterId,
   products: serverProducts,
   customers: serverCustomers,
@@ -153,7 +157,7 @@ export function PosClient({
     [customPaymentMethods]
   );
   const router = useRouter();
-  const { showSuccess, showWarning } = useToast();
+  const { showWarning } = useToast();
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -258,6 +262,12 @@ export function PosClient({
   const [customerHighlightedIndex, setCustomerHighlightedIndex] = useState(-1);
   const lastEnterAt = useRef<number>(0);
   const searchRef = useRef<HTMLInputElement>(null);
+  // Ventana "¡Venta cobrada!" con el vuelto y la opción de imprimir ticket.
+  const [lastReceipt, setLastReceipt] = useState<SaleReceipt | null>(null);
+  const closeReceipt = useCallback(() => {
+    setLastReceipt(null);
+    searchRef.current?.focus();
+  }, []);
   const customerPanelRef = useRef<HTMLDivElement>(null);
 
   const results = useMemo(() => {
@@ -502,7 +512,37 @@ export function PosClient({
           : 0
     );
 
-    showSuccess("¡Venta cobrada!", `${formatCurrency(total)} · ${itemCount} items`);
+    const methodLabel = (value: string) =>
+      paymentMethodsWithCustom(customPaymentMethods).find((m) => m.value === value)?.label ?? value;
+    setLastReceipt({
+      orgName,
+      soldAt: new Date().toISOString(),
+      lines: cart.map((item) =>
+        item.kind === "product"
+          ? {
+              name: item.product.name,
+              quantity: item.quantity,
+              unitPrice: item.product.price,
+              subtotal: item.quantity * item.product.price,
+              unit: item.product.unit === "u" ? undefined : item.product.unit,
+            }
+          : { name: item.label, quantity: 1, unitPrice: item.amount, subtotal: item.amount }
+      ),
+      subtotal,
+      discount,
+      surcharge,
+      total,
+      payments: payments
+        ? payments
+            .filter((p) => p.amount > 0)
+            .map((p) => ({ label: methodLabel(p.method), amount: p.amount }))
+        : [{ label: methodLabel(method), amount: total }],
+      cashReceived:
+        method === "efectivo" && cashReceived !== "" && Number(cashReceived) > total
+          ? Number(cashReceived)
+          : null,
+      customerName: selectedCustomer?.name ?? null,
+    });
     setCart([]);
     setDiscountInput("");
     setSurchargeInput("");
@@ -1769,6 +1809,8 @@ export function PosClient({
           />
         )}
       </Dialog>
+
+      <SaleDoneDialog receipt={lastReceipt} onClose={closeReceipt} />
     </div>
   );
 }

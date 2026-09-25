@@ -52,6 +52,7 @@ export default async function PosPage() {
   return (
     <PosScreen
       orgId={organization.id}
+      orgName={organization.name}
       cashRegisterId={openRegister.id}
       products={products.map((p) => ({ ...p, price: Number(p.price), stock: Number(p.stock) }))}
       customers={customers.map((c) => ({ ...c, balance: Number(c.balance) }))}

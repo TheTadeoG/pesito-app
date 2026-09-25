@@ -57,6 +57,11 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 - Historial de precios y costos (menú de cada producto): pestañas "Precio de venta" y "Costo", "Volver a este precio/costo", y etiqueta "Aumento masivo · +13% · Proveedor" en los cambios que vinieron de un aumento. Sin 0039 se ve igual pero sin la etiqueta.
 - Menú de los tres puntos en Productos: se posiciona fijo en pantalla y se abre hacia arriba si no entra (antes agrandaba la tabla con una barra de scroll). Acompaña al botón si la tabla o la página se mueven.
 
+## Hecho: precio de venta en Compras y ticket en el POS
+
+- Compras: cada renglón muestra el precio de venta actual, un campo "Nuevo" (vacío = no cambia) y el botón "Mantener margen" cuando el costo cambió (precio × costo nuevo / costo anterior, redondeado a pesos). Avisa "Venderías a pérdida". Los precios se guardan después de registrar la compra, en la misma acción (sin migración); si alguno falla, la compra queda y se avisa.
+- POS: al cobrar se abre "¡Venta cobrada!" con el total, el vuelto (si pagó en efectivo con más) e "Imprimir ticket". Enter o Escape la cierran; escanear el próximo producto también la cierra y el código entra al buscador. El ticket (`.ticket-print` en globals.css) ocupa el ancho del papel (58/80 mm) y dice "Comprobante no válido como factura".
+
 ## Pendiente
 
 - Speed Index en móvil: 3,8 s (naranja), el resto en verde.
@@ -66,9 +71,7 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 
 Estas no están en ninguna consulta a la base ni en Vercel — son ideas de producto anotadas y no arrancadas. La lista completa con más detalle vive en la tarea de cada sesión (`TaskList`), pero eso es local a cada sesión, así que quedan resumidas acá para que cualquier sesión nueva las vea:
 
-- Compras: actualizar el precio de venta al registrar una compra.
 - Tour interactivo de onboarding (primera venta guiada).
-- Modal de confirmación post-venta con opción de imprimir ticket.
 - Reportes con tabs (Resumen/Ventas/Productos/Métodos de pago/Historial).
 - Más toggles en Configuración → Sistema.
 - Modal de ayuda de atajos de teclado en el POS.

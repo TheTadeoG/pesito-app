@@ -246,3 +246,64 @@ body {
 .whatsapp-scroll::-webkit-scrollbar-thumb:hover {
   background-color: rgba(7, 94, 84, 0.55);
 }
+
+/* Ticket de venta (POS → "Imprimir ticket"). Sólo existe en el DOM mientras
+   está abierta la ventana de venta cobrada; al imprimir se oculta todo lo
+   demás. Sin @page (afectaría cualquier impresión): el ancho lo pone el
+   papel de la impresora (58 u 80 mm) y el ticket ocupa el 100%. */
+.ticket-print {
+  display: none;
+}
+
+@media print {
+  body:has(> .ticket-print) > *:not(.ticket-print) {
+    display: none !important;
+  }
+
+  body:has(> .ticket-print) {
+    background: #fff !important;
+  }
+
+  .ticket-print {
+    display: block;
+    width: 100%;
+    max-width: 80mm;
+    padding: 2mm;
+    color: #000;
+    font-family: ui-monospace, "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .ticket-print hr {
+    border: 0;
+    border-top: 1px dashed #000;
+    margin: 4px 0;
+  }
+
+  .ticket-print .ticket-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .ticket-print .ticket-line {
+    margin-bottom: 3px;
+  }
+
+  .ticket-print .ticket-center {
+    text-align: center;
+  }
+
+  .ticket-print .ticket-bold {
+    font-weight: 700;
+  }
+
+  .ticket-print .ticket-big {
+    font-size: 13px;
+  }
+
+  .ticket-print .ticket-small {
+    font-size: 9px;
+  }
+}
