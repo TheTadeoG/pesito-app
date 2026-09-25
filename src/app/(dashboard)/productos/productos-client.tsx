@@ -846,7 +846,7 @@ export function ProductosClient({
                                 onClick={() => setPriceHistoryProduct(product)}
                               >
                                 <Receipt className="h-4 w-4" />
-                                Historial de precios
+                                Historial de precios y costos
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleToggleActive(product)}

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -25,28 +26,9 @@ export function DropdownMenu({ trigger, align = "right", children }: DropdownMen
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    // Al scrollear o cambiar el tamaño el botón se mueve: se cierra en vez
-    // de dejar el menú flotando en otro lado.
-    function close() {
-      setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
-    };
-  }, [open]);
-
-  useLayoutEffect(() => {
-    if (!open || !ref.current || !menuRef.current) return;
+  // Ubica el menú pegado al botón: abajo si entra, si no arriba.
+  const place = useCallback(() => {
+    if (!ref.current || !menuRef.current) return;
     const trigger = ref.current.getBoundingClientRect();
     const menuHeight = menuRef.current.offsetHeight;
     const gap = 4;
@@ -57,7 +39,28 @@ export function DropdownMenu({ trigger, align = "right", children }: DropdownMen
     if (align === "right") next.right = window.innerWidth - trigger.right;
     else next.left = trigger.left;
     setPosition(next);
-  }, [open, align]);
+  }, [align]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    // Si la página o la tabla se mueven (scroll, también el horizontal que
+    // hace el navegador al enfocar el botón), el menú acompaña al botón.
+    document.addEventListener("mousedown", handleClick);
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, place]);
+
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open, place]);
 
   return (
     <div ref={ref} className="relative inline-block">
