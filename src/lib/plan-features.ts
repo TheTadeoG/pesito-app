@@ -70,14 +70,19 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Más elegido",
     features: [
       "Todas las funciones del Plan Esencial +",
-      "Aumentos masivos de precios y costos por proveedor o marca, y deshacerlos si te equivocás",
-      "Reportes avanzados para ganar más: cuánto ganás, qué te deja más plata, qué vendés a pérdida y cómo venís contra el mes anterior",
-      "En vivo: mirá cuánto vende cada sucursal en este momento",
+      "Aumentá precios y costos en segundos, por proveedor o marca (y lo deshacés si te equivocás)",
+      "Reportes avanzados: ganancias, ventas a pérdida, comparación de períodos e historial de caja",
+      "En vivo: mirá tu negocio desde tu casa, en el momento",
       "Hasta 2 sucursales, cada una con su stock",
       "Hasta 6 usuarios y 6 cajas",
       "Soporte prioritario",
     ],
-    soon: ["Ofertas y promociones", "Ganancias separadas por sucursal"],
+    soon: [
+      "Balanzas conectadas",
+      "1 catálogo online",
+      "Ofertas y promociones",
+      "Ganancias separadas por sucursal",
+    ],
   },
   ia: {
     plan: "ia",
@@ -88,9 +93,10 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Nuevo",
     features: ["Todas las funciones del Plan Pro +", "Soporte prioritario 24/7"],
     soon: [
-      "Recomendaciones de reposición con IA",
+      "Sugerencia de precios",
+      "Análisis de competidores y del mercado",
+      "Recomendaciones de reposición",
       "Detección de productos de baja rotación",
-      "Precios sugeridos automáticamente",
     ],
   },
 };
@@ -149,6 +155,14 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Efectivo, tarjeta, transferencia, QR y pago mixto", values: everyPlan },
       { label: "Ticket de venta (no fiscal)", values: everyPlan },
       {
+        label: "Balanzas conectadas",
+        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+      },
+      {
+        label: "Catálogo online",
+        values: { gratis: false, esencial: false, pro: "Pronto (1)", ia: "Pronto (1)" },
+      },
+      {
         label: "Combos y kits",
         values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
       },
@@ -199,10 +213,15 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     title: "Soporte e inteligencia artificial",
     rows: [
       { label: "Soporte prioritario", values: { gratis: false, esencial: false, pro: true, ia: "24/7" } },
-      {
-        label: "Herramientas con inteligencia artificial",
-        values: { gratis: false, esencial: false, pro: false, ia: "Pronto" },
-      },
+      ...[
+        "Sugerencia de precios",
+        "Análisis de competidores y del mercado",
+        "Recomendaciones de reposición",
+        "Detección de productos de baja rotación",
+      ].map((label) => ({
+        label,
+        values: { gratis: false, esencial: false, pro: false, ia: "Pronto" } as Record<Plan, ComparisonValue>,
+      })),
     ],
   },
 ];

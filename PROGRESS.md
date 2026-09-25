@@ -130,9 +130,12 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Talles y colores como variantes de un producto — Plan Esencial (`productVariants`). Mencionado también en /como-funciona, /comparacion y /pesito-para/indumentaria.
 - [ ] Ofertas y promociones — Plan Pro (`promotions`).
 - [ ] Ganancias separadas por sucursal (reportes) — Plan Pro.
-- [ ] Recomendaciones de reposición con IA — Plan IA (pantalla /recomendaciones "muy pronto").
-- [ ] Detección de productos de baja rotación — Plan IA (pantalla /baja-rotacion "muy pronto").
-- [ ] Precios sugeridos automáticamente — Plan IA.
+- [ ] Balanzas conectadas — Plan Pro (`scales`). En el POS ya hay un botón "Balanza (próximamente)".
+- [ ] Catálogo online (1 por negocio) — Plan Pro (`onlineCatalog`).
+- [ ] Sugerencia de precios — Plan IA (`priceSuggestions`).
+- [ ] Análisis de competidores y del mercado — Plan IA (`marketAnalysis`).
+- [ ] Recomendaciones de reposición — Plan IA (`restockRecommendations`; pantalla /recomendaciones "muy pronto").
+- [ ] Detección de productos de baja rotación — Plan IA (`lowRotation`; pantalla /baja-rotacion "muy pronto").
 - [ ] Cobro de los planes: el checkout de /registro dice "Muy pronto" (no hay pasarela de pago conectada).
 - [ ] Factura electrónica ARCA/AFIP: la web dice que no existe (no está anunciada como "Pronto").
 

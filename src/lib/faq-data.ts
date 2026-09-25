@@ -31,7 +31,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Qué diferencia hay entre los planes?",
-        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados de ganancias, la pantalla En vivo, hasta 2 sucursales con su propio stock y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar combos, kits y talles, y el Pro, ofertas y promociones. Pagando anual tenés un 20% de descuento.`,
+        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo, hasta 2 sucursales con su propio stock y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar combos, kits y talles; el Pro, balanzas conectadas, un catálogo online y ofertas y promociones; y el IA, sugerencia de precios y análisis de competidores y del mercado. Pagando anual tenés un 20% de descuento.`,
       },
       {
         question: "¿Necesito instalar algo?",
@@ -61,7 +61,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo vender por peso (fiambre, verdura, carne)?",
         answer:
-          "Sí. Los productos pueden ser por unidad o por kilo, y al vender cargás la cantidad con decimales (por ejemplo, 0,250 kg). El stock se descuenta en la misma unidad.",
+          "Sí. Los productos pueden ser por unidad o por kilo, y al vender cargás la cantidad con decimales (por ejemplo, 0,250 kg). El stock se descuenta en la misma unidad. La conexión con balanzas llega pronto en el Plan Pro.",
       },
       {
         question: "¿Qué medios de pago puedo cobrar?",

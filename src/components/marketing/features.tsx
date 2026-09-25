@@ -44,13 +44,13 @@ const features = [
     icon: Sparkles,
     title: "Recomendaciones con IA",
     description:
-      "Sugerencias de reposición y productos de baja rotación para que tu capital no quede dormido en la góndola.",
+      "Pronto, con el Plan IA: sugerencia de precios, reposición y productos de baja rotación, para que tu capital no quede dormido en la góndola.",
   },
   {
     icon: ScanBarcode,
     title: "Balanza y códigos",
     description:
-      "Compatible con lectores de código de barras y balanzas para productos que se venden por peso.",
+      "Compatible con lectores de código de barras, y productos por peso con la cantidad en kilos. La conexión con balanzas llega pronto.",
   },
   {
     icon: Receipt,

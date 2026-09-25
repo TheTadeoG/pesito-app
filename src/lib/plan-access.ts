@@ -16,7 +16,13 @@ export type PlanFeature =
   // que, al construirlas, se controlen con canUse desde el primer día.
   | "productBundles"
   | "productVariants"
-  | "promotions";
+  | "promotions"
+  | "scales"
+  | "onlineCatalog"
+  | "priceSuggestions"
+  | "marketAnalysis"
+  | "restockRecommendations"
+  | "lowRotation";
 
 /** Plan mínimo que habilita cada función (los planes superiores la heredan). */
 export const featureMinPlan: Record<PlanFeature, Plan> = {
@@ -30,6 +36,12 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   productBundles: "esencial",
   productVariants: "esencial",
   promotions: "pro",
+  scales: "pro",
+  onlineCatalog: "pro",
+  priceSuggestions: "ia",
+  marketAnalysis: "ia",
+  restockRecommendations: "ia",
+  lowRotation: "ia",
 };
 
 /** Nombre de la función para los avisos ("… está en el Plan Pro"). */
@@ -44,6 +56,12 @@ export const featureLabels: Record<PlanFeature, string> = {
   productBundles: "Los combos y kits",
   productVariants: "Los talles y colores",
   promotions: "Las ofertas y promociones",
+  scales: "Las balanzas conectadas",
+  onlineCatalog: "El catálogo online",
+  priceSuggestions: "La sugerencia de precios",
+  marketAnalysis: "El análisis de competidores y del mercado",
+  restockRecommendations: "Las recomendaciones de reposición",
+  lowRotation: "La detección de productos de baja rotación",
 };
 
 export interface PlanLimits {
