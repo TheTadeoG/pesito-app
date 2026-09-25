@@ -44,7 +44,7 @@ export function BulkPrices() {
             ))}
           </ul>
           <p className="mt-6 text-sm font-medium text-foreground">
-            Incluido en todos los planes, también en el gratis.
+            Incluido en el Plan Pro. Lo probás gratis los primeros 14 días.
           </p>
         </div>
 

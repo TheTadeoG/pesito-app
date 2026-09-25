@@ -330,12 +330,12 @@ export const blogPosts: BlogPost[] = [
       },
       {
         heading: "Cómo lo resolvés con Pesito",
-        paragraphs: ["Incluido en el Plan Gratis:"],
+        paragraphs: ["Los aumentos masivos están en el Plan Pro (y los probás gratis los primeros 14 días):"],
         list: [
           "Aumentos masivos: elegís un proveedor o una marca, ponés el porcentaje y se actualizan todos sus productos de una vez.",
           "Podés aumentar el costo y que el precio de venta suba en la misma proporción, para no perder margen.",
           "Si te equivocaste, deshacés el aumento.",
-          "Cada producto guarda su historial de precios y de costos.",
+          "En todos los planes, cada producto guarda su historial de precios y de costos.",
           "Al registrar una compra con el costo nuevo, podés actualizar ahí mismo el precio de venta.",
         ],
       },
@@ -374,13 +374,13 @@ export const blogPosts: BlogPost[] = [
       },
       {
         heading: "Cómo lo resolvés con Pesito",
-        paragraphs: ["Las cajas por usuario están en todos los planes:"],
+        paragraphs: ["Cada usuario tiene su caja en todos los planes (1 en el Plan Gratis, hasta 2 en el Esencial y hasta 6 en el Pro):"],
         list: [
           "Cada usuario abre y cierra su caja con su monto inicial.",
           "Retiros e ingresos de efectivo se registran con su motivo, y los cobros de fiado y pagos a proveedores en efectivo también impactan en la caja.",
           "Al cerrar contás el efectivo (hay una calculadora de billetes) y Pesito te dice si hubo faltante o sobrante.",
           "Podés configurar una hora de cierre y el sistema le recuerda a cada uno que cierre su caja.",
-          "En Reportes ves las diferencias de caja por persona, y desde En vivo ves en el momento quién tiene la caja abierta, cuánto efectivo tiene y cuánto vendió.",
+          "Con el Plan Pro, en Reportes ves las diferencias de caja por persona, y desde En vivo ves en el momento quién tiene la caja abierta, cuánto efectivo tiene y cuánto vendió.",
           "Tus empleados no necesitan email: les creás un usuario y contraseña desde Pesito.",
         ],
       },
@@ -420,7 +420,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         heading: "Cómo lo resolvés con Pesito",
-        paragraphs: ["Las sucursales están en el Plan Pro:"],
+        paragraphs: ["Las sucursales están en el Plan Pro, que incluye hasta 2 (si tenés más, escribinos):"],
         list: [
           "Cada sucursal tiene su propio stock y sus cajas; vender descuenta del local de la caja.",
           "A cada vendedor le asignás su sucursal; vos cambiás de sucursal desde el menú.",
@@ -464,7 +464,7 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "Cómo lo resolvés con Pesito",
         paragraphs: [
-          "En Reportes (Plan Gratis) tenés ingresos, ganancia estimada, ticket promedio, ventas por día, medios de pago, productos más vendidos y los que más ganancia dejan, y las ventas de cada vendedor. Con el Plan Pro sumás la comparación con el período anterior y los productos que se están vendiendo a pérdida.",
+          "En todos los planes, Reportes te muestra lo vendido, el ticket promedio, las ventas por día, los medios de pago y los productos más vendidos. Con el Plan Pro sumás el reporte de ganancias: la ganancia estimada, los productos que más ganancia dejan, los que se están vendiendo a pérdida, la comparación con el período anterior y las ventas de cada vendedor.",
         ],
       },
     ],

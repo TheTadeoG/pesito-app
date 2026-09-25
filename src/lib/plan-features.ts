@@ -39,9 +39,10 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     // preguntas frecuentes.
     features: [
       FREE_PLAN_SALES_LIMIT_LABEL,
-      "Caja diaria y fiado de clientes",
-      "Reportes simples de tu negocio",
-      "1 usuario",
+      "Caja diaria y fiado de tus clientes",
+      "Stock y compras a proveedores",
+      "Reportes básicos de ventas",
+      "1 usuario y 1 caja",
     ],
   },
   esencial: {
@@ -54,7 +55,8 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: [
       "Todas las funciones del Plan Gratis +",
       "Ventas ilimitadas",
-      "Hasta 2 usuarios, cada uno con su caja",
+      "Cuenta corriente con tus proveedores: cuánto les debés y cada pago",
+      "Hasta 2 usuarios y 2 cajas",
     ],
   },
   pro: {
@@ -66,14 +68,15 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Más elegido",
     features: [
       "Todas las funciones del Plan Esencial +",
-      "Varias sucursales, cada una con su stock y sus cajas",
-      "Transferencias de mercadería entre sucursales",
-      "Reportes avanzados: comparación de períodos y productos vendidos a pérdida",
-      "Múltiples cajas y usuarios simultáneos",
-      "Historial completo de caja (aperturas, cierres, diferencias)",
-      "Hasta 10 usuarios",
+      "Aumentos masivos de precios y costos por proveedor o marca, y deshacerlos si te equivocás",
+      "Reporte de ganancias: cuánto ganás, qué te deja más y qué vendés a pérdida",
+      "En vivo: mirá cuánto vende cada sucursal en este momento",
+      "Control por empleado y por sucursal: ventas y diferencias de caja",
+      "Hasta 2 sucursales, cada una con su stock",
+      "Hasta 6 usuarios y 6 cajas",
       "Soporte prioritario",
     ],
+    soon: ["Ganancias separadas por sucursal"],
   },
   ia: {
     plan: "ia",
@@ -119,6 +122,7 @@ export interface ComparisonRow {
 }
 
 const everyPlan: Record<Plan, ComparisonValue> = { gratis: true, esencial: true, pro: true, ia: true };
+const fromEsencial: Record<Plan, ComparisonValue> = { gratis: false, esencial: true, pro: true, ia: true };
 const fromPro: Record<Plan, ComparisonValue> = { gratis: false, esencial: false, pro: true, ia: true };
 
 // Tabla de /comparar-planes, agrupada por tema. Tiene que decir lo mismo que
@@ -131,8 +135,9 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         label: "Ventas por mes",
         values: { gratis: "150", esencial: "Ilimitadas", pro: "Ilimitadas", ia: "Ilimitadas" },
       },
-      { label: "Usuarios", values: { gratis: "1", esencial: "2", pro: "10", ia: "10" } },
-      { label: "Sucursales", values: { gratis: "1", esencial: "1", pro: "Varias", ia: "Varias" } },
+      { label: "Usuarios", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
+      { label: "Cajas", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
+      { label: "Sucursales", values: { gratis: "1", esencial: "1", pro: "2", ia: "2" } },
     ],
   },
   {
@@ -148,28 +153,38 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     title: "Stock, precios y compras",
     rows: [
       { label: "Stock con aviso de faltantes", values: everyPlan },
-      { label: "Aumentos masivos de precios por proveedor o marca", values: everyPlan },
-      { label: "Compras y cuenta corriente de proveedores", values: everyPlan },
-      { label: "Varias sucursales, cada una con su stock", values: fromPro },
-      { label: "Transferencias de mercadería entre sucursales", values: fromPro },
+      { label: "Compras a proveedores", values: everyPlan },
+      { label: "Historial de precios de cada producto", values: everyPlan },
+      { label: "Cuenta corriente con proveedores", values: fromEsencial },
+      { label: "Aumentos masivos de precios y costos, con deshacer", values: fromPro },
+      { label: "Pases de mercadería entre sucursales", values: fromPro },
     ],
   },
   {
     title: "Caja, clientes y equipo",
     rows: [
-      { label: "Caja diaria con control de faltantes", values: everyPlan },
+      { label: "Caja diaria con cierre y arqueo", values: everyPlan },
       { label: "Clientes con fiado (cuenta corriente)", values: everyPlan },
-      { label: "Pantalla En vivo con las ventas del día", values: everyPlan },
+      { label: "En vivo: ventas del momento por sucursal y vendedor", values: fromPro },
+      { label: "Ventas y diferencias de caja por empleado", values: fromPro },
       { label: "Historial completo de caja", values: fromPro },
     ],
   },
   {
-    title: "Reportes y soporte",
+    title: "Reportes",
     rows: [
+      { label: "Ventas, ticket promedio, medios de pago y más vendidos", values: everyPlan },
+      { label: "Ganancias y productos vendidos a pérdida", values: fromPro },
+      { label: "Comparación con el período anterior", values: fromPro },
       {
-        label: "Reportes del negocio",
-        values: { gratis: "Simples", esencial: "Simples", pro: "Avanzados", ia: "Avanzados" },
+        label: "Ganancias separadas por sucursal",
+        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
       },
+    ],
+  },
+  {
+    title: "Soporte e inteligencia artificial",
+    rows: [
       { label: "Soporte prioritario", values: { gratis: false, esencial: false, pro: true, ia: "24/7" } },
       {
         label: "Herramientas con inteligencia artificial",

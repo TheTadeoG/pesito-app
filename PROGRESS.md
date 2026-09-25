@@ -106,7 +106,9 @@ Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; 
 - Precios en la landing: 4 tarjetas + recorrido en 3 pasos arriba (14 días de Pro → Plan Gratis → plan pago), sin color a propósito para no quitarle atención al Pro. Botón a `/comparar-planes` (también en Recursos y el pie): tabla por tema desde `planComparison` en `plan-features.ts` (mantenerla alineada con las features de cada plan) + preguntas de planes con FAQPage.
 - Arreglo: el tope de 150 ventas/mes ya no aplica al Plan Esencial (`hasMonthlySalesLimit` en `lib/subscription.ts`).
 - Preguntas: `src/lib/faq-data.ts` (23 en 6 temas; la landing muestra 8). Blog: 10 artículos, autor "Tadeo, de Pesito", `seoTitle` para títulos cortos en Google.
-- Pendiente de negocio (no es código): los límites de usuarios por plan (1/2/10) se anuncian pero la app no los controla; "Soporte prioritario 24/7" del Plan IA es una promesa comercial.
+- Distribución de planes (decidida por el usuario): Gratis = 150 ventas/mes, caja y fiado, stock y compras, reportes básicos, 1 usuario/1 caja. Esencial = + ventas ilimitadas, cuenta corriente con proveedores, 2 usuarios/2 cajas. Pro = + aumentos masivos (precios y costos, con deshacer), reporte de ganancias (y comparación de períodos, a pérdida), En vivo, control por empleado/sucursal, hasta 2 sucursales, 6 usuarios/6 cajas, soporte prioritario; "Ganancias por sucursal" figura como Pronto. IA = + soporte 24/7 y funciones IA (Pronto).
+- PENDIENTE (código): la app todavía NO aplica esta distribución — los textos ya la anuncian. Falta bloquear por plan: aumentos masivos, reporte de ganancias/comparación, En vivo, reportes por vendedor y diferencias de caja por persona, cuenta corriente de proveedores, límites de usuarios/cajas/sucursales; y construir ganancias por sucursal. Decidir qué pasa con cuentas existentes que ya usan esas funciones.
+- "Soporte prioritario 24/7" del Plan IA es una promesa comercial.
 
 ## Skills del proyecto (`.agents/skills`, con acceso en `.claude/skills`)
 

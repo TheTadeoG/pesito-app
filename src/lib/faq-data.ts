@@ -22,16 +22,16 @@ export const faqCategories: FaqCategory[] = [
     faqs: [
       {
         question: "¿Pesito es gratis?",
-        answer: `Sí. El Plan Gratis no tiene costo, no pide tarjeta y no vence. Incluye el punto de venta, el stock, la caja, los clientes con fiado, las compras a proveedores y los reportes, para 1 usuario y hasta ${FREE_PLAN_SALES_LIMIT_LABEL}. Además, al crear tu cuenta tenés 14 días del Plan Pro de regalo.`,
+        answer: `Sí. El Plan Gratis no tiene costo, no pide tarjeta y no vence. Incluye el punto de venta con lector de códigos, el stock, las compras a proveedores, la caja, los clientes con fiado y reportes básicos de ventas, para 1 usuario y hasta ${FREE_PLAN_SALES_LIMIT_LABEL}. Además, al crear tu cuenta tenés 14 días del Plan Pro de regalo.`,
       },
       {
         question: "¿Qué pasa cuando terminan los 14 días de prueba?",
         answer:
-          "Seguís en el Plan Gratis automáticamente: no se te cobra nada y no perdés ningún dato. Lo único que deja de estar disponible son las funciones del Plan Pro (por ejemplo, sumar sucursales o los reportes avanzados), hasta que elijas un plan pago.",
+          "Seguís en el Plan Gratis automáticamente: no se te cobra nada y no perdés ningún dato. Lo único que deja de estar disponible son las funciones del Plan Pro (por ejemplo, los aumentos masivos, el reporte de ganancias, En vivo o las sucursales), hasta que elijas un plan pago.",
       },
       {
         question: "¿Qué diferencia hay entre los planes?",
-        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas y hasta 2 usuarios. El ${pro.name} (${pro.priceLabel} por mes) suma varias sucursales con su propio stock, transferencias de mercadería entre sucursales, reportes avanzados y hasta 10 usuarios. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Pagando anual tenés un 20% de descuento.`,
+        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, la cuenta corriente con tus proveedores y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, el reporte de ganancias, la pantalla En vivo, el control por empleado y por sucursal, hasta 2 sucursales con su propio stock y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Pagando anual tenés un 20% de descuento.`,
       },
       {
         question: "¿Necesito instalar algo?",
@@ -90,18 +90,15 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Cómo actualizo los precios cuando hay aumentos?",
-        answer:
-          "Con los aumentos masivos: subís un porcentaje a todos los productos de un proveedor o de una marca de una sola vez (y si te equivocaste, lo deshacés). Cada producto guarda su historial de precios, y al registrar una compra podés actualizar el precio de venta con el costo nuevo.",
+        answer: `Con los aumentos masivos del ${pro.name}: subís un porcentaje o un monto a los precios o costos de todos los productos de un proveedor o de una marca de una sola vez (y si te equivocaste, lo deshacés). En todos los planes cada producto guarda su historial de precios, y al registrar una compra podés actualizar el precio de venta con el costo nuevo.`,
       },
       {
         question: "¿Puedo registrar las compras a mis proveedores?",
-        answer:
-          "Sí. Al cargar una compra se suma el stock y se actualiza el costo. Podés pagarla en efectivo desde la caja, con otro medio o dejarla en la cuenta corriente del proveedor, y ver cuánto le debés a cada uno.",
+        answer: `Sí, en todos los planes. Al cargar una compra se suma el stock y se actualiza el costo, y la pagás en efectivo desde la caja o con otro medio. Desde el ${esencial.name} también podés dejarla en la cuenta corriente del proveedor y ver cuánto le debés a cada uno.`,
       },
       {
         question: "¿Me dice cuánto gano de verdad?",
-        answer:
-          "Sí. Si cargás el costo de cada producto, los reportes te muestran la ganancia estimada además de lo vendido, el ticket promedio, los productos más vendidos y los que más ganancia te dejan.",
+        answer: `Sí, con el reporte de ganancias del ${pro.name}: si cargás el costo de cada producto, ves la ganancia estimada, los productos que más ganancia te dejan, los que vendés a pérdida y la comparación con el período anterior. En todos los planes tenés los reportes básicos: lo vendido, el ticket promedio, los medios de pago y los productos más vendidos.`,
       },
     ],
   },
@@ -111,7 +108,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Cada empleado tiene su propia caja?",
         answer:
-          "Sí. Cada usuario abre y cierra su caja con su monto inicial de efectivo. Durante el turno se registran los retiros e ingresos, y al cerrar se cuenta el efectivo (con una calculadora de billetes) y Pesito te muestra si hubo faltante o sobrante.",
+          "Sí. Cada usuario abre y cierra su caja con su monto inicial de efectivo. Durante el turno se registran los retiros e ingresos, y al cerrar se cuenta el efectivo (con una calculadora de billetes) y Pesito te muestra si hubo faltante o sobrante. El Plan Gratis tiene 1 usuario con su caja, el Esencial hasta 2 y el Pro hasta 6.",
       },
       {
         question: "¿Mis empleados necesitan tener email?",
@@ -121,16 +118,16 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo ver cómo va el negocio sin estar en el local?",
         answer:
-          "Sí, con la pantalla En vivo, desde el celular o la compu: cuánto se vendió hoy, la comparación con ayer a la misma hora, cada sucursal, cada vendedor con su caja y las últimas ventas. Se actualiza sola cada 30 segundos mientras la mirás.",
+          "Sí, con la pantalla En vivo del Plan Pro, desde el celular o la compu: cuánto se vendió hoy, la comparación con ayer a la misma hora, cada sucursal, cada vendedor con su caja y las últimas ventas. Se actualiza sola cada 30 segundos mientras la mirás.",
       },
       {
         question: "¿Sirve si tengo varias sucursales?",
-        answer: `Sí, con el ${pro.name}. Cada sucursal tiene su propio stock y sus cajas, cada vendedor trabaja en la suya y podés pasar mercadería de una sucursal a otra. Desde En vivo ves cuánto vende cada una en el momento.`,
+        answer: `Sí, con el ${pro.name}, que incluye hasta 2 sucursales. Cada sucursal tiene su propio stock y sus cajas, cada vendedor trabaja en la suya y podés pasar mercadería de una sucursal a otra. Desde En vivo ves cuánto vende cada una en el momento. Si tenés más sucursales, escribinos por WhatsApp.`,
       },
       {
         question: "¿Cómo sé si falta plata en la caja?",
         answer:
-          "Al cerrar la caja contás el efectivo y Pesito lo compara con lo que debería haber (monto inicial + ventas en efectivo + cobros − retiros y pagos). Si no coincide, queda registrada la diferencia de ese vendedor, y en los reportes ves los faltantes y sobrantes por persona.",
+          "Al cerrar la caja contás el efectivo y Pesito lo compara con lo que debería haber (monto inicial + ventas en efectivo + cobros − retiros y pagos). Si no coincide, queda registrada la diferencia de ese vendedor. Con el Plan Pro, en los reportes ves los faltantes y sobrantes de cada persona.",
       },
     ],
   },
