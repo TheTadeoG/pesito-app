@@ -29,6 +29,12 @@ const rows: Row[] = [
     otros: "yes",
   },
   {
+    question: "¿Aumentás los precios de todo un proveedor o marca de una vez?",
+    pesito: "yes",
+    excel: "no",
+    otros: "no",
+  },
+  {
     question: "¿Lleva la cuenta de quién te debe (fiado)?",
     pesito: "yes",
     excel: "no",
