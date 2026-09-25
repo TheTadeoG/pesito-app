@@ -11,6 +11,7 @@ import {
 } from "@/app/(dashboard)/reportes/reportes-dashboard";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
+import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { getMemberLabelsById } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
 
@@ -45,26 +46,31 @@ export default async function ReportesPage({
   const isManager = membership.role === "owner" || membership.role === "admin";
   const subscription = await getSubscription(supabase, organization.id);
 
-  const { data: salesRaw } = await supabase
-    .from("sales")
-    .select("id, total, payment_method, invoice_type, created_at, customer_id")
-    .eq("org_id", organization.id)
-    .eq("status", "completada")
-    .gte("created_at", start.toISOString())
-    .order("created_at", { ascending: false });
+  const salesRaw = await fetchAll((from, to) =>
+    supabase
+      .from("sales")
+      .select("id, total, payment_method, invoice_type, created_at, customer_id")
+      .eq("org_id", organization.id)
+      .eq("status", "completada")
+      .gte("created_at", start.toISOString())
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to)
+  );
 
-  const sales = (salesRaw ?? []).map((s) => ({ ...s, total: Number(s.total) }));
+  const sales = salesRaw.map((s) => ({ ...s, total: Number(s.total) }));
   const saleIds = sales.map((s) => s.id);
 
-  const { data: itemsRaw } =
-    saleIds.length > 0
-      ? await supabase
-          .from("sale_items")
-          .select("sale_id, product_id, product_name, quantity, unit_price, subtotal")
-          .in("sale_id", saleIds)
-      : { data: [] };
+  const itemsRaw = await fetchAllIn(saleIds, (ids, from, to) =>
+    supabase
+      .from("sale_items")
+      .select("sale_id, product_id, product_name, quantity, unit_price, subtotal")
+      .in("sale_id", ids)
+      .order("id")
+      .range(from, to)
+  );
 
-  const items = (itemsRaw ?? []).map((i) => ({
+  const items = itemsRaw.map((i) => ({
     ...i,
     quantity: Number(i.quantity),
     unit_price: Number(i.unit_price),
@@ -79,17 +85,17 @@ export default async function ReportesPage({
     new Set(sales.map((s) => s.customer_id).filter((id): id is string => Boolean(id)))
   );
 
-  const [{ data: productsRaw }, { data: customersRaw }] = await Promise.all([
-    productIds.length > 0
-      ? supabase.from("products").select("id, cost").in("id", productIds)
-      : Promise.resolve({ data: [] }),
-    customerIds.length > 0
-      ? supabase.from("customers").select("id, name").in("id", customerIds)
-      : Promise.resolve({ data: [] }),
+  const [productsRaw, customersRaw] = await Promise.all([
+    fetchAllIn(productIds, (ids, from, to) =>
+      supabase.from("products").select("id, cost").in("id", ids).order("id").range(from, to)
+    ),
+    fetchAllIn(customerIds, (ids, from, to) =>
+      supabase.from("customers").select("id, name").in("id", ids).order("id").range(from, to)
+    ),
   ]);
 
-  const costById = new Map((productsRaw ?? []).map((p) => [p.id, Number(p.cost ?? 0)]));
-  const customerNameById = new Map((customersRaw ?? []).map((c) => [c.id, c.name]));
+  const costById = new Map(productsRaw.map((p) => [p.id, Number(p.cost ?? 0)]));
+  const customerNameById = new Map(customersRaw.map((c) => [c.id, c.name]));
 
   const ingresos = sales.reduce((acc, s) => acc + s.total, 0);
   const totalVentas = sales.length;
@@ -219,19 +225,23 @@ export default async function ReportesPage({
 
   let cashDiffByUser: CashDiffRow[] | null = null;
   if (isManager) {
-    const { data: closedRegisters } = await supabase
-      .from("cash_registers")
-      .select("user_id, expected_amount, closing_amount")
-      .eq("org_id", organization.id)
-      .eq("status", "cerrada")
-      .gte("closed_at", start.toISOString());
+    const closedRegisters = await fetchAll((from, to) =>
+      supabase
+        .from("cash_registers")
+        .select("user_id, expected_amount, closing_amount")
+        .eq("org_id", organization.id)
+        .eq("status", "cerrada")
+        .gte("closed_at", start.toISOString())
+        .order("id")
+        .range(from, to)
+    );
 
     const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
     const totalsByUser = new Map<
       string,
       { cajasCerradas: number; faltante: number; sobrante: number }
     >();
-    for (const r of closedRegisters ?? []) {
+    for (const r of closedRegisters) {
       const diff = Number(r.closing_amount ?? 0) - Number(r.expected_amount ?? 0);
       const current = totalsByUser.get(r.user_id) ?? {
         cajasCerradas: 0,
@@ -253,30 +263,32 @@ export default async function ReportesPage({
   }
 
   // "Quién te debe": clientes con saldo de fiado, con hace cuánto no pagan.
-  const { data: debtorsRaw } = await supabase
-    .from("customers")
-    .select("id, name, balance")
-    .eq("org_id", organization.id)
-    .gt("balance", 0)
-    .order("balance", { ascending: false });
+  const debtors = await fetchAll((from, to) =>
+    supabase
+      .from("customers")
+      .select("id, name, balance")
+      .eq("org_id", organization.id)
+      .gt("balance", 0)
+      .order("balance", { ascending: false })
+      .order("id")
+      .range(from, to)
+  );
 
-  const debtors = debtorsRaw ?? [];
   const lastPaymentByCustomer = new Map<string, string>();
-  if (debtors.length > 0) {
-    const { data: paymentsRaw } = await supabase
-      .from("customer_payments")
-      .select("customer_id, created_at")
-      .in(
-        "customer_id",
-        debtors.map((d) => d.id)
-      )
-      .order("created_at", { ascending: false });
-    // Ordenado desc: la primera vez que vemos un customer_id es su pago
-    // más reciente.
-    for (const p of paymentsRaw ?? []) {
-      if (!lastPaymentByCustomer.has(p.customer_id)) {
-        lastPaymentByCustomer.set(p.customer_id, p.created_at);
-      }
+  const paymentsRaw = await fetchAllIn(
+    debtors.map((d) => d.id),
+    (ids, from, to) =>
+      supabase
+        .from("customer_payments")
+        .select("customer_id, created_at")
+        .in("customer_id", ids)
+        .order("id")
+        .range(from, to)
+  );
+  for (const p of paymentsRaw) {
+    const current = lastPaymentByCustomer.get(p.customer_id);
+    if (!current || new Date(p.created_at) > new Date(current)) {
+      lastPaymentByCustomer.set(p.customer_id, p.created_at);
     }
   }
   const fiadoDebtors = debtors.map((d) => {
@@ -293,13 +305,17 @@ export default async function ReportesPage({
 
   // Stock valorizado: cuánta plata hay parada en mercadería, al costo y al
   // precio de venta.
-  const { data: stockProductsRaw } = await supabase
-    .from("products")
-    .select("cost, price, stock")
-    .eq("org_id", organization.id)
-    .eq("active", true);
+  const stockProductsRaw = await fetchAll((from, to) =>
+    supabase
+      .from("products")
+      .select("cost, price, stock")
+      .eq("org_id", organization.id)
+      .eq("active", true)
+      .order("id")
+      .range(from, to)
+  );
 
-  const stockValue = (stockProductsRaw ?? []).reduce(
+  const stockValue = stockProductsRaw.reduce(
     (acc, p) => {
       const stock = Number(p.stock);
       acc.atCost += stock * Number(p.cost ?? 0);
@@ -323,48 +339,50 @@ export default async function ReportesPage({
     // eslint-disable-next-line react-hooks/purity
     const durationMs = Date.now() - start.getTime();
     const previousStart = new Date(start.getTime() - durationMs);
-    const { data: previousSalesRaw } = await supabase
-      .from("sales")
-      .select("id, total")
-      .eq("org_id", organization.id)
-      .eq("status", "completada")
-      .gte("created_at", previousStart.toISOString())
-      .lt("created_at", start.toISOString());
+    const previousSalesRaw = await fetchAll((from, to) =>
+      supabase
+        .from("sales")
+        .select("id, total")
+        .eq("org_id", organization.id)
+        .eq("status", "completada")
+        .gte("created_at", previousStart.toISOString())
+        .lt("created_at", start.toISOString())
+        .order("id")
+        .range(from, to)
+    );
 
-    const previousSales = (previousSalesRaw ?? []).map((s) => ({ ...s, total: Number(s.total) }));
+    const previousSales = previousSalesRaw.map((s) => ({ ...s, total: Number(s.total) }));
     const previousIngresos = previousSales.reduce((acc, s) => acc + s.total, 0);
     const previousVentas = previousSales.length;
     const previousTicket = previousVentas > 0 ? previousIngresos / previousVentas : 0;
 
     const previousSaleIds = previousSales.map((s) => s.id);
-    const { data: previousItemsRaw } =
-      previousSaleIds.length > 0
-        ? await supabase
-            .from("sale_items")
-            .select("product_id, quantity")
-            .in("sale_id", previousSaleIds)
-        : { data: [] };
+    const previousItemsRaw = await fetchAllIn(previousSaleIds, (ids, from, to) =>
+      supabase
+        .from("sale_items")
+        .select("product_id, quantity")
+        .in("sale_id", ids)
+        .order("id")
+        .range(from, to)
+    );
 
     // El período anterior puede haber vendido productos que no aparecen en
     // el actual — completar el costo de esos para poder estimar su margen.
     const missingProductIds = Array.from(
       new Set(
-        (previousItemsRaw ?? [])
+        previousItemsRaw
           .map((i) => i.product_id)
           .filter((id): id is string => id !== null && !costById.has(id))
       )
     );
-    if (missingProductIds.length > 0) {
-      const { data: extraProductsRaw } = await supabase
-        .from("products")
-        .select("id, cost")
-        .in("id", missingProductIds);
-      for (const p of extraProductsRaw ?? []) {
-        costById.set(p.id, Number(p.cost ?? 0));
-      }
+    const extraProductsRaw = await fetchAllIn(missingProductIds, (ids, from, to) =>
+      supabase.from("products").select("id, cost").in("id", ids).order("id").range(from, to)
+    );
+    for (const p of extraProductsRaw) {
+      costById.set(p.id, Number(p.cost ?? 0));
     }
 
-    const previousCosto = (previousItemsRaw ?? []).reduce(
+    const previousCosto = previousItemsRaw.reduce(
       (acc, i) => acc + Number(i.quantity) * (i.product_id ? costById.get(i.product_id) ?? 0 : 0),
       0
     );

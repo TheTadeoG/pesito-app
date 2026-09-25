@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Wallet } from "lucide-react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllIn } from "@/lib/supabase/fetch-all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
@@ -58,16 +59,17 @@ export default async function ProveedorDetailPage({
   const completedPurchases = purchases.filter((p) => p.status === "completada");
   const purchaseIds = purchases.map((p) => p.id);
 
-  const { data: itemsRaw } =
-    purchaseIds.length > 0
-      ? await supabase
-          .from("purchase_items")
-          .select("purchase_id, product_name, quantity")
-          .in("purchase_id", purchaseIds)
-      : { data: [] };
+  const itemsRaw = await fetchAllIn(purchaseIds, (ids, from, to) =>
+    supabase
+      .from("purchase_items")
+      .select("purchase_id, product_name, quantity")
+      .in("purchase_id", ids)
+      .order("id")
+      .range(from, to)
+  );
 
   const itemsByPurchase = new Map<string, string[]>();
-  for (const item of itemsRaw ?? []) {
+  for (const item of itemsRaw) {
     const list = itemsByPurchase.get(item.purchase_id) ?? [];
     const quantity = Number(item.quantity);
     list.push(quantity > 1 ? `${item.product_name} x${quantity}` : item.product_name);

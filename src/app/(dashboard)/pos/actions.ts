@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { getSubscription, getMonthlySalesCount, FREE_PLAN_MONTHLY_SALES_LIMIT } from "@/lib/subscription";
 import type { Json } from "@/lib/database.types";
+import type { SaleRow } from "@/components/dashboard/ventas-list";
+import { getRecentSaleRows } from "@/app/(dashboard)/pos/recent-sales";
 
 export interface CheckoutItemInput {
   product_id: string | null;
@@ -34,9 +35,18 @@ export interface CheckoutInput {
   payments?: PaymentLineInput[];
 }
 
-export async function checkoutSale(
-  input: CheckoutInput
-): Promise<{ error?: string; saleId?: string }> {
+export interface CheckoutResult {
+  error?: string;
+  saleId?: string;
+  // Lo que cambió con la venta, para que el POS se actualice sin volver a
+  // renderizarse entero (eso bajaba otra vez todo el catálogo y todos los
+  // clientes: ~700 KB por venta en un negocio mediano).
+  stockByProduct?: Record<string, number>;
+  customerBalance?: { id: string; balance: number };
+  recentSales?: SaleRow[];
+}
+
+export async function checkoutSale(input: CheckoutInput): Promise<CheckoutResult> {
   if (input.items.length === 0) {
     return { error: "El carrito está vacío." };
   }
@@ -72,14 +82,34 @@ export async function checkoutSale(
     return { error: error.message || "No pudimos procesar la venta." };
   }
 
-  revalidatePath("/pos");
-  revalidatePath("/productos");
-  revalidatePath("/caja");
-  revalidatePath("/reportes");
-  revalidatePath("/clientes");
-  if (input.customerId) revalidatePath(`/clientes/${input.customerId}`);
+  // Sin revalidatePath: cualquier revalidatePath dentro de un server
+  // action (aunque sea de otra ruta) hace que la respuesta traiga el POS
+  // entero renderizado de nuevo — catálogo y clientes completos, ~700 KB
+  // desde Supabase por venta. Lo que cambió se devuelve abajo. Las otras
+  // pantallas del panel son dinámicas: a lo sumo muestran lo de hace 30s
+  // (staleTimes en next.config.ts) si se vuelve a ellas enseguida.
 
-  return { saleId: data ?? undefined };
+  const productIds = Array.from(
+    new Set(input.items.map((i) => i.product_id).filter((id): id is string => Boolean(id)))
+  );
+  const [{ data: stockRows }, { data: customerRow }, recentSales] = await Promise.all([
+    productIds.length > 0
+      ? supabase.from("products").select("id, stock").in("id", productIds)
+      : Promise.resolve({ data: [] }),
+    input.customerId
+      ? supabase.from("customers").select("id, balance").eq("id", input.customerId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    getRecentSaleRows(supabase, input.cashRegisterId),
+  ]);
+
+  return {
+    saleId: data ?? undefined,
+    stockByProduct: Object.fromEntries((stockRows ?? []).map((p) => [p.id, Number(p.stock)])),
+    customerBalance: customerRow
+      ? { id: customerRow.id, balance: Number(customerRow.balance) }
+      : undefined,
+    recentSales,
+  };
 }
 
 export async function createCustomerQuick(
@@ -103,8 +133,6 @@ export async function createCustomerQuick(
     return { error: "No pudimos crear el cliente." };
   }
 
-  revalidatePath("/pos");
-  revalidatePath("/clientes");
 
   return { id: data.id };
 }

@@ -1,82 +1,37 @@
-# Estado del trabajo — optimización de costos Vercel/Supabase
+# Progreso
 
-Rama: `claude/sharp-carson-p8zpd2`. Todo lo de acá abajo ya está commiteado y
-pusheado — este archivo es sólo para que una sesión nueva no tenga que
-re-leer toda la conversación anterior.
+Última actualización: 2026-09-25.
 
-## Por qué existe esto
+## Hecho (PR #2, mergeado)
 
-El usuario pidió bajar cuánta información se transfiere y cuántas veces se
-repite ida y vuelta a Vercel/Supabase, para optimizar costos, sin romper
-nada. Se hizo en varios pasos chicos y seguros (no una reescritura grande),
-verificando build + lint + typecheck en cada uno antes de pushear.
+Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 clientes, 2 vendedores y 30 días con ~2.500 ventas. Usamos Supabase local + `next start`.
 
-## Qué se hizo, en orden (más reciente primero)
+- Reportes, POS, Compras, Productos y Clientes ya no se cortan en 1.000 filas ni en 500/300 productos/clientes.
+- Migración 0037 (aplicada en producción): los negocios nuevos vuelven a tener la prueba Pro de 14 días.
+- POS: una venta pasó de 42 consultas / ~710 KB a 6 consultas / ~1,5 KB. La sesión se valida con `getClaims`.
+- Errores de hidratación #418 arreglados: formato de fechas, cronómetro de caja y `<html>`.
 
-1. **`next.config.ts`** — `experimental.staleTimes.dynamic = 30`. El layout
-   del dashboard (sesión + suscripción + caja) se reusa hasta 30s entre
-   navegaciones en vez de recalcularse en cada click. Seguro: las acciones
-   que cambian plata (checkout, abrir/cerrar caja) ya fuerzan datos
-   frescos con `router.refresh()`/`revalidatePath`, así que nunca muestran
-   algo viejo.
-2. **`src/components/dashboard/sidebar.tsx` + `mobile-nav.tsx`** —
-   `prefetch={false}` en los ~14 links del menú (antes Next.js los
-   precargaba TODOS apenas se veía el sidebar, disparando el layout del
-   dashboard de más aunque nadie los visitara). En el sidebar de escritorio
-   se agregó en cambio `onMouseEnter={() => router.prefetch(item.href)}`
-   para que la navegación real siga sintiéndose instantánea sin
-   precargar los 14 de una.
-3. **`src/lib/org.ts`** — `requireOrgContext()` envuelta en `cache()` de
-   React: se llamaba una vez en el layout y otra en cada página,
-   duplicando la consulta de sesión+membership por request.
-4. **`src/lib/caja.ts`** — nueva `getCachedCashOnHand(cashRegisterId,
-   openingAmount)`, cacheada por request y **por ID de caja registradora**
-   (no por usuario ni por negocio — a propósito, para seguir siendo
-   correcta si a futuro hay varios vendedores compartiendo una caja o
-   varias sucursales). El layout y la página de Caja calculaban el mismo
-   desglose de 6-8 consultas por separado; ahora se reusa.
-5. **`src/app/(dashboard)/layout.tsx`** — la consulta de suscripción y la
-   de "¿hay caja abierta?" pasaron de secuenciales a `Promise.all`.
-6. **`src/app/(dashboard)/usuarios/usuarios-client.tsx`** — el polling
-   automático de la lista de usuarios bajó de cada 10s a cada 60s (el
-   refresco instantáneo al volver a la pestaña, vía visibilitychange/
-   focus, queda igual).
+## Costos (cliente mediano, por mes, después del PR #2)
 
-## Medido en Vercel (dato real, no estimado)
+- Supabase: ~80.000 consultas y ~0,34 GB transferidos. La base crece ~2,7 KB por venta (~7 MB por mes).
+- Vercel: ~10.000 invocaciones y ~0,16 h de servidor (centavos de dólar).
+- Supabase Pro (250 GB) alcanza para unos 740 clientes. Con 300 clientes: ~US$45/mes (Vercel Pro US$20 + Supabase Pro US$25), más un servidor de Supabase más grande si hace falta.
 
-El usuario probó en producción (login + 1 venta + 1 compra + abrir/cerrar/
-abrir caja) con todo lo de arriba ya desplegado: **76 Vercel Functions, 1MB
-de transferencia** en esa sesión de prueba (ventana de 5 min en Vercel
-Observability). Antes de estos cambios, sólo *una* carga de pantalla sin
-hacer nada generaba más invocaciones que eso — por la precarga automática
-del menú (ver punto 2). No hay una medición real de "antes" en MB para
-comparar 1 a 1 (no se capturó ese gráfico antes de los cambios), sólo la
-estimación razonada de que bajó ~90%+.
+## Pendiente (por prioridad)
 
-## Pendiente / en curso
+1. **Caja y cierre de caja**: 194 consultas por visita y 582 al cerrar (consulta caja por caja del historial). Es 2/3 de las consultas que quedan y lo más lento en producción. Conviene calcularlo con una sola consulta o una función SQL.
+2. **Precarga de listas**: /clientes precarga el detalle de cada cliente visible y /configuracion se precarga muchas veces. Poner `prefetch={false}` en esos links.
+3. **Productos**: renderiza la tabla entera (~2 s con 1.600 artículos). Paginar o virtualizar.
+4. **Reportes**: "Monto libre" aparece primero en "más vendidos" y "más ganancia" (se agrupa todo junto y no tiene costo). Excluirlo de esos rankings.
+5. **Usuarios**: el texto del alta dice "otro kiosco" aunque el rubro sea otro.
+6. **Contra conocida del PR #2**: después de vender, Caja/Reportes/Productos pueden mostrar datos de hasta 30 s atrás si se vuelve a ellos enseguida (`staleTimes` en `next.config.ts`).
 
-**Tarea en curso**: simular un "cliente mediano" (no un kiosco chico) en la
-web real (`https://www.pesito.com.ar`) — crear una cuenta de prueba
-(marcarla claramente como test, ej. nombre de negocio "PRUEBA - ..."),
-cargar un catálogo más grande, registrar varias ventas/compras variadas,
-abrir/cerrar caja, y mirar los números reales de Vercel Observability
-después. Esto se frenó porque el sandbox no tenía permiso de red para salir
-a `pesito.com.ar` — el usuario ya lo habilitó en la configuración del
-entorno, pero el cambio necesita una sesión/contenedor nuevo para tomar
-efecto (no alcanza con reintentar en la sesión vieja).
+## Cómo reproducir la simulación
 
-**Si estás en una sesión nueva retomando esto**: probá primero
-`curl -s -o /dev/null -w "%{http_code}\n" --max-time 15 https://www.pesito.com.ar/`
-— si ya da 200, seguí con la simulación del cliente mediano y compartí los
-números de Vercel Observability con el usuario al final, con contexto de
-qué representa cada uno (Edge Requests vs Vercel Functions vs Middleware
-vs Fast Data Transfer — ya se le explicó la diferencia antes, no hace
-falta repetirla de cero).
+1. `npx supabase init`
+2. `npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,storage-api,postgres-meta,mailpit,supavisor`. Si Docker Hub devuelve 429, reintentar el `docker pull` de cada imagen.
+3. `.env.local` apuntando a `http://127.0.0.1:54321` con las keys que imprime el paso anterior.
+4. `npm run build && npm run start`.
+5. Registrarse, crear vendedores desde Usuarios y cargar ventas llamando a las RPC (`checkout_sale`, `register_purchase`) con los usuarios reales.
 
-## Otras ideas anotadas (no implementadas, sin urgencia)
-
-Hay un sistema de tareas (TaskCreate/TaskUpdate) con más de 100 ítems ya
-completados y varias ideas pendientes marcadas como tal (ej. sucursales,
-sugerencia de compra automática, cierres de caja programados). No son
-parte de esta rama de trabajo de optimización — quedaron anotadas para
-más adelante, a pedido explícito del usuario de "no implementar todavía".
+No commitear `supabase/config.toml`, `supabase/.gitignore`, `supabase/.branches/` ni `.env.local`.

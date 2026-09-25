@@ -1,5 +1,6 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComprasClient } from "@/app/(dashboard)/compras/compras-client";
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
@@ -16,19 +17,22 @@ export default async function ComprasPage({
   const supabase = await createClient();
 
   const [
-    { data: products },
+    products,
     { data: suppliers },
     { data: purchasesRaw },
     { data: openRegister },
     { data: customPaymentMethods },
   ] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, name, barcode, sku, cost, stock, min_stock, unit, image_url")
-      .eq("org_id", organization.id)
-      .eq("active", true)
-      .order("name")
-      .limit(500),
+    fetchAll((from, to) =>
+      supabase
+        .from("products")
+        .select("id, name, barcode, sku, cost, stock, min_stock, unit, image_url")
+        .eq("org_id", organization.id)
+        .eq("active", true)
+        .order("name")
+        .order("id")
+        .range(from, to)
+    ),
     supabase
       .from("suppliers")
       .select("id, name, balance")
@@ -100,7 +104,7 @@ export default async function ComprasPage({
     <div className="space-y-6">
       <ComprasClient
         orgId={organization.id}
-        products={(products ?? []).map((p) => ({
+        products={products.map((p) => ({
           ...p,
           cost: p.cost === null ? null : Number(p.cost),
           stock: Number(p.stock),

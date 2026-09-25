@@ -29,12 +29,14 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { resolveInvoiceType } from "@/lib/invoice-labels";
 import { suggestBilletes } from "@/lib/billetes";
 import { useToast } from "@/components/toast/toast-provider";
+import { emitCashDelta } from "@/lib/cash-events";
 import {
   checkoutSale,
   createCustomerQuick,
   type CheckoutItemInput,
   type PaymentLineInput,
 } from "@/app/(dashboard)/pos/actions";
+import type { SaleRow } from "@/components/dashboard/ventas-list";
 
 interface ProductLite {
   id: string;
@@ -108,16 +110,40 @@ interface PosClientProps {
   customers: CustomerLite[];
   autoInvoiceByPayment: boolean;
   customPaymentMethods: string[];
+  onSaleCompleted: (recentSales: SaleRow[]) => void;
 }
 
 export function PosClient({
   orgId,
   cashRegisterId,
-  products,
-  customers,
+  products: serverProducts,
+  customers: serverCustomers,
   autoInvoiceByPayment,
   customPaymentMethods,
+  onSaleCompleted,
 }: PosClientProps) {
+  // Después de cobrar no se vuelve a renderizar el POS desde el servidor
+  // (bajaba otra vez el catálogo y los clientes enteros en cada venta):
+  // checkoutSale devuelve el stock de lo vendido y el saldo del cliente, y
+  // se aplican acá encima de lo que mandó el servidor. `base` recuerda
+  // sobre qué datos del servidor se tomaron, así que en cuanto llega una
+  // versión más nueva (router.refresh(), volver a entrar) manda esa.
+  const [liveUpdates, setLiveUpdates] = useState<{
+    baseProducts: ProductLite[];
+    baseCustomers: CustomerLite[];
+    stock: Record<string, number>;
+    balance: Record<string, number>;
+  }>({ baseProducts: serverProducts, baseCustomers: serverCustomers, stock: {}, balance: {} });
+  const products = useMemo(() => {
+    const stock = liveUpdates.baseProducts === serverProducts ? liveUpdates.stock : {};
+    if (Object.keys(stock).length === 0) return serverProducts;
+    return serverProducts.map((p) => (p.id in stock ? { ...p, stock: stock[p.id] } : p));
+  }, [serverProducts, liveUpdates]);
+  const customers = useMemo(() => {
+    const balance = liveUpdates.baseCustomers === serverCustomers ? liveUpdates.balance : {};
+    if (Object.keys(balance).length === 0) return serverCustomers;
+    return serverCustomers.map((c) => (c.id in balance ? { ...c, balance: balance[c.id] } : c));
+  }, [serverCustomers, liveUpdates]);
   const paymentMethods = useMemo(
     () => paymentMethodsWithCustom(customPaymentMethods),
     [customPaymentMethods]
@@ -189,8 +215,14 @@ export function PosClient({
   const [extraCustomers, setExtraCustomers] = useState<CustomerLite[]>([]);
   const localCustomers = useMemo(() => {
     const existingIds = new Set(customers.map((c) => c.id));
-    return [...customers, ...extraCustomers.filter((c) => !existingIds.has(c.id))];
-  }, [customers, extraCustomers]);
+    // Un cliente dado de alta recién (alta rápida) también puede quedar
+    // debiendo en esta misma sesión: su saldo sale de liveUpdates.
+    const balance = liveUpdates.baseCustomers === serverCustomers ? liveUpdates.balance : {};
+    const extras = extraCustomers
+      .filter((c) => !existingIds.has(c.id))
+      .map((c) => (c.id in balance ? { ...c, balance: balance[c.id] } : c));
+    return [...customers, ...extras];
+  }, [customers, extraCustomers, liveUpdates, serverCustomers]);
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [creatingCustomer, setCreatingCustomer] = useState(false);
@@ -439,8 +471,35 @@ export function PosClient({
 
     if (result.error) {
       setError(result.error);
+      // El stock en pantalla puede haber quedado viejo si otro vendedor
+      // vendió lo mismo: en ese caso sí traemos el catálogo actualizado.
+      if (/stock/i.test(result.error)) router.refresh();
       return;
     }
+
+    setLiveUpdates((current) => {
+      const fresh =
+        current.baseProducts === serverProducts && current.baseCustomers === serverCustomers;
+      return {
+        baseProducts: serverProducts,
+        baseCustomers: serverCustomers,
+        stock: { ...(fresh ? current.stock : {}), ...result.stockByProduct },
+        balance: {
+          ...(fresh ? current.balance : {}),
+          ...(result.customerBalance
+            ? { [result.customerBalance.id]: result.customerBalance.balance }
+            : {}),
+        },
+      };
+    });
+    if (result.recentSales) onSaleCompleted(result.recentSales);
+    emitCashDelta(
+      payments
+        ? payments.filter((p) => p.method === "efectivo").reduce((acc, p) => acc + p.amount, 0)
+        : method === "efectivo"
+          ? total
+          : 0
+    );
 
     showSuccess("¡Venta cobrada!", `${formatCurrency(total)} · ${itemCount} items`);
     setCart([]);
@@ -449,7 +508,6 @@ export function PosClient({
     setCustomerId("");
     setCustomerQuery("");
     setShowCustomerSearch(false);
-    router.refresh();
   }
 
   function pickMethod(method: PaymentMethod) {

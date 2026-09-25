@@ -1,5 +1,6 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
 import { MarcasTab } from "@/app/(dashboard)/productos/marcas-tab";
@@ -21,9 +22,17 @@ export default async function ProductosPage({
 
   // Los productos se usan en las tres pestañas (tabla, stock bajo y conteo
   // por marca), así que se traen siempre; el resto depende de la pestaña.
-  const [{ data: products }, { data: brands }, { data: suppliers }, { data: movements }] =
+  const [products, { data: brands }, { data: suppliers }, { data: movements }] =
     await Promise.all([
-      supabase.from("products").select("*").eq("org_id", organization.id).order("name"),
+      fetchAll((from, to) =>
+        supabase
+          .from("products")
+          .select("*")
+          .eq("org_id", organization.id)
+          .order("name")
+          .order("id")
+          .range(from, to)
+      ),
       tab === "stock"
         ? Promise.resolve({ data: [] })
         : supabase.from("brands").select("*").eq("org_id", organization.id).order("name"),
@@ -40,7 +49,7 @@ export default async function ProductosPage({
         : Promise.resolve({ data: [] }),
     ]);
 
-  const normalized = (products ?? []).map((p) => ({
+  const normalized = products.map((p) => ({
     ...p,
     price: Number(p.price),
     cost: p.cost === null ? null : Number(p.cost),
