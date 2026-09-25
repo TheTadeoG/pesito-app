@@ -23,13 +23,23 @@ export function formatCurrency(value: number) {
   return currencyFormatter.format(value);
 }
 
+// Node y el navegador traen versiones distintas de los datos de ICU: uno
+// escribe "1:39 p. m." con espacios comunes y el otro con espacios duros
+// (U+00A0 / U+202F). Esa diferencia invisible rompía la hidratación de React
+// (error #418) en toda lista con fecha/hora. Normalizamos a espacio común.
+function normalizeSpaces(value: string) {
+  return value.replace(/[\u00a0\u202f]/g, " ");
+}
+
 export function formatDateTime(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone: "America/Argentina/Buenos_Aires",
-  }).format(date);
+  return normalizeSpaces(
+    new Intl.DateTimeFormat("es-AR", {
+      dateStyle: "short",
+      timeStyle: "short",
+      timeZone: "America/Argentina/Buenos_Aires",
+    }).format(date)
+  );
 }
 
 export function formatDate(value: string | Date) {
@@ -42,10 +52,12 @@ export function formatDate(value: string | Date) {
 
 export function formatTime(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat("es-AR", {
-    timeStyle: "short",
-    timeZone: "America/Argentina/Buenos_Aires",
-  }).format(date);
+  return normalizeSpaces(
+    new Intl.DateTimeFormat("es-AR", {
+      timeStyle: "short",
+      timeZone: "America/Argentina/Buenos_Aires",
+    }).format(date)
+  );
 }
 
 export function capitalizeWords(value: string) {

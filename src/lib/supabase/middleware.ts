@@ -74,9 +74,13 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims (no getUser): verifica la firma del token localmente con la
+  // clave pública del proyecto, sin ir al servidor de Auth en cada pedido.
+  // Igual que getUser, renueva la sesión cuando el token está por vencer.
+  // Si el proyecto todavía firma con la clave simétrica vieja (HS256),
+  // getClaims cae solo en getUser, así que nunca es menos seguro.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   if (!user && !isPublicPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();

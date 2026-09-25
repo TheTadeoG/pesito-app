@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Banknote, Lock, Settings2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
+import { onCashDelta } from "@/lib/cash-events";
 import { OpenCajaFormDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 
 function elapsed(openedAt: string) {
@@ -33,6 +34,26 @@ export function VenderCard({ cashRegister }: VenderCardProps) {
     cashRegister ? elapsed(cashRegister.openedAt) : "0:00:00"
   );
   const [openDialog, setOpenDialog] = useState(false);
+  // Efectivo que entró desde el último render del servidor (ventas cobradas
+  // en el POS, que ya no refrescan el layout). `base` es el cashRegister
+  // sobre el que se acumuló: cuando el servidor manda uno nuevo, se descarta.
+  const [cashDelta, setCashDelta] = useState<{ base: VenderCardProps["cashRegister"]; amount: number }>({
+    base: cashRegister,
+    amount: 0,
+  });
+  const cashTotal =
+    (cashRegister?.cashTotal ?? 0) + (cashDelta.base === cashRegister ? cashDelta.amount : 0);
+
+  useEffect(
+    () =>
+      onCashDelta((amount) =>
+        setCashDelta((current) => ({
+          base: cashRegister,
+          amount: (current.base === cashRegister ? current.amount : 0) + amount,
+        }))
+      ),
+    [cashRegister]
+  );
 
   useEffect(() => {
     if (!cashRegister) return;
@@ -80,7 +101,10 @@ export function VenderCard({ cashRegister }: VenderCardProps) {
         </span>
       </div>
       <p className="mt-2 text-xs text-primary-foreground/80">
-        {formatCurrency(cashRegister.cashTotal)} en caja · {time}
+        {formatCurrency(cashTotal)} en caja ·{" "}
+        {/* El servidor y el navegador calculan el tiempo con segundos de
+            diferencia; sin esto React tira error de hidratación (#418). */}
+        <span suppressHydrationWarning>{time}</span>
       </p>
     </Link>
   );

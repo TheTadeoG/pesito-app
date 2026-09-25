@@ -17,7 +17,7 @@ export interface CurrentOrgContext {
  *
  * Envuelta en cache() de React: el layout del dashboard y la página que
  * renderiza adentro llaman esto por separado, así que sin memoizar por
- * request se repetía el mismo auth.getUser() + join a memberships dos
+ * request se repetía la misma validación de sesión + join a memberships dos
  * veces en cada navegación. cache() lo deja en una sola consulta real
  * por request — nunca se comparte entre requests distintos, así que no
  * hay riesgo de servir un usuario/organización vieja.
@@ -25,18 +25,21 @@ export interface CurrentOrgContext {
 export const requireOrgContext = cache(async (): Promise<CurrentOrgContext> => {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims valida el token localmente (ver lib/supabase/middleware.ts)
+  // en vez de preguntarle al servidor de Auth en cada render. Que la
+  // persona siga en el negocio lo decide la consulta a memberships de
+  // abajo, que sí va a la base en cada pedido.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
 
-  if (!user) {
+  if (!claims?.sub) {
     redirect("/login");
   }
 
   const { data: membership } = await supabase
     .from("memberships")
     .select("*, organizations(*)")
-    .eq("user_id", user.id)
+    .eq("user_id", claims.sub)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle<Membership & { organizations: Organization }>();
@@ -48,11 +51,11 @@ export const requireOrgContext = cache(async (): Promise<CurrentOrgContext> => {
   const { organizations, ...membershipRow } = membership;
 
   const firstName =
-    typeof user.user_metadata?.first_name === "string" ? user.user_metadata.first_name : null;
+    typeof claims.user_metadata?.first_name === "string" ? claims.user_metadata.first_name : null;
 
   return {
-    userId: user.id,
-    email: user.email ?? null,
+    userId: claims.sub,
+    email: claims.email ?? null,
     firstName,
     organization: organizations,
     membership: membershipRow,

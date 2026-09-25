@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, DollarSign, Receipt, ShoppingBag, TrendingUp } from "lucide-react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllIn } from "@/lib/supabase/fetch-all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
@@ -42,16 +43,17 @@ export default async function ClienteDetailPage({
   const completedSales = sales.filter((s) => s.status === "completada");
   const saleIds = sales.map((s) => s.id);
 
-  const { data: itemsRaw } =
-    saleIds.length > 0
-      ? await supabase
-          .from("sale_items")
-          .select("sale_id, product_name, quantity")
-          .in("sale_id", saleIds)
-      : { data: [] };
+  const itemsRaw = await fetchAllIn(saleIds, (ids, from, to) =>
+    supabase
+      .from("sale_items")
+      .select("sale_id, product_name, quantity")
+      .in("sale_id", ids)
+      .order("id")
+      .range(from, to)
+  );
 
   const itemsBySale = new Map<string, string[]>();
-  for (const item of itemsRaw ?? []) {
+  for (const item of itemsRaw) {
     const list = itemsBySale.get(item.sale_id) ?? [];
     const quantity = Number(item.quantity);
     list.push(quantity > 1 ? `${item.product_name} x${quantity}` : item.product_name);

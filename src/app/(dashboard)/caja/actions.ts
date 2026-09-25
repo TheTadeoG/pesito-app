@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllIn } from "@/lib/supabase/fetch-all";
 import { requireOrgContext } from "@/lib/org";
 import {
   computeCashBreakdown,
@@ -96,13 +97,15 @@ export async function getCajaDetail(
     .map((s) => ({ ...s, total: Number(s.total) }));
 
   const saleIds = sales.map((s) => s.id);
-  const [{ data: itemsRaw }, { data: customersRaw }, fiadoBySale] = await Promise.all([
-    saleIds.length > 0
-      ? supabase
-          .from("sale_items")
-          .select("sale_id, product_name, quantity")
-          .in("sale_id", saleIds)
-      : Promise.resolve({ data: [] }),
+  const [itemsRaw, { data: customersRaw }, fiadoBySale] = await Promise.all([
+    fetchAllIn(saleIds, (ids, from, to) =>
+      supabase
+        .from("sale_items")
+        .select("sale_id, product_name, quantity")
+        .in("sale_id", ids)
+        .order("id")
+        .range(from, to)
+    ),
     (() => {
       const customerIds = Array.from(
         new Set(sales.map((s) => s.customer_id).filter((id): id is string => Boolean(id)))
@@ -116,7 +119,7 @@ export async function getCajaDetail(
 
   const customerNameById = new Map((customersRaw ?? []).map((c) => [c.id, c.name]));
   const itemsBySale = new Map<string, string[]>();
-  for (const item of itemsRaw ?? []) {
+  for (const item of itemsRaw) {
     const list = itemsBySale.get(item.sale_id) ?? [];
     const quantity = Number(item.quantity);
     list.push(quantity > 1 ? `${item.product_name} x${quantity}` : item.product_name);
