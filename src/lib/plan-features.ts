@@ -34,14 +34,12 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     priceLabel: "Gratis",
     period: "sin tarjeta",
     badge: null,
-    // Cortas a propósito (sólo el Plan Gratis): la tarjeta tiene que verse
-    // simple. El detalle de cada función está en las preguntas frecuentes.
+    // Pocas y cortas a propósito (sólo el Plan Gratis): la tarjeta tiene que
+    // verse simple. Todo lo que incluye está en /comparar-planes y en las
+    // preguntas frecuentes.
     features: [
       FREE_PLAN_SALES_LIMIT_LABEL,
-      "Cobrá con lector de código de barras",
-      "Stock con aviso de faltantes",
-      "Caja y fiado siempre al día",
-      "Aumentos de precios en un paso",
+      "Caja diaria y fiado de clientes",
       "Reportes simples de tu negocio",
       "1 usuario",
     ],

@@ -43,7 +43,7 @@ const steps = [
   { title: "14 días del Plan Pro gratis", text: "Al crear tu cuenta probás todo, sin tarjeta." },
   {
     title: "Seguís en el Plan Gratis",
-    text: `$0 para siempre: ${FREE_PLAN_SALES_LIMIT_LABEL}, lector de códigos, stock, caja y fiado, 1 usuario.`,
+    text: `$0 para siempre: ${FREE_PLAN_SALES_LIMIT_LABEL}, caja y fiado, reportes simples, 1 usuario.`,
   },
   { title: "Pasás a un plan cuando crezcas", text: "Más ventas, usuarios o sucursales." },
 ];
