@@ -13,6 +13,29 @@ export interface LiveBranch {
   by_hour: number[];
 }
 
+export interface LiveOpenRegister {
+  id: string;
+  branch_id?: string | null;
+  opened_at: string;
+  opening_amount: number;
+  cash: number | null;
+  // Desde 0044: lo vendido en esta caja.
+  sales_count?: number;
+  sales_total?: number;
+}
+
+export interface LiveClosedRegister {
+  closed_at: string;
+  difference: number;
+  // Desde 0044.
+  id?: string;
+  branch_id?: string | null;
+  opened_at?: string;
+  closing_amount?: number | null;
+  sales_count?: number;
+  sales_total?: number;
+}
+
 export interface LiveMember {
   user_id: string;
   // Con sucursales (0043): la de su caja abierta, o la asignada.
@@ -22,8 +45,8 @@ export interface LiveMember {
   sales_count: number;
   sales_total: number;
   last_sale_at: string | null;
-  open_register: { id: string; opened_at: string; opening_amount: number; cash: number | null } | null;
-  closed_today: { closed_at: string; difference: number }[];
+  open_register: LiveOpenRegister | null;
+  closed_today: LiveClosedRegister[];
   // Con sucursales: lo vendido hoy en cada una (branch_id -> totales).
   by_branch?: Record<string, { count: number; total: number; last_sale_at: string }>;
 }

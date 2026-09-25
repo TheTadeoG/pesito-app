@@ -95,6 +95,11 @@ Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; 
 - Probado en local: 29 casos de base (venta/compra/anulación/ajuste/transferencia por sucursal, stock insuficiente en una sucursal aunque otra tenga, compatibilidad con código viejo, Pro, otro negocio no ve ni toca) y el flujo completo en el navegador.
 - Pendiente / límites: Reportes y Caja no filtran por sucursal todavía (Reportes "stock valorizado" es el total); no se pueden borrar sucursales; si se vence el Pro, las sucursales existentes siguen funcionando pero no se pueden crear nuevas.
 
+## Hecho: En vivo desglosado negocio → sucursal → vendedor → caja
+
+- `/en-vivo` ahora muestra primero el negocio (vendido, ventas, ticket, cajas abiertas, vs ayer), después una tarjeta por sucursal (totales, ticket, cajas abiertas, vs ayer, "la que más vende hoy") y adentro sus vendedores: lo vendido en esa sucursal hoy y sus cajas de esa sucursal (abierta: hace cuánto, efectivo, vendido en la caja; cerradas hoy: horario, vendido y faltante/sobrante). Un vendedor que trabajó en dos sucursales aparece en las dos con lo suyo de cada una. Abajo, ventas por hora y últimas ventas del negocio.
+- Migración 0044 (**falta aplicar en producción, después de la 0043**): `live_overview` suma por caja lo vendido y, en las cerradas hoy, sucursal, apertura y monto de cierre. Sin 0044 la pantalla anda igual pero sin "vendió $X" por caja (y las cajas cerradas quedan en la sucursal asignada de la persona).
+
 ## Pendiente
 
 - Speed Index en móvil: 3,8 s (naranja), el resto en verde.

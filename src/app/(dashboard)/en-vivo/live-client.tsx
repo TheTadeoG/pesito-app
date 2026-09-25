@@ -1,14 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Radio, Store, Trophy } from "lucide-react";
+import { Building2, Radio, Store, Trophy, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart } from "@/components/dashboard/bar-chart";
 import { paymentLabels } from "@/lib/payment-labels";
 import { cn, formatCurrency, formatTime } from "@/lib/utils";
-import { parseLiveOverview, type LiveMember, type LiveOverview } from "@/lib/live-overview";
+import {
+  parseLiveOverview,
+  type LiveClosedRegister,
+  type LiveMember,
+  type LiveOpenRegister,
+  type LiveOverview,
+} from "@/lib/live-overview";
 
 const REFRESH_MS = 30_000;
 // Un vendedor con la caja abierta que lleva más que esto sin vender se
@@ -33,12 +39,40 @@ function durationLabel(iso: string, now: number) {
   return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
+function deltaPct(today: number, yesterday: number) {
+  return yesterday > 0 ? ((today - yesterday) / yesterday) * 100 : null;
+}
+
+// Una persona dentro de una sucursal: lo que vendió ahí hoy y sus cajas de
+// esa sucursal (la abierta y las que cerró hoy).
+interface BranchMember {
+  member: LiveMember;
+  label: string;
+  salesCount: number;
+  salesTotal: number;
+  lastSaleAt: string | null;
+  openRegister: LiveOpenRegister | null;
+  closedRegisters: LiveClosedRegister[];
+}
+
+interface BranchView {
+  id: string;
+  name: string;
+  count: number;
+  total: number;
+  yesterdayTotal: number | null;
+  openRegisters: number;
+  members: BranchMember[];
+}
+
 export function LiveClient({
   orgId,
+  orgName,
   currentUserId,
   initial,
 }: {
   orgId: string;
+  orgName: string;
   currentUserId: string;
   initial: LiveOverview;
 }) {
@@ -49,8 +83,6 @@ export function LiveClient({
   const [now, setNow] = useState(() => new Date(initial.generated_at).getTime());
   const supabase = useMemo(() => createClient(), []);
   const loading = useRef(false);
-  // Sucursal elegida en el ranking (null = todas).
-  const [branchId, setBranchId] = useState<string | null>(null);
 
   useEffect(() => {
     async function refresh() {
@@ -99,48 +131,84 @@ export function LiveClient({
     };
   }, [orgId, supabase]);
 
-  const labelById = new Map(
-    data.members.map((m) => [
-      m.user_id,
-      m.user_id === currentUserId ? "Vos" : m.label ?? "Usuario eliminado",
-    ])
-  );
-  const branches = data.branches ?? [];
-  const multiBranch = branches.length > 1;
-  const selectedBranch = multiBranch ? branches.find((b) => b.id === branchId) ?? null : null;
-  // Con una sucursal elegida: quien trabaja ahí o vendió ahí hoy, con lo
-  // vendido sólo en esa sucursal.
-  const members = selectedBranch
-    ? data.members
-        .filter((m) => m.branch_id === selectedBranch.id || m.by_branch?.[selectedBranch.id])
-        .map((m) => {
-          const inBranch = m.by_branch?.[selectedBranch.id];
-          return {
-            ...m,
-            sales_count: inBranch?.count ?? 0,
-            sales_total: inBranch?.total ?? 0,
-            last_sale_at: inBranch?.last_sale_at ?? null,
-            open_register:
-              m.open_register && m.branch_id === selectedBranch.id ? m.open_register : null,
-          };
-        })
-    : data.members;
-  const recentSales = selectedBranch
-    ? data.recent_sales.filter((s) => s.branch_id === selectedBranch.id)
-    : data.recent_sales;
-  const today = selectedBranch
-    ? { count: selectedBranch.count, total: Number(selectedBranch.total) }
-    : data.today;
-  const yesterday = selectedBranch
-    ? Number(selectedBranch.yesterday_total)
-    : data.yesterday_same_time.total;
-  const byHour = selectedBranch ? selectedBranch.by_hour : data.by_hour;
-  const openCount = members.filter((m) => m.open_register).length;
-  const ticket = today.count > 0 ? today.total / today.count : 0;
-  const deltaPct = yesterday > 0 ? ((today.total - yesterday) / yesterday) * 100 : null;
+  const labelFor = (m: LiveMember) =>
+    m.user_id === currentUserId ? "Vos" : m.label ?? "Usuario eliminado";
+
+  // Sucursales con su gente. Sin sucursales en la base (0043 sin aplicar)
+  // se muestra todo el equipo como un solo bloque.
+  const branchViews: BranchView[] = (() => {
+    const branches = data.branches ?? [];
+    if (branches.length === 0) {
+      return [
+        {
+          id: "all",
+          name: orgName,
+          count: data.today.count,
+          total: data.today.total,
+          yesterdayTotal: data.yesterday_same_time.total,
+          openRegisters: data.members.filter((m) => m.open_register).length,
+          members: data.members.map((m) => ({
+            member: m,
+            label: labelFor(m),
+            salesCount: m.sales_count,
+            salesTotal: Number(m.sales_total),
+            lastSaleAt: m.last_sale_at,
+            openRegister: m.open_register,
+            closedRegisters: m.closed_today,
+          })),
+        },
+      ];
+    }
+    const mainId = branches.find((b) => b.is_main)?.id ?? branches[0].id;
+    return branches.map((b) => {
+      const members: BranchMember[] = [];
+      for (const m of data.members) {
+        const sold = m.by_branch?.[b.id];
+        const open =
+          m.open_register && (m.open_register.branch_id ?? m.branch_id ?? mainId) === b.id
+            ? m.open_register
+            : null;
+        const closed = m.closed_today.filter(
+          (c) => (c.branch_id ?? m.branch_id ?? mainId) === b.id
+        );
+        const belongs = (m.branch_id ?? mainId) === b.id;
+        if (!belongs && !sold && !open && closed.length === 0) continue;
+        members.push({
+          member: m,
+          label: labelFor(m),
+          salesCount: sold?.count ?? 0,
+          salesTotal: Number(sold?.total ?? 0),
+          lastSaleAt: sold?.last_sale_at ?? null,
+          openRegister: open,
+          closedRegisters: closed,
+        });
+      }
+      members.sort(
+        (a, c) =>
+          Number(Boolean(c.openRegister)) - Number(Boolean(a.openRegister)) ||
+          c.salesTotal - a.salesTotal
+      );
+      return {
+        id: b.id,
+        name: b.name,
+        count: b.count,
+        total: Number(b.total),
+        yesterdayTotal: Number(b.yesterday_total),
+        openRegisters: b.open_registers,
+        members,
+      };
+    });
+  })();
+  const multiBranch = branchViews.length > 1;
   const topBranchId = multiBranch
-    ? [...branches].sort((a, b) => Number(b.total) - Number(a.total))[0]?.id
+    ? [...branchViews].sort((a, b) => b.total - a.total)[0]?.id
     : null;
+  const branchName = new Map(branchViews.map((b) => [b.id, b.name]));
+
+  const ticket = data.today.count > 0 ? data.today.total / data.today.count : 0;
+  const businessDelta = deltaPct(data.today.total, data.yesterday_same_time.total);
+  const openCount = data.members.filter((m) => m.open_register).length;
+
   const currentHour = Number(
     new Intl.DateTimeFormat("en-US", {
       hour: "numeric",
@@ -149,8 +217,8 @@ export function LiveClient({
     }).format(now)
   );
   // Desde las 8 (o antes, si hubo ventas más temprano) hasta la hora actual.
-  const firstHour = Math.min(8, ...byHour.map((v, h) => (v > 0 ? h : 24)));
-  const hourChart = byHour
+  const firstHour = Math.min(8, ...data.by_hour.map((v, h) => (v > 0 ? h : 24)));
+  const hourChart = data.by_hour
     .map((value, hour) => ({ label: `${hour}h`, value }))
     .slice(firstHour, Math.max(firstHour + 1, currentHour + 1));
 
@@ -159,124 +227,49 @@ export function LiveClient({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Radio className="h-4 w-4 animate-pulse text-success" />
-          Hoy, en vivo{selectedBranch ? ` · ${selectedBranch.name}` : ""} · actualizado{" "}
-          {agoLabel(data.generated_at, now)}
+          Hoy, en vivo · actualizado {agoLabel(data.generated_at, now)}
         </p>
         {error && (
-          <p className="text-sm text-danger">
-            No pudimos actualizar. Reintentamos en 30 segundos.
-          </p>
+          <p className="text-sm text-danger">No pudimos actualizar. Reintentamos en 30 segundos.</p>
         )}
       </div>
 
-      {multiBranch && (
-        <Card>
-          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-            <CardTitle className="text-base">Sucursales</CardTitle>
-            <button
-              type="button"
-              onClick={() => setBranchId(null)}
-              className={cn(
-                "rounded-lg px-3 py-1 text-sm font-medium",
-                selectedBranch ? "text-primary hover:bg-muted" : "bg-muted text-foreground"
-              )}
-            >
-              Todas
-            </button>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {branches.map((b) => {
-              const bDelta =
-                Number(b.yesterday_total) > 0
-                  ? ((Number(b.total) - Number(b.yesterday_total)) / Number(b.yesterday_total)) * 100
-                  : null;
-              const active = selectedBranch?.id === b.id;
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setBranchId(active ? null : b.id)}
-                  aria-pressed={active}
-                  className={cn(
-                    "rounded-xl border p-4 text-left transition-colors",
-                    active ? "border-primary bg-primary/10" : "border-border hover:border-primary/40",
-                    b.id === topBranchId && Number(b.total) > 0 && !active && "border-success bg-success-bg"
-                  )}
-                >
-                  <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                    <Store className="h-4 w-4 text-muted-foreground" />
-                    {b.name}
-                    {b.id === topBranchId && Number(b.total) > 0 && (
-                      <Trophy className="h-3.5 w-3.5 text-success" aria-label="La que más vende hoy" />
-                    )}
-                  </p>
-                  <p className="mt-1 text-xl font-bold text-foreground">{formatCurrency(Number(b.total))}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {b.count} {b.count === 1 ? "venta" : "ventas"} · {b.open_registers}{" "}
-                    {b.open_registers === 1 ? "caja abierta" : "cajas abiertas"}
-                  </p>
-                  {bDelta !== null && (
-                    <p className={cn("text-xs", bDelta >= 0 ? "text-success" : "text-danger")}>
-                      {bDelta >= 0 ? "▲" : "▼"} {Math.abs(bDelta).toFixed(0)}% vs ayer a esta hora
-                    </p>
-                  )}
-                </button>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Vendido hoy" value={formatCurrency(today.total)}>
-          {deltaPct === null ? (
-            <span className="text-muted-foreground">Ayer a esta hora no había ventas</span>
-          ) : (
-            <span className={deltaPct >= 0 ? "text-success" : "text-danger"}>
-              {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(0)}% vs ayer a esta hora
-            </span>
-          )}
-        </Stat>
-        <Stat label="Ventas" value={String(today.count)}>
-          {!selectedBranch && (
+      {/* 1. Negocio */}
+      <section className="space-y-3">
+        <SectionTitle icon={Building2}>{orgName}</SectionTitle>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Vendido hoy" value={formatCurrency(data.today.total)}>
+            <Delta pct={businessDelta} />
+          </Stat>
+          <Stat label="Ventas" value={String(data.today.count)}>
             <span className="text-muted-foreground">
               Ayer a esta hora: {data.yesterday_same_time.count}
             </span>
-          )}
-        </Stat>
-        <Stat label="Ticket promedio" value={formatCurrency(ticket)} />
-        <Stat label="Cajas abiertas" value={String(openCount)}>
-          <span className="text-muted-foreground">de {members.length} personas del equipo</span>
-        </Stat>
-      </div>
+          </Stat>
+          <Stat label="Ticket promedio" value={formatCurrency(ticket)} />
+          <Stat label="Cajas abiertas" value={String(openCount)}>
+            <span className="text-muted-foreground">
+              {multiBranch ? `en ${branchViews.length} sucursales` : `de ${data.members.length} personas`}
+            </span>
+          </Stat>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Equipo</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="divide-y divide-border">
-            {members.length === 0 && (
-              <p className="px-5 pb-5 text-sm text-muted-foreground">
-                Nadie trabaja hoy en esta sucursal.
-              </p>
-            )}
-            {members.map((m) => (
-              <MemberRow
-                key={m.user_id}
-                member={m}
-                label={labelById.get(m.user_id)!}
-                branchName={
-                  multiBranch && !selectedBranch
-                    ? branches.find((b) => b.id === m.branch_id)?.name ?? null
-                    : null
-                }
-                now={now}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* 2. Sucursales → 3. vendedores → cajas */}
+      <section className="space-y-3">
+        {multiBranch && <SectionTitle icon={Store}>Sucursales</SectionTitle>}
+        <div className="space-y-4">
+          {branchViews.map((b) => (
+            <BranchCard
+              key={b.id}
+              branch={b}
+              showHeader={multiBranch}
+              isTop={b.id === topBranchId && b.total > 0}
+              now={now}
+            />
+          ))}
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -284,7 +277,7 @@ export function LiveClient({
             <CardTitle className="text-base">Ventas por hora</CardTitle>
           </CardHeader>
           <CardContent>
-            {today.count === 0 ? (
+            {data.today.count === 0 ? (
               <p className="text-sm text-muted-foreground">Todavía no hay ventas hoy.</p>
             ) : (
               <BarChart data={hourChart} showValueLabels={false} labelEvery={2} />
@@ -297,39 +290,69 @@ export function LiveClient({
             <CardTitle className="text-base">Últimas ventas</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {recentSales.length === 0 ? (
+            {data.recent_sales.length === 0 ? (
               <p className="px-5 pb-5 text-sm text-muted-foreground">Todavía no hay ventas hoy.</p>
             ) : (
               <div className="divide-y divide-border">
-                {recentSales.map((s) => (
-                  <div key={s.id} className="flex items-start justify-between gap-3 px-5 py-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">
-                        {formatTime(s.created_at)} · {labelById.get(s.user_id) ?? "Usuario eliminado"}
-                        {multiBranch && !selectedBranch && s.branch_id && (
-                          <span className="font-normal text-muted-foreground">
-                            {" "}· {branches.find((b) => b.id === s.branch_id)?.name}
-                          </span>
-                        )}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {s.items || "Sin detalle"}
-                      </p>
+                {data.recent_sales.map((s) => {
+                  const seller = data.members.find((m) => m.user_id === s.user_id);
+                  return (
+                    <div key={s.id} className="flex items-start justify-between gap-3 px-5 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {formatTime(s.created_at)} · {seller ? labelFor(seller) : "Usuario eliminado"}
+                          {multiBranch && s.branch_id && (
+                            <span className="font-normal text-muted-foreground">
+                              {" "}
+                              · {branchName.get(s.branch_id)}
+                            </span>
+                          )}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {s.items || "Sin detalle"}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold text-foreground">
+                          {formatCurrency(s.total)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {paymentLabels[s.payment_method] ?? s.payment_method}
+                        </p>
+                      </div>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold text-foreground">{formatCurrency(s.total)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {paymentLabels[s.payment_method] ?? s.payment_method}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
     </div>
+  );
+}
+
+function SectionTitle({
+  icon: Icon,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      {children}
+    </h2>
+  );
+}
+
+function Delta({ pct }: { pct: number | null }) {
+  if (pct === null) return <span className="text-muted-foreground">Ayer a esta hora no había ventas</span>;
+  return (
+    <span className={pct >= 0 ? "text-success" : "text-danger"}>
+      {pct >= 0 ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}% vs ayer a esta hora
+    </span>
   );
 }
 
@@ -353,61 +376,175 @@ function Stat({
   );
 }
 
-function MemberRow({
-  member,
-  label,
-  branchName,
+function BranchCard({
+  branch,
+  showHeader,
+  isTop,
   now,
 }: {
-  member: LiveMember;
-  label: string;
-  branchName: string | null;
+  branch: BranchView;
+  showHeader: boolean;
+  isTop: boolean;
   now: number;
 }) {
-  const register = member.open_register;
-  const idle =
-    register !== null &&
-    now - new Date(member.last_sale_at ?? register.opened_at).getTime() > IDLE_WARNING_MS;
-  const closedDiff = member.closed_today.reduce((acc, c) => acc + Number(c.difference), 0);
+  const ticket = branch.count > 0 ? branch.total / branch.count : 0;
+  const pct = branch.yesterdayTotal === null ? null : deltaPct(branch.total, branch.yesterdayTotal);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-      <div className="min-w-0">
-        <p className="flex items-center gap-2 font-medium text-foreground">
-          <span
-            className={register ? "h-2 w-2 rounded-full bg-success" : "h-2 w-2 rounded-full bg-muted-foreground/40"}
-          />
-          {label}
-          {branchName && <span className="text-xs font-normal text-muted-foreground">· {branchName}</span>}
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-          {register ? (
-            <>
-              <Badge tone="success">Caja abierta hace {durationLabel(register.opened_at, now)}</Badge>
-              {register.cash !== null && <span>{formatCurrency(Number(register.cash))} en caja</span>}
-            </>
-          ) : member.closed_today.length > 0 ? (
-            <Badge tone={closedDiff < 0 ? "danger" : "default"}>
-              Cerró caja
-              {closedDiff < 0
-                ? ` con faltante de ${formatCurrency(-closedDiff)}`
-                : closedDiff > 0
-                  ? ` con sobrante de ${formatCurrency(closedDiff)}`
-                  : " sin diferencias"}
-            </Badge>
-          ) : (
-            <Badge>Sin caja hoy</Badge>
-          )}
-          {idle && <Badge tone="warning">Sin vender {agoLabel(member.last_sale_at ?? register!.opened_at, now)}</Badge>}
+    <Card className={cn(isTop && "border-success")}>
+      {showHeader && (
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 border-b border-border">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Store className="h-4 w-4 text-muted-foreground" />
+              {branch.name}
+              {isTop && (
+                <Badge tone="success" className="gap-1">
+                  <Trophy className="h-3 w-3" />
+                  La que más vende hoy
+                </Badge>
+              )}
+            </CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {branch.count} {branch.count === 1 ? "venta" : "ventas"} · ticket{" "}
+              {formatCurrency(ticket)} · {branch.openRegisters}{" "}
+              {branch.openRegisters === 1 ? "caja abierta" : "cajas abiertas"}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xl font-bold text-foreground">{formatCurrency(branch.total)}</p>
+            <p className="text-xs">
+              <Delta pct={pct} />
+            </p>
+          </div>
+        </CardHeader>
+      )}
+      <CardContent className="p-0">
+        {!showHeader && (
+          <p className="px-5 pt-5 text-sm font-semibold text-foreground">Vendedores</p>
+        )}
+        {branch.members.length === 0 ? (
+          <p className="px-5 py-4 text-sm text-muted-foreground">Nadie trabaja hoy en esta sucursal.</p>
+        ) : (
+          <div className="divide-y divide-border">
+            {branch.members.map((m) => (
+              <SellerRow key={m.member.user_id} seller={m} now={now} />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SellerRow({ seller, now }: { seller: BranchMember; now: number }) {
+  const open = seller.openRegister;
+  const idle =
+    open !== null &&
+    now - new Date(seller.lastSaleAt ?? open.opened_at).getTime() > IDLE_WARNING_MS;
+  const hasCaja = open !== null || seller.closedRegisters.length > 0;
+
+  return (
+    <div className="space-y-2 px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 font-medium text-foreground">
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                open ? "bg-success" : "bg-muted-foreground/40"
+              )}
+            />
+            {seller.label}
+            {idle && (
+              <Badge tone="warning">
+                Sin vender {agoLabel(seller.lastSaleAt ?? open!.opened_at, now)}
+              </Badge>
+            )}
+          </p>
+          {!hasCaja && <p className="mt-1 text-xs text-muted-foreground">Sin caja hoy</p>}
+        </div>
+        <div className="text-right">
+          <p className="text-lg font-semibold text-foreground">{formatCurrency(seller.salesTotal)}</p>
+          <p className="text-xs text-muted-foreground">
+            {seller.salesCount} {seller.salesCount === 1 ? "venta" : "ventas"} hoy
+            {seller.lastSaleAt && ` · última ${agoLabel(seller.lastSaleAt, now)}`}
+          </p>
         </div>
       </div>
-      <div className="text-right">
-        <p className="text-lg font-semibold text-foreground">{formatCurrency(Number(member.sales_total))}</p>
-        <p className="text-xs text-muted-foreground">
-          {member.sales_count} {member.sales_count === 1 ? "venta" : "ventas"}
-          {member.last_sale_at && ` · última ${agoLabel(member.last_sale_at, now)}`}
-        </p>
-      </div>
+
+      {hasCaja && (
+        <div className="space-y-1.5 pl-4">
+          {open && (
+            <CajaLine
+              tone="open"
+              title={`Caja abierta hace ${durationLabel(open.opened_at, now)}`}
+              detail={[
+                open.cash !== null ? `${formatCurrency(Number(open.cash))} en caja` : null,
+                open.sales_total !== undefined
+                  ? `vendió ${formatCurrency(Number(open.sales_total))} en ${open.sales_count} ${
+                      open.sales_count === 1 ? "venta" : "ventas"
+                    }`
+                  : null,
+              ]}
+            />
+          )}
+          {seller.closedRegisters.map((c, i) => {
+            const diff = Number(c.difference);
+            return (
+              <CajaLine
+                key={c.id ?? i}
+                tone={diff < 0 ? "danger" : "closed"}
+                title={`Caja cerrada ${c.opened_at ? `${formatTime(c.opened_at)}–` : "a las "}${formatTime(c.closed_at)}`}
+                detail={[
+                  c.sales_total !== undefined
+                    ? `vendió ${formatCurrency(Number(c.sales_total))} en ${c.sales_count} ${
+                        c.sales_count === 1 ? "venta" : "ventas"
+                      }`
+                    : null,
+                  diff < 0
+                    ? `faltante de ${formatCurrency(-diff)}`
+                    : diff > 0
+                      ? `sobrante de ${formatCurrency(diff)}`
+                      : "sin diferencias",
+                ]}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
+  );
+}
+
+function CajaLine({
+  tone,
+  title,
+  detail,
+}: {
+  tone: "open" | "closed" | "danger";
+  title: string;
+  detail: (string | null)[];
+}) {
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+      <Wallet
+        className={cn(
+          "h-3.5 w-3.5",
+          tone === "open" ? "text-success" : tone === "danger" ? "text-danger" : "text-muted-foreground"
+        )}
+      />
+      <span
+        className={cn(
+          "font-medium",
+          tone === "open" ? "text-success" : tone === "danger" ? "text-danger" : "text-foreground"
+        )}
+      >
+        {title}
+      </span>
+      {detail.filter(Boolean).map((d) => (
+        <span key={d}>· {d}</span>
+      ))}
+    </p>
   );
 }

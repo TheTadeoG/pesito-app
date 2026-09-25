@@ -22,6 +22,11 @@ export default async function EnVivoPage() {
   if (error || !data) throw new Error("No pudimos cargar la vista en vivo.");
 
   return (
-    <LiveClient orgId={organization.id} currentUserId={userId} initial={parseLiveOverview(data)} />
+    <LiveClient
+      orgId={organization.id}
+      orgName={organization.name}
+      currentUserId={userId}
+      initial={parseLiveOverview(data)}
+    />
   );
 }
