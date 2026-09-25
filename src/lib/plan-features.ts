@@ -34,8 +34,8 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     priceLabel: "Gratis",
     period: "sin tarjeta",
     badge: null,
-    // Cortas a propósito: la tarjeta de precios tiene que verse simple. El
-    // detalle de cada función está en las preguntas frecuentes.
+    // Cortas a propósito (sólo el Plan Gratis): la tarjeta tiene que verse
+    // simple. El detalle de cada función está en las preguntas frecuentes.
     features: [
       FREE_PLAN_SALES_LIMIT_LABEL,
       "Cobrá con lector de código de barras",
@@ -56,7 +56,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: [
       "Todas las funciones del Plan Gratis +",
       "Ventas ilimitadas",
-      "2 usuarios, cada uno con su caja",
+      "Hasta 2 usuarios, cada uno con su caja",
     ],
   },
   pro: {
@@ -68,9 +68,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Más elegido",
     features: [
       "Todas las funciones del Plan Esencial +",
-      "Varias sucursales, cada una con su stock",
-      "Pasá mercadería entre sucursales",
-      "Reportes avanzados",
+      "Varias sucursales, cada una con su stock y sus cajas",
+      "Transferencias de mercadería entre sucursales",
+      "Reportes avanzados: comparación de períodos y productos vendidos a pérdida",
+      "Múltiples cajas y usuarios simultáneos",
+      "Historial completo de caja (aperturas, cierres, diferencias)",
       "Hasta 10 usuarios",
       "Soporte prioritario",
     ],
@@ -83,7 +85,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     period: "por mes · IVA incl.",
     badge: "Nuevo",
     features: ["Todas las funciones del Plan Pro +", "Soporte prioritario 24/7"],
-    soon: ["Qué reponer, sugerido con IA", "Productos que no se venden", "Precios sugeridos"],
+    soon: [
+      "Recomendaciones de reposición con IA",
+      "Detección de productos de baja rotación",
+      "Precios sugeridos automáticamente",
+    ],
   },
 };
 
