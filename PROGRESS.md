@@ -18,11 +18,15 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 - Visita a Caja: de 3 a 8 consultas por caja del historial a ~11 fijas. Cerrar la caja: ~23. El detalle de una caja: 9, y ya no se corta en 1000 ventas.
 - Verificado contra el cálculo anterior con ventas anuladas, mixtas (con y sin desglose), fiado, cobros de deuda, ingresos/retiros, compras (mixtas y anuladas) y pagos a proveedores: mismos números. Un negocio no puede ver cajas de otro.
 
-## Costos (cliente mediano, por mes, después del PR #2)
+## Costos (cliente mediano, por mes, después del PR #4)
 
-- Supabase: ~80.000 consultas y ~0,34 GB transferidos. La base crece ~2,7 KB por venta (~7 MB por mes).
-- Vercel: ~10.000 invocaciones y ~0,16 h de servidor (centavos de dólar).
-- Supabase Pro (250 GB) alcanza para unos 740 clientes. Con 300 clientes: ~US$45/mes (Vercel Pro US$20 + Supabase Pro US$25), más un servidor de Supabase más grande si hace falta.
+Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.600 productos, 381 clientes, ~2.500 ventas/mes). Uso supuesto por mes: 2.526 ventas, 60 aperturas y 60 cierres de caja, 60 recargas del POS, 90 logins, 150 visitas a Caja, 30 a Reportes (30 días), 15 a Productos, 8 a Stock, 10 a Compras, 15 a Clientes.
+
+- Supabase: ~22.600 consultas (antes ~84.000) y ~0,15 GB transferidos. Lo que más transfiere: Reportes (~59 MB) y cargar el catálogo en el POS (~62 MB). La base crece ~2,7 KB por venta (~7 MB por mes).
+- Vercel: ~7.900 invocaciones, ~11.400 edge requests, ~0,08 h de servidor, ~60 MB transferidos.
+- Precios (septiembre 2026): Supabase Pro US$25 (250 GB de transferencia, 8 GB de disco, servidor Micro incluido; después US$0,09/GB, US$0,125/GB de disco). Vercel Pro US$20 por desarrollador con US$20 de crédito (1 TB de transferencia y 10 M de edge requests aparte; después US$2 por millón de edge requests).
+- Límites: el disco de 8 GB se llena primero (~95 clientes con un año de historial; cada GB extra cuesta US$0,125). Los 10 M de edge requests de Vercel alcanzan para ~870 clientes. La transferencia de Supabase, para ~1.600. El servidor Micro no está medido con carga real: estimamos que hay que agrandarlo entre 300 y 500 clientes.
+- Total estimado: 100 clientes ~US$45/mes; 300 clientes ~US$50-60; 1.000 clientes ~US$120-130 (con servidor Medium). Cada cliente extra cuesta entre US$0,05 y US$0,10 por mes.
 
 ## Pendiente (por prioridad)
 
