@@ -80,8 +80,8 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     soon: [
       "Control por usuario: su stock, caja y diferencias",
       "Importar costos desde Excel",
-      "Inventarios físicos",
-      "Balanzas conectadas",
+      "Controlá inventarios físicos",
+      "Soporte para balanzas",
       "Carteles de precios para imprimir",
       "1 catálogo online",
       "Ofertas y promociones",
