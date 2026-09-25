@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { formatCurrency } from "@/lib/utils";
 
 export interface ProductFormInput {
   id?: string;
@@ -310,6 +311,101 @@ export async function bulkIncreaseField(
   revalidatePath("/productos");
   revalidatePath("/pos");
   return { updatedCount: data ?? 0 };
+}
+
+// Se pueden deshacer los aumentos masivos de los últimos 30 días (el mismo
+// límite valida revert_bulk_price_change, migración 0039).
+const BULK_UNDO_DAYS = 30;
+
+export interface BulkChangeRow {
+  id: string;
+  groupLabel: string;
+  amountLabel: string;
+  productCount: number;
+  createdAt: string;
+  createdByLabel: string | null;
+  reverted: boolean;
+}
+
+export async function getRecentBulkChanges(field: "price" | "cost"): Promise<BulkChangeRow[]> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+  const since = new Date(Date.now() - BULK_UNDO_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: rows } = await supabase
+    .from("bulk_price_changes")
+    .select("id, supplier_id, brand, percent, fixed_amount, product_count, created_by, created_at, reverted_at")
+    .eq("org_id", organization.id)
+    .eq("field", field)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (!rows || rows.length === 0) return [];
+
+  const supplierIds = Array.from(
+    new Set(rows.map((r) => r.supplier_id).filter((id): id is string => Boolean(id)))
+  );
+  const userIds = Array.from(
+    new Set(rows.map((r) => r.created_by).filter((id): id is string => Boolean(id)))
+  );
+  const [{ data: suppliers }, { data: members }] = await Promise.all([
+    supplierIds.length > 0
+      ? supabase.from("suppliers").select("id, name").in("id", supplierIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    userIds.length > 0
+      ? supabase
+          .from("memberships")
+          .select("user_id, username, email")
+          .eq("org_id", organization.id)
+          .in("user_id", userIds)
+      : Promise.resolve({ data: [] as { user_id: string; username: string | null; email: string | null }[] }),
+  ]);
+  const supplierName = new Map((suppliers ?? []).map((s) => [s.id, s.name]));
+  const memberLabel = new Map(
+    (members ?? []).map((m) => [m.user_id, m.username ?? m.email ?? "Alguien del equipo"])
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    groupLabel: r.brand
+      ? `Marca ${r.brand}`
+      : (r.supplier_id && supplierName.get(r.supplier_id)) || "Proveedor borrado",
+    amountLabel:
+      r.percent !== null
+        ? `+${Number(r.percent).toLocaleString("es-AR")}%`
+        : `+${formatCurrency(Number(r.fixed_amount ?? 0))}`,
+    productCount: r.product_count,
+    createdAt: r.created_at,
+    createdByLabel: r.created_by ? memberLabel.get(r.created_by) ?? null : null,
+    reverted: r.reverted_at !== null,
+  }));
+}
+
+export interface RevertBulkChangeResult extends ActionState {
+  reverted?: number;
+  skipped?: number;
+}
+
+export async function revertBulkChange(bulkChangeId: string): Promise<RevertBulkChangeResult> {
+  await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("revert_bulk_price_change", {
+    p_bulk_change_id: bulkChangeId,
+  });
+
+  if (error || !data) {
+    if (error?.message.includes("ya se deshizo")) return { error: "Ese aumento ya se deshizo." };
+    if (error?.message.includes("30 días")) {
+      return { error: "Sólo se pueden deshacer aumentos de los últimos 30 días." };
+    }
+    return { error: "No pudimos deshacer el aumento." };
+  }
+
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  return { reverted: data.reverted, skipped: data.skipped };
 }
 
 export interface PriceHistoryRow {
