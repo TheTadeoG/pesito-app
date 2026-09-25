@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 // para cualquier ruta que no defina la suya propia (ninguna la define
 // hoy, así que ésta aplica a todas). Sin esto, compartir un link de
 // Pesito en WhatsApp/Twitter/LinkedIn no mostraba ninguna imagen.
-export const alt = "Pesito — sistema de punto de venta para el comercio de barrio";
+export const alt = "Pesito — sistema POS y punto de venta para tu negocio";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -50,7 +50,7 @@ export default function Image() {
             textAlign: "center",
           }}
         >
-          Punto de venta, inventario, clientes y caja para el comercio de barrio
+          Sistema POS para tu negocio: ventas, stock, caja y fiado
         </div>
       </div>
     ),

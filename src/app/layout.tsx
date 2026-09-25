@@ -24,9 +24,9 @@ const fredoka = Fredoka({
   subsets: ["latin"],
 });
 
-const title = "Pesito | Sistema de punto de venta para el comercio de barrio";
+const title = "Pesito | Sistema POS y punto de venta para tu negocio";
 const description =
-  "Pesito es el sistema de punto de venta, inventario, clientes y caja pensado para comerciantes de barrio de cualquier rubro en Argentina: simple, rápido y sin vueltas. Empezá gratis.";
+  "Pesito es el sistema POS para negocios de Argentina: cobrá con lector de códigos, controlá stock y caja, anotá el fiado y mirá tus reportes. Empezá gratis.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

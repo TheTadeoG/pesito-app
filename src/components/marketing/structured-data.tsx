@@ -13,7 +13,7 @@ export function StructuredData() {
       operatingSystem: "Web",
       url: siteUrl,
       description:
-        "Sistema de punto de venta, inventario, clientes y caja para comercios de barrio de cualquier rubro.",
+        "Sistema POS y punto de venta para negocios de Argentina: ventas con lector de códigos, stock, caja, clientes con fiado, compras y reportes.",
       offers: planOrder.map((plan) => ({
         "@type": "Offer",
         name: planDefinitions[plan].name,

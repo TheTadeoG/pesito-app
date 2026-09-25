@@ -76,8 +76,8 @@ export function Footer() {
               <Wordmark className="text-xl" />
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-              Punto de venta, inventario, clientes y caja para el comercio de barrio. Hecho en
-              Argentina para cualquier rubro.
+              Sistema POS para tu negocio: ventas, stock, caja y clientes. Hecho en Argentina para
+              cualquier rubro.
             </p>
           </div>
 

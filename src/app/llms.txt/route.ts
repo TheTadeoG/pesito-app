@@ -20,7 +20,7 @@ export function GET() {
 
   const body = `# Pesito
 
-> Pesito es un sistema de punto de venta en la nube para comercios de barrio de Argentina (kioscos, almacenes, verdulerías, locales de ropa y más): ventas con lector de código de barras, stock, caja diaria, clientes con fiado, compras a proveedores y reportes. Funciona desde el navegador y el celular, sin instalar nada. Se empieza gratis y se elige un plan pago cuando el negocio crece.
+> Pesito es un sistema POS (punto de venta) en la nube para negocios de Argentina (kioscos, almacenes, verdulerías, locales de ropa y más): ventas con lector de código de barras, stock, caja diaria, clientes con fiado, compras a proveedores y reportes. Funciona desde el navegador y el celular, sin instalar nada. Se empieza gratis y se elige un plan pago cuando el negocio crece.
 
 Funciones destacadas: aumentos masivos de precios o costos por proveedor o por marca (en porcentaje o monto fijo), historial de precios por producto, varias cajas y usuarios, cuentas corrientes de clientes y proveedores.
 
