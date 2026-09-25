@@ -13,7 +13,7 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 
 ## Hecho: Caja y cierre de caja
 
-- Migración 0038 (**falta aplicarla en producción**): función `cash_register_summaries(uuid[])` que calcula efectivo y cobros por medio de pago de varias cajas en una sola consulta, más un índice en `sales (cash_register_id)`.
+- Migración 0038 (aplicada en producción): función `cash_register_summaries(uuid[])` que calcula efectivo y cobros por medio de pago de varias cajas en una sola consulta, más un índice en `sales (cash_register_id)`.
 - `src/lib/caja.ts`: `getCashRegisterSummaries` la usa para todas las cajas de la página; `computeCashOnHand` (usado al cerrar, retirar, comprar y pagar a proveedores) también. Si la función no existe o falla, calcula como antes, caja por caja (`legacy*`); ese código se puede borrar cuando 0038 esté en producción.
 - Visita a Caja: de 3 a 8 consultas por caja del historial a ~11 fijas. Cerrar la caja: ~23. El detalle de una caja: 9, y ya no se corta en 1000 ventas.
 - Verificado contra el cálculo anterior con ventas anuladas, mixtas (con y sin desglose), fiado, cobros de deuda, ingresos/retiros, compras (mixtas y anuladas) y pagos a proveedores: mismos números. Un negocio no puede ver cajas de otro.
@@ -26,7 +26,7 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 
 ## Pendiente (por prioridad)
 
-1. **Aplicar la migración 0038 en producción** (ver arriba). Hasta entonces Caja funciona igual que antes, con el cálculo viejo.
+1. **Borrar el cálculo viejo de Caja** (`legacy*` en `src/lib/caja.ts`) cuando se confirme en los logs de Vercel que no aparece "cash_register_summaries falló".
 2. **Precarga de listas**: /clientes precarga el detalle de cada cliente visible y /configuracion se precarga muchas veces. Poner `prefetch={false}` en esos links.
 3. **Productos**: renderiza la tabla entera (~2 s con 1.600 artículos). Paginar o virtualizar.
 4. **Reportes**: "Monto libre" aparece primero en "más vendidos" y "más ganancia" (se agrupa todo junto y no tiene costo). Excluirlo de esos rankings.
