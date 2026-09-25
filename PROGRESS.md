@@ -130,6 +130,7 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Talles y colores como variantes de un producto — Plan Esencial (`productVariants`). Mencionado también en /como-funciona, /comparacion y /pesito-para/indumentaria.
 - [ ] Ofertas y promociones — Plan Pro (`promotions`).
 - [ ] Ganancias separadas por sucursal (reportes) — Plan IA.
+- [ ] Control por usuario: permisos de qué puede ver y hacer cada uno (hoy sólo hay roles dueño/administrador/vendedor) — Plan Pro (`userPermissions`).
 - [ ] Inventarios físicos (contar todo el stock y ajustar las diferencias de una vez) — Plan Pro (`physicalInventory`). Hoy sólo existe el ajuste a mano por producto.
 - [ ] Balanzas conectadas — Plan Pro (`scales`). En el POS ya hay un botón "Balanza (próximamente)".
 - [ ] Carteles de precios para imprimir, que se arman solos con el precio actual — Plan Pro (`priceSigns`).
