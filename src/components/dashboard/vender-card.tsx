@@ -21,7 +21,8 @@ interface VenderCardProps {
   cashRegister: {
     openedAt: string;
     openingAmount: number;
-    cashTotal: number;
+    // null si no se pudo calcular el efectivo.
+    cashTotal: number | null;
   } | null;
 }
 
@@ -42,7 +43,9 @@ export function VenderCard({ cashRegister }: VenderCardProps) {
     amount: 0,
   });
   const cashTotal =
-    (cashRegister?.cashTotal ?? 0) + (cashDelta.base === cashRegister ? cashDelta.amount : 0);
+    cashRegister?.cashTotal == null
+      ? null
+      : cashRegister.cashTotal + (cashDelta.base === cashRegister ? cashDelta.amount : 0);
 
   useEffect(
     () =>
@@ -101,7 +104,7 @@ export function VenderCard({ cashRegister }: VenderCardProps) {
         </span>
       </div>
       <p className="mt-2 text-xs text-primary-foreground/80">
-        {formatCurrency(cashTotal)} en caja ·{" "}
+        {cashTotal === null ? "—" : formatCurrency(cashTotal)} en caja ·{" "}
         {/* El servidor y el navegador calculan el tiempo con segundos de
             diferencia; sin esto React tira error de hidratación (#418). */}
         <span suppressHydrationWarning>{time}</span>

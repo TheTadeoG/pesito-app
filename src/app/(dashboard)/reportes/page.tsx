@@ -119,12 +119,17 @@ export default async function ReportesPage({
 
   const byProductQty = new Map<string, { name: string; quantity: number; margin: number }>();
   for (const item of items) {
-    const key = item.product_id ?? item.product_name;
-    const current = byProductQty.get(key) ?? { name: item.product_name, quantity: 0, margin: 0 };
+    // Sin product_id es un monto libre (o un producto borrado): no tiene costo
+    // y todos los "Monto libre" se sumarían juntos, así que no va en los rankings.
+    if (!item.product_id) continue;
+    const current = byProductQty.get(item.product_id) ?? {
+      name: item.product_name,
+      quantity: 0,
+      margin: 0,
+    };
     current.quantity += item.quantity;
-    current.margin +=
-      item.subtotal - item.quantity * (item.product_id ? costById.get(item.product_id) ?? 0 : 0);
-    byProductQty.set(key, current);
+    current.margin += item.subtotal - item.quantity * (costById.get(item.product_id) ?? 0);
+    byProductQty.set(item.product_id, current);
   }
   const topByQuantity = Array.from(byProductQty.values())
     .sort((a, b) => b.quantity - a.quantity)

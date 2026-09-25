@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { formatCurrency } from "@/lib/utils";
 
 export interface ProductFormInput {
   id?: string;
@@ -312,65 +313,286 @@ export async function bulkIncreaseField(
   return { updatedCount: data ?? 0 };
 }
 
-export interface PriceHistoryRow {
-  id: string;
-  oldPrice: number;
-  newPrice: number;
-  changedAt: string;
-  changedByLabel: string | null;
+// Se pueden deshacer los aumentos masivos de los últimos 30 días (el mismo
+// límite valida revert_bulk_price_change, migración 0039).
+const BULK_UNDO_DAYS = 30;
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+interface BulkChangeInfo {
+  groupLabel: string;
+  amountLabel: string;
 }
 
-export async function getProductPriceHistory(productId: string): Promise<PriceHistoryRow[]> {
+// "+13%" / "+$500" y "Distribuidora Norte" / "Marca Arcor" de cada aumento.
+async function describeBulkChanges(
+  supabase: Supabase,
+  changes: {
+    id: string;
+    supplier_id: string | null;
+    brand: string | null;
+    percent: number | null;
+    fixed_amount: number | null;
+  }[]
+): Promise<Map<string, BulkChangeInfo>> {
+  const supplierIds = Array.from(
+    new Set(changes.map((c) => c.supplier_id).filter((id): id is string => Boolean(id)))
+  );
+  const { data: suppliers } =
+    supplierIds.length > 0
+      ? await supabase.from("suppliers").select("id, name").in("id", supplierIds)
+      : { data: [] as { id: string; name: string }[] };
+  const supplierName = new Map((suppliers ?? []).map((s) => [s.id, s.name]));
+
+  return new Map(
+    changes.map((c) => [
+      c.id,
+      {
+        groupLabel: c.brand
+          ? `Marca ${c.brand}`
+          : (c.supplier_id && supplierName.get(c.supplier_id)) || "Proveedor borrado",
+        amountLabel:
+          c.percent !== null
+            ? `+${Number(c.percent).toLocaleString("es-AR")}%`
+            : `+${formatCurrency(Number(c.fixed_amount ?? 0))}`,
+      },
+    ])
+  );
+}
+
+async function memberLabels(
+  supabase: Supabase,
+  orgId: string,
+  userIds: (string | null)[]
+): Promise<Map<string, string>> {
+  const ids = Array.from(new Set(userIds.filter((id): id is string => Boolean(id))));
+  if (ids.length === 0) return new Map();
+  const { data: members } = await supabase
+    .from("memberships")
+    .select("user_id, username, email")
+    .eq("org_id", orgId)
+    .in("user_id", ids);
+  return new Map(
+    (members ?? []).map((m) => [m.user_id, m.username ?? m.email ?? "Alguien del equipo"])
+  );
+}
+
+export interface BulkChangeRow extends BulkChangeInfo {
+  id: string;
+  productCount: number;
+  createdAt: string;
+  createdByLabel: string | null;
+  reverted: boolean;
+}
+
+export async function getRecentBulkChanges(field: "price" | "cost"): Promise<BulkChangeRow[]> {
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
+  const since = new Date(Date.now() - BULK_UNDO_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: rows } = await supabase
-    .from("product_price_history")
-    .select("id, old_price, new_price, changed_by, created_at")
+    .from("bulk_price_changes")
+    .select("id, supplier_id, brand, percent, fixed_amount, product_count, created_by, created_at, reverted_at")
     .eq("org_id", organization.id)
-    .eq("product_id", productId)
-    .order("created_at", { ascending: false });
+    .eq("field", field)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(20);
 
   if (!rows || rows.length === 0) return [];
 
-  const userIds = Array.from(
-    new Set(rows.map((r) => r.changed_by).filter((id): id is string => Boolean(id)))
-  );
-
-  const membersByUserId = new Map<string, string>();
-  if (userIds.length > 0) {
-    const { data: members } = await supabase
-      .from("memberships")
-      .select("user_id, username, email")
-      .eq("org_id", organization.id)
-      .in("user_id", userIds);
-    for (const m of members ?? []) {
-      membersByUserId.set(m.user_id, m.username ?? m.email ?? "Alguien del equipo");
-    }
-  }
+  const [info, members] = await Promise.all([
+    describeBulkChanges(supabase, rows),
+    memberLabels(supabase, organization.id, rows.map((r) => r.created_by)),
+  ]);
 
   return rows.map((r) => ({
     id: r.id,
-    oldPrice: Number(r.old_price),
-    newPrice: Number(r.new_price),
-    changedAt: r.created_at,
-    changedByLabel: r.changed_by ? membersByUserId.get(r.changed_by) ?? null : null,
+    ...info.get(r.id)!,
+    productCount: r.product_count,
+    createdAt: r.created_at,
+    createdByLabel: r.created_by ? members.get(r.created_by) ?? null : null,
+    reverted: r.reverted_at !== null,
   }));
 }
 
-export async function revertProductPrice(productId: string, price: number): Promise<ActionState> {
-  if (!Number.isFinite(price) || price < 0) return { error: "Precio inválido." };
+export interface RevertBulkChangeResult extends ActionState {
+  reverted?: number;
+  skipped?: number;
+}
+
+export async function revertBulkChange(bulkChangeId: string): Promise<RevertBulkChangeResult> {
+  await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("revert_bulk_price_change", {
+    p_bulk_change_id: bulkChangeId,
+  });
+
+  if (error || !data) {
+    if (error?.message.includes("ya se deshizo")) return { error: "Ese aumento ya se deshizo." };
+    if (error?.message.includes("30 días")) {
+      return { error: "Sólo se pueden deshacer aumentos de los últimos 30 días." };
+    }
+    return { error: "No pudimos deshacer el aumento." };
+  }
+
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  return { reverted: data.reverted, skipped: data.skipped };
+}
+
+export interface ProductHistoryRow {
+  id: string;
+  oldValue: number;
+  newValue: number;
+  changedAt: string;
+  changedByLabel: string | null;
+  // Si el cambio vino de un aumento masivo (migración 0039).
+  bulk: BulkChangeInfo | null;
+}
+
+interface HistoryDbRow {
+  id: string;
+  oldValue: number;
+  newValue: number;
+  changed_by: string | null;
+  created_at: string;
+  bulk_change_id: string | null;
+}
+
+async function fetchHistoryRows(
+  supabase: Supabase,
+  orgId: string,
+  productId: string,
+  field: "price" | "cost"
+): Promise<HistoryDbRow[]> {
+  // Pide bulk_change_id; si la columna todavía no existe (código publicado
+  // antes de aplicar 0039) vuelve a pedir sin ella para no dejar el
+  // historial vacío.
+  const run = async (withBulk: boolean) => {
+    if (field === "price") {
+      const { data, error } = await supabase
+        .from("product_price_history")
+        .select(
+          withBulk
+            ? "id, old_price, new_price, changed_by, created_at, bulk_change_id"
+            : "id, old_price, new_price, changed_by, created_at"
+        )
+        .eq("org_id", orgId)
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false });
+      const rows = (data ?? []) as unknown as {
+        id: string;
+        old_price: number;
+        new_price: number;
+        changed_by: string | null;
+        created_at: string;
+        bulk_change_id?: string | null;
+      }[];
+      return {
+        error,
+        rows: rows.map((r) => ({
+          id: r.id,
+          oldValue: Number(r.old_price),
+          newValue: Number(r.new_price),
+          changed_by: r.changed_by,
+          created_at: r.created_at,
+          bulk_change_id: r.bulk_change_id ?? null,
+        })),
+      };
+    }
+    const { data, error } = await supabase
+      .from("product_cost_history")
+      .select(
+        withBulk
+          ? "id, old_cost, new_cost, changed_by, created_at, bulk_change_id"
+          : "id, old_cost, new_cost, changed_by, created_at"
+      )
+      .eq("org_id", orgId)
+      .eq("product_id", productId)
+      .order("created_at", { ascending: false });
+    const rows = (data ?? []) as unknown as {
+      id: string;
+      old_cost: number;
+      new_cost: number;
+      changed_by: string | null;
+      created_at: string;
+      bulk_change_id?: string | null;
+    }[];
+    return {
+      error,
+      rows: rows.map((r) => ({
+        id: r.id,
+        oldValue: Number(r.old_cost),
+        newValue: Number(r.new_cost),
+        changed_by: r.changed_by,
+        created_at: r.created_at,
+        bulk_change_id: r.bulk_change_id ?? null,
+      })),
+    };
+  };
+
+  const first = await run(true);
+  if (!first.error) return first.rows;
+  return (await run(false)).rows;
+}
+
+export async function getProductHistory(
+  productId: string,
+  field: "price" | "cost"
+): Promise<ProductHistoryRow[]> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const rows = await fetchHistoryRows(supabase, organization.id, productId, field);
+  if (rows.length === 0) return [];
+
+  const bulkIds = Array.from(
+    new Set(rows.map((r) => r.bulk_change_id).filter((id): id is string => Boolean(id)))
+  );
+  const [members, bulkInfo] = await Promise.all([
+    memberLabels(supabase, organization.id, rows.map((r) => r.changed_by)),
+    bulkIds.length > 0
+      ? supabase
+          .from("bulk_price_changes")
+          .select("id, supplier_id, brand, percent, fixed_amount")
+          .in("id", bulkIds)
+          .then(({ data }) => describeBulkChanges(supabase, data ?? []))
+      : Promise.resolve(new Map<string, BulkChangeInfo>()),
+  ]);
+
+  return rows.map((r) => ({
+    id: r.id,
+    oldValue: r.oldValue,
+    newValue: r.newValue,
+    changedAt: r.created_at,
+    changedByLabel: r.changed_by ? members.get(r.changed_by) ?? null : null,
+    bulk: r.bulk_change_id ? bulkInfo.get(r.bulk_change_id) ?? null : null,
+  }));
+}
+
+export async function revertProductField(
+  productId: string,
+  field: "price" | "cost",
+  value: number
+): Promise<ActionState> {
+  if (!Number.isFinite(value) || value < 0) {
+    return { error: field === "price" ? "Precio inválido." : "Costo inválido." };
+  }
 
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
 
   const { error } = await supabase
     .from("products")
-    .update({ price })
+    .update(field === "price" ? { price: value } : { cost: value })
     .eq("id", productId)
     .eq("org_id", organization.id);
 
-  if (error) return { error: "No pudimos volver a ese precio." };
+  if (error) {
+    return { error: field === "price" ? "No pudimos volver a ese precio." : "No pudimos volver a ese costo." };
+  }
 
   revalidatePath("/productos");
   revalidatePath("/pos");

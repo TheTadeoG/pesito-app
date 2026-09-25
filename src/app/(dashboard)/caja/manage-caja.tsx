@@ -61,9 +61,11 @@ export function ManageCaja({
     setDetailOpen(true);
     setDetailLoading(true);
     setDetail(null);
-    const result = await getCajaDetail(cashRegisterId);
+    // Si falla, el diálogo muestra "No pudimos cargar" en vez de quedar
+    // cargando para siempre.
+    const result = await getCajaDetail(cashRegisterId).catch(() => null);
     setDetailLoading(false);
-    setDetail(result.detail ?? null);
+    setDetail(result?.detail ?? null);
   }
 
   // Con la caja abierta y sin ningún diálogo activo, Enter lleva directo a

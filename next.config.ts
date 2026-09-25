@@ -7,10 +7,9 @@ const nextConfig: NextConfig = {
     // cada navegación —aunque sea al layout compartido (sidebar/topbar)—
     // vuelve a pedirle todo a Supabase. Con esto, ese layout se reusa
     // hasta 30s entre navegaciones en vez de recalcularse en cada click.
-    // No arriesga mostrar datos viejos después de una venta o de abrir/
-    // cerrar caja: esos flujos ya llaman router.refresh() (o revalidatePath
-    // desde el server action), que fuerza los datos frescos igual, pasando
-    // por arriba de este valor.
+    // Abrir/cerrar caja y demás acciones usan revalidatePath, que pasa por
+    // arriba de este valor. El POS no (ver CLAUDE.md): después de cobrar,
+    // RefreshAfterSale refresca la primera página que se abre fuera del POS.
     staleTimes: {
       dynamic: 30,
     },

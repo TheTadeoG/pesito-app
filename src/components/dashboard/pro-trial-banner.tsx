@@ -71,7 +71,11 @@ export function ProTrialBanner({ proTrialEndsAt }: ProTrialBannerProps) {
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
         <p className="min-w-0 flex-1 text-danger">
           Tu prueba de funciones Pro terminó.{" "}
-          <Link href="/configuracion" className="font-semibold underline underline-offset-2">
+          <Link
+            href="/configuracion"
+            prefetch={false}
+            className="font-semibold underline underline-offset-2"
+          >
             Pasate a Pro
           </Link>{" "}
           para volver a tenerlas.
@@ -114,7 +118,11 @@ export function ProTrialBanner({ proTrialEndsAt }: ProTrialBannerProps) {
         Estás usando funciones del <span className="font-semibold">Plan Pro</span>, de prueba.
         Te quedan <span className="font-semibold">{timeLabel}</span> — después volvés al Plan
         Gratis y las perdés.{" "}
-        <Link href="/configuracion" className="font-semibold underline underline-offset-2">
+        <Link
+          href="/configuracion"
+          prefetch={false}
+          className="font-semibold underline underline-offset-2"
+        >
           Ver planes
         </Link>
       </p>

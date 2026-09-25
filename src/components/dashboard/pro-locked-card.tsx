@@ -22,6 +22,7 @@ export function ProLockedCard({ title }: { title: string }) {
         </div>
         <Link
           href="/configuracion"
+          prefetch={false}
           className="text-sm font-medium text-primary hover:underline"
         >
           Ver planes

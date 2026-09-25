@@ -6,7 +6,7 @@ export default function RecomendacionesPage() {
     <ComingSoon
       icon={Sparkles}
       title="Recomendaciones con IA, muy pronto"
-      description="Estamos entrenando sugerencias de reposición y combos según lo que más se vende en tu kiosco."
+      description="Estamos entrenando sugerencias de reposición y combos según lo que más se vende en tu negocio."
     />
   );
 }

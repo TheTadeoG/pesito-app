@@ -8,3 +8,4 @@
 - Sesión en server: `supabase.auth.getClaims()` (verifica el JWT localmente, el proyecto firma con ES256), no `getUser()`.
 - Fechas/horas en pantalla: `formatDateTime` / `formatTime` de `src/lib/utils.ts` (normalizan espacios para no romper la hidratación).
 - Estado y pendientes del trabajo: ver `PROGRESS.md`.
+- Git: trabajar directo sobre la rama principal (`claude/sharp-carson-p8zpd2`, no hay `main`), sin ramas ni PRs. Commitear y pushear cada cambio terminado.

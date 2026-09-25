@@ -117,6 +117,38 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
         Relationships: [];
       };
+      bulk_price_changes: {
+        Row: {
+          id: string;
+          org_id: string;
+          field: "price" | "cost";
+          supplier_id: string | null;
+          brand: string | null;
+          percent: number | null;
+          fixed_amount: number | null;
+          product_count: number;
+          created_by: string | null;
+          created_at: string;
+          reverted_at: string | null;
+          reverted_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          field: "price" | "cost";
+          supplier_id?: string | null;
+          brand?: string | null;
+          percent?: number | null;
+          fixed_amount?: number | null;
+          product_count?: number;
+          created_by?: string | null;
+          created_at?: string;
+          reverted_at?: string | null;
+          reverted_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["bulk_price_changes"]["Insert"]>;
+        Relationships: [];
+      };
       product_price_history: {
         Row: {
           id: string;
@@ -125,6 +157,7 @@ export interface Database {
           old_price: number;
           new_price: number;
           changed_by: string | null;
+          bulk_change_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -134,6 +167,7 @@ export interface Database {
           old_price: number;
           new_price: number;
           changed_by?: string | null;
+          bulk_change_id?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["product_price_history"]["Insert"]>;
@@ -147,6 +181,7 @@ export interface Database {
           old_cost: number;
           new_cost: number;
           changed_by: string | null;
+          bulk_change_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -156,6 +191,7 @@ export interface Database {
           old_cost: number;
           new_cost: number;
           changed_by?: string | null;
+          bulk_change_id?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["product_cost_history"]["Insert"]>;
@@ -667,6 +703,19 @@ export interface Database {
         };
         Returns: string;
       };
+      cash_register_summaries: {
+        Args: { p_register_ids: string[] };
+        Returns: {
+          cash_register_id: string;
+          sales_cash: number;
+          debt_payments: number;
+          ingresos: number;
+          retiros: number;
+          supplier_payments: number;
+          cash_purchases: number;
+          payment_breakdown: Json;
+        }[];
+      };
       void_sale: {
         Args: { p_sale_id: string };
         Returns: undefined;
@@ -723,6 +772,10 @@ export interface Database {
           p_fixed_amount?: number | null;
         };
         Returns: number;
+      };
+      revert_bulk_price_change: {
+        Args: { p_bulk_change_id: string };
+        Returns: { reverted: number; skipped: number };
       };
       create_invitation: {
         Args: { p_org_id: string; p_role: string };

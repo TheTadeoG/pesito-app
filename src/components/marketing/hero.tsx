@@ -13,18 +13,14 @@ export function Hero() {
       />
       <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-2 lg:items-center lg:pb-28 lg:pt-24">
         <div>
-          <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
-            Hecho para el comercio de barrio, sea cual sea tu rubro
-          </span>
-
-          <h1 className="mt-5 text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
+          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
             El sistema para manejar tu negocio sin dolores de cabeza
           </h1>
 
           <p className="mt-5 max-w-xl text-lg text-muted-foreground">
             Cobrá más rápido, controlá tu stock y llevá tu caja al día desde
-            una sola pantalla. Pesito reemplaza el cuaderno, la calculadora y
-            las planillas sueltas.
+            una sola pantalla. Empezás gratis y elegís un plan recién cuando
+            tu negocio crece.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -43,7 +39,7 @@ export function Hero() {
           </div>
 
           <p className="mt-4 text-sm text-muted-foreground">
-            Sin tarjeta de crédito · Configurás tu negocio en minutos
+            Sin tarjeta de crédito · Para cualquier rubro · Listo en minutos
           </p>
         </div>
 

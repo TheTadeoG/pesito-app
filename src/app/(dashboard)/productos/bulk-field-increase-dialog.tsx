@@ -1,20 +1,128 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { useToast } from "@/components/toast/toast-provider";
-import { bulkIncreaseField } from "@/app/(dashboard)/productos/actions";
+import {
+  bulkIncreaseField,
+  getRecentBulkChanges,
+  revertBulkChange,
+  type BulkChangeRow,
+} from "@/app/(dashboard)/productos/actions";
 import type { Brand, Product, Supplier } from "@/lib/types";
 
 type SupplierOption = Pick<Supplier, "id" | "name">;
 type BrandOption = Pick<Brand, "id" | "name">;
 type GroupBy = "supplier" | "brand";
+
+// Aumentos masivos de los últimos 30 días, con la opción de deshacerlos.
+// Se monta al abrir el diálogo (Dialog no renderiza nada cerrado), así que
+// la lista se pide recién ahí.
+function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
+  const router = useRouter();
+  const { showSuccess } = useToast();
+  const [rows, setRows] = useState<BulkChangeRow[] | null>(null);
+  const [revertingId, setRevertingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fieldPlural = field === "price" ? "precios" : "costos";
+
+  useEffect(() => {
+    getRecentBulkChanges(field).then(setRows);
+  }, [field]);
+
+  async function handleRevert(row: BulkChangeRow) {
+    if (
+      !confirm(
+        `¿Deshacer el aumento de ${row.amountLabel} (${row.groupLabel})? Los ${row.productCount} productos vuelven al ${field === "price" ? "precio" : "costo"} que tenían antes.`
+      )
+    )
+      return;
+    setRevertingId(row.id);
+    setError(null);
+    const result = await revertBulkChange(row.id);
+    setRevertingId(null);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setRows((current) =>
+      current ? current.map((r) => (r.id === row.id ? { ...r, reverted: true } : r)) : current
+    );
+    const reverted = result.reverted ?? 0;
+    const skipped = result.skipped ?? 0;
+    showSuccess(
+      "Aumento deshecho",
+      (reverted === 1
+        ? "1 producto volvió a su valor anterior."
+        : `${reverted} productos volvieron a su valor anterior.`) +
+        (skipped === 1
+          ? " 1 no se tocó porque cambió después del aumento."
+          : skipped > 1
+            ? ` ${skipped} no se tocaron porque cambiaron después del aumento.`
+            : "")
+    );
+    router.refresh();
+  }
+
+  if (rows === null || rows.length === 0) return null;
+
+  return (
+    <div className="mt-6 border-t border-border pt-5">
+      <p className="text-sm font-semibold text-foreground">Aumentos anteriores</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        Podés deshacer los aumentos de {fieldPlural} de los últimos 30 días.
+      </p>
+      {error && <p className="mt-2 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
+      <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+        {rows.map((row) => (
+          <div
+            key={row.id}
+            className="flex flex-col gap-2 rounded-xl border border-border px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm text-foreground">
+                <span className="font-semibold">{row.amountLabel}</span> · {row.groupLabel}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {row.productCount} producto{row.productCount === 1 ? "" : "s"} ·{" "}
+                {formatDateTime(row.createdAt)}
+              </p>
+              {row.createdByLabel && (
+                <p className="truncate text-xs text-muted-foreground" title={row.createdByLabel}>
+                  {row.createdByLabel}
+                </p>
+              )}
+            </div>
+            {row.reverted ? (
+              <span className="shrink-0 self-start text-xs font-medium text-muted-foreground sm:self-auto">
+                Deshecho
+              </span>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleRevert(row)}
+                disabled={revertingId !== null}
+                className="shrink-0 self-start whitespace-nowrap sm:self-auto"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                {revertingId === row.id ? "Deshaciendo…" : "Deshacer"}
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function BulkFieldIncreaseDialog({
   open,
@@ -244,6 +352,7 @@ export function BulkFieldIncreaseDialog({
           </Button>
         </div>
       </form>
+      <RecentBulkChanges field={field} />
     </Dialog>
   );
 }

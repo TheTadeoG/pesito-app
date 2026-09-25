@@ -12,7 +12,7 @@ export default function SoportePage() {
           </span>
           <CardTitle className="mt-4">¿Necesitás ayuda?</CardTitle>
           <CardDescription>
-            Escribinos y te ayudamos a sacarle el jugo a Pesito en tu kiosco.
+            Escribinos y te ayudamos a sacarle el jugo a Pesito en tu negocio.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

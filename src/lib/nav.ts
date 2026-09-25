@@ -100,9 +100,9 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/proveedores": { title: "Proveedores", description: "Tus proveedores y sus cuentas." },
   "/usuarios": { title: "Usuarios", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
-  "/recomendaciones": { title: "Recomendaciones", description: "Sugerencias inteligentes para tu kiosco." },
+  "/recomendaciones": { title: "Recomendaciones", description: "Sugerencias inteligentes para tu negocio." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },
-  "/configuracion": { title: "Configuración", description: "Datos de tu kiosco." },
+  "/configuracion": { title: "Configuración", description: "Datos de tu negocio." },
   "/soporte": { title: "Soporte", description: "¿Necesitás ayuda?" },
   "/caja": { title: "Mi Caja", description: "Apertura y cierre de caja." },
 };

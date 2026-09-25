@@ -18,11 +18,11 @@ export function CookieConsent() {
         type="button"
         onClick={acceptCookieConsent}
         aria-label="Cerrar aviso de cookies"
-        className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+        className="absolute right-0.5 top-0.5 flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground"
       >
         <X className="h-3.5 w-3.5" />
       </button>
-      <p className="pr-4 leading-relaxed text-muted-foreground">
+      <p className="pr-5 leading-relaxed text-muted-foreground">
         Usamos cookies esenciales, sin publicidad ni seguimiento.{" "}
         <Link href="/privacidad" className="text-primary hover:underline">
           Más info

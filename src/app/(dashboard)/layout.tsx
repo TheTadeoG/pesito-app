@@ -11,6 +11,7 @@ import { CommercialDatesBanner } from "@/components/dashboard/commercial-dates-b
 import { ProTrialBanner } from "@/components/dashboard/pro-trial-banner";
 import { ToastProvider } from "@/components/toast/toast-provider";
 import { WelcomeModal } from "@/components/dashboard/welcome-modal";
+import { RefreshAfterSale } from "@/components/dashboard/refresh-after-sale";
 import { getUpcomingCommercialDates } from "@/lib/commercial-dates";
 import { argDateString } from "@/lib/timezone";
 import { getSubscription } from "@/lib/subscription";
@@ -74,6 +75,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Suspense fallback={null}>
         <WelcomeModal />
       </Suspense>
+      <RefreshAfterSale />
       <div className="flex min-h-screen bg-background">
         <Sidebar
           orgName={organization.name}

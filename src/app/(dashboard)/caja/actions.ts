@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { fetchAllIn } from "@/lib/supabase/fetch-all";
+import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { requireOrgContext } from "@/lib/org";
 import {
-  computeCashBreakdown,
-  computeCashOnHand,
-  computePaymentBreakdown,
+  CASH_UNAVAILABLE_ERROR,
+  tryComputeCashOnHand,
+  getCashRegisterSummary,
   sumCashBreakdown,
   type PaymentBreakdownRow,
 } from "@/lib/caja";
@@ -68,20 +68,24 @@ export async function getCajaDetail(
   const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
   const openingAmount = Number(register.opening_amount);
 
-  const [{ data: movementsRaw }, { data: salesRaw }, cashBreakdown, paymentBreakdown] =
+  const [{ data: movementsRaw }, salesRaw, { cash: cashBreakdown, payments: paymentBreakdown }] =
     await Promise.all([
       supabase
         .from("cash_movements")
         .select("id, type, amount, reason, created_at")
         .eq("cash_register_id", cashRegisterId)
         .order("created_at"),
-      supabase
-        .from("sales")
-        .select("id, total, payment_method, invoice_type, created_at, customer_id, status")
-        .eq("cash_register_id", cashRegisterId)
-        .order("created_at", { ascending: false }),
-      computeCashBreakdown(supabase, cashRegisterId, openingAmount),
-      computePaymentBreakdown(supabase, cashRegisterId),
+      // Una caja de un día movido puede pasar las 1000 ventas.
+      fetchAll((from, to) =>
+        supabase
+          .from("sales")
+          .select("id, total, payment_method, invoice_type, created_at, customer_id, status")
+          .eq("cash_register_id", cashRegisterId)
+          .order("created_at", { ascending: false })
+          .order("id")
+          .range(from, to)
+      ),
+      getCashRegisterSummary(supabase, cashRegisterId, openingAmount),
     ]);
 
   const movements: CajaMovementRow[] = (movementsRaw ?? []).map((m) => ({
@@ -92,7 +96,7 @@ export async function getCajaDetail(
     created_at: m.created_at,
   }));
 
-  const sales = (salesRaw ?? [])
+  const sales = salesRaw
     .filter((s) => s.status === "completada")
     .map((s) => ({ ...s, total: Number(s.total) }));
 
@@ -216,11 +220,12 @@ export async function addCashMovement(
       .single();
 
     if (register) {
-      const cashOnHand = await computeCashOnHand(
+      const cashOnHand = await tryComputeCashOnHand(
         supabase,
         cashRegisterId,
         Number(register.opening_amount)
       );
+      if (cashOnHand === null) return { error: CASH_UNAVAILABLE_ERROR };
       if (amount > cashOnHand) {
         return { error: "No podés retirar más efectivo del que hay disponible." };
       }
@@ -257,11 +262,12 @@ export async function closeCaja(
 
   if (!register) return { error: "No encontramos la caja." };
 
-  const expectedAmount = await computeCashOnHand(
+  const expectedAmount = await tryComputeCashOnHand(
     supabase,
     cashRegisterId,
     Number(register.opening_amount)
   );
+  if (expectedAmount === null) return { error: CASH_UNAVAILABLE_ERROR };
 
   const { error } = await supabase
     .from("cash_registers")

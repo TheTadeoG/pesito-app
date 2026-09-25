@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
-import { computeCashOnHand } from "@/lib/caja";
+import { CASH_UNAVAILABLE_ERROR, tryComputeCashOnHand } from "@/lib/caja";
 import {
   buildFullUsername,
   generateDiscriminator,
@@ -93,7 +93,8 @@ export async function removeMember(membershipId: string): Promise<ActionState> {
 
   if (openRegister) {
     const openingAmount = Number(openRegister.opening_amount);
-    const expectedAmount = await computeCashOnHand(supabase, openRegister.id, openingAmount);
+    const expectedAmount = await tryComputeCashOnHand(supabase, openRegister.id, openingAmount);
+    if (expectedAmount === null) return { error: CASH_UNAVAILABLE_ERROR };
     await supabase
       .from("cash_registers")
       .update({

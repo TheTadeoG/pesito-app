@@ -16,7 +16,7 @@ interface SidebarProps {
   cashRegister: {
     openedAt: string;
     openingAmount: number;
-    cashTotal: number;
+    cashTotal: number | null;
   } | null;
 }
 

@@ -31,10 +31,11 @@ export function Pricing() {
     <section id="precios" className="scroll-mt-20 mx-auto max-w-6xl px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Precios simples, sin letra chica
+          Empezá gratis. Pagá recién cuando crezcas
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Elegí el plan que se ajuste a tu negocio. Probá 14 días gratis, sin tarjeta.
+          Pesito es gratis para arrancar, sin tarjeta y sin vencimiento. Cuando tu
+          negocio necesite más ventas, usuarios o reportes, elegís el plan que te sirva.
         </p>
       </div>
 

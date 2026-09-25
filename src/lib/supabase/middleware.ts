@@ -24,6 +24,10 @@ const PUBLIC_PATHS = [
   "/opengraph-image",
   "/sitemap.xml",
   "/robots.txt",
+  "/llms.txt",
+  // Archivos que buscan los crawlers y agentes de IA (ai-catalog.json, etc.):
+  // si no existen, que respondan 404 y no la página de login.
+  "/.well-known",
 ];
 
 function isPublicPath(pathname: string) {

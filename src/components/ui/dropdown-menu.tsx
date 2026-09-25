@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 
 interface DropdownMenuProps {
@@ -9,28 +17,67 @@ interface DropdownMenuProps {
   children: ReactNode;
 }
 
+// El menú se posiciona "fixed" respecto de la pantalla (no absolute dentro
+// del contenedor): así no lo recorta una tabla con overflow ni le agrega
+// una barra de scroll, y si no entra abajo del botón se abre hacia arriba.
 export function DropdownMenu({ trigger, align = "right", children }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<CSSProperties | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Ubica el menú pegado al botón: abajo si entra, si no arriba.
+  const place = useCallback(() => {
+    if (!ref.current || !menuRef.current) return;
+    const trigger = ref.current.getBoundingClientRect();
+    const menuHeight = menuRef.current.offsetHeight;
+    const gap = 4;
+    const fitsBelow = trigger.bottom + gap + menuHeight <= window.innerHeight;
+    const next: CSSProperties = fitsBelow
+      ? { top: trigger.bottom + gap }
+      : { bottom: window.innerHeight - trigger.top + gap };
+    if (align === "right") next.right = window.innerWidth - trigger.right;
+    else next.left = trigger.left;
+    setPosition(next);
+  }, [align]);
 
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
+    // Si la página o la tabla se mueven (scroll, también el horizontal que
+    // hace el navegador al enfocar el botón), el menú acompaña al botón.
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, place]);
+
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open, place]);
 
   return (
     <div ref={ref} className="relative inline-block">
-      <div onClick={() => setOpen((v) => !v)}>{trigger}</div>
+      <div
+        onClick={() => {
+          setPosition(null);
+          setOpen((v) => !v);
+        }}
+      >
+        {trigger}
+      </div>
       {open && (
         <div
-          className={cn(
-            "absolute z-30 mt-1 min-w-[200px] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg",
-            align === "right" ? "right-0" : "left-0"
-          )}
+          ref={menuRef}
+          className="fixed z-50 min-w-[200px] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
+          // Hasta medir, invisible (evita un parpadeo en la posición vieja).
+          style={position ?? { top: 0, left: 0, visibility: "hidden" }}
           onClick={() => setOpen(false)}
         >
           {children}

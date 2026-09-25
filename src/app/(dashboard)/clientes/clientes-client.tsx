@@ -84,6 +84,7 @@ export function ClientesClient({
                 >
                   <Link
                     href={`/clientes/${customer.id}`}
+                    prefetch={false}
                     title="Ver ficha del cliente"
                     className="-mx-2.5 min-w-0 flex-1 rounded-xl px-2.5 py-1 transition-colors hover:bg-muted"
                   >
