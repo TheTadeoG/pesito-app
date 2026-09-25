@@ -2,6 +2,8 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 import { getBranchContext, withBranchStock } from "@/lib/branches";
+import { getSubscription } from "@/lib/subscription";
+import { canUse } from "@/lib/plan-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComprasClient } from "@/app/(dashboard)/compras/compras-client";
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
@@ -119,6 +121,10 @@ export default async function ComprasPage({
         suppliers={(suppliers ?? []).map((s) => ({ ...s, balance: Number(s.balance) }))}
         hasOpenCaja={Boolean(openRegister)}
         customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
+        supplierAccountsEnabled={canUse(
+          await getSubscription(supabase, organization.id),
+          "supplierAccounts"
+        )}
         preselectedProductId={preselectedProductId ?? null}
       />
 

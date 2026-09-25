@@ -193,12 +193,12 @@ export const rubroPages: RubroPage[] = [
     ],
     features: [
       {
-        title: "Variantes de producto",
-        description: "Cargás talle y color como variantes de una misma prenda, sin duplicar el catálogo.",
+        title: "Talles y colores (pronto)",
+        description: "Pronto vas a poder cargar talle y color como variantes de una misma prenda, desde el Plan Esencial. Hoy cada combinación se carga como un producto con su propio stock.",
       },
       {
         title: "Detección de baja rotación",
-        description: "El plan IA te avisa qué prendas no se están vendiendo, para que puedas liquidarlas a tiempo.",
+        description: "Pronto, el Plan IA te va a avisar qué prendas no se están vendiendo, para que puedas liquidarlas a tiempo.",
       },
       {
         title: "Cuenta corriente de clientes",
@@ -210,6 +210,6 @@ export const rubroPages: RubroPage[] = [
       },
     ],
     dayInLife:
-      "Una clienta pregunta si te queda el mismo buzo en talle M en gris — mirás el stock de esa variante puntual sin tener que ir al perchero a contar. Se prueba dos prendas, se lleva una y te pide dejarte la otra separada: queda anotada a su nombre, lista para cuando vuelva.",
+      "Una clienta pregunta si te queda el mismo buzo en talle M en gris — mirás en Pesito si te queda sin tener que ir al perchero a contar. Se prueba dos prendas, se lleva una y te pide dejarte la otra separada: queda anotada a su nombre, lista para cuando vuelva.",
   },
 ];

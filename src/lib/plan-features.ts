@@ -56,8 +56,10 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Todas las funciones del Plan Gratis +",
       "Ventas ilimitadas",
       "Cuenta corriente con tus proveedores: cuánto les debés y cada pago",
+      "Ventas y diferencias de caja de cada empleado",
       "Hasta 2 usuarios y 2 cajas",
     ],
+    soon: ["Combos, kits y talles"],
   },
   pro: {
     plan: "pro",
@@ -69,14 +71,13 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: [
       "Todas las funciones del Plan Esencial +",
       "Aumentos masivos de precios y costos por proveedor o marca, y deshacerlos si te equivocás",
-      "Reporte de ganancias: cuánto ganás, qué te deja más y qué vendés a pérdida",
+      "Reportes avanzados para ganar más: cuánto ganás, qué te deja más plata, qué vendés a pérdida y cómo venís contra el mes anterior",
       "En vivo: mirá cuánto vende cada sucursal en este momento",
-      "Control por empleado y por sucursal: ventas y diferencias de caja",
       "Hasta 2 sucursales, cada una con su stock",
       "Hasta 6 usuarios y 6 cajas",
       "Soporte prioritario",
     ],
-    soon: ["Ganancias separadas por sucursal"],
+    soon: ["Ofertas y promociones", "Ganancias separadas por sucursal"],
   },
   ia: {
     plan: "ia",
@@ -147,6 +148,18 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Venta por unidad o por peso", values: everyPlan },
       { label: "Efectivo, tarjeta, transferencia, QR y pago mixto", values: everyPlan },
       { label: "Ticket de venta (no fiscal)", values: everyPlan },
+      {
+        label: "Combos y kits",
+        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+      },
+      {
+        label: "Talles y colores (variantes)",
+        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+      },
+      {
+        label: "Ofertas y promociones",
+        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+      },
     ],
   },
   {
@@ -166,7 +179,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Caja diaria con cierre y arqueo", values: everyPlan },
       { label: "Clientes con fiado (cuenta corriente)", values: everyPlan },
       { label: "En vivo: ventas del momento por sucursal y vendedor", values: fromPro },
-      { label: "Ventas y diferencias de caja por empleado", values: fromPro },
+      { label: "Ventas y diferencias de caja por empleado", values: fromEsencial },
       { label: "Historial completo de caja", values: fromPro },
     ],
   },
@@ -174,7 +187,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     title: "Reportes",
     rows: [
       { label: "Ventas, ticket promedio, medios de pago y más vendidos", values: everyPlan },
-      { label: "Ganancias y productos vendidos a pérdida", values: fromPro },
+      { label: "Ganancias: qué te deja más plata y qué vendés a pérdida", values: fromPro },
       { label: "Comparación con el período anterior", values: fromPro },
       {
         label: "Ganancias separadas por sucursal",

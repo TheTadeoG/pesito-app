@@ -27,11 +27,11 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Qué pasa cuando terminan los 14 días de prueba?",
         answer:
-          "Seguís en el Plan Gratis automáticamente: no se te cobra nada y no perdés ningún dato. Lo único que deja de estar disponible son las funciones del Plan Pro (por ejemplo, los aumentos masivos, el reporte de ganancias, En vivo o las sucursales), hasta que elijas un plan pago.",
+          "Seguís en el Plan Gratis automáticamente: no se te cobra nada y no perdés ningún dato. Lo único que deja de estar disponible son las funciones del Plan Pro (por ejemplo, los aumentos masivos, los reportes avanzados, En vivo o las sucursales), hasta que elijas un plan pago.",
       },
       {
         question: "¿Qué diferencia hay entre los planes?",
-        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, la cuenta corriente con tus proveedores y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, el reporte de ganancias, la pantalla En vivo, el control por empleado y por sucursal, hasta 2 sucursales con su propio stock y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Pagando anual tenés un 20% de descuento.`,
+        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados de ganancias, la pantalla En vivo, hasta 2 sucursales con su propio stock y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar combos, kits y talles, y el Pro, ofertas y promociones. Pagando anual tenés un 20% de descuento.`,
       },
       {
         question: "¿Necesito instalar algo?",
@@ -98,7 +98,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Me dice cuánto gano de verdad?",
-        answer: `Sí, con el reporte de ganancias del ${pro.name}: si cargás el costo de cada producto, ves la ganancia estimada, los productos que más ganancia te dejan, los que vendés a pérdida y la comparación con el período anterior. En todos los planes tenés los reportes básicos: lo vendido, el ticket promedio, los medios de pago y los productos más vendidos.`,
+        answer: `Sí, con los reportes avanzados del ${pro.name}: si cargás el costo de cada producto, ves la ganancia estimada, los productos que más ganancia te dejan, los que vendés a pérdida y la comparación con el período anterior. En todos los planes tenés los reportes básicos: lo vendido, el ticket promedio, los medios de pago y los productos más vendidos.`,
       },
     ],
   },
@@ -127,7 +127,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Cómo sé si falta plata en la caja?",
         answer:
-          "Al cerrar la caja contás el efectivo y Pesito lo compara con lo que debería haber (monto inicial + ventas en efectivo + cobros − retiros y pagos). Si no coincide, queda registrada la diferencia de ese vendedor. Con el Plan Pro, en los reportes ves los faltantes y sobrantes de cada persona.",
+          "Al cerrar la caja contás el efectivo y Pesito lo compara con lo que debería haber (monto inicial + ventas en efectivo + cobros − retiros y pagos). Si no coincide, queda registrada la diferencia de ese vendedor. Desde el Plan Esencial, en los reportes ves los faltantes y sobrantes de cada persona.",
       },
     ],
   },

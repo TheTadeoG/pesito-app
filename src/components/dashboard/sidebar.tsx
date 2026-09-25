@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/marketing/wordmark";
 import { VenderCard } from "@/components/dashboard/vender-card";
 import { BranchSwitcher, type BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
+import type { PlanFeature } from "@/lib/plan-access";
 
 interface SidebarProps {
   orgName: string;
@@ -20,9 +21,19 @@ interface SidebarProps {
     cashTotal: number | null;
   } | null;
   branch: BranchSwitcherProps | null;
+  /** Funciones que el plan no incluye, con el plan que las trae ("Pro"). */
+  lockedFeatures: Partial<Record<PlanFeature, string>>;
 }
 
-export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister, branch }: SidebarProps) {
+export function Sidebar({
+  orgName,
+  memberName,
+  roleLabel,
+  role,
+  cashRegister,
+  branch,
+  lockedFeatures,
+}: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -61,6 +72,7 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister, br
               <div className="mt-2 space-y-0.5">
                 {items.map((item) => {
                   const active = isNavItemActive(item, pathname, tabParam);
+                  const badge = item.badge ?? (item.feature ? lockedFeatures[item.feature] : undefined);
                   return (
                     <Link
                       key={item.href}
@@ -86,9 +98,9 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister, br
                         <item.icon className="h-4 w-4" />
                         {item.label}
                       </span>
-                      {item.badge && (
+                      {badge && (
                         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                          {item.badge}
+                          {badge}
                         </span>
                       )}
                     </Link>

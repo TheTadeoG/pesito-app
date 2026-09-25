@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
+import { checkUserLimit } from "@/lib/plan-limits";
 import { CASH_UNAVAILABLE_ERROR, tryComputeCashOnHand } from "@/lib/caja";
 import {
   buildFullUsername,
@@ -28,6 +29,9 @@ export async function createInvitation(role: "admin" | "vendedor"): Promise<Invi
   }
 
   const supabase = await createClient();
+  const limitError = await checkUserLimit(supabase, organization.id);
+  if (limitError) return { error: limitError };
+
   const { data, error } = await supabase.rpc("create_invitation", {
     p_org_id: organization.id,
     p_role: role,
@@ -149,6 +153,8 @@ export async function createDirectMember(
   }
 
   const supabase = await createClient();
+  const limitError = await checkUserLimit(supabase, organization.id);
+  if (limitError) return { error: limitError };
 
   // "base" puede repetirse entre distintos kioscos (le agregamos un código
   // #XXXX al estilo Discord para que el usuario final sea único de verdad).

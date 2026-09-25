@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +24,14 @@ export interface CajaHistorialRow {
   paymentBreakdown: PaymentBreakdownRow[];
 }
 
-export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
+export function CajaHistorial({
+  rows,
+  limitedTo,
+}: {
+  rows: CajaHistorialRow[];
+  /** El plan no incluye el historial completo: sólo se ven los últimos N cierres. */
+  limitedTo?: number;
+}) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detail, setDetail] = useState<CajaDetail | null>(null);
@@ -43,6 +51,14 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Historial de caja</CardTitle>
+        {limitedTo !== undefined && (
+          <p className="text-xs text-muted-foreground">
+            {`Ves los últimos ${limitedTo} cierres. El historial completo está en el Plan Pro. `}
+            <Link href="/configuracion?tab=plan" prefetch={false} className="font-medium text-primary hover:underline">
+              Ver planes
+            </Link>
+          </p>
+        )}
       </CardHeader>
       <CardContent className="p-0">
         {rows.length === 0 ? (

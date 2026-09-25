@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { BRANCH_COOKIE } from "@/lib/branches";
+import { checkBranchLimit } from "@/lib/plan-limits";
 import type { Json } from "@/lib/database.types";
 
 export interface BranchActionState {
@@ -66,6 +67,9 @@ export async function setCurrentBranch(branchId: string): Promise<BranchActionSt
 export async function createBranch(name: string): Promise<BranchActionState> {
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
+  const limitError = await checkBranchLimit(supabase, organization.id);
+  if (limitError) return { error: limitError };
+
   const { error } = await supabase.rpc("create_branch", {
     p_org_id: organization.id,
     p_name: name,

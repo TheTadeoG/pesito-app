@@ -15,7 +15,8 @@ import { RefreshAfterSale } from "@/components/dashboard/refresh-after-sale";
 import { CashCloseReminder } from "@/components/dashboard/cash-close-reminder";
 import { getUpcomingCommercialDates } from "@/lib/commercial-dates";
 import { argDateString } from "@/lib/timezone";
-import { getSubscription } from "@/lib/subscription";
+import { getSubscription, planLabels } from "@/lib/subscription";
+import { canUse, featureMinPlan, type PlanFeature } from "@/lib/plan-access";
 import { getBranchContext } from "@/lib/branches";
 
 export const metadata: Metadata = {
@@ -78,6 +79,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     firstName || (membership.username ? membership.username.split("#")[0] : null) || null;
   const greetingName = greetingNameRaw ? capitalizeWords(greetingNameRaw) : null;
   const roleLabel = roleLabels[membership.role] ?? membership.role;
+  const lockedFeatures = Object.fromEntries(
+    (Object.keys(featureMinPlan) as PlanFeature[])
+      .filter((f) => !canUse(subscription, f))
+      .map((f) => [f, planLabels[featureMinPlan[f]]])
+  );
   const memberName = greetingName || membership.username || email || "";
 
   return (
@@ -94,6 +100,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           role={membership.role}
           cashRegister={cashRegister}
           branch={branch}
+          lockedFeatures={lockedFeatures}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar

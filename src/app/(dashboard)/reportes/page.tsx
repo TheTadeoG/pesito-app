@@ -16,6 +16,7 @@ import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { getMemberLabelsById } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
+import { canUse } from "@/lib/plan-access";
 
 const paymentLabels: Record<string, string> = {
   efectivo: "Efectivo",
@@ -46,10 +47,13 @@ export default async function ReportesPage({
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const isManager = membership.role === "owner" || membership.role === "admin";
-  const [subscription, memberLabelsById] = await Promise.all([
-    getSubscription(supabase, organization.id),
-    isManager ? getMemberLabelsById(supabase, organization.id) : Promise.resolve(null),
-  ]);
+  const subscription = await getSubscription(supabase, organization.id);
+  // Ganancias y comparación de períodos: reporte de ganancias (Plan Pro).
+  // Ventas y diferencias de caja por vendedor: reportes por empleado (Plan Pro).
+  const canProfit = canUse(subscription, "profitReports");
+  const canTeam = canUse(subscription, "teamReports");
+  const memberLabelsById =
+    isManager && canTeam ? await getMemberLabelsById(supabase, organization.id) : null;
 
   // Filtro por vendedor: sólo dueños/administradores. Se acepta también un
   // usuario que ya no está en el negocio (llega desde "Ventas por vendedor").
@@ -191,7 +195,7 @@ export default async function ReportesPage({
 
   // Reporte Pro: productos vendidos a pérdida (margen negativo), los que
   // "más ganancia dejan" arriba justamente excluye.
-  const lossProducts = subscription.hasProAccess
+  const lossProducts = canProfit
     ? Array.from(byProductQty.values())
         .filter((p) => p.margin < 0)
         .sort((a, b) => a.margin - b.margin)
@@ -386,7 +390,7 @@ export default async function ReportesPage({
     ventasPct: number | null;
     ticketPct: number | null;
   } | null = null;
-  if (subscription.hasProAccess) {
+  if (canProfit) {
     // eslint-disable-next-line react-hooks/purity
     const durationMs = Date.now() - start.getTime();
     const previousStart = new Date(start.getTime() - durationMs);
@@ -466,7 +470,8 @@ export default async function ReportesPage({
       {
         icon: "trending",
         label: "Ganancia estimada",
-        value: formatCurrency(gananciaEstimada),
+        value: canProfit ? formatCurrency(gananciaEstimada) : "Plan Pro",
+        locked: !canProfit,
         deltaPct: tileDeltas?.gananciaPct ?? null,
       },
       {
@@ -486,7 +491,7 @@ export default async function ReportesPage({
     revenueChartIsHourly: groupBy === "hour",
     paymentBreakdown,
     topByQuantity,
-    topByMargin,
+    topByMargin: canProfit ? topByMargin : null,
     topCustomers,
     saleRows,
     cashDiffByUser,
@@ -494,7 +499,8 @@ export default async function ReportesPage({
     sellerLabel,
     fiadoDebtors,
     stockValue,
-    hasProAccess: subscription.hasProAccess,
+    hasProAccess: canProfit,
+    teamLocked: isManager && !canTeam,
     periodComparison,
     lossProducts,
   };

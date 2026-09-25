@@ -40,6 +40,7 @@ import {
   toggleProductActive,
 } from "@/app/(dashboard)/productos/actions";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
+import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
 
@@ -134,12 +135,15 @@ export function ProductosClient({
   brands,
   suppliers,
   initialBrand,
+  bulkLocked,
 }: {
   products: Product[];
   brands: Pick<Brand, "id" | "name">[];
   suppliers: SupplierOption[];
   // Viene de tocar el conteo de productos en la pestaña Marcas.
   initialBrand: string | null;
+  // El plan no incluye aumentos masivos: los botones abren el aviso del plan.
+  bulkLocked: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -158,6 +162,7 @@ export function ProductosClient({
     useState<Product | null>(null);
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
   const [bulkCostOpen, setBulkCostOpen] = useState(false);
+  const [bulkLockedOpen, setBulkLockedOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   // Activar/desactivar se ve al toque en vez de esperar el viaje al server +
@@ -441,13 +446,21 @@ export function ProductosClient({
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setBulkPriceOpen(true)}>
+          <Button
+            variant="outline"
+            onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkPriceOpen(true))}
+          >
             <TrendingUp className="h-4 w-4" />
             Aumentar precios
+            {bulkLocked && <Badge tone="accent">Pro</Badge>}
           </Button>
-          <Button variant="outline" onClick={() => setBulkCostOpen(true)}>
+          <Button
+            variant="outline"
+            onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkCostOpen(true))}
+          >
             <TrendingUp className="h-4 w-4" />
             Aumentar costos
+            {bulkLocked && <Badge tone="accent">Pro</Badge>}
           </Button>
           <Button variant="outline" onClick={() => setShowColumns(true)}>
             <Columns3 className="h-4 w-4" />
@@ -1014,6 +1027,16 @@ export function ProductosClient({
         onClose={() => setPriceHistoryProduct(null)}
       />
 
+      <Dialog
+        open={bulkLockedOpen}
+        onClose={() => setBulkLockedOpen(false)}
+        title="Aumentos masivos"
+      >
+        <ProLockedCard
+          title="Aumentos masivos de precios y costos"
+          description="Actualizá de una vez todos los productos de un proveedor o una marca, en porcentaje o monto fijo, y deshacelo si te equivocás."
+        />
+      </Dialog>
       <BulkFieldIncreaseDialog
         open={bulkPriceOpen}
         onClose={() => setBulkPriceOpen(false)}

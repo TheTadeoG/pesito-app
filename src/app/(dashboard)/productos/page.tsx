@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 import { getBranchContext, withBranchStock } from "@/lib/branches";
 import { isOrgAdmin } from "@/lib/roles";
+import { getSubscription } from "@/lib/subscription";
+import { canUse } from "@/lib/plan-access";
 import { TransferButton } from "@/app/(dashboard)/productos/transfer-dialog";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
@@ -115,6 +117,7 @@ export default async function ProductosPage({
         brands={brands ?? []}
         suppliers={suppliers ?? []}
         initialBrand={marca ?? null}
+        bulkLocked={!canUse(await getSubscription(supabase, organization.id), "bulkPriceChanges")}
       />
     );
   }

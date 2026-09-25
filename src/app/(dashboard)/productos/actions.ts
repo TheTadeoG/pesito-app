@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { getSubscription } from "@/lib/subscription";
+import { canUse, featureLockedMessage } from "@/lib/plan-access";
 import { getBranchContext } from "@/lib/branches";
 import { formatCurrency } from "@/lib/utils";
 
@@ -337,6 +339,9 @@ export async function bulkIncreaseField(
 
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
+  if (!canUse(await getSubscription(supabase, organization.id), "bulkPriceChanges")) {
+    return { error: featureLockedMessage("bulkPriceChanges") };
+  }
 
   if (field === "cost" && alsoPrice) {
     const { data, error } = await supabase.rpc("bulk_increase_cost_with_price", {

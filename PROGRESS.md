@@ -106,8 +106,8 @@ Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; 
 - Precios en la landing: 4 tarjetas + recorrido en 3 pasos arriba (14 días de Pro → Plan Gratis → plan pago), sin color a propósito para no quitarle atención al Pro. Botón a `/comparar-planes` (también en Recursos y el pie): tabla por tema desde `planComparison` en `plan-features.ts` (mantenerla alineada con las features de cada plan) + preguntas de planes con FAQPage.
 - Arreglo: el tope de 150 ventas/mes ya no aplica al Plan Esencial (`hasMonthlySalesLimit` en `lib/subscription.ts`).
 - Preguntas: `src/lib/faq-data.ts` (23 en 6 temas; la landing muestra 8). Blog: 10 artículos, autor "Tadeo, de Pesito", `seoTitle` para títulos cortos en Google.
-- Distribución de planes (decidida por el usuario): Gratis = 150 ventas/mes, caja y fiado, stock y compras, reportes básicos, 1 usuario/1 caja. Esencial = + ventas ilimitadas, cuenta corriente con proveedores, 2 usuarios/2 cajas. Pro = + aumentos masivos (precios y costos, con deshacer), reporte de ganancias (y comparación de períodos, a pérdida), En vivo, control por empleado/sucursal, hasta 2 sucursales, 6 usuarios/6 cajas, soporte prioritario; "Ganancias por sucursal" figura como Pronto. IA = + soporte 24/7 y funciones IA (Pronto).
-- PENDIENTE (código): la app todavía NO aplica esta distribución — los textos ya la anuncian. Falta bloquear por plan: aumentos masivos, reporte de ganancias/comparación, En vivo, reportes por vendedor y diferencias de caja por persona, cuenta corriente de proveedores, límites de usuarios/cajas/sucursales; y construir ganancias por sucursal. Decidir qué pasa con cuentas existentes que ya usan esas funciones.
+- Distribución de planes (decidida por el usuario): Gratis = 150 ventas/mes, caja y fiado, stock y compras, reportes básicos, 1 usuario/1 caja. Esencial = + ventas ilimitadas, cuenta corriente con proveedores, ventas y diferencias de caja por empleado, 2 usuarios/2 cajas. Pro = + aumentos masivos (precios y costos, con deshacer), reportes avanzados de ganancias (qué deja más, a pérdida, comparación de períodos), En vivo, historial completo de caja, hasta 2 sucursales, 6 usuarios/6 cajas, soporte prioritario. IA = + soporte 24/7 y funciones IA.
+- Bloqueo por plan en la app: `src/lib/plan-access.ts` (`featureMinPlan`, `planLimits`, `canUse`) + `src/lib/plan-limits.ts` (usuarios con invitaciones pendientes, cajas abiertas a la vez, sucursales). Aviso con `ProLockedCard`; el menú muestra "Pro" en En vivo. La prueba Pro cuenta como Pro.
 - "Soporte prioritario 24/7" del Plan IA es una promesa comercial.
 
 ## Skills del proyecto (`.agents/skills`, con acceso en `.claude/skills`)
@@ -121,6 +121,24 @@ Instaladas con `npx skills add` (quedan en `skills-lock.json`). Además de las q
 - `design-references` (propia, `.agents/skills/design-references`): usa la colección awesome-design-md (VoltAgent, 74 `DESIGN.md` de marcas como Stripe, Linear, Notion, Wise) como fuente de ideas. No copia los archivos al repo: baja el `DESIGN.md` que haga falta desde raw.githubusercontent.com en el momento. Regla: tomar ideas (layout, densidad, tipografía, componentes) y aplicarlas con los tokens de Pesito, sin copiar logos, paletas ni fuentes de otra marca.
 
 Nota: el buscador de skills.sh está bloqueado en este entorno (`npx skills find` no encuentra nada), pero `npx skills add owner/repo --skill <nombre>` funciona porque va por GitHub. El nombre de `--skill` es el `name:` del SKILL.md, no la carpeta (`--list` los muestra).
+
+## Funciones pendientes (tasklist)
+
+Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: controlarla con `canUse` (ya tiene su plan en `featureMinPlan`), sacarle el "Pronto" en `plan-features.ts` (cards y `planComparison`), `faq-data.ts`, blog y páginas por rubro.
+
+- [ ] Combos y kits — Plan Esencial (`productBundles`).
+- [ ] Talles y colores como variantes de un producto — Plan Esencial (`productVariants`). Mencionado también en /como-funciona, /comparacion y /pesito-para/indumentaria.
+- [ ] Ofertas y promociones — Plan Pro (`promotions`).
+- [ ] Ganancias separadas por sucursal (reportes) — Plan Pro.
+- [ ] Recomendaciones de reposición con IA — Plan IA (pantalla /recomendaciones "muy pronto").
+- [ ] Detección de productos de baja rotación — Plan IA (pantalla /baja-rotacion "muy pronto").
+- [ ] Precios sugeridos automáticamente — Plan IA.
+- [ ] Cobro de los planes: el checkout de /registro dice "Muy pronto" (no hay pasarela de pago conectada).
+- [ ] Factura electrónica ARCA/AFIP: la web dice que no existe (no está anunciada como "Pronto").
+
+Técnicas pendientes:
+- [ ] Bloqueo por plan también en la base: hoy se controla en las páginas y acciones del servidor; las RPC (`bulk_increase_field`, `live_overview`, etc.) se podrían llamar directo con el token del usuario.
+- [ ] Menú del celular (`mobile-nav.tsx`): no muestra las etiquetas ("Pronto", "Pro") ni oculta los ítems sólo para administradores.
 
 ## Pendiente
 

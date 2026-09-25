@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { requireOrgContext } from "@/lib/org";
+import { checkOpenRegisterLimit } from "@/lib/plan-limits";
 import { getBranchContext } from "@/lib/branches";
 import {
   CASH_UNAVAILABLE_ERROR,
@@ -187,6 +188,9 @@ export async function openCaja(openingAmount: number): Promise<ActionState> {
   if (existing) {
     return { error: "Ya tenés una caja abierta." };
   }
+
+  const limitError = await checkOpenRegisterLimit(supabase, organization.id);
+  if (limitError) return { error: limitError };
 
   // La caja se abre en la sucursal en la que está trabajando (la asignada
   // si es vendedor, la elegida en el menú si es dueño/administrador). Sin

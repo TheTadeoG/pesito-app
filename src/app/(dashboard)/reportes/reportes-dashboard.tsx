@@ -6,6 +6,7 @@ import {
   BarChart3,
   CreditCard,
   DollarSign,
+  Lock,
   Package,
   Receipt,
   Scale,
@@ -24,6 +25,7 @@ import { BarChart, type BarChartDatum } from "@/components/dashboard/bar-chart";
 import { DonutChart } from "@/components/dashboard/donut-chart";
 import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
+import { featureMinPlan } from "@/lib/plan-access";
 import { cn, formatCurrency } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 import { reportesHref, type ReportPeriod } from "@/lib/report-periods";
@@ -87,12 +89,15 @@ export interface ReportesData {
     icon: "dollar" | "trending" | "chart" | "receipt";
     // Variación vs. el período anterior — sólo se completa con acceso Pro.
     deltaPct: number | null;
+    /** El plan no incluye este indicador (ganancia sin reporte de ganancias). */
+    locked?: boolean;
   }[];
   revenueChart: BarChartDatum[];
   revenueChartIsHourly: boolean;
   paymentBreakdown: { label: string; value: number }[];
   topByQuantity: { name: string; quantity: number }[];
-  topByMargin: { name: string; margin: number }[];
+  // null: el plan no incluye el reporte de ganancias.
+  topByMargin: { name: string; margin: number }[] | null;
   topCustomers: { name: string; total: number }[];
   saleRows: SaleRow[];
   // Sólo se completa para dueños/administradores.
@@ -103,6 +108,8 @@ export interface ReportesData {
   fiadoDebtors: FiadoDebtorRow[];
   stockValue: { atCost: number; atPrice: number };
   hasProAccess: boolean;
+  /** Dueño/administrador sin reportes por empleado en su plan: se muestran bloqueados. */
+  teamLocked: boolean;
   // Los dos siguientes vienen en null cuando el negocio no tiene acceso Pro
   // (no vale la pena calcularlos en el servidor si no se van a mostrar).
   periodComparison: { ingresos: number; deltaPct: number | null } | null;
@@ -178,8 +185,8 @@ export function ReportesDashboard({
   // Fiado y stock son de todo el negocio: filtrando por vendedor no aplican.
   // "Ventas por vendedor" con uno solo elegido repetiría los indicadores.
   const hidden = new Set<WidgetId>();
-  if (data.cashDiffByUser === null) hidden.add("cashDiff");
-  if (data.sellerRows === null || data.sellerLabel !== null) hidden.add("sellers");
+  if (data.cashDiffByUser === null && !data.teamLocked) hidden.add("cashDiff");
+  if ((data.sellerRows === null && !data.teamLocked) || data.sellerLabel !== null) hidden.add("sellers");
   if (data.sellerLabel !== null) {
     hidden.add("fiadoDebtors");
     hidden.add("stockValue");
@@ -209,7 +216,18 @@ export function ReportesDashboard({
                   <div className="min-w-0">
                     <p className="truncate text-xs text-muted-foreground">{tile.label}</p>
                     <div className="flex items-center gap-2">
-                      <p className="truncate text-xl font-bold text-foreground">{tile.value}</p>
+                      {tile.locked ? (
+                        <Link
+                          href="/configuracion?tab=plan"
+                          prefetch={false}
+                          className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary"
+                        >
+                          <Lock className="h-3.5 w-3.5" />
+                          {tile.value}
+                        </Link>
+                      ) : (
+                        <p className="truncate text-xl font-bold text-foreground">{tile.value}</p>
+                      )}
                       {tile.deltaPct !== null && <TrendBadge deltaPct={tile.deltaPct} size="sm" />}
                     </div>
                   </div>
@@ -305,7 +323,13 @@ export function ReportesDashboard({
             </Card>
           )}
 
-          {isVisible("topMargin") && (
+          {isVisible("topMargin") && !data.topByMargin && (
+            <ProLockedCard
+              title="Productos que más ganancia dejan"
+              description="Con los reportes avanzados ves cuánto ganás, qué te deja más plata y qué vendés a pérdida."
+            />
+          )}
+          {isVisible("topMargin") && data.topByMargin && (
             <Card>
               <CardHeader className="flex flex-row items-center gap-2">
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -423,6 +447,14 @@ export function ReportesDashboard({
         </Card>
       )}
 
+      {isVisible("sellers") && data.teamLocked && (
+        <ProLockedCard
+          title="Ventas por vendedor"
+          plan={featureMinPlan.teamReports}
+          description="Cuánto vende y cuánto gana cada empleado, y sus diferencias de caja."
+        />
+      )}
+
       {isVisible("sellers") && data.sellerRows && (
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
@@ -488,6 +520,10 @@ export function ReportesDashboard({
             )}
           </CardContent>
         </Card>
+      )}
+
+      {isVisible("cashDiff") && data.teamLocked && (
+        <ProLockedCard title="Diferencias de caja por vendedor" plan={featureMinPlan.teamReports} />
       )}
 
       {isVisible("cashDiff") && data.cashDiffByUser && (

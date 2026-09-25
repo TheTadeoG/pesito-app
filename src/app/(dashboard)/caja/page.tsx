@@ -3,6 +3,8 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { getCashRegisterSummaries, sumCashBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
 import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
+import { getSubscription } from "@/lib/subscription";
+import { canUse } from "@/lib/plan-access";
 import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
 import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/historial";
@@ -24,11 +26,17 @@ const FALTANTE_THRESHOLD = 100;
 // más abajo), a partir de qué proporción con faltante se avisa al manager.
 const FALTANTE_RATIO_ALERT = 0.6;
 const RECENT_CLOSES_PER_USER = 5;
+// Sin historial completo de caja (Plan Pro) se ven sólo los últimos cierres.
+const LIMITED_HISTORY = 5;
 
 export default async function CajaPage() {
   const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const isManager = membership.role === "owner" || membership.role === "admin";
+  const subscription = await getSubscription(supabase, organization.id);
+  const fullHistory = canUse(subscription, "cashHistory");
+  const canTeam = canUse(subscription, "teamReports");
+  const canSupplierAccounts = canUse(subscription, "supplierAccounts");
 
   // Todo lo que no depende de otra consulta va en paralelo; después, el
   // efectivo y el desglose de todas las cajas en una sola consulta.
@@ -54,7 +62,7 @@ export default async function CajaPage() {
       .eq("org_id", organization.id)
       .eq("status", "cerrada")
       .order("closed_at", { ascending: false })
-      .limit(20),
+      .limit(fullHistory ? 20 : LIMITED_HISTORY),
     getMemberLabelsById(supabase, organization.id),
     isManager
       ? supabase
@@ -71,7 +79,7 @@ export default async function CajaPage() {
           .gt("balance", 0)
           .order("balance", { ascending: false })
       : Promise.resolve({ data: null }),
-    isManager
+    isManager && canSupplierAccounts
       ? supabase
           .from("suppliers")
           .select("id, name, balance")
@@ -82,7 +90,7 @@ export default async function CajaPage() {
     // Más historial que closedRegisters (acotado a 20 para la lista
     // visible): acá hace falta suficiente por usuario para detectar un
     // patrón, no sólo los últimos cierres del equipo en general.
-    isManager
+    isManager && canTeam
       ? supabase
           .from("cash_registers")
           .select("id, user_id, expected_amount, closing_amount, closed_at")
@@ -186,9 +194,11 @@ export default async function CajaPage() {
         />
         <div className="grid gap-6 lg:grid-cols-2">
           <DeudasFiadoOverview totalDebt={totalDebt} debtors={debtors} />
-          <CuentasPorPagarOverview totalDebt={totalOwed} creditors={creditors} />
+          {canSupplierAccounts && (
+            <CuentasPorPagarOverview totalDebt={totalOwed} creditors={creditors} />
+          )}
         </div>
-        <RecurringDiscrepanciesOverview rows={recurringDiscrepancies} />
+        {canTeam && <RecurringDiscrepanciesOverview rows={recurringDiscrepancies} />}
       </>
     );
   }
@@ -198,7 +208,7 @@ export default async function CajaPage() {
       <div className="space-y-6">
         <OpenCajaDialog />
         {teamOverview}
-        <CajaHistorial rows={historialRows} />
+        <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
       </div>
     );
   }
@@ -217,7 +227,7 @@ export default async function CajaPage() {
         paymentBreakdown={getBreakdown(register.id)}
       />
       {teamOverview}
-      <CajaHistorial rows={historialRows} />
+      <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
     </div>
   );
 }

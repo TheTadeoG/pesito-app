@@ -380,7 +380,7 @@ export const blogPosts: BlogPost[] = [
           "Retiros e ingresos de efectivo se registran con su motivo, y los cobros de fiado y pagos a proveedores en efectivo también impactan en la caja.",
           "Al cerrar contás el efectivo (hay una calculadora de billetes) y Pesito te dice si hubo faltante o sobrante.",
           "Podés configurar una hora de cierre y el sistema le recuerda a cada uno que cierre su caja.",
-          "Con el Plan Pro, en Reportes ves las diferencias de caja por persona, y desde En vivo ves en el momento quién tiene la caja abierta, cuánto efectivo tiene y cuánto vendió.",
+          "Desde el Plan Esencial, en Reportes ves las diferencias de caja por persona, y con el Plan Pro, desde En vivo ves en el momento quién tiene la caja abierta, cuánto efectivo tiene y cuánto vendió.",
           "Tus empleados no necesitan email: les creás un usuario y contraseña desde Pesito.",
         ],
       },
@@ -464,7 +464,7 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "Cómo lo resolvés con Pesito",
         paragraphs: [
-          "En todos los planes, Reportes te muestra lo vendido, el ticket promedio, las ventas por día, los medios de pago y los productos más vendidos. Con el Plan Pro sumás el reporte de ganancias: la ganancia estimada, los productos que más ganancia dejan, los que se están vendiendo a pérdida, la comparación con el período anterior y las ventas de cada vendedor.",
+          "En todos los planes, Reportes te muestra lo vendido, el ticket promedio, las ventas por día, los medios de pago y los productos más vendidos. Desde el Plan Esencial ves las ventas de cada vendedor. Con el Plan Pro sumás los reportes avanzados: la ganancia estimada, los productos que más ganancia dejan, los que se están vendiendo a pérdida y la comparación con el período anterior.",
         ],
       },
     ],

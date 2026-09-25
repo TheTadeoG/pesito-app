@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { getSubscription } from "@/lib/subscription";
+import { canUse, featureLockedMessage } from "@/lib/plan-access";
 import { getBranchContext } from "@/lib/branches";
 import { CASH_UNAVAILABLE_ERROR, tryComputeCashOnHand } from "@/lib/caja";
 import type { Json } from "@/lib/database.types";
@@ -46,8 +48,15 @@ export async function registerPurchase(
     return { error: "Agregá al menos un producto a la compra." };
   }
 
-  const { userId } = await requireOrgContext();
+  const { userId, organization } = await requireOrgContext();
   const supabase = await createClient();
+
+  if (
+    input.payments.some((p) => p.method === "cuenta_corriente" && p.amount > 0) &&
+    !canUse(await getSubscription(supabase, organization.id), "supplierAccounts")
+  ) {
+    return { error: featureLockedMessage("supplierAccounts") };
+  }
 
   const { data: register } = await supabase
     .from("cash_registers")

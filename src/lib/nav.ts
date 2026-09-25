@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { PlanFeature } from "@/lib/plan-access";
 import {
   BarChart3,
   CreditCard,
@@ -23,6 +24,9 @@ export interface NavItem {
   badge?: string;
   // Sólo visible para dueños/administradores (ej. gestión de usuarios).
   adminOnly?: boolean;
+  // Función que depende del plan (lib/plan-access.ts): si el plan no la
+  // incluye, el menú la muestra igual con el nombre del plan que la trae.
+  feature?: PlanFeature;
   // Cuándo se lo marca activo en el sidebar, según el ?tab= de la URL —
   // undefined significa "no le importa el tab, cualquiera lo activa"
   // (comportamiento de siempre). Se usa para diferenciar dos items de nav
@@ -62,7 +66,7 @@ export const navSections: NavSection[] = [
   {
     title: "Análisis",
     items: [
-      { href: "/en-vivo", label: "En vivo", icon: Radio, adminOnly: true },
+      { href: "/en-vivo", label: "En vivo", icon: Radio, adminOnly: true, feature: "liveView" },
       { href: "/reportes", label: "Reportes", icon: BarChart3 },
     ],
   },

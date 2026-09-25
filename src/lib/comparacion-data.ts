@@ -48,7 +48,7 @@ export const comparisonBlocks: ComparisonBlock[] = [
     otros:
       "Muchos sistemas de punto de venta están pensados para un solo tipo de negocio (gastronomía, indumentaria) y el resto de los rubros tienen que forzar el uso de campos que no les cierran del todo.",
     pesito:
-      "Pesito soporta productos por unidad, por peso o con variantes (talle, color, gramaje) desde el mismo catálogo — sirve igual para un kiosco, una verdulería o un local de ropa.",
+      "Pesito soporta productos por unidad o por peso desde el mismo catálogo, y pronto también variantes de talle y color — sirve igual para un kiosco, una verdulería o un local de ropa.",
   },
   {
     slug: "soporte",

@@ -25,7 +25,7 @@ const steps = [
     icon: Package,
     title: "Cargás tu catálogo",
     description:
-      "Sumás tus productos a mano o escaneando el código de barras. Podés cargarlos por unidad, por peso o con variantes (talle, color, gramaje), con marca, costo y precio — lo mínimo obligatorio es nombre y precio, el resto lo completás cuando puedas.",
+      "Sumás tus productos a mano o escaneando el código de barras. Podés cargarlos por unidad o por peso, con marca, costo y precio (los talles y colores como variantes llegan pronto) — lo mínimo obligatorio es nombre y precio, el resto lo completás cuando puedas.",
   },
   {
     icon: ShoppingCart,

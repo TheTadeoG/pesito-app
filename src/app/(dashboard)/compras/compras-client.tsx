@@ -68,7 +68,11 @@ function priceKeepingMargin(line: CartLine): number | null {
   return Math.round((line.product.price * line.unitCost) / oldCost);
 }
 
-function paymentMethodOptionsWithCustom(customMethods: string[]): {
+function paymentMethodOptionsWithCustom(
+  customMethods: string[],
+  // Cuenta corriente con proveedores: desde el Plan Esencial.
+  allowAccount: boolean
+): {
   value: PurchasePaymentMethod;
   label: string;
   icon: typeof Banknote;
@@ -79,7 +83,9 @@ function paymentMethodOptionsWithCustom(customMethods: string[]): {
     { value: "transferencia", label: "Transferencia", icon: Landmark },
     { value: "qr", label: "QR", icon: QrCode },
     ...customMethods.map((name) => ({ value: name, label: name, icon: CircleDollarSign })),
-    { value: "cuenta_corriente", label: "Cuenta corriente", icon: Wallet },
+    ...(allowAccount
+      ? [{ value: "cuenta_corriente" as const, label: "Cuenta corriente", icon: Wallet }]
+      : []),
   ];
 }
 
@@ -89,6 +95,7 @@ interface ComprasClientProps {
   suppliers: SupplierLite[];
   hasOpenCaja: boolean;
   customPaymentMethods: string[];
+  supplierAccountsEnabled: boolean;
   // Viene de tocar "Comprar" en el aviso de stock bajo de Productos.
   preselectedProductId?: string | null;
 }
@@ -99,11 +106,12 @@ export function ComprasClient({
   suppliers,
   hasOpenCaja,
   customPaymentMethods,
+  supplierAccountsEnabled,
   preselectedProductId,
 }: ComprasClientProps) {
   const paymentMethodOptions = useMemo(
-    () => paymentMethodOptionsWithCustom(customPaymentMethods),
-    [customPaymentMethods]
+    () => paymentMethodOptionsWithCustom(customPaymentMethods, supplierAccountsEnabled),
+    [customPaymentMethods, supplierAccountsEnabled]
   );
   const router = useRouter();
   const { showSuccess } = useToast();
