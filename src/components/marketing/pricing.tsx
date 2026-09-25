@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Clock, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
-import { ANNUAL_DISCOUNT, paidPlanDefinitions } from "@/lib/plan-features";
+import { ANNUAL_DISCOUNT, paidPlanDefinitions, planDefinitions } from "@/lib/plan-features";
 
 // A propósito, un solo acento (el plan recomendado) en vez de un color por
 // plan: acá el visitante todavía no sabe qué es "Pro" o "IA", así que 3
@@ -14,28 +14,47 @@ import { ANNUAL_DISCOUNT, paidPlanDefinitions } from "@/lib/plan-features";
 // (Configuración), donde el usuario ya conoce esos planes y el color sí
 // funciona como señal — ver lib/plan-visuals.tsx.
 
-const plans = paidPlanDefinitions.map((def) => ({
-  plan: def.plan,
-  name: def.name,
-  price: def.price,
-  badge: def.badge,
-  features: def.features,
-  cta: `Activar ${def.name}`,
-  highlighted: def.plan === "pro",
-}));
+const plans = paidPlanDefinitions.map((def) => {
+  // "Todas las funciones del Plan X +" pasa a ser el encabezado de la lista:
+  // en cada plan pago se ve sólo lo que suma sobre el anterior.
+  const [first, ...rest] = def.features;
+  const includesPrevious = first?.startsWith("Todas las funciones");
+  return {
+    plan: def.plan,
+    name: def.name,
+    price: def.price,
+    badge: def.badge,
+    previous: includesPrevious ? first.replace("Todas las funciones del ", "").replace(" +", "") : null,
+    features: includesPrevious ? rest : def.features,
+    soon: def.soon ?? [],
+    cta: `Activar ${def.name}`,
+    highlighted: def.plan === "pro",
+  };
+});
+
+const freePlan = planDefinitions.gratis;
 
 export function Pricing() {
   const [annual, setAnnual] = useState(true);
 
   return (
-    <section id="precios" className="scroll-mt-20 mx-auto max-w-6xl px-4 py-20 sm:px-6">
+    <section id="precios" className="scroll-mt-20 mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           Empezá gratis. Pagá recién cuando crezcas
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Pesito es gratis para arrancar, sin tarjeta y sin vencimiento. Cuando tu
-          negocio necesite más ventas, usuarios o reportes, elegís el plan que te sirva.
+          El Plan Gratis no vence y no pide tarjeta. Cuando tu negocio necesite más ventas,
+          usuarios o sucursales, elegís el plan que te sirva.
+        </p>
+      </div>
+
+      <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-success/30 bg-success-bg px-5 py-4 text-sm text-foreground">
+        <Gift className="mt-0.5 h-5 w-5 shrink-0 text-success" />
+        <p>
+          <span className="font-semibold">Al crear tu cuenta tenés 14 días del Plan Pro gratis.</span>{" "}
+          Probás todo sin pagar nada; cuando termina seguís en el Plan Gratis, o elegís un plan si
+          te sirve más.
         </p>
       </div>
 
@@ -70,7 +89,31 @@ export function Pricing() {
         </button>
       </div>
 
-      <div className="mx-auto mt-10 grid max-w-5xl gap-6 lg:grid-cols-3">
+      <div className="mx-auto mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="relative flex flex-col rounded-card border border-border bg-card p-7">
+          <h3 className="text-lg font-semibold text-foreground">{freePlan.name}</h3>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-3xl font-bold text-foreground">$0</span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">para siempre · sin tarjeta</p>
+          <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Incluye
+          </p>
+          <ul className="mt-3 flex-1 space-y-3">
+            {freePlan.features.map((feature) => (
+              <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+          <Link href="/registro" className="mt-7">
+            <Button variant="outline" className="w-full">
+              Empezar gratis
+            </Button>
+          </Link>
+        </div>
+
         {plans.map((plan) => {
           const monthlyPrice = plan.price;
           const annualMonthlyPrice = Math.round(plan.price * (1 - ANNUAL_DISCOUNT));
@@ -130,11 +173,25 @@ export function Pricing() {
                 </p>
               )}
 
-              <ul className="mt-6 flex-1 space-y-3">
+              <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {plan.previous ? `Todo lo del ${plan.previous}, y además` : "Incluye"}
+              </p>
+              <ul className="mt-3 flex-1 space-y-3">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                     {feature}
+                  </li>
+                ))}
+                {plan.soon.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                    <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      {feature}{" "}
+                      <span className="whitespace-nowrap rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold">
+                        Pronto
+                      </span>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -144,19 +201,13 @@ export function Pricing() {
                   {plan.cta}
                 </Button>
               </Link>
-              <Link
-                href="/registro"
-                className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground hover:underline"
-              >
-                O probá gratis 14 días, sin elegir plan todavía
-              </Link>
             </div>
           );
         })}
       </div>
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
-        ¿Cadenas o franquicias con varias sucursales? Escribinos por WhatsApp.
+        ¿Cadenas o franquicias con muchas sucursales? Escribinos por WhatsApp.
       </p>
     </section>
   );

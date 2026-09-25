@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, PlayCircle } from "lucide-react";
+import { ArrowRight, Check, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PosMockup } from "@/components/marketing/pos-mockup";
 import { AnchorLink } from "@/components/marketing/anchor-link";
@@ -18,9 +18,9 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-            Cobrá más rápido, controlá tu stock y llevá tu caja al día desde
-            una sola pantalla. Empezás gratis y elegís un plan recién cuando
-            tu negocio crece.
+            Cobrá más rápido, controlá tu stock, tu caja y el fiado desde una
+            sola pantalla. Empezás gratis —sin tarjeta y sin vencimiento— y
+            elegís un plan recién cuando tu negocio crece.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -38,9 +38,22 @@ export function Hero() {
             </AnchorLink>
           </div>
 
-          <p className="mt-4 text-sm text-muted-foreground">
-            Sin tarjeta de crédito · Para cualquier rubro · Listo en minutos
-          </p>
+          <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            {["Plan Gratis para siempre", "Sin tarjeta", "14 días de Plan Pro de regalo"].map(
+              (item) => (
+                <li key={item} className="flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-success" />
+                  {item}
+                </li>
+              )
+            )}
+          </ul>
+          <AnchorLink
+            href="#precios"
+            className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+          >
+            Ver qué incluye cada plan →
+          </AnchorLink>
         </div>
 
         <div className="relative mx-auto w-full max-w-md lg:max-w-none">

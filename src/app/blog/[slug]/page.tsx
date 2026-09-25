@@ -5,7 +5,7 @@ import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 import { Button } from "@/components/ui/button";
-import { blogPosts } from "@/lib/blog-data";
+import { blogAuthor, blogPosts } from "@/lib/blog-data";
 import { siteUrl } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
 
@@ -23,7 +23,7 @@ export async function generateMetadata({
   if (!post) return {};
 
   return pageMetadata({
-    title: post.title,
+    title: post.seoTitle ?? post.title,
     description: post.excerpt,
     path: `/blog/${post.slug}`,
   });
@@ -51,8 +51,15 @@ export default async function BlogPostPage({
     headline: post.title,
     description: post.excerpt,
     datePublished: post.publishedAt,
+    dateModified: post.publishedAt,
+    inLanguage: "es-AR",
     url: `${siteUrl}/blog/${post.slug}`,
-    author: { "@type": "Organization", name: "Pesito" },
+    mainEntityOfPage: `${siteUrl}/blog/${post.slug}`,
+    author: {
+      "@type": "Person",
+      name: blogAuthor.name,
+      worksFor: { "@type": "Organization", name: "Pesito", url: siteUrl },
+    },
     publisher: { "@type": "Organization", name: "Pesito" },
   };
 
@@ -73,7 +80,10 @@ export default async function BlogPostPage({
             Volver al blog
           </Link>
 
-          <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {`Por ${blogAuthor.name}, ${blogAuthor.role}`}
+            </span>
             <time dateTime={post.publishedAt}>{formatLongDate(post.publishedAt)}</time>
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, History, Sparkles } from "lucide-react";
+import { Check, Clock, History, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,6 +116,12 @@ export function SubscriptionSection({
               <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                 {feature}
+              </li>
+            ))}
+            {current.soon?.map((feature) => (
+              <li key={feature} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+                {feature} (pronto)
               </li>
             ))}
           </ul>
@@ -241,6 +247,15 @@ export function SubscriptionSection({
                       >
                         <Check className="mt-0.5 h-3 w-3 shrink-0 text-success" />
                         {feature}
+                      </li>
+                    ))}
+                    {def.soon?.map((feature) => (
+                      <li
+                        key={feature}
+                        className="flex items-start gap-1.5 text-xs text-muted-foreground"
+                      >
+                        <Clock className="mt-0.5 h-3 w-3 shrink-0" />
+                        {feature} (pronto)
                       </li>
                     ))}
                   </ul>

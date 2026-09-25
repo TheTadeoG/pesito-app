@@ -3,7 +3,7 @@ import { ArrowRight, Clock, Newspaper } from "lucide-react";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
-import { blogPosts } from "@/lib/blog-data";
+import { blogAuthor, blogPosts } from "@/lib/blog-data";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -48,7 +48,10 @@ export default function BlogPage() {
                 href={`/blog/${post.slug}`}
                 className="group block rounded-card border border-border bg-card p-6 transition-colors hover:border-primary/40 hover:bg-accent"
               >
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <span>
+                    {`Por ${blogAuthor.name}, ${blogAuthor.role}`}
+                  </span>
                   <time dateTime={post.publishedAt}>{formatLongDate(post.publishedAt)}</time>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />

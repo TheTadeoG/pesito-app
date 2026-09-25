@@ -82,6 +82,16 @@ export async function getPlanHistory(
 // se van a ir definiendo más adelante.
 export const FREE_PLAN_MONTHLY_SALES_LIMIT = 150;
 
+/**
+ * El tope de ventas por mes aplica sólo al Plan Gratis sin prueba vigente.
+ * Cualquier plan pago (incluido Esencial) vende sin límite — antes se
+ * miraba hasProAccess, y un negocio que pagaba Esencial quedaba con el
+ * mismo tope que el gratis.
+ */
+export function hasMonthlySalesLimit(subscription: SubscriptionInfo): boolean {
+  return subscription.plan === "gratis" && !subscription.trialActive;
+}
+
 /** Ventas completadas en lo que va del mes calendario (huso Argentina). */
 export async function getMonthlySalesCount(
   supabase: SupabaseClient<Database>,

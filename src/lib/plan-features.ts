@@ -14,6 +14,8 @@ export interface PlanDefinition {
   period: string;
   badge: string | null;
   features: string[];
+  /** Funciones anunciadas que todavía no están disponibles ("Pronto"). */
+  soon?: string[];
 }
 
 // Ver también FREE_PLAN_MONTHLY_SALES_LIMIT en lib/subscription.ts, que es
@@ -33,12 +35,13 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     period: "sin tarjeta",
     badge: null,
     features: [
-      "Ventas rápidas con lector de código de barras o teclado",
-      "Productos por unidad, peso y variantes",
-      "Stock: sumar, restar y ajustar a cantidad exacta",
-      "Caja diaria con arqueo y diferencias",
-      "Clientes y cuentas corrientes (fiado)",
-      "Reportes de ventas e ingresos",
+      "Punto de venta con lector de código de barras, efectivo, tarjeta, QR, transferencia y pago mixto",
+      "Productos por unidad o por peso, con stock y alertas de stock bajo",
+      "Aumentos de precios masivos por proveedor o marca",
+      "Caja diaria con arqueo, retiros y diferencias",
+      "Clientes con fiado (cuenta corriente) y cobros",
+      "Compras y cuenta corriente con proveedores",
+      "Reportes de ventas, ganancia y productos más vendidos",
       "1 usuario",
       FREE_PLAN_SALES_LIMIT_LABEL,
     ],
@@ -50,7 +53,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     priceLabel: "$15.000",
     period: "por mes · IVA incl.",
     badge: null,
-    features: ["Todas las funciones del Plan Gratis +", "Hasta 2 usuarios"],
+    features: [
+      "Todas las funciones del Plan Gratis +",
+      "Ventas ilimitadas",
+      "Hasta 2 usuarios, cada uno con su caja",
+    ],
   },
   pro: {
     plan: "pro",
@@ -61,7 +68,9 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Más elegido",
     features: [
       "Todas las funciones del Plan Esencial +",
-      "Reportes avanzados: períodos, gráficos y widgets",
+      "Varias sucursales, cada una con su stock y sus cajas",
+      "Transferencias de mercadería entre sucursales",
+      "Reportes avanzados: comparación de períodos y productos vendidos a pérdida",
       "Múltiples cajas y usuarios simultáneos",
       "Historial completo de caja (aperturas, cierres, diferencias)",
       "Hasta 10 usuarios",
@@ -75,12 +84,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     priceLabel: "$28.000",
     period: "por mes · IVA incl.",
     badge: "Nuevo",
-    features: [
-      "Todas las funciones del Plan Pro +",
+    features: ["Todas las funciones del Plan Pro +", "Soporte prioritario 24/7"],
+    soon: [
       "Recomendaciones de reposición con IA",
       "Detección de productos de baja rotación",
       "Precios sugeridos automáticamente",
-      "Soporte prioritario 24/7",
     ],
   },
 };

@@ -14,7 +14,12 @@ import { isOrgAdmin } from "@/lib/roles";
 import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
 import { ConfiguracionTabs, type ConfiguracionTab } from "@/app/(dashboard)/configuracion/configuracion-tabs";
-import { getSubscription, getMonthlySalesCount, getPlanHistory } from "@/lib/subscription";
+import {
+  getSubscription,
+  getMonthlySalesCount,
+  getPlanHistory,
+  hasMonthlySalesLimit,
+} from "@/lib/subscription";
 import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 
@@ -38,9 +43,9 @@ export default async function ConfiguracionPage({
     const subscription = await getSubscription(supabase, organization.id);
     // Sólo importa contar esto cuando el límite de ventas realmente aplica
     // (plan gratis, sin prueba Pro activa) — evita una query de más al resto.
-    const monthlySalesCount = subscription.hasProAccess
-      ? null
-      : await getMonthlySalesCount(supabase, organization.id);
+    const monthlySalesCount = hasMonthlySalesLimit(subscription)
+      ? await getMonthlySalesCount(supabase, organization.id)
+      : null;
     const planHistory = await getPlanHistory(supabase, organization.id);
 
     return (

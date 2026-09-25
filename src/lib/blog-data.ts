@@ -4,9 +4,15 @@ export interface BlogSection {
   list?: string[];
 }
 
+// Autor de los artículos. Si algún día escribe otra persona, se agrega un
+// campo author por post que pise a éste.
+export const blogAuthor = { name: "Tadeo", role: "de Pesito" };
+
 export interface BlogPost {
   slug: string;
   title: string;
+  /** Título corto para Google (≤51 caracteres + " | Pesito"). Si falta, se usa title. */
+  seoTitle?: string;
   excerpt: string;
   publishedAt: string;
   readingMinutes: number;
@@ -16,6 +22,7 @@ export interface BlogPost {
 export const blogPosts: BlogPost[] = [
   {
     slug: "como-armar-lista-de-precios",
+    seoTitle: "Cómo armar una lista de precios",
     title: "Cómo armar una lista de precios sin perder plata en el camino",
     excerpt:
       "El método simple para ponerle precio a cada producto sin adivinar — y sin regalar margen sin darte cuenta.",
@@ -58,6 +65,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: "arqueo-de-caja-que-es-como-se-hace",
+    seoTitle: "Arqueo de caja: qué es y cómo se hace",
     title: "Arqueo de caja: qué es, cómo se hace y por qué conviene hacerlo todos los días",
     excerpt:
       "La rutina de cerrar caja que evita sorpresas: paso a paso, y qué hacer cuando el número no cierra.",
@@ -103,6 +111,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: "factura-a-b-c-diferencia",
+    seoTitle: "Factura A, B o C: la diferencia explicada",
     title: "Factura A, B o C: la diferencia explicada sin vueltas",
     excerpt:
       "Cuál corresponde según quién te compra, qué es el CAE, y si hace falta facturar todas las ventas.",
@@ -149,6 +158,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: "como-elegir-sistema-para-tu-comercio",
+    seoTitle: "Cómo elegir un sistema para tu negocio",
     title: "Cómo elegir un sistema para tu comercio (más allá del precio)",
     excerpt:
       "Las preguntas que de verdad importan antes de dejar el cuaderno o el Excel, para no arrepentirte a los tres meses.",
@@ -182,7 +192,279 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "Por qué te contamos esto siendo Pesito",
         paragraphs: [
-          "Porque construimos Pesito pensando exactamente en esas preguntas: plan gratis sin vencimiento, fiado como función central, soporte por WhatsApp con una persona real, y facturación que se activa cuando la necesitás, no antes. No pretendemos ser la única opción — sí que, si las evaluás con esta lista, tengamos con qué responder cada una.",
+          "Porque construimos Pesito pensando exactamente en esas preguntas: plan gratis sin vencimiento, fiado como función central, venta por peso o por unidad, y soporte por WhatsApp con una persona real. No pretendemos ser la única opción — sí que, si las evaluás con esta lista, tengamos con qué responder cada una.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "como-controlar-el-fiado",
+    seoTitle: "Cómo controlar el fiado de tus clientes",
+    title: "Cómo controlar el fiado de tus clientes sin perder plata",
+    excerpt:
+      "El fiado fideliza, pero anotado en un cuaderno se pierde. Cómo llevarlo ordenado, cobrarlo a tiempo y saber siempre quién te debe.",
+    publishedAt: "2026-09-01",
+    readingMinutes: 5,
+    sections: [
+      {
+        paragraphs: [
+          "Fiar es parte del negocio de todos los días: el vecino que viene siempre, la familia que paga a fin de mes. El problema no es fiar, es no saber exactamente cuánto te deben, quién y desde cuándo. Un cuaderno se moja, se pierde o tiene una cuenta mal sumada, y esa plata no vuelve.",
+        ],
+      },
+      {
+        heading: "Las reglas que conviene tener claras",
+        paragraphs: [
+          "Antes de pensar en herramientas, definí tus propias reglas. Ayudan a que el fiado no se te vaya de las manos:",
+        ],
+        list: [
+          "A quién le fiás: clientes que conocés y que vienen seguido.",
+          "Hasta cuánto: un tope por cliente evita deudas que después no se pueden pagar.",
+          "Cada cuánto se paga: semanal, quincenal o a fin de mes, pero siempre claro.",
+          "Qué pasa si se atrasa: avisar a tiempo es mucho más fácil que reclamar meses después.",
+        ],
+      },
+      {
+        heading: "Anotá cada venta fiada en el momento",
+        paragraphs: [
+          "El error más común es anotar \"después\". En un día con mucha gente, ese después no llega. Cada venta fiada tiene que quedar registrada en el mismo momento en que se cobra, con el nombre del cliente y el detalle de lo que se llevó, así si hay una duda la podés resolver mirando la venta.",
+        ],
+      },
+      {
+        heading: "Mirá quién te debe y hace cuánto",
+        paragraphs: [
+          "No alcanza con saber el total. Lo que sirve es ver quién te debe más y quién hace más tiempo que no te paga: son los primeros a los que conviene llamar. Una deuda de hace dos semanas se cobra; una de hace tres meses, muchas veces no.",
+        ],
+      },
+      {
+        heading: "Cómo lo resolvés con Pesito",
+        paragraphs: [
+          "En Pesito el fiado es una forma de cobro más, como el efectivo o la transferencia. Está incluido en el Plan Gratis:",
+        ],
+        list: [
+          "Al cobrar, elegís \"Fiado\" y el cliente: la venta queda cargada a su cuenta corriente.",
+          "También podés cobrar una parte en efectivo y el resto fiado (pago mixto).",
+          "Cuando el cliente paga, registrás el pago total o parcial y el saldo se actualiza solo.",
+          "En Reportes ves \"Quién te debe\": cada cliente con su deuda y hace cuántos días no paga.",
+          "En la ficha de cada cliente tenés todas sus compras y pagos, por si hay que revisar algo.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "como-controlar-el-stock",
+    seoTitle: "Cómo controlar el stock de tu negocio",
+    title: "Cómo controlar el stock de tu negocio y no quedarte sin mercadería",
+    excerpt:
+      "Quedarte sin lo que más se vende es plata que perdés. Cómo saber qué tenés, qué se está acabando y qué te falta pedir.",
+    publishedAt: "2026-09-08",
+    readingMinutes: 6,
+    sections: [
+      {
+        paragraphs: [
+          "Hay dos formas de perder plata con el stock: quedarte sin lo que la gente viene a buscar, o llenarte de mercadería que no rota. Las dos se evitan con lo mismo: saber en todo momento qué tenés y cuánto se vende.",
+        ],
+      },
+      {
+        heading: "Que el stock se mueva solo con cada venta y cada compra",
+        paragraphs: [
+          "Contar todo a mano cada semana no es sostenible. Lo que funciona es que cada venta descuente lo vendido y cada compra sume lo que entró, sin que tengas que hacer nada extra. Así, el número que ves es el real y los conteos a mano quedan sólo para controlar de vez en cuando.",
+        ],
+      },
+      {
+        heading: "Ponele un stock mínimo a lo importante",
+        paragraphs: [
+          "El stock mínimo es la cantidad por debajo de la cual tenés que reponer. No hace falta ponérselo a todo: empezá por lo que más se vende y lo que tarda más en llegar. Con eso, en vez de descubrir el faltante cuando un cliente te lo pide, lo ves venir.",
+        ],
+      },
+      {
+        heading: "Registrá las roturas, vencidos y diferencias",
+        paragraphs: [
+          "Un paquete roto o un producto vencido también es stock que sale. Si no lo registrás, el sistema cree que lo tenés y los números dejan de coincidir con la góndola. Anotalo con el motivo: al mes vas a ver si hay un producto que siempre se rompe o se vence, y eso también es información.",
+        ],
+      },
+      {
+        heading: "Cómo lo resolvés con Pesito",
+        paragraphs: ["Todo esto está en el Plan Gratis:"],
+        list: [
+          "Cada venta descuenta el stock y cada compra lo suma, sin pasos extra.",
+          "Le ponés un stock mínimo a cada producto y Pesito te muestra los que están por acabarse, con un botón para cargar la compra.",
+          "Los ajustes a mano (rotura, vencido, conteo) se registran con el motivo, y el historial de movimientos muestra cada entrada y salida.",
+          "Ves el stock valorizado: cuánta plata tenés parada en mercadería, al costo y al precio de venta.",
+          "Productos por unidad o por peso, con la cantidad exacta en kilos.",
+          "Si tenés varias sucursales (Plan Pro), cada una lleva su propio stock y podés pasar mercadería de una a otra.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "como-actualizar-precios-con-inflacion",
+    seoTitle: "Cómo actualizar precios con la inflación",
+    title: "Cómo actualizar precios con la inflación sin perder margen",
+    excerpt:
+      "Cuando los proveedores aumentan seguido, actualizar producto por producto no da abasto. Cómo hacerlo rápido y sin equivocarte.",
+    publishedAt: "2026-09-15",
+    readingMinutes: 5,
+    sections: [
+      {
+        paragraphs: [
+          "Con aumentos frecuentes, el mayor riesgo no es subir los precios: es subirlos tarde. Cada día que vendés con el precio viejo y reponés con el costo nuevo, estás perdiendo margen sin darte cuenta.",
+        ],
+      },
+      {
+        heading: "Actualizá por proveedor o por marca, no producto por producto",
+        paragraphs: [
+          "Los aumentos casi siempre llegan por proveedor (\"subió todo lo de la distribuidora un 8%\") o por marca. Actualizar cien productos de a uno lleva horas y es fácil saltearse alguno. Lo práctico es aplicar el porcentaje a todo el grupo de una sola vez.",
+        ],
+      },
+      {
+        heading: "Mirá el costo, no sólo el precio",
+        paragraphs: [
+          "Si aumentó el costo y subís el precio en el mismo porcentaje, mantenés el margen. Si subís el precio \"redondo\" sin mirar el costo, podés quedar ganando menos que antes. Por eso conviene cargar el costo nuevo cuando llega la mercadería y decidir el precio a partir de ahí.",
+        ],
+      },
+      {
+        heading: "Guardá el historial",
+        paragraphs: [
+          "Saber cuándo y cuánto subió cada producto te sirve para comparar proveedores, explicarle a un cliente un aumento y detectar errores (un precio que quedó mal cargado se nota enseguida si ves el historial).",
+        ],
+      },
+      {
+        heading: "Cómo lo resolvés con Pesito",
+        paragraphs: ["Incluido en el Plan Gratis:"],
+        list: [
+          "Aumentos masivos: elegís un proveedor o una marca, ponés el porcentaje y se actualizan todos sus productos de una vez.",
+          "Podés aumentar el costo y que el precio de venta suba en la misma proporción, para no perder margen.",
+          "Si te equivocaste, deshacés el aumento.",
+          "Cada producto guarda su historial de precios y de costos.",
+          "Al registrar una compra con el costo nuevo, podés actualizar ahí mismo el precio de venta.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "como-controlar-la-caja-con-empleados",
+    title: "Cómo controlar la caja cuando tenés empleados",
+    excerpt:
+      "Si la caja no cierra, ¿quién fue? Cómo organizar las cajas por persona para detectar diferencias y confiar en los números.",
+    publishedAt: "2026-09-22",
+    readingMinutes: 6,
+    sections: [
+      {
+        paragraphs: [
+          "Cuando atiende una sola persona, la caja se controla fácil. Cuando son dos o tres por turno y todos usan el mismo cajón, una diferencia al final del día es imposible de explicar: nadie sabe de dónde salió.",
+        ],
+      },
+      {
+        heading: "Una caja por persona",
+        paragraphs: [
+          "La regla más útil es que cada empleado abra su propia caja con un monto inicial contado, cobre en ella durante su turno y la cierre contando el efectivo. Así, si hay una diferencia, sabés en qué caja y en qué turno pasó.",
+        ],
+      },
+      {
+        heading: "Registrá todo lo que entra y sale que no es una venta",
+        paragraphs: [
+          "Un retiro para pagar un flete, un ingreso de cambio, el pago de una deuda de un cliente: si no se anota, al cierre parece un faltante o un sobrante que no lo es. Todo movimiento de efectivo tiene que quedar registrado con su motivo.",
+        ],
+      },
+      {
+        heading: "Mirá las diferencias por persona, no sólo del día",
+        paragraphs: [
+          "Una diferencia de $500 un día puede ser un error de vuelto. La misma diferencia repetida en la caja de la misma persona es otra cosa. Ver los faltantes y sobrantes acumulados por empleado te muestra si hay un patrón.",
+        ],
+      },
+      {
+        heading: "Cómo lo resolvés con Pesito",
+        paragraphs: ["Las cajas por usuario están en todos los planes:"],
+        list: [
+          "Cada usuario abre y cierra su caja con su monto inicial.",
+          "Retiros e ingresos de efectivo se registran con su motivo, y los cobros de fiado y pagos a proveedores en efectivo también impactan en la caja.",
+          "Al cerrar contás el efectivo (hay una calculadora de billetes) y Pesito te dice si hubo faltante o sobrante.",
+          "Podés configurar una hora de cierre y el sistema le recuerda a cada uno que cierre su caja.",
+          "En Reportes ves las diferencias de caja por persona, y desde En vivo ves en el momento quién tiene la caja abierta, cuánto efectivo tiene y cuánto vendió.",
+          "Tus empleados no necesitan email: les creás un usuario y contraseña desde Pesito.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "como-manejar-varias-sucursales",
+    seoTitle: "Cómo manejar varias sucursales",
+    title: "Cómo manejar varias sucursales desde un solo sistema",
+    excerpt:
+      "Abrir un segundo local multiplica el trabajo. Cómo llevar el stock, las cajas y las ventas de cada sucursal sin volverte loco.",
+    publishedAt: "2026-09-25",
+    readingMinutes: 5,
+    sections: [
+      {
+        paragraphs: [
+          "Con un segundo local aparecen preguntas nuevas: ¿cuánto tengo de cada cosa en cada lugar?, ¿cuál vende más?, ¿mando mercadería de uno al otro?, ¿cómo sé qué pasa en el que no estoy? Llevarlo en planillas separadas funciona un tiempo, hasta que los números dejan de coincidir.",
+        ],
+      },
+      {
+        heading: "Cada sucursal con su propio stock",
+        paragraphs: [
+          "Lo primero es que el stock sea por local. Que el sistema diga \"hay 20\" no sirve si los 20 están en la otra sucursal. Cada venta tiene que descontar del local donde se vendió, y cada compra sumar donde entró la mercadería.",
+        ],
+      },
+      {
+        heading: "Pasar mercadería de un local al otro",
+        paragraphs: [
+          "Es muy común reponer una sucursal con lo que sobra en otra. Si eso no se registra, un local termina con stock \"de más\" y el otro \"de menos\" en el sistema. Cada transferencia tiene que restar en el origen y sumar en el destino.",
+        ],
+      },
+      {
+        heading: "Ver todo junto, y cada local por separado",
+        paragraphs: [
+          "Como dueño necesitás las dos vistas: el total del negocio y el detalle de cada sucursal con sus vendedores. Así detectás rápido si un local viene flojo hoy o si una caja está abierta hace demasiado.",
+        ],
+      },
+      {
+        heading: "Cómo lo resolvés con Pesito",
+        paragraphs: ["Las sucursales están en el Plan Pro:"],
+        list: [
+          "Cada sucursal tiene su propio stock y sus cajas; vender descuenta del local de la caja.",
+          "A cada vendedor le asignás su sucursal; vos cambiás de sucursal desde el menú.",
+          "Transferencias de mercadería entre sucursales, con el registro en el historial de cada una.",
+          "La pantalla En vivo muestra primero el negocio, después cada sucursal y adentro cada vendedor con su caja, actualizada cada 30 segundos.",
+          "Si recién empezás, arrancá con una sucursal en el Plan Gratis y sumá las demás cuando las necesites.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "como-saber-cuanto-ganas",
+    title: "Cómo saber cuánto ganás de verdad en tu negocio",
+    excerpt:
+      "Vender mucho no es lo mismo que ganar. Qué números mirar para saber si el negocio anda bien y dónde está la plata.",
+    publishedAt: "2026-09-25",
+    readingMinutes: 5,
+    sections: [
+      {
+        paragraphs: [
+          "Es muy común mirar sólo cuánto entró en la caja. Pero un día con mucha venta de productos con poco margen puede dejarte menos que un día tranquilo. Para saber cómo anda el negocio hay que mirar la ganancia, no sólo la venta.",
+        ],
+      },
+      {
+        heading: "Cargá el costo de cada producto",
+        paragraphs: [
+          "Sin el costo no hay forma de saber la ganancia. No hace falta que sea perfecto desde el primer día: empezá por lo que más vendés y actualizalo cuando llega una compra.",
+        ],
+      },
+      {
+        heading: "Los números que conviene mirar",
+        paragraphs: ["Con pocos indicadores alcanza para saber cómo venís:"],
+        list: [
+          "Ganancia estimada: lo vendido menos lo que te costó.",
+          "Ticket promedio: cuánto gasta cada cliente por compra. Subirlo un poco (una oferta en la caja, un producto complementario) suele ser más fácil que conseguir clientes nuevos.",
+          "Productos más vendidos y los que más ganancia dejan: no siempre son los mismos, y los segundos son los que no te pueden faltar.",
+          "Productos vendidos a pérdida: un precio desactualizado puede hacerte vender por debajo del costo sin darte cuenta.",
+          "Cómo te pagan: cuánto es efectivo, transferencia, tarjeta o fiado.",
+        ],
+      },
+      {
+        heading: "Cómo lo resolvés con Pesito",
+        paragraphs: [
+          "En Reportes (Plan Gratis) tenés ingresos, ganancia estimada, ticket promedio, ventas por día, medios de pago, productos más vendidos y los que más ganancia dejan, y las ventas de cada vendedor. Con el Plan Pro sumás la comparación con el período anterior y los productos que se están vendiendo a pérdida.",
         ],
       },
     ],

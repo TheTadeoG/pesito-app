@@ -2,7 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
-import { getSubscription, getMonthlySalesCount, FREE_PLAN_MONTHLY_SALES_LIMIT } from "@/lib/subscription";
+import {
+  getSubscription,
+  getMonthlySalesCount,
+  hasMonthlySalesLimit,
+  FREE_PLAN_MONTHLY_SALES_LIMIT,
+} from "@/lib/subscription";
 import type { Json } from "@/lib/database.types";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 import { getRecentSaleRows } from "@/app/(dashboard)/pos/recent-sales";
@@ -57,7 +62,7 @@ export async function checkoutSale(input: CheckoutInput): Promise<CheckoutResult
   // tope de ventas por mes. Se valida acá (antes de la RPC) para poder
   // devolver un mensaje claro en vez de un error genérico de base de datos.
   const subscription = await getSubscription(supabase, input.orgId);
-  if (!subscription.hasProAccess) {
+  if (hasMonthlySalesLimit(subscription)) {
     const monthlySales = await getMonthlySalesCount(supabase, input.orgId);
     if (monthlySales >= FREE_PLAN_MONTHLY_SALES_LIMIT) {
       return {

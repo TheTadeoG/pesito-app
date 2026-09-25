@@ -1,4 +1,4 @@
-import { faqs } from "@/components/marketing/faq";
+import { featuredFaqs as faqs } from "@/lib/faq-data";
 import { siteUrl } from "@/lib/utils";
 import { planOrder } from "@/lib/subscription";
 import { planDefinitions } from "@/lib/plan-features";
