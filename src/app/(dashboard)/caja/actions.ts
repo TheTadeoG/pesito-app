@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { requireOrgContext } from "@/lib/org";
 import {
-  computeCashOnHand,
+  CASH_UNAVAILABLE_ERROR,
+  tryComputeCashOnHand,
   getCashRegisterSummary,
   sumCashBreakdown,
   type PaymentBreakdownRow,
@@ -219,11 +220,12 @@ export async function addCashMovement(
       .single();
 
     if (register) {
-      const cashOnHand = await computeCashOnHand(
+      const cashOnHand = await tryComputeCashOnHand(
         supabase,
         cashRegisterId,
         Number(register.opening_amount)
       );
+      if (cashOnHand === null) return { error: CASH_UNAVAILABLE_ERROR };
       if (amount > cashOnHand) {
         return { error: "No podés retirar más efectivo del que hay disponible." };
       }
@@ -260,11 +262,12 @@ export async function closeCaja(
 
   if (!register) return { error: "No encontramos la caja." };
 
-  const expectedAmount = await computeCashOnHand(
+  const expectedAmount = await tryComputeCashOnHand(
     supabase,
     cashRegisterId,
     Number(register.opening_amount)
   );
+  if (expectedAmount === null) return { error: CASH_UNAVAILABLE_ERROR };
 
   const { error } = await supabase
     .from("cash_registers")

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
-import { computeCashOnHand } from "@/lib/caja";
+import { CASH_UNAVAILABLE_ERROR, tryComputeCashOnHand } from "@/lib/caja";
 import type { Json } from "@/lib/database.types";
 
 export interface PurchaseItemInput {
@@ -60,7 +60,8 @@ export async function registerPurchase(
     if (!register) {
       return { error: "Abrí tu caja para poder pagar en efectivo." };
     }
-    const cashOnHand = await computeCashOnHand(supabase, register.id, Number(register.opening_amount));
+    const cashOnHand = await tryComputeCashOnHand(supabase, register.id, Number(register.opening_amount));
+    if (cashOnHand === null) return { error: CASH_UNAVAILABLE_ERROR };
     if (cashAmount > cashOnHand) {
       return { error: "No hay suficiente efectivo en la caja para pagar esta parte de la compra." };
     }
