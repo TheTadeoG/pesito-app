@@ -18,6 +18,8 @@ export interface Database {
           currency: string;
           phone: string | null;
           auto_invoice_by_payment: boolean;
+          /** "HH:MM:SS" en hora de Argentina (0041). undefined si falta la migración. */
+          cash_close_time?: string | null;
           org_code: string;
           created_at: string;
         };
@@ -29,6 +31,7 @@ export interface Database {
           currency?: string;
           phone?: string | null;
           auto_invoice_by_payment?: boolean;
+          cash_close_time?: string | null;
           org_code?: string;
           created_at?: string;
         };

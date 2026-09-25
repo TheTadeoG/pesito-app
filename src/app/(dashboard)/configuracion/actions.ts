@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { isOrgAdmin } from "@/lib/roles";
+import { normalizeCloseTime } from "@/lib/cash-reminder";
 
 export interface ActionState {
   error?: string;
@@ -40,5 +42,26 @@ export async function updateAutoInvoiceSetting(enabled: boolean): Promise<Action
 
   revalidatePath("/configuracion");
   revalidatePath("/pos");
+  return { success: true };
+}
+
+/** Hora de cierre ("HH:MM", Argentina) para recordar cerrar la caja; null la desactiva. */
+export async function updateCashCloseTime(time: string | null): Promise<ActionState> {
+  const { organization, membership } = await requireOrgContext();
+  if (!isOrgAdmin(membership.role)) {
+    return { error: "Sólo el dueño o un administrador puede cambiar esto." };
+  }
+  const value = time === null ? null : normalizeCloseTime(time);
+  if (time !== null && !value) return { error: "Elegí una hora válida." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ cash_close_time: value })
+    .eq("id", organization.id);
+
+  if (error) return { error: "No pudimos guardar el cambio." };
+
+  revalidatePath("/configuracion");
   return { success: true };
 }

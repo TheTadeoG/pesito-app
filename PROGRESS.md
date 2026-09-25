@@ -67,6 +67,15 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 - Migración 0040 (aplicada en producción el 2026-09-25): `bulk_increase_cost_with_price`. En "Aumentar costos", la casilla "Aumentar también el precio de venta en la misma proporción" sube cada precio × costo nuevo / costo anterior (con % es el mismo %; con monto fijo, cada producto en su proporción). Sólo productos con costo > 0. Deja un aumento de costo y otro de precio, cada uno se deshace por separado; el de precio con monto fijo figura como "Proporcional al costo".
 - Sin 0040 aplicada, marcar la casilla da error ("No pudimos actualizar los costos y precios"); sin marcarla funciona como antes.
 
+## Hecho: reportes por vendedor y recordatorio de cierre de caja
+
+- Reportes (dueños/administradores): selector "Todos los vendedores" / uno en particular (`?vendedor=<user_id>`), que filtra ventas, indicadores, gráficos, rankings, comparación con el período anterior y diferencias de caja. Fiado y stock valorizado son de todo el negocio: con un vendedor elegido no se muestran ni se consultan. Tarjeta nueva "Ventas por vendedor" (ventas, ticket promedio, ingresos, ganancia estimada y % del total); cada fila abre el reporte de ese vendedor. Los vendedores siguen viendo Reportes como antes, sin selector.
+- Migración 0041 (**falta aplicar en producción**): `organizations.cash_close_time` (hora de Argentina, null = sin recordatorio). Configuración → "Cierre de caja" (sólo dueños/administradores): activar y elegir la hora.
+- Aviso arriba del panel (también en el POS) para quien tiene la caja abierta: 15 minutos antes de la hora de cierre, a la hora de cierre, y siempre que la caja siga abierta desde un día anterior (esto último funciona aunque no haya hora configurada ni 0041). Se calcula en el navegador cada 30 s, sin consultas extra; se puede descartar (vale para esa pestaña). Una caja abierta después de la hora de cierre (turno noche) no avisa hasta el día siguiente. Lógica en `src/lib/cash-reminder.ts`.
+- Caja → "Cajas abiertas del equipo": etiquetas "Abierta desde otro día" y "Pasó la hora de cierre".
+- Sin 0041 aplicada: no hay recordatorio por horario y guardar la hora da "No pudimos guardar el cambio."; el resto funciona.
+- Probado en local con "Almacén La Esquina": la suma por vendedor coincide con el total (1.211 + 1.177 = 2.388 ventas en 30 días) y el filtro de un vendedor muestra los mismos números que su fila.
+
 ## Pendiente
 
 - Speed Index en móvil: 3,8 s (naranja), el resto en verde.
@@ -86,9 +95,9 @@ Estas no están en ninguna consulta a la base ni en Vercel — son ideas de prod
 ### Sucursales / multi-usuario (a futuro)
 
 - Resumen por sucursal y cajas de cada sucursal.
-- Reportes por sucursal, por caja y por vendedor.
+- Reportes por sucursal y por caja (por vendedor ya está).
 - Cambiar de sucursal desde el header del sidebar (dueños).
-- Cierres automáticos de caja por horario + recordatorios de cierre.
+- Cierres automáticos de caja por horario (los recordatorios ya están).
 - Sugerencia de compra automática (stock para X días, por proveedor/marca/producto).
 - Preguntar el objetivo del usuario en el onboarding.
 

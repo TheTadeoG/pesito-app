@@ -3,6 +3,7 @@ import { AlertCircle, AlertTriangle, HandCoins, LockOpen, Users } from "lucide-r
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { getCashReminder } from "@/lib/cash-reminder";
 
 export interface OpenRegisterRow {
   id: string;
@@ -72,7 +73,13 @@ export function RecurringDiscrepanciesOverview({ rows }: { rows: RecurringDiscre
   );
 }
 
-export function TeamCajasOverview({ rows }: { rows: OpenRegisterRow[] }) {
+export function TeamCajasOverview({
+  rows,
+  closeTime,
+}: {
+  rows: OpenRegisterRow[];
+  closeTime: string | null;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -88,24 +95,35 @@ export function TeamCajasOverview({ rows }: { rows: OpenRegisterRow[] }) {
           </p>
         ) : (
           <div className="divide-y divide-border">
-            {rows.map((row) => (
-              <div key={row.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-success-bg text-success">
-                  <LockOpen className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">{row.userLabel}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Abierta el {formatDateTime(row.openedAt)} · Inicial:{" "}
-                    {formatCurrency(row.openingAmount)}
-                  </p>
+            {rows.map((row) => {
+              const reminder = getCashReminder(row.openedAt, closeTime);
+              return (
+                <div key={row.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-success-bg text-success">
+                    <LockOpen className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
+                      {row.userLabel}
+                      {reminder?.kind === "stale" && (
+                        <Badge tone="danger">Abierta desde otro día</Badge>
+                      )}
+                      {reminder?.kind === "closing" && (
+                        <Badge tone="warning">Pasó la hora de cierre</Badge>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Abierta el {formatDateTime(row.openedAt)} · Inicial:{" "}
+                      {formatCurrency(row.openingAmount)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Efectivo disponible</p>
+                    <p className="font-semibold text-foreground">{formatCurrency(row.cashOnHand)}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Efectivo disponible</p>
-                  <p className="font-semibold text-foreground">{formatCurrency(row.cashOnHand)}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

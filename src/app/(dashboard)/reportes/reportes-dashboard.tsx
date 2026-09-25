@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   BarChart3,
   CreditCard,
@@ -11,6 +12,7 @@ import {
   Settings2,
   TrendingDown,
   TrendingUp,
+  UserRound,
   Users,
   Wallet,
 } from "lucide-react";
@@ -24,6 +26,7 @@ import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { cn, formatCurrency } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
+import { reportesHref, type ReportPeriod } from "@/lib/report-periods";
 
 const WIDGETS = [
   { id: "tiles", label: "Indicadores principales" },
@@ -34,6 +37,7 @@ const WIDGETS = [
   { id: "fiadoDebtors", label: "Quién te debe (fiado)" },
   { id: "stockValue", label: "Stock valorizado" },
   { id: "topCustomers", label: "Mejores clientes" },
+  { id: "sellers", label: "Ventas por vendedor" },
   { id: "cashDiff", label: "Diferencias de caja por vendedor" },
   { id: "periodComparison", label: "Comparación con el período anterior (Pro)" },
   { id: "lossProducts", label: "Productos vendidos a pérdida (Pro)" },
@@ -49,6 +53,17 @@ export interface CashDiffRow {
   cajasCerradas: number;
   faltante: number;
   sobrante: number;
+}
+
+export interface SellerRow {
+  userId: string;
+  userLabel: string;
+  ventas: number;
+  ingresos: number;
+  ganancia: number;
+  ticketPromedio: number;
+  /** Parte de los ingresos del período (0 a 1). */
+  share: number;
 }
 
 export interface FiadoDebtorRow {
@@ -82,6 +97,9 @@ export interface ReportesData {
   saleRows: SaleRow[];
   // Sólo se completa para dueños/administradores.
   cashDiffByUser: CashDiffRow[] | null;
+  sellerRows: SellerRow[] | null;
+  /** Vendedor por el que se filtra el reporte, o null si es de todos. */
+  sellerLabel: string | null;
   fiadoDebtors: FiadoDebtorRow[];
   stockValue: { atCost: number; atPrice: number };
   hasProAccess: boolean;
@@ -120,7 +138,13 @@ function TrendBadge({ deltaPct, size = "md" }: { deltaPct: number; size?: "sm" |
   );
 }
 
-export function ReportesDashboard({ data }: { data: ReportesData }) {
+export function ReportesDashboard({
+  data,
+  period,
+}: {
+  data: ReportesData;
+  period: ReportPeriod;
+}) {
   const [visible, setVisible] = useState<Set<WidgetId>>(new Set(ALL_WIDGET_IDS));
   const [showCustomize, setShowCustomize] = useState(false);
 
@@ -151,8 +175,17 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
     });
   }
 
-  const isVisible = (id: WidgetId) => visible.has(id);
-  const availableWidgets = WIDGETS.filter((w) => w.id !== "cashDiff" || data.cashDiffByUser !== null);
+  // Fiado y stock son de todo el negocio: filtrando por vendedor no aplican.
+  // "Ventas por vendedor" con uno solo elegido repetiría los indicadores.
+  const hidden = new Set<WidgetId>();
+  if (data.cashDiffByUser === null) hidden.add("cashDiff");
+  if (data.sellerRows === null || data.sellerLabel !== null) hidden.add("sellers");
+  if (data.sellerLabel !== null) {
+    hidden.add("fiadoDebtors");
+    hidden.add("stockValue");
+  }
+  const isVisible = (id: WidgetId) => visible.has(id) && !hidden.has(id);
+  const availableWidgets = WIDGETS.filter((w) => !hidden.has(w.id));
 
   return (
     <div className="space-y-6">
@@ -383,6 +416,73 @@ export function ReportesDashboard({ data }: { data: ReportesData }) {
                     <span className="truncate text-foreground">{c.name}</span>
                     <span className="font-semibold text-foreground">{formatCurrency(c.total)}</span>
                   </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {isVisible("sellers") && data.sellerRows && (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <UserRound className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Ventas por vendedor</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {data.sellerRows.length === 0 ? (
+              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+                Nadie vendió en este período.
+              </p>
+            ) : (
+              <div className="divide-y divide-border">
+                {data.sellerRows.map((row) => (
+                  <Link
+                    key={row.userId}
+                    href={reportesHref(period, row.userId)}
+                    title={`Ver el reporte de ${row.userLabel}`}
+                    className="block px-5 py-3 text-sm hover:bg-muted"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">{row.userLabel}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {row.ventas} venta{row.ventas !== 1 ? "s" : ""} · ticket promedio{" "}
+                          {formatCurrency(row.ticketPromedio)}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-4 text-right">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Ingresos</p>
+                          <p className="font-semibold text-foreground">
+                            {formatCurrency(row.ingresos)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Ganancia est.</p>
+                          <p
+                            className={cn(
+                              "font-semibold",
+                              row.ganancia < 0 ? "text-danger" : "text-success"
+                            )}
+                          >
+                            {formatCurrency(row.ganancia)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${Math.round(row.share * 100)}%` }}
+                        />
+                      </div>
+                      <span className="w-10 text-right text-xs text-muted-foreground">
+                        {Math.round(row.share * 100)}%
+                      </span>
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}

@@ -15,6 +15,13 @@ export function resolvePeriod(value: string | string[] | undefined): ReportPerio
   return "30d";
 }
 
+/** Link a Reportes con el período y, si hay, el vendedor elegido. */
+export function reportesHref(period: ReportPeriod, sellerId: string | null = null): string {
+  return sellerId
+    ? `/reportes?period=${period}&vendedor=${sellerId}`
+    : `/reportes?period=${period}`;
+}
+
 export interface PeriodRange {
   start: Date;
   label: string;

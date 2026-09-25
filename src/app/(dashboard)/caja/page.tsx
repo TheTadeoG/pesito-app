@@ -180,7 +180,10 @@ export default async function CajaPage() {
 
     teamOverview = (
       <>
-        <TeamCajasOverview rows={openRegisterRows} />
+        <TeamCajasOverview
+          rows={openRegisterRows}
+          closeTime={organization.cash_close_time ?? null}
+        />
         <div className="grid gap-6 lg:grid-cols-2">
           <DeudasFiadoOverview totalDebt={totalDebt} debtors={debtors} />
           <CuentasPorPagarOverview totalDebt={totalOwed} creditors={creditors} />

@@ -8,6 +8,9 @@ import { roleLabels } from "@/lib/roles";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
 import { AccountIds } from "@/app/(dashboard)/configuracion/account-ids";
 import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
+import { CashCloseTimeForm } from "@/app/(dashboard)/configuracion/cash-close-time-form";
+import { normalizeCloseTime } from "@/lib/cash-reminder";
+import { isOrgAdmin } from "@/lib/roles";
 import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
 import { ConfiguracionTabs, type ConfiguracionTab } from "@/app/(dashboard)/configuracion/configuracion-tabs";
@@ -24,7 +27,7 @@ export default async function ConfiguracionPage({
 }) {
   const { tab: tabParam } = await searchParams;
   const tab = parseTab(tabParam);
-  const { userId, email, organization } = await requireOrgContext();
+  const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
 
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
@@ -85,6 +88,19 @@ export default async function ConfiguracionPage({
             <AutoInvoiceToggle initialEnabled={organization.auto_invoice_by_payment} />
           </CardContent>
         </Card>
+
+        {isOrgAdmin(membership.role) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Cierre de caja</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CashCloseTimeForm
+                initialTime={normalizeCloseTime(organization.cash_close_time)}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

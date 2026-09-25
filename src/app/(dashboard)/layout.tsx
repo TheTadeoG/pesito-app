@@ -12,6 +12,7 @@ import { ProTrialBanner } from "@/components/dashboard/pro-trial-banner";
 import { ToastProvider } from "@/components/toast/toast-provider";
 import { WelcomeModal } from "@/components/dashboard/welcome-modal";
 import { RefreshAfterSale } from "@/components/dashboard/refresh-after-sale";
+import { CashCloseReminder } from "@/components/dashboard/cash-close-reminder";
 import { getUpcomingCommercialDates } from "@/lib/commercial-dates";
 import { argDateString } from "@/lib/timezone";
 import { getSubscription } from "@/lib/subscription";
@@ -91,6 +92,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             greetingName={greetingName}
           />
           <CommercialDatesBanner dates={commercialDates} />
+          {openRegister && (
+            <CashCloseReminder
+              registerId={openRegister.id}
+              openedAt={openRegister.opened_at}
+              closeTime={organization.cash_close_time ?? null}
+            />
+          )}
           {subscription.plan === "gratis" && subscription.proTrialEndsAt && (
             <ProTrialBanner proTrialEndsAt={subscription.proTrialEndsAt} />
           )}

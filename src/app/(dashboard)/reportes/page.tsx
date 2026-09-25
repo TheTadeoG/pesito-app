@@ -4,10 +4,12 @@ import { formatCurrency } from "@/lib/utils";
 import { daysSince, getPeriodRange, resolvePeriod } from "@/lib/report-periods";
 import { ARG_TZ, argHour } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
+import { SellerSelector } from "@/app/(dashboard)/reportes/seller-selector";
 import {
   ReportesDashboard,
   type CashDiffRow,
   type ReportesData,
+  type SellerRow,
 } from "@/app/(dashboard)/reportes/reportes-dashboard";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
@@ -35,28 +37,39 @@ function dayLabel(date: Date) {
 export default async function ReportesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; vendedor?: string }>;
 }) {
-  const { period: periodParam } = await searchParams;
+  const { period: periodParam, vendedor: vendedorParam } = await searchParams;
   const period = resolvePeriod(periodParam);
   const { start, label: periodLabel, groupBy } = getPeriodRange(period);
 
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const isManager = membership.role === "owner" || membership.role === "admin";
-  const subscription = await getSubscription(supabase, organization.id);
+  const [subscription, memberLabelsById] = await Promise.all([
+    getSubscription(supabase, organization.id),
+    isManager ? getMemberLabelsById(supabase, organization.id) : Promise.resolve(null),
+  ]);
 
-  const salesRaw = await fetchAll((from, to) =>
-    supabase
+  // Filtro por vendedor: sólo dueños/administradores. Se acepta también un
+  // usuario que ya no está en el negocio (llega desde "Ventas por vendedor").
+  const sellerId =
+    isManager && vendedorParam && /^[0-9a-f-]{36}$/i.test(vendedorParam) ? vendedorParam : null;
+  const sellerLabel = sellerId ? memberLabelsById?.get(sellerId) ?? "Usuario eliminado" : null;
+
+  const salesRaw = await fetchAll((from, to) => {
+    let query = supabase
       .from("sales")
-      .select("id, total, payment_method, invoice_type, created_at, customer_id")
+      .select("id, user_id, total, payment_method, invoice_type, created_at, customer_id")
       .eq("org_id", organization.id)
       .eq("status", "completada")
-      .gte("created_at", start.toISOString())
+      .gte("created_at", start.toISOString());
+    if (sellerId) query = query.eq("user_id", sellerId);
+    return query
       .order("created_at", { ascending: false })
       .order("id")
-      .range(from, to)
-  );
+      .range(from, to);
+  });
 
   const sales = salesRaw.map((s) => ({ ...s, total: Number(s.total) }));
   const saleIds = sales.map((s) => s.id);
@@ -105,6 +118,39 @@ export default async function ReportesPage({
     0
   );
   const gananciaEstimada = ingresos - costoTotal;
+
+  // Ventas por vendedor (dueños/administradores): cantidad, ingresos y
+  // ganancia estimada de cada uno, con el mismo costo que los indicadores.
+  let sellerRows: SellerRow[] | null = null;
+  if (memberLabelsById) {
+    const costBySale = new Map<string, number>();
+    for (const item of items) {
+      if (!item.product_id) continue;
+      costBySale.set(
+        item.sale_id,
+        (costBySale.get(item.sale_id) ?? 0) + item.quantity * (costById.get(item.product_id) ?? 0)
+      );
+    }
+    const totalsBySeller = new Map<string, { ventas: number; ingresos: number; costo: number }>();
+    for (const sale of sales) {
+      const current = totalsBySeller.get(sale.user_id) ?? { ventas: 0, ingresos: 0, costo: 0 };
+      current.ventas += 1;
+      current.ingresos += sale.total;
+      current.costo += costBySale.get(sale.id) ?? 0;
+      totalsBySeller.set(sale.user_id, current);
+    }
+    sellerRows = Array.from(totalsBySeller.entries())
+      .map(([userId, t]) => ({
+        userId,
+        userLabel: memberLabelsById.get(userId) ?? "Usuario eliminado",
+        ventas: t.ventas,
+        ingresos: t.ingresos,
+        ganancia: t.ingresos - t.costo,
+        ticketPromedio: t.ingresos / t.ventas,
+        share: ingresos > 0 ? t.ingresos / ingresos : 0,
+      }))
+      .sort((a, b) => b.ingresos - a.ingresos);
+  }
 
   const paymentTotals = new Map<string, number>();
   for (const sale of sales) {
@@ -229,19 +275,18 @@ export default async function ReportesPage({
   }));
 
   let cashDiffByUser: CashDiffRow[] | null = null;
-  if (isManager) {
-    const closedRegisters = await fetchAll((from, to) =>
-      supabase
+  if (memberLabelsById) {
+    const closedRegisters = await fetchAll((from, to) => {
+      let query = supabase
         .from("cash_registers")
         .select("user_id, expected_amount, closing_amount")
         .eq("org_id", organization.id)
         .eq("status", "cerrada")
-        .gte("closed_at", start.toISOString())
-        .order("id")
-        .range(from, to)
-    );
+        .gte("closed_at", start.toISOString());
+      if (sellerId) query = query.eq("user_id", sellerId);
+      return query.order("id").range(from, to);
+    });
 
-    const memberLabelsById = await getMemberLabelsById(supabase, organization.id);
     const totalsByUser = new Map<
       string,
       { cajasCerradas: number; faltante: number; sobrante: number }
@@ -268,7 +313,8 @@ export default async function ReportesPage({
   }
 
   // "Quién te debe": clientes con saldo de fiado, con hace cuánto no pagan.
-  const debtors = await fetchAll((from, to) =>
+  // Es de todo el negocio: filtrando por vendedor no se muestra ni se consulta.
+  const debtors = sellerId ? [] : await fetchAll((from, to) =>
     supabase
       .from("customers")
       .select("id, name, balance")
@@ -310,7 +356,7 @@ export default async function ReportesPage({
 
   // Stock valorizado: cuánta plata hay parada en mercadería, al costo y al
   // precio de venta.
-  const stockProductsRaw = await fetchAll((from, to) =>
+  const stockProductsRaw = sellerId ? [] : await fetchAll((from, to) =>
     supabase
       .from("products")
       .select("cost, price, stock")
@@ -344,17 +390,17 @@ export default async function ReportesPage({
     // eslint-disable-next-line react-hooks/purity
     const durationMs = Date.now() - start.getTime();
     const previousStart = new Date(start.getTime() - durationMs);
-    const previousSalesRaw = await fetchAll((from, to) =>
-      supabase
+    const previousSalesRaw = await fetchAll((from, to) => {
+      let query = supabase
         .from("sales")
         .select("id, total")
         .eq("org_id", organization.id)
         .eq("status", "completada")
         .gte("created_at", previousStart.toISOString())
-        .lt("created_at", start.toISOString())
-        .order("id")
-        .range(from, to)
-    );
+        .lt("created_at", start.toISOString());
+      if (sellerId) query = query.eq("user_id", sellerId);
+      return query.order("id").range(from, to);
+    });
 
     const previousSales = previousSalesRaw.map((s) => ({ ...s, total: Number(s.total) }));
     const previousIngresos = previousSales.reduce((acc, s) => acc + s.total, 0);
@@ -444,6 +490,8 @@ export default async function ReportesPage({
     topCustomers,
     saleRows,
     cashDiffByUser,
+    sellerRows,
+    sellerLabel,
     fiadoDebtors,
     stockValue,
     hasProAccess: subscription.hasProAccess,
@@ -453,8 +501,27 @@ export default async function ReportesPage({
 
   return (
     <div className="space-y-6">
-      <PeriodSelector period={period} />
-      <ReportesDashboard data={data} />
+      <div className="flex flex-wrap items-center gap-3">
+        <PeriodSelector period={period} sellerId={sellerId} />
+        {memberLabelsById && (
+          <SellerSelector
+            period={period}
+            sellerId={sellerId}
+            sellers={Array.from(memberLabelsById.entries())
+              .map(([id, label]) => ({ id, label }))
+              .sort((a, b) => a.label.localeCompare(b.label, "es"))}
+            sellerLabel={sellerLabel}
+          />
+        )}
+      </div>
+      {sellerLabel && (
+        <p className="text-sm text-muted-foreground">
+          Mostrando sólo las ventas y cajas de{" "}
+          <span className="font-medium text-foreground">{sellerLabel}</span>. Fiado y stock son
+          de todo el negocio y no se muestran.
+        </p>
+      )}
+      <ReportesDashboard data={data} period={period} />
     </div>
   );
 }
