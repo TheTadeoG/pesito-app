@@ -108,7 +108,7 @@ Instaladas con `npx skills add` (quedan en `skills-lock.json`). Además de las q
 - `image-to-code` (Leonxlnx/taste-skill): genera imágenes de referencia de un diseño y lo implementa a partir de ellas. Pensada para Codex; acá sirve sobre todo pasándole una captura o un diseño para copiar.
 - `web-design-guidelines` (vercel-labs/agent-skills): auditoría de UI/accesibilidad contra las Web Interface Guidelines de Vercel ("revisá la UI de …").
 - `playwright-cli` (microsoft/playwright-cli): manejar el navegador desde la terminal para probar pantallas; si no está el comando, se instala con `npm install -g @playwright/cli@latest`.
-- awesome-design-md (VoltAgent) **no es una skill**: es una colección de `DESIGN.md` con el estilo de otras marcas. No se instaló.
+- `design-references` (propia, `.agents/skills/design-references`): usa la colección awesome-design-md (VoltAgent, 74 `DESIGN.md` de marcas como Stripe, Linear, Notion, Wise) como fuente de ideas. No copia los archivos al repo: baja el `DESIGN.md` que haga falta desde raw.githubusercontent.com en el momento. Regla: tomar ideas (layout, densidad, tipografía, componentes) y aplicarlas con los tokens de Pesito, sin copiar logos, paletas ni fuentes de otra marca.
 
 Nota: el buscador de skills.sh está bloqueado en este entorno (`npx skills find` no encuentra nada), pero `npx skills add owner/repo --skill <nombre>` funciona porque va por GitHub. El nombre de `--skill` es el `name:` del SKILL.md, no la carpeta (`--list` los muestra).
 
