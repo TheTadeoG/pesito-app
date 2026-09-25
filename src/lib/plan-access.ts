@@ -17,6 +17,7 @@ export type PlanFeature =
   // que, al construirlas, se controlen con canUse desde el primer día.
   | "productBundles"
   | "productVariants"
+  | "productImport"
   | "promotions"
   | "scales"
   | "onlineCatalog"
@@ -41,6 +42,7 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   branches: "ia",
   productBundles: "esencial",
   productVariants: "esencial",
+  productImport: "esencial",
   promotions: "pro",
   scales: "pro",
   onlineCatalog: "pro",
@@ -66,6 +68,7 @@ export const featureLabels: Record<PlanFeature, string> = {
   branches: "Las sucursales",
   productBundles: "Los combos y kits",
   productVariants: "Los talles y colores",
+  productImport: "La carga masiva de productos con Excel",
   promotions: "Las ofertas y promociones",
   scales: "Las balanzas conectadas",
   onlineCatalog: "El catálogo online",

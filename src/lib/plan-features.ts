@@ -60,7 +60,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Control de caja por empleado",
       "Hasta 2 usuarios y 2 cajas",
     ],
-    soon: ["Talles, combos y kits"],
+    soon: ["Carga masiva de productos con Excel", "Talles, combos y kits"],
   },
   pro: {
     plan: "pro",
@@ -193,6 +193,10 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     title: "Stock, precios y compras",
     rows: [
       { label: "Stock que se actualiza con cada venta y compra", values: everyPlan },
+      {
+        label: "Carga masiva de productos desde Excel",
+        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+      },
       { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromEsencial },
       { label: "Historial de movimientos de stock", values: fromEsencial },
       {
