@@ -146,6 +146,8 @@ export function BulkFieldIncreaseDialog({
   const [brandName, setBrandName] = useState("");
   const [mode, setMode] = useState<"percent" | "fixed">("percent");
   const [value, setValue] = useState("");
+  // Sólo en "Aumentar costos": subir también el precio de venta.
+  const [alsoPrice, setAlsoPrice] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -169,6 +171,7 @@ export function BulkFieldIncreaseDialog({
     setBrandName("");
     setMode("percent");
     setValue("");
+    setAlsoPrice(false);
     setError(null);
     onClose();
   }
@@ -195,7 +198,8 @@ export function BulkFieldIncreaseDialog({
       field,
       groupBy === "supplier" ? { supplierId } : { brand: brandName },
       mode,
-      Number(value)
+      Number(value),
+      field === "cost" && alsoPrice
     );
     setPending(false);
     if (result.error) {
@@ -203,8 +207,12 @@ export function BulkFieldIncreaseDialog({
       return;
     }
     showSuccess(
-      `${fieldLabelCap === "Precio" ? "Precios" : "Costos"} actualizados`,
-      `Se actualizaron ${result.updatedCount ?? 0} producto${result.updatedCount === 1 ? "" : "s"}.`
+      result.priceUpdatedCount !== undefined
+        ? "Costos y precios actualizados"
+        : `${fieldLabelCap === "Precio" ? "Precios" : "Costos"} actualizados`,
+      result.priceUpdatedCount !== undefined
+        ? `${result.updatedCount ?? 0} costo${result.updatedCount === 1 ? "" : "s"} y ${result.priceUpdatedCount} precio${result.priceUpdatedCount === 1 ? "" : "s"} de venta.`
+        : `Se actualizaron ${result.updatedCount ?? 0} producto${result.updatedCount === 1 ? "" : "s"}.`
     );
     router.refresh();
     resetAndClose();
@@ -338,6 +346,28 @@ export function BulkFieldIncreaseDialog({
           />
         </div>
 
+        {field === "cost" && (
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-border px-3.5 py-2.5 text-sm">
+            <input
+              type="checkbox"
+              checked={alsoPrice}
+              onChange={(e) => setAlsoPrice(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+            />
+            <span>
+              <span className="font-medium text-foreground">
+                Aumentar también el precio de venta en la misma proporción
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {mode === "percent"
+                  ? "El precio de venta de esos productos sube el mismo porcentaje."
+                  : "Cada precio sube en la misma proporción que subió su costo (ej. si el costo sube 10%, el precio también)."}{" "}
+                Sólo en productos con costo cargado.
+              </span>
+            </span>
+          </label>
+        )}
+
         {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-2">
@@ -348,7 +378,11 @@ export function BulkFieldIncreaseDialog({
             type="submit"
             disabled={pending || (groupBy === "supplier" ? !supplierId : !brandName) || !value}
           >
-            {pending ? "Actualizando…" : `Aumentar ${fieldLabel}s`}
+            {pending
+              ? "Actualizando…"
+              : field === "cost" && alsoPrice
+                ? "Aumentar costos y precios"
+                : `Aumentar ${fieldLabel}s`}
           </Button>
         </div>
       </form>

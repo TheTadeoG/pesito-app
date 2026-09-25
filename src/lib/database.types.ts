@@ -773,6 +773,16 @@ export interface Database {
         };
         Returns: number;
       };
+      bulk_increase_cost_with_price: {
+        Args: {
+          p_org_id: string;
+          p_supplier_id?: string | null;
+          p_brand?: string | null;
+          p_percent?: number | null;
+          p_fixed_amount?: number | null;
+        };
+        Returns: { cost_count: number; price_count: number };
+      };
       revert_bulk_price_change: {
         Args: { p_bulk_change_id: string };
         Returns: { reverted: number; skipped: number };

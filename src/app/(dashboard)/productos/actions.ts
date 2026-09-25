@@ -280,6 +280,8 @@ export async function deleteBrand(id: string): Promise<ActionState> {
 
 export interface BulkPriceIncreaseResult extends ActionState {
   updatedCount?: number;
+  // Sólo con alsoPrice: cuántos precios de venta subieron junto al costo.
+  priceUpdatedCount?: number;
 }
 
 // Agrupa por proveedor por defecto o por marca (uno de los dos) — usado
@@ -288,12 +290,29 @@ export async function bulkIncreaseField(
   field: "price" | "cost",
   groupBy: { supplierId: string } | { brand: string },
   mode: "percent" | "fixed",
-  value: number
+  value: number,
+  // Sólo para costos: sube también el precio de venta en la misma
+  // proporción que el costo de cada producto (migración 0040).
+  alsoPrice = false
 ): Promise<BulkPriceIncreaseResult> {
   if (!value || value <= 0) return { error: "Ingresá un valor mayor a cero." };
 
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
+
+  if (field === "cost" && alsoPrice) {
+    const { data, error } = await supabase.rpc("bulk_increase_cost_with_price", {
+      p_org_id: organization.id,
+      p_supplier_id: "supplierId" in groupBy ? groupBy.supplierId : null,
+      p_brand: "brand" in groupBy ? groupBy.brand : null,
+      p_percent: mode === "percent" ? value : null,
+      p_fixed_amount: mode === "fixed" ? value : null,
+    });
+    if (error || !data) return { error: "No pudimos actualizar los costos y precios." };
+    revalidatePath("/productos");
+    revalidatePath("/pos");
+    return { updatedCount: data.cost_count, priceUpdatedCount: data.price_count };
+  }
 
   const { data, error } = await supabase.rpc("bulk_increase_field", {
     p_org_id: organization.id,
@@ -356,7 +375,10 @@ async function describeBulkChanges(
         amountLabel:
           c.percent !== null
             ? `+${Number(c.percent).toLocaleString("es-AR")}%`
-            : `+${formatCurrency(Number(c.fixed_amount ?? 0))}`,
+            : c.fixed_amount !== null
+              ? `+${formatCurrency(Number(c.fixed_amount))}`
+              : // Precio subido junto a un aumento de costo en monto fijo (0040).
+                "Proporcional al costo",
       },
     ])
   );
