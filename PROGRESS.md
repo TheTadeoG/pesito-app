@@ -100,6 +100,18 @@ Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; 
 - `/en-vivo` ahora muestra primero el negocio (vendido, ventas, ticket, cajas abiertas, vs ayer), después una tarjeta por sucursal (totales, ticket, cajas abiertas, vs ayer, "la que más vende hoy") y adentro sus vendedores: lo vendido en esa sucursal hoy y sus cajas de esa sucursal (abierta: hace cuánto, efectivo, vendido en la caja; cerradas hoy: horario, vendido y faltante/sobrante). Un vendedor que trabajó en dos sucursales aparece en las dos con lo suyo de cada una. Abajo, ventas por hora y últimas ventas del negocio.
 - Migración 0044 (**falta aplicar en producción, después de la 0043**): `live_overview` suma por caja lo vendido y, en las cerradas hoy, sucursal, apertura y monto de cierre. Sin 0044 la pantalla anda igual pero sin "vendió $X" por caja (y las cajas cerradas quedan en la sucursal asignada de la persona).
 
+## Skills del proyecto (`.agents/skills`, con acceso en `.claude/skills`)
+
+Instaladas con `npx skills add` (quedan en `skills-lock.json`). Además de las que ya estaban (docx, pdf, pptx, xlsx, frontend-design, webapp-testing, mcp-builder, skill-creator, find-skills):
+
+- `design-taste-frontend` (Leonxlnx/taste-skill): diseño "anti-plantilla" para landing, portfolios y rediseños. Ella misma aclara que **no** es para dashboards ni tablas: usarla para la web pública, no para el panel.
+- `image-to-code` (Leonxlnx/taste-skill): genera imágenes de referencia de un diseño y lo implementa a partir de ellas. Pensada para Codex; acá sirve sobre todo pasándole una captura o un diseño para copiar.
+- `web-design-guidelines` (vercel-labs/agent-skills): auditoría de UI/accesibilidad contra las Web Interface Guidelines de Vercel ("revisá la UI de …").
+- `playwright-cli` (microsoft/playwright-cli): manejar el navegador desde la terminal para probar pantallas; si no está el comando, se instala con `npm install -g @playwright/cli@latest`.
+- awesome-design-md (VoltAgent) **no es una skill**: es una colección de `DESIGN.md` con el estilo de otras marcas. No se instaló.
+
+Nota: el buscador de skills.sh está bloqueado en este entorno (`npx skills find` no encuentra nada), pero `npx skills add owner/repo --skill <nombre>` funciona porque va por GitHub. El nombre de `--skill` es el `name:` del SKILL.md, no la carpeta (`--list` los muestra).
+
 ## Pendiente
 
 - Speed Index en móvil: 3,8 s (naranja), el resto en verde.
