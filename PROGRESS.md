@@ -61,7 +61,6 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 
 - Speed Index en móvil: 3,8 s (naranja), el resto en verde.
 - Accesibilidad 96: ver qué aviso queda.
-- Revisar la lista de ideas que se habló en otra conversación (no quedó guardada en el repo).
 
 ## Ideas pendientes (funcionalidad, no relacionadas a performance)
 
