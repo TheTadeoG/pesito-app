@@ -34,11 +34,16 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 - Reportes: los ítems sin producto ("Monto libre" o productos borrados) ya no entran en "más vendidos", "más ganancia" ni "vendidos a pérdida". Siguen contando en ingresos y ganancia estimada.
 - Usuarios: el alta dice "otro negocio" en vez de "otro kiosco".
 
-## Pendiente (por prioridad)
+## Hecho: Productos, Caja sin cálculo viejo, datos frescos después de vender
 
-1. **Borrar el cálculo viejo de Caja** (`legacy*` en `src/lib/caja.ts`) cuando se confirme en los logs de Vercel que no aparece "cash_register_summaries falló".
-2. **Productos**: renderiza la tabla entera (~2 s con 1.600 artículos). Paginar o virtualizar.
-3. **Contra conocida del PR #2**: después de vender, Caja/Reportes/Productos pueden mostrar datos de hasta 30 s atrás si se vuelve a ellos enseguida (`staleTimes` en `next.config.ts`).
+- Productos: la tabla muestra 100 filas y agrega de a 100 al bajar (o con "Mostrar más"). Buscar, filtrar y ordenar siguen trabajando sobre todo el catálogo. Con 1.600 artículos pasó de ~2 s a ~0,5 s.
+- Caja: se borró el cálculo viejo caja por caja (`legacy*`). Si `cash_register_summaries` falla, la página de Caja da error y las acciones (retirar, cerrar, comprar o pagar a proveedores en efectivo, quitar un usuario con la caja abierta) devuelven "No pudimos calcular el efectivo de la caja" en vez de usar un monto equivocado. La tarjeta "Vender" muestra "—" en caja.
+- Después de cobrar en el POS, la primera página que se abre fuera del POS se refresca una vez (`RefreshAfterSale` + `markSaleCompleted` en `src/lib/cash-events.ts`). El POS sigue sin refrescarse.
+- Textos del panel: "negocio" en vez de "kiosco" en Configuración, Recomendaciones y Soporte. La web pública y el registro siguen nombrando kioscos a propósito.
+
+## Pendiente
+
+Nada de la lista anterior. Falta revisar la lista de ideas que se habló en otra conversación (no quedó guardada en el repo).
 
 ## Cómo reproducir la simulación
 
