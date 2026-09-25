@@ -22,7 +22,7 @@ export const faqCategories: FaqCategory[] = [
     faqs: [
       {
         question: "¿Pesito es gratis?",
-        answer: `Sí. El Plan Gratis no tiene costo, no pide tarjeta y no vence. Incluye el punto de venta, el stock, la caja, los clientes con fiado, las compras a proveedores y los reportes, para 1 usuario y ${FREE_PLAN_SALES_LIMIT_LABEL.toLowerCase()}. Además, al crear tu cuenta tenés 14 días del Plan Pro de regalo.`,
+        answer: `Sí. El Plan Gratis no tiene costo, no pide tarjeta y no vence. Incluye el punto de venta, el stock, la caja, los clientes con fiado, las compras a proveedores y los reportes, para 1 usuario y hasta ${FREE_PLAN_SALES_LIMIT_LABEL}. Además, al crear tu cuenta tenés 14 días del Plan Pro de regalo.`,
       },
       {
         question: "¿Qué pasa cuando terminan los 14 días de prueba?",
