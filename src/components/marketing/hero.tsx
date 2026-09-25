@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, PlayCircle } from "lucide-react";
+import { ArrowRight, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PosMockup } from "@/components/marketing/pos-mockup";
 import { AnchorLink } from "@/components/marketing/anchor-link";
@@ -13,12 +13,7 @@ export function Hero() {
       />
       <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-2 lg:items-center lg:pb-28 lg:pt-24">
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success-bg px-3 py-1 text-xs font-semibold text-success">
-            <BadgeCheck className="h-3.5 w-3.5" />
-            Gratis para empezar · Sin vencimiento
-          </span>
-
-          <h1 className="mt-5 text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
+          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
             El sistema para manejar tu negocio sin dolores de cabeza
           </h1>
 
