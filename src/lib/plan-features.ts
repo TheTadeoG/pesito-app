@@ -73,7 +73,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Todas las funciones del Plan Esencial +",
       "Aumentos masivos de precios en segundos",
       "Reportes avanzados",
-      "Mirá tu negocio en vivo, desde casa, en tu celular",
+      "Mirá el negocio en vivo, desde casa, en tu celular",
       "Hasta 6 usuarios y 6 cajas",
       "Soporte prioritario",
     ],
