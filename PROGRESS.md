@@ -83,9 +83,17 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 - Se actualiza cada 30 s sólo con la pestaña visible; en segundo plano no consulta nada; al volver consulta en el momento y retoma cada 30 s. La consulta va directo del navegador a Supabase (no gasta invocaciones de Vercel). Con la pantalla abierta 8 h/día: ~29.000 consultas/mes por dueño, ~100 MB.
 - Sin 0042 aplicada, `/en-vivo` da error; el resto funciona.
 
-## En curso: sucursales (etapa 2)
+## Hecho: sucursales con stock propio (etapa 2)
 
-Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; la primera sucursal es de todos los planes y las adicionales son Pro; "En vivo" pasa a mostrar las sucursales y dentro de cada una sus vendedores.
+Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; la primera sucursal es de todos los planes y las adicionales son Pro (plan pro/ia o prueba vigente); "En vivo" muestra las sucursales y dentro de cada una sus vendedores.
+
+- Migración 0043 (**falta aplicar en producción, después de la 0042**): tablas `branches` (una `is_main` por negocio, "Principal", se crea sola) y `branch_stock`; `branch_id` en `cash_registers`, `sales`, `purchases`, `stock_movements` y `memberships` (sucursal asignada). Todo lo existente queda en la Principal.
+- `products.stock` = suma de `branch_stock`, mantenido por triggers. Un cambio directo a `products.stock` (código viejo, SQL Editor) se aplica a la sucursal "de contexto" (`set_stock_branch`, que fijan venta/compra/anulaciones/ajustes) o a la Principal. Por eso la migración es compatible con el código anterior y el código nuevo funciona sin la migración (sin sucursales, como antes: probado).
+- `checkout_sale` controla y descuenta el stock de la sucursal de la caja; `register_purchase` (nuevo parámetro opcional `p_branch_id`) suma en la de la caja o la elegida; `void_sale`/`void_purchase` en la de la venta/compra. RPCs nuevas: `create_branch` (admin; Pro desde la segunda), `set_member_branch`, `adjust_branch_stock`, `transfer_stock` (admin; movimientos tipo "transferencia"). `live_overview` suma sucursales (totales, ayer, cajas abiertas, por hora) y lo vendido por persona en cada sucursal.
+- App: `src/lib/branches.ts` (`getBranchContext`: vendedor = su sucursal asignada o la Principal; dueño/admin = la elegida en el menú, cookie `pesito-branch`). Selector en el menú lateral y en el del celular (sólo con 2+ sucursales). La caja se abre en la sucursal actual; POS muestra y controla el stock de la sucursal de la caja; Compras, Productos (tabla, stock bajo, movimientos, ajustes, stock inicial de un producto nuevo) usan la sucursal actual. Configuración → Sucursales (crear/renombrar). Usuarios → sucursal de cada persona. Productos → "Transferir a otra sucursal".
+- En vivo: ranking de sucursales (la que más vende hoy destacada) y filtro por sucursal (equipo, lo vendido por cada persona en esa sucursal, ventas por hora y últimas ventas).
+- Probado en local: 29 casos de base (venta/compra/anulación/ajuste/transferencia por sucursal, stock insuficiente en una sucursal aunque otra tenga, compatibilidad con código viejo, Pro, otro negocio no ve ni toca) y el flujo completo en el navegador.
+- Pendiente / límites: Reportes y Caja no filtran por sucursal todavía (Reportes "stock valorizado" es el total); no se pueden borrar sucursales; si se vence el Pro, las sucursales existentes siguen funcionando pero no se pueden crear nuevas.
 
 ## Pendiente
 
@@ -105,9 +113,8 @@ Estas no están en ninguna consulta a la base ni en Vercel — son ideas de prod
 
 ### Sucursales / multi-usuario (a futuro)
 
-- Resumen por sucursal y cajas de cada sucursal (en curso, ver arriba).
+- Reportes y Caja filtrados por sucursal (En vivo y el stock ya son por sucursal).
 - Reportes por sucursal y por caja (por vendedor ya está).
-- Cambiar de sucursal desde el header del sidebar (dueños).
 - Cierres automáticos de caja por horario (los recordatorios ya están).
 - Sugerencia de compra automática (stock para X días, por proveedor/marca/producto).
 - Preguntar el objetivo del usuario en el onboarding.

@@ -19,6 +19,7 @@ import {
   createDirectMember,
   updateMemberCredentials,
 } from "@/app/(dashboard)/usuarios/actions";
+import { setMemberBranch } from "@/lib/actions/branches";
 
 interface MemberRow {
   id: string;
@@ -27,6 +28,7 @@ interface MemberRow {
   email: string | null;
   username: string | null;
   created_at: string;
+  branch_id?: string | null;
 }
 
 interface InvitationRow {
@@ -42,12 +44,15 @@ export function UsuariosClient({
   invitations,
   currentUserId,
   siteUrl,
+  branches,
 }: {
   members: MemberRow[];
   invitations: InvitationRow[];
   currentUserId: string;
   siteUrl: string;
+  branches: { id: string; name: string; is_main: boolean }[];
 }) {
+  const mainBranchId = branches.find((b) => b.is_main)?.id ?? branches[0]?.id ?? "";
   const router = useRouter();
   const { showSuccess } = useToast();
   const [showInvite, setShowInvite] = useState(false);
@@ -130,6 +135,14 @@ export function UsuariosClient({
     setBusyId(membershipId);
     await updateMemberRole(membershipId, role);
     setBusyId(null);
+  }
+
+  async function handleBranchChange(membershipId: string, branchId: string) {
+    setBusyId(membershipId);
+    const result = await setMemberBranch(membershipId, branchId);
+    setBusyId(null);
+    if (result.error) alert(result.error);
+    else router.refresh();
   }
 
   async function handleRemove(member: MemberRow) {
@@ -254,7 +267,22 @@ export function UsuariosClient({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {branches.length > 1 && !isOwner && (
+                      <Select
+                        value={member.branch_id ?? mainBranchId}
+                        onChange={(e) => handleBranchChange(member.id, e.target.value)}
+                        disabled={busyId === member.id}
+                        className="h-9 w-40"
+                        aria-label="Sucursal"
+                      >
+                        {branches.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
                     {isOwner ? (
                       <Badge tone="accent">{roleLabels.owner}</Badge>
                     ) : (

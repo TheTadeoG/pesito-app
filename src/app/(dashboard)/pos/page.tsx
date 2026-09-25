@@ -4,6 +4,7 @@ import { PosScreen } from "@/app/(dashboard)/pos/pos-screen";
 import { OpenCajaPrompt } from "@/app/(dashboard)/pos/open-caja-prompt";
 import { getRecentSaleRows } from "@/app/(dashboard)/pos/recent-sales";
 import { fetchAll } from "@/lib/supabase/fetch-all";
+import { withBranchStock } from "@/lib/branches";
 
 export default async function PosPage() {
   const { userId, organization } = await requireOrgContext();
@@ -11,7 +12,9 @@ export default async function PosPage() {
 
   const { data: openRegister } = await supabase
     .from("cash_registers")
-    .select("id")
+    // "*" y no "id, branch_id": si la migración 0043 todavía no está
+    // aplicada, pedir branch_id por nombre haría fallar la consulta.
+    .select("*")
     .eq("org_id", organization.id)
     .eq("user_id", userId)
     .eq("status", "abierta")
@@ -25,7 +28,7 @@ export default async function PosPage() {
   // filtran en el navegador, así que un producto o cliente que no viene
   // acá no se puede vender (antes se cortaba en 500 productos y 300
   // clientes por orden alfabético).
-  const [products, customers, recentSales, { data: customPaymentMethods }] = await Promise.all([
+  const [allProducts, customers, recentSales, { data: customPaymentMethods }] = await Promise.all([
     fetchAll((from, to) =>
       supabase
         .from("products")
@@ -48,6 +51,14 @@ export default async function PosPage() {
     getRecentSaleRows(supabase, openRegister.id),
     supabase.from("payment_methods").select("name").eq("org_id", organization.id).order("created_at"),
   ]);
+
+  // El stock que se muestra (y el que controla la venta) es el de la
+  // sucursal de la caja abierta.
+  const products = await withBranchStock(
+    supabase,
+    openRegister.branch_id ? { id: openRegister.branch_id, name: "", is_main: false } : null,
+    allProducts
+  );
 
   return (
     <PosScreen

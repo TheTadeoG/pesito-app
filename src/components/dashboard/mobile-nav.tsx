@@ -7,8 +7,9 @@ import { Menu, X } from "lucide-react";
 import { navSections, isNavItemActive } from "@/lib/nav";
 import { Wordmark } from "@/components/marketing/wordmark";
 import { cn } from "@/lib/utils";
+import { BranchSwitcher, type BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
 
-export function MobileNav({ orgName }: { orgName: string }) {
+export function MobileNav({ orgName, branch }: { orgName: string; branch?: BranchSwitcherProps | null }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,6 +50,12 @@ export function MobileNav({ orgName }: { orgName: string }) {
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {branch && branch.branches.length > 1 && (
+              <div className="border-b border-border px-4 py-3">
+                <BranchSwitcher {...branch} />
+              </div>
+            )}
 
             <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
               {navSections.map((section) => (

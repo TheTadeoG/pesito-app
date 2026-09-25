@@ -16,6 +16,7 @@ import { CashCloseReminder } from "@/components/dashboard/cash-close-reminder";
 import { getUpcomingCommercialDates } from "@/lib/commercial-dates";
 import { argDateString } from "@/lib/timezone";
 import { getSubscription } from "@/lib/subscription";
+import { getBranchContext } from "@/lib/branches";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -27,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Independientes entre sí (ninguna depende del resultado de la otra):
   // van en paralelo en vez de una atrás de la otra.
-  const [subscription, { data: openRegister }] = await Promise.all([
+  const [subscription, { data: openRegister }, branchContext] = await Promise.all([
     getSubscription(supabase, organization.id),
     supabase
       .from("cash_registers")
@@ -36,7 +37,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .eq("user_id", userId)
       .eq("status", "abierta")
       .maybeSingle(),
+    getBranchContext(),
   ]);
+  const branch = branchContext.current
+    ? {
+        branches: branchContext.branches.map((b) => ({ id: b.id, name: b.name })),
+        currentId: branchContext.current.id,
+        canSwitch: branchContext.canSwitch,
+      }
+    : null;
 
   let cashRegister = null;
   if (openRegister) {
@@ -84,12 +93,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           roleLabel={roleLabel}
           role={membership.role}
           cashRegister={cashRegister}
+          branch={branch}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar
             orgName={organization.name}
             userLabel={membership.username ?? email ?? ""}
             greetingName={greetingName}
+            branch={branch}
           />
           <CommercialDatesBanner dates={commercialDates} />
           {openRegister && (

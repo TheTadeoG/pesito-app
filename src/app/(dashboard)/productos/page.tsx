@@ -1,6 +1,9 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/supabase/fetch-all";
+import { getBranchContext, withBranchStock } from "@/lib/branches";
+import { isOrgAdmin } from "@/lib/roles";
+import { TransferButton } from "@/app/(dashboard)/productos/transfer-dialog";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
 import { MarcasTab } from "@/app/(dashboard)/productos/marcas-tab";
@@ -17,12 +20,13 @@ export default async function ProductosPage({
 }) {
   const { tab: tabParam, producto, marca } = await searchParams;
   const tab = parseTab(tabParam);
-  const { organization } = await requireOrgContext();
+  const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
+  const { current: branch, branches } = await getBranchContext();
 
   // Los productos se usan en las tres pestañas (tabla, stock bajo y conteo
   // por marca), así que se traen siempre; el resto depende de la pestaña.
-  const [products, { data: brands }, { data: suppliers }, { data: movements }] =
+  const [allProducts, { data: brands }, { data: suppliers }, { data: movements }] =
     await Promise.all([
       fetchAll((from, to) =>
         supabase
@@ -44,11 +48,16 @@ export default async function ProductosPage({
             .from("stock_movements")
             .select("id, product_id, type, quantity, reference, created_at")
             .eq("org_id", organization.id)
+            // Con sucursales, los movimientos de la sucursal actual.
+            .match(branch ? { branch_id: branch.id } : {})
             .order("created_at", { ascending: false })
             .limit(500)
         : Promise.resolve({ data: [] }),
     ]);
 
+  // Stock, stock bajo y valorización: de la sucursal en la que se está
+  // trabajando.
+  const products = await withBranchStock(supabase, branch, allProducts);
   const normalized = products.map((p) => ({
     ...p,
     price: Number(p.price),
@@ -112,6 +121,23 @@ export default async function ProductosPage({
 
   return (
     <div className="space-y-4">
+      {branch && branches.length > 1 && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Stock de <span className="font-medium text-foreground">{branch.name}</span>. Para ver
+            otra sucursal, cambiala desde el menú.
+          </p>
+          {isOrgAdmin(membership.role) && (
+            <TransferButton
+              products={activeProducts
+                .filter((p) => p.stock > 0)
+                .map(({ id, name, barcode, sku, stock, unit }) => ({ id, name, barcode, sku, stock, unit }))}
+              branches={branches}
+              currentBranchId={branch.id}
+            />
+          )}
+        </div>
+      )}
       <CatalogTabs active={tab} lowStockCount={lowStockCount} />
       {content}
     </div>

@@ -47,6 +47,7 @@ export interface Database {
           email: string | null;
           username: string | null;
           created_at: string;
+          branch_id: string | null;
         };
         Insert: {
           id?: string;
@@ -56,6 +57,7 @@ export interface Database {
           email?: string | null;
           username?: string | null;
           created_at?: string;
+          branch_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["memberships"]["Insert"]>;
         Relationships: [];
@@ -242,6 +244,7 @@ export interface Database {
           opened_at: string;
           closed_at: string | null;
           notes: string | null;
+          branch_id: string | null;
         };
         Insert: {
           id?: string;
@@ -254,6 +257,7 @@ export interface Database {
           opened_at?: string;
           closed_at?: string | null;
           notes?: string | null;
+          branch_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["cash_registers"]["Insert"]>;
         Relationships: [];
@@ -297,6 +301,7 @@ export interface Database {
           invoice_type: "consumidor_final" | "factura_a" | "factura_b" | "factura_c";
           status: "completada" | "anulada";
           created_at: string;
+          branch_id: string | null;
         };
         Insert: {
           id?: string;
@@ -312,6 +317,7 @@ export interface Database {
           invoice_type?: "consumidor_final" | "factura_a" | "factura_b" | "factura_c";
           status?: "completada" | "anulada";
           created_at?: string;
+          branch_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["sales"]["Insert"]>;
         Relationships: [];
@@ -365,23 +371,59 @@ export interface Database {
           id: string;
           org_id: string;
           product_id: string;
-          type: "venta" | "compra" | "ajuste" | "apertura";
+          type: "venta" | "compra" | "ajuste" | "apertura" | "transferencia";
           quantity: number;
           reference: string | null;
           user_id: string | null;
           created_at: string;
+          branch_id: string | null;
         };
         Insert: {
           id?: string;
           org_id: string;
           product_id: string;
-          type: "venta" | "compra" | "ajuste" | "apertura";
+          type: "venta" | "compra" | "ajuste" | "apertura" | "transferencia";
           quantity: number;
           reference?: string | null;
           user_id?: string | null;
           created_at?: string;
+          branch_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["stock_movements"]["Insert"]>;
+        Relationships: [];
+      };
+      branches: {
+        Row: {
+          id: string;
+          org_id: string;
+          name: string;
+          is_main: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          name: string;
+          is_main?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["branches"]["Insert"]>;
+        Relationships: [];
+      };
+      branch_stock: {
+        Row: {
+          branch_id: string;
+          product_id: string;
+          org_id: string;
+          stock: number;
+        };
+        Insert: {
+          branch_id: string;
+          product_id: string;
+          org_id: string;
+          stock?: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["branch_stock"]["Insert"]>;
         Relationships: [];
       };
       brands: {
@@ -438,6 +480,7 @@ export interface Database {
           cash_register_id: string | null;
           payment_method: "efectivo" | "tarjeta" | "transferencia" | "qr" | null;
           created_at: string;
+          branch_id: string | null;
         };
         Insert: {
           id?: string;
@@ -452,6 +495,7 @@ export interface Database {
           cash_register_id?: string | null;
           payment_method?: "efectivo" | "tarjeta" | "transferencia" | "qr" | null;
           created_at?: string;
+          branch_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["purchases"]["Insert"]>;
         Relationships: [];
@@ -735,8 +779,25 @@ export interface Database {
           p_notes?: string | null;
           p_cash_register_id?: string | null;
           p_payments?: Json | null;
+          p_branch_id?: string | null;
         };
         Returns: string;
+      };
+      create_branch: {
+        Args: { p_org_id: string; p_name: string };
+        Returns: string;
+      };
+      set_member_branch: {
+        Args: { p_membership_id: string; p_branch_id: string | null };
+        Returns: undefined;
+      };
+      adjust_branch_stock: {
+        Args: { p_branch_id: string; p_product_id: string; p_delta: number; p_reason?: string | null };
+        Returns: number;
+      };
+      transfer_stock: {
+        Args: { p_from_branch_id: string; p_to_branch_id: string; p_items: Json; p_note?: string | null };
+        Returns: undefined;
       };
       void_purchase: {
         Args: { p_purchase_id: string };

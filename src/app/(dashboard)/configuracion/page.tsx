@@ -15,6 +15,8 @@ import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscriptio
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
 import { ConfiguracionTabs, type ConfiguracionTab } from "@/app/(dashboard)/configuracion/configuracion-tabs";
 import { getSubscription, getMonthlySalesCount, getPlanHistory } from "@/lib/subscription";
+import { getBranchContext } from "@/lib/branches";
+import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 
 function parseTab(value: string | undefined): ConfiguracionTab {
   return value === "plan" ? "plan" : "negocio";
@@ -53,7 +55,7 @@ export default async function ConfiguracionPage({
     );
   }
 
-  const [{ data: memberships }, { data: paymentMethods }] = await Promise.all([
+  const [{ data: memberships }, { data: paymentMethods }, branchContext, subscription] = await Promise.all([
     supabase
       .from("memberships")
       .select("id, user_id, role, email, username, created_at")
@@ -64,6 +66,8 @@ export default async function ConfiguracionPage({
       .select("id, name")
       .eq("org_id", organization.id)
       .order("created_at"),
+    getBranchContext(),
+    getSubscription(supabase, organization.id),
   ]);
 
   return (
@@ -97,6 +101,21 @@ export default async function ConfiguracionPage({
             <CardContent>
               <CashCloseTimeForm
                 initialTime={normalizeCloseTime(organization.cash_close_time)}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {isOrgAdmin(membership.role) && branchContext.current && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Sucursales</CardTitle>
+              <CardDescription>Tus locales, cada uno con su stock y sus cajas.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BranchesManager
+                branches={branchContext.branches}
+                hasProAccess={subscription.hasProAccess}
               />
             </CardContent>
           </Card>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { getBranchContext } from "@/lib/branches";
 import { formatCurrency } from "@/lib/utils";
 
 export interface ProductFormInput {
@@ -82,13 +83,29 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     return {};
   }
 
+  // Con sucursales, el stock inicial se carga en la sucursal en la que se
+  // está trabajando (un insert con stock iría a la principal).
+  const { current: branch } = await getBranchContext();
   const { data, error } = await supabase
     .from("products")
-    .insert({ ...payload, stock: input.stock })
+    .insert({ ...payload, stock: branch ? 0 : input.stock })
     .select("id, name, barcode, sku, cost, price, stock, min_stock, unit, image_url")
     .single();
 
   if (error || !data) return { error: "No pudimos crear el producto." };
+
+  if (branch && input.stock > 0) {
+    const { error: stockError } = await supabase.rpc("adjust_branch_stock", {
+      p_branch_id: branch.id,
+      p_product_id: data.id,
+      p_delta: input.stock,
+      p_reason: "Stock inicial",
+    });
+    if (stockError) {
+      return { error: "Creamos el producto, pero no pudimos cargar el stock inicial." };
+    }
+    data.stock = input.stock;
+  }
 
   revalidatePath("/productos");
   revalidatePath("/pos");
@@ -189,6 +206,27 @@ export async function adjustStock(
 
   const { organization, userId } = await requireOrgContext();
   const supabase = await createClient();
+
+  // Con sucursales: el ajuste es sobre el stock de la sucursal actual.
+  const { current: branch } = await getBranchContext();
+  if (branch) {
+    const { error } = await supabase.rpc("adjust_branch_stock", {
+      p_branch_id: branch.id,
+      p_product_id: productId,
+      p_delta: delta,
+      p_reason: reason || null,
+    });
+    if (error) {
+      return {
+        error: /negativo/.test(error.message)
+          ? "El ajuste dejaría el stock en negativo."
+          : "No pudimos actualizar el stock.",
+      };
+    }
+    revalidatePath("/productos");
+    revalidatePath("/pos");
+    return {};
+  }
 
   const { data: product, error: fetchError } = await supabase
     .from("products")

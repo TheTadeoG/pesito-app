@@ -1,6 +1,7 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/supabase/fetch-all";
+import { getBranchContext, withBranchStock } from "@/lib/branches";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComprasClient } from "@/app/(dashboard)/compras/compras-client";
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
@@ -17,7 +18,7 @@ export default async function ComprasPage({
   const supabase = await createClient();
 
   const [
-    products,
+    allProducts,
     { data: suppliers },
     { data: purchasesRaw },
     { data: openRegister },
@@ -53,6 +54,11 @@ export default async function ComprasPage({
       .maybeSingle(),
     supabase.from("payment_methods").select("name").eq("org_id", organization.id).order("created_at"),
   ]);
+
+  // Stock de la sucursal en la que está trabajando (donde va a entrar la
+  // mercadería).
+  const { current: branch } = await getBranchContext();
+  const products = await withBranchStock(supabase, branch, allProducts);
 
   const purchases = (purchasesRaw ?? []).map((p) => ({
     ...p,

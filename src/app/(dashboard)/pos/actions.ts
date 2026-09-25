@@ -92,10 +92,27 @@ export async function checkoutSale(input: CheckoutInput): Promise<CheckoutResult
   const productIds = Array.from(
     new Set(input.items.map((i) => i.product_id).filter((id): id is string => Boolean(id)))
   );
+  // Stock que queda en la sucursal de la caja (o el total, si la base
+  // todavía no tiene sucursales).
+  const { data: register } = await supabase
+    .from("cash_registers")
+    .select("*")
+    .eq("id", input.cashRegisterId)
+    .maybeSingle();
+  const branchId = register?.branch_id ?? null;
   const [{ data: stockRows }, { data: customerRow }, recentSales] = await Promise.all([
-    productIds.length > 0
-      ? supabase.from("products").select("id, stock").in("id", productIds)
-      : Promise.resolve({ data: [] }),
+    productIds.length === 0
+      ? Promise.resolve({ data: [] as { id: string; stock: number }[] })
+      : branchId
+        ? supabase
+            .from("branch_stock")
+            .select("product_id, stock")
+            .eq("branch_id", branchId)
+            .in("product_id", productIds)
+            .then(({ data }) => ({
+              data: (data ?? []).map((r) => ({ id: r.product_id, stock: r.stock })),
+            }))
+        : supabase.from("products").select("id, stock").in("id", productIds),
     input.customerId
       ? supabase.from("customers").select("id, balance").eq("id", input.customerId).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -104,7 +121,11 @@ export async function checkoutSale(input: CheckoutInput): Promise<CheckoutResult
 
   return {
     saleId: data ?? undefined,
-    stockByProduct: Object.fromEntries((stockRows ?? []).map((p) => [p.id, Number(p.stock)])),
+    // Un producto sin fila en la sucursal quedó en 0.
+    stockByProduct: {
+      ...Object.fromEntries(productIds.map((id) => [id, 0])),
+      ...Object.fromEntries((stockRows ?? []).map((p) => [p.id, Number(p.stock)])),
+    },
     customerBalance: customerRow
       ? { id: customerRow.id, balance: Number(customerRow.balance) }
       : undefined,

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { getBranchContext } from "@/lib/branches";
 import { CASH_UNAVAILABLE_ERROR, tryComputeCashOnHand } from "@/lib/caja";
 import type { Json } from "@/lib/database.types";
 
@@ -70,6 +71,10 @@ export async function registerPurchase(
     }
   }
 
+  // La mercadería entra en la sucursal de la caja con la que se paga o, si
+  // no hay caja de por medio, en la sucursal en la que está trabajando.
+  // p_branch_id sólo existe con la migración 0043.
+  const { current: branch } = await getBranchContext();
   const { data, error } = await supabase.rpc("register_purchase", {
     p_org_id: input.orgId,
     p_supplier_id: input.supplierId,
@@ -77,6 +82,7 @@ export async function registerPurchase(
     p_notes: input.notes || null,
     p_cash_register_id: register?.id ?? null,
     p_payments: input.payments as unknown as Json,
+    ...(branch ? { p_branch_id: branch.id } : {}),
   });
 
   if (error) {

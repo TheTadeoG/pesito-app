@@ -92,11 +92,12 @@ const periodOptions: { value: MovementPeriod; label: string }[] = [
   { value: "month", label: "Este mes" },
 ];
 
-const movementTypes = ["venta", "compra", "ajuste", "apertura"] as const;
+const movementTypes = ["venta", "compra", "ajuste", "transferencia", "apertura"] as const;
 const movementTypeLabels: Record<string, string> = {
   venta: "Venta",
   compra: "Compra",
   ajuste: "Ajuste",
+  transferencia: "Transferencia",
   apertura: "Apertura",
 };
 

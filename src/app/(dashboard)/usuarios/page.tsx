@@ -5,6 +5,7 @@ import { isOrgAdmin } from "@/lib/roles";
 import { Card, CardContent } from "@/components/ui/card";
 import { UsuariosClient } from "@/app/(dashboard)/usuarios/usuarios-client";
 import { siteUrl } from "@/lib/utils";
+import { getBranchContext } from "@/lib/branches";
 
 export default async function UsuariosPage() {
   const { organization, membership, userId } = await requireOrgContext();
@@ -27,10 +28,12 @@ export default async function UsuariosPage() {
 
   const supabase = await createClient();
 
-  const [{ data: members }, { data: invitations }] = await Promise.all([
+  const [{ data: members }, { data: invitations }, branchContext] = await Promise.all([
     supabase
       .from("memberships")
-      .select("id, user_id, role, email, username, created_at")
+      // "*": con la migración 0043 trae también branch_id; sin ella, pedirlo
+      // por nombre haría fallar la consulta.
+      .select("*")
       .eq("org_id", organization.id)
       .order("created_at", { ascending: true }),
     supabase
@@ -40,6 +43,7 @@ export default async function UsuariosPage() {
       .is("used_at", null)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false }),
+    getBranchContext(),
   ]);
 
   return (
@@ -48,6 +52,7 @@ export default async function UsuariosPage() {
       invitations={invitations ?? []}
       currentUserId={userId}
       siteUrl={siteUrl}
+      branches={branchContext.branches}
     />
   );
 }

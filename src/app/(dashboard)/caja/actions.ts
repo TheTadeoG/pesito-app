@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { requireOrgContext } from "@/lib/org";
+import { getBranchContext } from "@/lib/branches";
 import {
   CASH_UNAVAILABLE_ERROR,
   tryComputeCashOnHand,
@@ -187,11 +188,16 @@ export async function openCaja(openingAmount: number): Promise<ActionState> {
     return { error: "Ya tenés una caja abierta." };
   }
 
+  // La caja se abre en la sucursal en la que está trabajando (la asignada
+  // si es vendedor, la elegida en el menú si es dueño/administrador). Sin
+  // sucursales en la base (0043 sin aplicar) no se manda el campo.
+  const { current: branch } = await getBranchContext();
   const { error } = await supabase.from("cash_registers").insert({
     org_id: organization.id,
     user_id: userId,
     opening_amount: openingAmount,
     status: "abierta",
+    ...(branch ? { branch_id: branch.id } : {}),
   });
 
   if (error) return { error: "No pudimos abrir la caja." };

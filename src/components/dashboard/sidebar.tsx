@@ -7,6 +7,7 @@ import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/marketing/wordmark";
 import { VenderCard } from "@/components/dashboard/vender-card";
+import { BranchSwitcher, type BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
 
 interface SidebarProps {
   orgName: string;
@@ -18,9 +19,10 @@ interface SidebarProps {
     openingAmount: number;
     cashTotal: number | null;
   } | null;
+  branch: BranchSwitcherProps | null;
 }
 
-export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: SidebarProps) {
+export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister, branch }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -37,6 +39,7 @@ export function Sidebar({ orgName, memberName, roleLabel, role, cashRegister }: 
             <p className="truncate text-xs text-muted-foreground">{memberName}</p>
           )}
           <p className="text-xs text-muted-foreground">{roleLabel}</p>
+          {branch && <BranchSwitcher {...branch} />}
         </div>
       </div>
 
