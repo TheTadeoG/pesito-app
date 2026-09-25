@@ -36,7 +36,7 @@ export function GET() {
 
 > Pesito es un sistema POS (punto de venta) en la nube para negocios de Argentina (kioscos, almacenes, verdulerías, locales de ropa y más): ventas con lector de código de barras, stock, caja diaria, clientes con fiado, compras a proveedores y reportes. Funciona desde el navegador y el celular, sin instalar nada. Se empieza gratis y se elige un plan pago cuando el negocio crece.
 
-Funciones destacadas: punto de venta con lector de códigos, stock, compras, caja diaria y clientes con fiado (en todos los planes, también el gratis); cuenta corriente con proveedores y ventas y diferencias de caja por empleado (desde el Plan Esencial); aumentos masivos de precios o costos por proveedor o por marca con opción de deshacer, reportes avanzados de ganancias, pantalla "En vivo" con las ventas del momento por sucursal y vendedor y hasta 2 sucursales con stock propio (Plan Pro). Todavía no emite factura electrónica de ARCA/AFIP.
+Funciones destacadas: punto de venta con lector de códigos, stock que se actualiza con cada venta y compra, compras, caja diaria y clientes con fiado (en todos los planes, también el gratis); control de stock con mínimos, aviso de faltantes y reposición, cuenta corriente con proveedores y ventas y diferencias de caja por empleado (desde el Plan Esencial); aumentos masivos de precios o costos por proveedor o por marca con opción de deshacer, reportes avanzados de ganancias, pantalla "En vivo" con las ventas del momento por sucursal y vendedor y hasta 2 sucursales con stock propio (Plan Pro). Todavía no emite factura electrónica de ARCA/AFIP.
 
 ## Planes
 

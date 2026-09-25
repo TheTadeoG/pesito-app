@@ -106,7 +106,7 @@ Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; 
 - Precios en la landing: 4 tarjetas + recorrido en 3 pasos arriba (14 días de Pro → Plan Gratis → plan pago), sin color a propósito para no quitarle atención al Pro. Botón a `/comparar-planes` (también en Recursos y el pie): tabla por tema desde `planComparison` en `plan-features.ts` (mantenerla alineada con las features de cada plan) + preguntas de planes con FAQPage.
 - Arreglo: el tope de 150 ventas/mes ya no aplica al Plan Esencial (`hasMonthlySalesLimit` en `lib/subscription.ts`).
 - Preguntas: `src/lib/faq-data.ts` (23 en 6 temas; la landing muestra 8). Blog: 10 artículos, autor "Tadeo, de Pesito", `seoTitle` para títulos cortos en Google.
-- Distribución de planes (decidida por el usuario): Gratis = 150 ventas/mes, caja y fiado, stock y compras, reportes básicos, 1 usuario/1 caja. Esencial = + ventas ilimitadas, cuenta corriente con proveedores, ventas y diferencias de caja por empleado, 2 usuarios/2 cajas. Pro = + aumentos masivos (precios y costos, con deshacer), reportes avanzados de ganancias (qué deja más, a pérdida, comparación de períodos), En vivo, historial completo de caja, hasta 2 sucursales, 6 usuarios/6 cajas, soporte prioritario. IA = + soporte 24/7 y funciones IA.
+- Distribución de planes (decidida por el usuario): Gratis = 150 ventas/mes, caja y fiado, stock y compras, reportes básicos, 1 usuario/1 caja. Esencial = + ventas ilimitadas, gestión de stock (pestaña Stock: mínimos, faltantes, reposición, movimientos; `stockManagement`), cuentas corrientes de clientes y proveedores, ventas y diferencias de caja por empleado, 2 usuarios/2 cajas. Pro = + aumentos masivos (precios y costos, con deshacer), reportes avanzados de ganancias (qué deja más, a pérdida, comparación de períodos), En vivo, historial completo de caja, hasta 2 sucursales, 6 usuarios/6 cajas, soporte prioritario. IA = + soporte 24/7 y funciones IA.
 - Bloqueo por plan en la app: `src/lib/plan-access.ts` (`featureMinPlan`, `planLimits`, `canUse`) + `src/lib/plan-limits.ts` (usuarios con invitaciones pendientes, cajas abiertas a la vez, sucursales). Aviso con `ProLockedCard`; el menú muestra "Pro" en En vivo. La prueba Pro cuenta como Pro.
 - "Soporte prioritario 24/7" del Plan IA es una promesa comercial.
 
@@ -126,7 +126,7 @@ Nota: el buscador de skills.sh está bloqueado en este entorno (`npx skills find
 
 Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: controlarla con `canUse` (ya tiene su plan en `featureMinPlan`), sacarle el "Pronto" en `plan-features.ts` (cards y `planComparison`), `faq-data.ts`, blog y páginas por rubro.
 
-- [ ] Combos y kits — Plan Esencial (`productBundles`).
+- [ ] Combos y kits — Plan Esencial (`productBundles`). En la card del Esencial: "Productos con variantes (talles y colores), combos y kits".
 - [ ] Talles y colores como variantes de un producto — Plan Esencial (`productVariants`). Mencionado también en /como-funciona, /comparacion y /pesito-para/indumentaria.
 - [ ] Ofertas y promociones — Plan Pro (`promotions`).
 - [ ] Ganancias separadas por sucursal (reportes) — Plan Pro.

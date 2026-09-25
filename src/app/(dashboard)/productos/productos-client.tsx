@@ -136,6 +136,7 @@ export function ProductosClient({
   suppliers,
   initialBrand,
   bulkLocked,
+  stockAlertsLocked,
 }: {
   products: Product[];
   brands: Pick<Brand, "id" | "name">[];
@@ -144,6 +145,8 @@ export function ProductosClient({
   initialBrand: string | null;
   // El plan no incluye aumentos masivos: los botones abren el aviso del plan.
   bulkLocked: boolean;
+  // Sin gestión de stock (Plan Gratis): no se avisa ni se filtra por stock bajo.
+  stockAlertsLocked: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -231,8 +234,8 @@ export function ProductosClient({
   }, [localBrands, products, brandFilter]);
 
   const lowStockProducts = useMemo(
-    () => products.filter(isLowStock),
-    [products],
+    () => (stockAlertsLocked ? [] : products.filter(isLowStock)),
+    [products, stockAlertsLocked],
   );
   const lowStockCount = lowStockProducts.length;
   const lossProducts = useMemo(
@@ -530,6 +533,7 @@ export function ProductosClient({
                 </Select>
               </div>
 
+              {!stockAlertsLocked && (
               <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
                 <span className="text-foreground">
                   Stock bajo
@@ -542,6 +546,7 @@ export function ProductosClient({
                   className="h-4 w-4 accent-primary"
                 />
               </label>
+              )}
               <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
                 <span className="text-foreground">Sin código de barras</span>
                 <input

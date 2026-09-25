@@ -5,6 +5,7 @@ import { planLabels, planOrder, type Plan, type SubscriptionInfo } from "@/lib/s
 // lib/plan-features.ts, que la describen en la web pública).
 
 export type PlanFeature =
+  | "stockManagement"
   | "supplierAccounts"
   | "bulkPriceChanges"
   | "profitReports"
@@ -26,6 +27,7 @@ export type PlanFeature =
 
 /** Plan mínimo que habilita cada función (los planes superiores la heredan). */
 export const featureMinPlan: Record<PlanFeature, Plan> = {
+  stockManagement: "esencial",
   supplierAccounts: "esencial",
   bulkPriceChanges: "pro",
   profitReports: "pro",
@@ -46,6 +48,7 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
 
 /** Nombre de la función para los avisos ("… está en el Plan Pro"). */
 export const featureLabels: Record<PlanFeature, string> = {
+  stockManagement: "La gestión de stock y reposición",
   supplierAccounts: "La cuenta corriente con proveedores",
   bulkPriceChanges: "Los aumentos masivos de precios y costos",
   profitReports: "Los reportes avanzados de ganancias",

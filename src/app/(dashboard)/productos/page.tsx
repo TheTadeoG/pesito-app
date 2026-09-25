@@ -4,7 +4,8 @@ import { fetchAll } from "@/lib/supabase/fetch-all";
 import { getBranchContext, withBranchStock } from "@/lib/branches";
 import { isOrgAdmin } from "@/lib/roles";
 import { getSubscription } from "@/lib/subscription";
-import { canUse } from "@/lib/plan-access";
+import { canUse, featureMinPlan } from "@/lib/plan-access";
+import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { TransferButton } from "@/app/(dashboard)/productos/transfer-dialog";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
@@ -25,6 +26,9 @@ export default async function ProductosPage({
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const { current: branch, branches } = await getBranchContext();
+  const subscription = await getSubscription(supabase, organization.id);
+  // Pestaña Stock (mínimos, faltantes, reposición y movimientos): Plan Esencial.
+  const stockLocked = !canUse(subscription, "stockManagement");
 
   // Los productos se usan en las tres pestañas (tabla, stock bajo y conteo
   // por marca), así que se traen siempre; el resto depende de la pestaña.
@@ -45,7 +49,7 @@ export default async function ProductosPage({
       tab === "productos" || tab === "stock"
         ? supabase.from("suppliers").select("id, name").eq("org_id", organization.id).order("name")
         : Promise.resolve({ data: [] }),
-      tab === "stock"
+      tab === "stock" && !stockLocked
         ? supabase
             .from("stock_movements")
             .select("id, product_id, type, quantity, reference, created_at")
@@ -69,10 +73,20 @@ export default async function ProductosPage({
   }));
 
   const activeProducts = normalized.filter((p) => p.active);
-  const lowStockCount = activeProducts.filter((p) => p.stock <= p.min_stock).length;
+  const lowStockCount = stockLocked
+    ? 0
+    : activeProducts.filter((p) => p.stock <= p.min_stock).length;
 
   let content: React.ReactNode;
-  if (tab === "stock") {
+  if (tab === "stock" && stockLocked) {
+    content = (
+      <ProLockedCard
+        title="Gestión de stock y reposición"
+        plan={featureMinPlan.stockManagement}
+        description="Stock mínimo por producto, aviso de lo que se está acabando, lista para reponer e historial de cada movimiento."
+      />
+    );
+  } else if (tab === "stock") {
     // Sin filtrar por activo: un movimiento puede referenciar un producto
     // ya desactivado, y lo necesitamos igual para mostrar/filtrar por SKU.
     const productById = new Map(normalized.map((p) => [p.id, p]));
@@ -117,7 +131,8 @@ export default async function ProductosPage({
         brands={brands ?? []}
         suppliers={suppliers ?? []}
         initialBrand={marca ?? null}
-        bulkLocked={!canUse(await getSubscription(supabase, organization.id), "bulkPriceChanges")}
+        bulkLocked={!canUse(subscription, "bulkPriceChanges")}
+        stockAlertsLocked={stockLocked}
       />
     );
   }

@@ -284,13 +284,12 @@ export const blogPosts: BlogPost[] = [
       },
       {
         heading: "Cómo lo resolvés con Pesito",
-        paragraphs: ["Todo esto está en el Plan Gratis:"],
+        paragraphs: ["En todos los planes, cada venta descuenta el stock y cada compra lo suma, sin pasos extra. Desde el Plan Esencial sumás el control de stock:"],
         list: [
-          "Cada venta descuenta el stock y cada compra lo suma, sin pasos extra.",
           "Le ponés un stock mínimo a cada producto y Pesito te muestra los que están por acabarse, con un botón para cargar la compra.",
           "Los ajustes a mano (rotura, vencido, conteo) se registran con el motivo, y el historial de movimientos muestra cada entrada y salida.",
           "Ves el stock valorizado: cuánta plata tenés parada en mercadería, al costo y al precio de venta.",
-          "Productos por unidad o por peso, con la cantidad exacta en kilos.",
+          "Productos por unidad o por peso, con la cantidad exacta en kilos (en todos los planes).",
           "Si tenés varias sucursales (Plan Pro), cada una lleva su propio stock y podés pasar mercadería de una a otra.",
         ],
       },

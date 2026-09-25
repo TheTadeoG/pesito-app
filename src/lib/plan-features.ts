@@ -55,11 +55,12 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: [
       "Todas las funciones del Plan Gratis +",
       "Ventas ilimitadas",
-      "Cuenta corriente con tus proveedores: cuánto les debés y cada pago",
+      "Control de stock: mínimos, aviso de faltantes y lista para reponer",
+      "Cuentas corrientes de clientes y proveedores",
       "Ventas y diferencias de caja de cada empleado",
       "Hasta 2 usuarios y 2 cajas",
     ],
-    soon: ["Combos, kits y talles"],
+    soon: ["Productos con variantes (talles y colores), combos y kits"],
   },
   pro: {
     plan: "pro",
@@ -179,7 +180,9 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
   {
     title: "Stock, precios y compras",
     rows: [
-      { label: "Stock con aviso de faltantes", values: everyPlan },
+      { label: "Stock que se actualiza con cada venta y compra", values: everyPlan },
+      { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromEsencial },
+      { label: "Historial de movimientos de stock", values: fromEsencial },
       { label: "Compras a proveedores", values: everyPlan },
       { label: "Historial de precios de cada producto", values: everyPlan },
       { label: "Cuenta corriente con proveedores", values: fromEsencial },

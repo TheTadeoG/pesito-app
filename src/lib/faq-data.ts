@@ -31,7 +31,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Qué diferencia hay entre los planes?",
-        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo, hasta 2 sucursales con su propio stock y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar combos, kits y talles; el Pro, balanzas conectadas, un catálogo online y ofertas y promociones; y el IA, sugerencia de precios y análisis de competidores y del mercado. Pagando anual tenés un 20% de descuento.`,
+        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo, hasta 2 sucursales con su propio stock y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar productos con variantes (talles y colores), combos y kits; el Pro, balanzas conectadas, un catálogo online y ofertas y promociones; y el IA, sugerencia de precios y análisis de competidores y del mercado. Pagando anual tenés un 20% de descuento.`,
       },
       {
         question: "¿Necesito instalar algo?",
@@ -86,7 +86,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Cómo controlo el stock?",
         answer:
-          "Cada venta descuenta el stock sola y cada compra lo suma. Le ponés a cada producto un stock mínimo y Pesito te avisa cuáles están por acabarse. Los ajustes a mano (roturas, vencidos, conteos) quedan registrados con el motivo en el historial de movimientos.",
+          "En todos los planes, cada venta descuenta el stock sola y cada compra lo suma. Desde el Plan Esencial le ponés a cada producto un stock mínimo y Pesito te avisa cuáles están por acabarse, con la lista para reponer; y los ajustes a mano (roturas, vencidos, conteos) quedan registrados con el motivo en el historial de movimientos.",
       },
       {
         question: "¿Cómo actualizo los precios cuando hay aumentos?",
