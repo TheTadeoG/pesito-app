@@ -472,7 +472,7 @@ export function UsuariosClient({
               <p className="mt-1.5 text-xs text-muted-foreground">
                 Sin espacios ni acentos, 3 a 20 caracteres. Le vamos a agregar un código al final
                 (ej. {directUsername.trim() || "juan"}#4821) para que no choque con el mismo
-                nombre en otro kiosco. Con esto entra en vez de un email.
+                nombre en otro negocio. Con esto entra en vez de un email.
               </p>
             </div>
 

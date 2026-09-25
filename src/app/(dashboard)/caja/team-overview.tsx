@@ -142,6 +142,7 @@ export function DeudasFiadoOverview({
               <Link
                 key={debtor.id}
                 href={`/clientes/${debtor.id}`}
+                prefetch={false}
                 className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm hover:bg-muted"
               >
                 <span className="truncate font-medium text-foreground">{debtor.name}</span>

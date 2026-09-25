@@ -28,14 +28,17 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 - Límites: el disco de 8 GB se llena primero (~95 clientes con un año de historial; cada GB extra cuesta US$0,125). Los 10 M de edge requests de Vercel alcanzan para ~870 clientes. La transferencia de Supabase, para ~1.600. El servidor Micro no está medido con carga real: estimamos que hay que agrandarlo entre 300 y 500 clientes.
 - Total estimado: 100 clientes ~US$45/mes; 300 clientes ~US$47-52 (con servidor Small); 1.000 clientes ~US$110 (con servidor Medium). Cada cliente extra cuesta entre US$0,05 y US$0,10 por mes.
 
+## Hecho: tanda rápida
+
+- Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).
+- Reportes: los ítems sin producto ("Monto libre" o productos borrados) ya no entran en "más vendidos", "más ganancia" ni "vendidos a pérdida". Siguen contando en ingresos y ganancia estimada.
+- Usuarios: el alta dice "otro negocio" en vez de "otro kiosco".
+
 ## Pendiente (por prioridad)
 
 1. **Borrar el cálculo viejo de Caja** (`legacy*` en `src/lib/caja.ts`) cuando se confirme en los logs de Vercel que no aparece "cash_register_summaries falló".
-2. **Precarga de listas**: /clientes precarga el detalle de cada cliente visible y /configuracion se precarga muchas veces. Poner `prefetch={false}` en esos links.
-3. **Productos**: renderiza la tabla entera (~2 s con 1.600 artículos). Paginar o virtualizar.
-4. **Reportes**: "Monto libre" aparece primero en "más vendidos" y "más ganancia" (se agrupa todo junto y no tiene costo). Excluirlo de esos rankings.
-5. **Usuarios**: el texto del alta dice "otro kiosco" aunque el rubro sea otro.
-6. **Contra conocida del PR #2**: después de vender, Caja/Reportes/Productos pueden mostrar datos de hasta 30 s atrás si se vuelve a ellos enseguida (`staleTimes` en `next.config.ts`).
+2. **Productos**: renderiza la tabla entera (~2 s con 1.600 artículos). Paginar o virtualizar.
+3. **Contra conocida del PR #2**: después de vender, Caja/Reportes/Productos pueden mostrar datos de hasta 30 s atrás si se vuelve a ellos enseguida (`staleTimes` en `next.config.ts`).
 
 ## Cómo reproducir la simulación
 

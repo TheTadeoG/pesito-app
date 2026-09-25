@@ -15,6 +15,7 @@ export function ConfiguracionTabs({ active }: { active: ConfiguracionTab }) {
         <Link
           key={tab.value}
           href={tab.href}
+          prefetch={false}
           aria-current={active === tab.value ? "page" : undefined}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors",
