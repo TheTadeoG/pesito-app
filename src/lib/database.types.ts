@@ -667,6 +667,19 @@ export interface Database {
         };
         Returns: string;
       };
+      cash_register_summaries: {
+        Args: { p_register_ids: string[] };
+        Returns: {
+          cash_register_id: string;
+          sales_cash: number;
+          debt_payments: number;
+          ingresos: number;
+          retiros: number;
+          supplier_payments: number;
+          cash_purchases: number;
+          payment_breakdown: Json;
+        }[];
+      };
       void_sale: {
         Args: { p_sale_id: string };
         Returns: undefined;

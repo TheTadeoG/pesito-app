@@ -11,6 +11,13 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 - POS: una venta pasó de 42 consultas / ~710 KB a 6 consultas / ~1,5 KB. La sesión se valida con `getClaims`.
 - Errores de hidratación #418 arreglados: formato de fechas, cronómetro de caja y `<html>`.
 
+## Hecho: Caja y cierre de caja
+
+- Migración 0038 (**falta aplicarla en producción**): función `cash_register_summaries(uuid[])` que calcula efectivo y cobros por medio de pago de varias cajas en una sola consulta, más un índice en `sales (cash_register_id)`.
+- `src/lib/caja.ts`: `getCashRegisterSummaries` la usa para todas las cajas de la página; `computeCashOnHand` (usado al cerrar, retirar, comprar y pagar a proveedores) también. Si la función no existe o falla, calcula como antes, caja por caja (`legacy*`); ese código se puede borrar cuando 0038 esté en producción.
+- Visita a Caja: de 3 a 8 consultas por caja del historial a ~11 fijas. Cerrar la caja: ~23. El detalle de una caja: 9, y ya no se corta en 1000 ventas.
+- Verificado contra el cálculo anterior con ventas anuladas, mixtas (con y sin desglose), fiado, cobros de deuda, ingresos/retiros, compras (mixtas y anuladas) y pagos a proveedores: mismos números. Un negocio no puede ver cajas de otro.
+
 ## Costos (cliente mediano, por mes, después del PR #2)
 
 - Supabase: ~80.000 consultas y ~0,34 GB transferidos. La base crece ~2,7 KB por venta (~7 MB por mes).
@@ -19,7 +26,7 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 
 ## Pendiente (por prioridad)
 
-1. **Caja y cierre de caja**: 194 consultas por visita y 582 al cerrar (consulta caja por caja del historial). Es 2/3 de las consultas que quedan y lo más lento en producción. Conviene calcularlo con una sola consulta o una función SQL.
+1. **Aplicar la migración 0038 en producción** (ver arriba). Hasta entonces Caja funciona igual que antes, con el cálculo viejo.
 2. **Precarga de listas**: /clientes precarga el detalle de cada cliente visible y /configuracion se precarga muchas veces. Poner `prefetch={false}` en esos links.
 3. **Productos**: renderiza la tabla entera (~2 s con 1.600 artículos). Paginar o virtualizar.
 4. **Reportes**: "Monto libre" aparece primero en "más vendidos" y "más ganancia" (se agrupa todo junto y no tiene costo). Excluirlo de esos rankings.
@@ -33,5 +40,7 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 3. `.env.local` apuntando a `http://127.0.0.1:54321` con las keys que imprime el paso anterior.
 4. `npm run build && npm run start`.
 5. Registrarse, crear vendedores desde Usuarios y cargar ventas llamando a las RPC (`checkout_sale`, `register_purchase`) con los usuarios reales.
+
+Ojo: la base local y un `next start` de una sesión anterior pueden seguir vivos. Mirar `select version from supabase_migrations.schema_migrations` (aplicar las que falten con `psql -f`) y que el puerto 3000 no lo tenga otro proceso.
 
 No commitear `supabase/config.toml`, `supabase/.gitignore`, `supabase/.branches/` ni `.env.local`.

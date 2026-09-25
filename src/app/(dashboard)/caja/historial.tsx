@@ -32,9 +32,11 @@ export function CajaHistorial({ rows }: { rows: CajaHistorialRow[] }) {
     setDetailOpen(true);
     setDetailLoading(true);
     setDetail(null);
-    const result = await getCajaDetail(cashRegisterId);
+    // Si falla, el diálogo muestra "No pudimos cargar" en vez de quedar
+    // cargando para siempre.
+    const result = await getCajaDetail(cashRegisterId).catch(() => null);
     setDetailLoading(false);
-    setDetail(result.detail ?? null);
+    setDetail(result?.detail ?? null);
   }
 
   return (
