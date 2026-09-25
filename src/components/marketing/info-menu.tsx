@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 const infoLinks = [
   { href: "/como-funciona", label: "Cómo funciona (los 5 pasos)" },
+  { href: "/comparar-planes", label: "Comparar planes" },
   { href: "/comparacion", label: "Comparación con otros sistemas" },
   { href: "/diccionario", label: "Diccionario de términos" },
   { href: "/pesito-para", label: "Pesito por rubro" },

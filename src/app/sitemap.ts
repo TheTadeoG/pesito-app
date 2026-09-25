@@ -28,6 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     })),
     { url: `${siteUrl}/como-funciona`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${siteUrl}/comparar-planes`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${siteUrl}/comparacion`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     ...comparisonBlocks.map((b) => ({
       url: `${siteUrl}/comparacion/${b.slug}`,

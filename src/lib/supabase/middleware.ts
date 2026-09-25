@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   "/blog",
   "/como-funciona",
   "/comparacion",
+  "/comparar-planes",
   "/diccionario",
   "/pesito-para",
   "/preguntas-frecuentes",

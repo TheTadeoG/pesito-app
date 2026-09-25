@@ -103,6 +103,7 @@ Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; 
 ## Hecho: landing, planes, preguntas y blog (SEO/GEO)
 
 - Precios: tarjeta del Plan Gratis + cada plan pago con "Todo lo del Plan X, y además"; aviso de 14 días de Pro; lo del Plan IA que no existe aparece como "Pronto" (campo `soon` en `plan-features`).
+- Precios en la landing: 4 tarjetas + recorrido en 3 pasos arriba (14 días de Pro → Plan Gratis → plan pago), sin color a propósito para no quitarle atención al Pro. Botón a `/comparar-planes` (también en Recursos y el pie): tabla por tema desde `planComparison` en `plan-features.ts` (mantenerla alineada con las features de cada plan) + preguntas de planes con FAQPage.
 - Arreglo: el tope de 150 ventas/mes ya no aplica al Plan Esencial (`hasMonthlySalesLimit` en `lib/subscription.ts`).
 - Preguntas: `src/lib/faq-data.ts` (23 en 6 temas; la landing muestra 8). Blog: 10 artículos, autor "Tadeo, de Pesito", `seoTitle` para títulos cortos en Google.
 - Pendiente de negocio (no es código): los límites de usuarios por plan (1/2/10) se anuncian pero la app no los controla; "Soporte prioritario 24/7" del Plan IA es una promesa comercial.

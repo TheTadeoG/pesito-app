@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Clock, Gift } from "lucide-react";
+import { ArrowRight, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
-import { ANNUAL_DISCOUNT, paidPlanDefinitions, planDefinitions } from "@/lib/plan-features";
+import {
+  ANNUAL_DISCOUNT,
+  FREE_PLAN_SALES_LIMIT_LABEL,
+  paidPlanDefinitions,
+  planDefinitions,
+} from "@/lib/plan-features";
 
 // A propósito, un solo acento (el plan recomendado) en vez de un color por
 // plan: acá el visitante todavía no sabe qué es "Pro" o "IA", así que 3
@@ -34,6 +39,15 @@ const plans = paidPlanDefinitions.map((def) => {
 
 const freePlan = planDefinitions.gratis;
 
+const steps = [
+  { title: "14 días del Plan Pro gratis", text: "Al crear tu cuenta probás todo, sin tarjeta." },
+  {
+    title: "Seguís en el Plan Gratis",
+    text: `$0 para siempre: ${FREE_PLAN_SALES_LIMIT_LABEL}, lector de códigos, stock, caja y fiado, 1 usuario.`,
+  },
+  { title: "Pasás a un plan cuando crezcas", text: "Más ventas, usuarios o sucursales." },
+];
+
 export function Pricing() {
   const [annual, setAnnual] = useState(true);
 
@@ -49,14 +63,26 @@ export function Pricing() {
         </p>
       </div>
 
-      <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-success/30 bg-success-bg px-5 py-4 text-sm text-foreground">
-        <Gift className="mt-0.5 h-5 w-5 shrink-0 text-success" />
-        <p>
-          <span className="font-semibold">Al crear tu cuenta tenés 14 días del Plan Pro gratis.</span>{" "}
-          Probás todo sin pagar nada; cuando termina seguís en el Plan Gratis, o elegís un plan si
-          te sirve más.
-        </p>
-      </div>
+      {/* El recorrido en 3 pasos, a propósito sin color: el único acento de
+          la sección es el plan recomendado. */}
+      <ol className="mx-auto mt-8 grid max-w-5xl gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center">
+        {steps.map((step, i) => (
+          <li key={step.title} className="contents">
+            <div className="h-full rounded-2xl border border-border bg-card px-4 py-3">
+              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-foreground text-[11px] text-background">
+                  {i + 1}
+                </span>
+                {step.title}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{step.text}</p>
+            </div>
+            {i < steps.length - 1 && (
+              <ArrowRight className="mx-auto hidden h-4 w-4 text-muted-foreground md:block" aria-hidden />
+            )}
+          </li>
+        ))}
+      </ol>
 
       <div className="mx-auto mt-8 flex w-fit items-center gap-1 rounded-full border border-border bg-card p-1">
         <button
@@ -206,7 +232,17 @@ export function Pricing() {
         })}
       </div>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="mt-10 text-center">
+        <Link
+          href="/comparar-planes"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+        >
+          Compará los planes en detalle
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </p>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         ¿Cadenas o franquicias con muchas sucursales? Escribinos por WhatsApp.
       </p>
     </section>

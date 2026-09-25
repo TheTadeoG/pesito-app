@@ -19,6 +19,7 @@ const columns: {
     links: [
       { label: "Blog", href: "/blog" },
       { label: "Los 5 pasos", href: "/como-funciona" },
+      { label: "Comparar planes", href: "/comparar-planes" },
       { label: "Comparación", href: "/comparacion" },
       { label: "Diccionario", href: "/diccionario" },
       { label: "Por rubro", href: "/pesito-para" },

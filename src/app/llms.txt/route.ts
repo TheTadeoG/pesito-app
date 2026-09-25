@@ -52,6 +52,7 @@ ${faqs}
 
 ${link("Inicio", "/", "qué es Pesito, funciones y precios")}
 ${link("Cómo funciona", "/como-funciona")}
+${link("Comparar planes", "/comparar-planes", "tabla con las funciones de cada plan, lado a lado")}
 ${link("Preguntas frecuentes", "/preguntas-frecuentes")}
 ${link("Crear una cuenta gratis", "/registro")}
 

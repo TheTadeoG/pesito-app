@@ -111,3 +111,72 @@ export const paidPlanDefinitions: PlanDefinition[] = [
 export function getPlanOwnFeatures(plan: Plan): string[] {
   return planDefinitions[plan].features.filter((f) => !f.startsWith("Todas las funciones"));
 }
+
+/** Valor de una celda de la comparación: incluido, no incluido o un texto. */
+export type ComparisonValue = boolean | string;
+
+export interface ComparisonRow {
+  label: string;
+  values: Record<Plan, ComparisonValue>;
+}
+
+const everyPlan: Record<Plan, ComparisonValue> = { gratis: true, esencial: true, pro: true, ia: true };
+const fromPro: Record<Plan, ComparisonValue> = { gratis: false, esencial: false, pro: true, ia: true };
+
+// Tabla de /comparar-planes, agrupada por tema. Tiene que decir lo mismo que
+// las features de cada plan de arriba: si cambia una, cambiar la otra.
+export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
+  {
+    title: "Límites",
+    rows: [
+      {
+        label: "Ventas por mes",
+        values: { gratis: "150", esencial: "Ilimitadas", pro: "Ilimitadas", ia: "Ilimitadas" },
+      },
+      { label: "Usuarios", values: { gratis: "1", esencial: "2", pro: "10", ia: "10" } },
+      { label: "Sucursales", values: { gratis: "1", esencial: "1", pro: "Varias", ia: "Varias" } },
+    ],
+  },
+  {
+    title: "Vender",
+    rows: [
+      { label: "Punto de venta con lector de código de barras", values: everyPlan },
+      { label: "Venta por unidad o por peso", values: everyPlan },
+      { label: "Efectivo, tarjeta, transferencia, QR y pago mixto", values: everyPlan },
+      { label: "Ticket de venta (no fiscal)", values: everyPlan },
+    ],
+  },
+  {
+    title: "Stock, precios y compras",
+    rows: [
+      { label: "Stock con aviso de faltantes", values: everyPlan },
+      { label: "Aumentos masivos de precios por proveedor o marca", values: everyPlan },
+      { label: "Compras y cuenta corriente de proveedores", values: everyPlan },
+      { label: "Varias sucursales, cada una con su stock", values: fromPro },
+      { label: "Transferencias de mercadería entre sucursales", values: fromPro },
+    ],
+  },
+  {
+    title: "Caja, clientes y equipo",
+    rows: [
+      { label: "Caja diaria con control de faltantes", values: everyPlan },
+      { label: "Clientes con fiado (cuenta corriente)", values: everyPlan },
+      { label: "Pantalla En vivo con las ventas del día", values: everyPlan },
+      { label: "Historial completo de caja", values: fromPro },
+    ],
+  },
+  {
+    title: "Reportes y soporte",
+    rows: [
+      {
+        label: "Reportes del negocio",
+        values: { gratis: "Simples", esencial: "Simples", pro: "Avanzados", ia: "Avanzados" },
+      },
+      { label: "Soporte prioritario", values: { gratis: false, esencial: false, pro: true, ia: "24/7" } },
+      {
+        label: "Herramientas con inteligencia artificial",
+        values: { gratis: false, esencial: false, pro: false, ia: "Pronto" },
+      },
+    ],
+  },
+];
