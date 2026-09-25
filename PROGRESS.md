@@ -131,6 +131,7 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Ofertas y promociones — Plan Pro (`promotions`).
 - [ ] Ganancias separadas por sucursal (reportes) — Plan Pro.
 - [ ] Balanzas conectadas — Plan Pro (`scales`). En el POS ya hay un botón "Balanza (próximamente)".
+- [ ] Carteles de precios para imprimir, que se arman solos con el precio actual — Plan Pro (`priceSigns`).
 - [ ] Catálogo online (1 por negocio) — Plan Pro (`onlineCatalog`).
 - [ ] Reportes avanzados con IA — Plan IA (`aiReports`).
 - [ ] Sugerencia de precios — Plan IA (`priceSuggestions`).

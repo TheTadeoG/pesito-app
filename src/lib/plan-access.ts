@@ -20,6 +20,7 @@ export type PlanFeature =
   | "promotions"
   | "scales"
   | "onlineCatalog"
+  | "priceSigns"
   | "aiReports"
   | "priceSuggestions"
   | "marketAnalysis"
@@ -41,6 +42,7 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   promotions: "pro",
   scales: "pro",
   onlineCatalog: "pro",
+  priceSigns: "pro",
   aiReports: "ia",
   priceSuggestions: "ia",
   marketAnalysis: "ia",
@@ -63,6 +65,7 @@ export const featureLabels: Record<PlanFeature, string> = {
   promotions: "Las ofertas y promociones",
   scales: "Las balanzas conectadas",
   onlineCatalog: "El catálogo online",
+  priceSigns: "Los carteles de precios para imprimir",
   aiReports: "Los reportes avanzados con IA",
   priceSuggestions: "La sugerencia de precios",
   marketAnalysis: "El análisis de competidores y del mercado",

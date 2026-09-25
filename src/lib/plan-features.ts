@@ -80,6 +80,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     ],
     soon: [
       "Balanzas conectadas",
+      "Carteles de precios para imprimir",
       "1 catálogo online",
       "Ofertas y promociones",
       "Ganancias por sucursal",
@@ -158,6 +159,10 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Ticket de venta (no fiscal)", values: everyPlan },
       {
         label: "Balanzas conectadas",
+        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+      },
+      {
+        label: "Carteles de precios para imprimir, siempre actualizados",
         values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
       },
       {
