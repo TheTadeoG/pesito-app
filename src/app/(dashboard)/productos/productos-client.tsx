@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -62,6 +62,11 @@ const DEFAULT_COLUMNS: ColumnId[] = ALL_COLUMN_IDS.filter(
   (id) => id !== "supplier",
 );
 const COLUMNS_STORAGE_KEY = "pesito-productos-columns";
+
+// Dibujar las 1.600 filas de un catálogo mediano de una vez tarda ~2 s: se
+// muestran de a tandas y se agregan más al acercarse al final de la tabla.
+// Buscar, filtrar y ordenar siguen trabajando sobre todos los productos.
+const ROWS_PER_BATCH = 100;
 
 type SortKey = "name" | ColumnId;
 type SortDir = "asc" | "desc";
@@ -307,6 +312,42 @@ export function ProductosClient({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, sortKey, sortDir, supplierNameById]);
+
+  // Cambiar la búsqueda, un filtro o el orden vuelve a la primera tanda.
+  const listKey = [
+    query,
+    brandFilter,
+    supplierFilter,
+    activeFilter,
+    noBarcodeOnly,
+    noCostOnly,
+    lowStockOnly,
+    sortKey,
+    sortDir,
+  ].join("|");
+  const [visibleCount, setVisibleCount] = useState(ROWS_PER_BATCH);
+  const [visibleListKey, setVisibleListKey] = useState(listKey);
+  if (visibleListKey !== listKey) {
+    setVisibleListKey(listKey);
+    setVisibleCount(ROWS_PER_BATCH);
+  }
+  const visibleRows = sorted.slice(0, visibleCount);
+  const hiddenCount = sorted.length - visibleRows.length;
+
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || hiddenCount === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting))
+          setVisibleCount((c) => c + ROWS_PER_BATCH);
+      },
+      { rootMargin: "800px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hiddenCount]);
 
   function handleSort(key: SortKey) {
     if (sortKey !== key) {
@@ -627,7 +668,7 @@ export function ProductosClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {sorted.map((product) => {
+                  {visibleRows.map((product) => {
                     // El override optimista hace que el estado se vea al
                     // toque al activar/desactivar, sin esperar el viaje al
                     // server — ver handleToggleActive.
@@ -829,6 +870,22 @@ export function ProductosClient({
                   })}
                 </tbody>
               </table>
+              {hiddenCount > 0 && (
+                <div
+                  ref={loadMoreRef}
+                  className="border-t border-border px-4 py-3 text-center"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setVisibleCount((c) => c + ROWS_PER_BATCH)
+                    }
+                  >
+                    Mostrar más ({hiddenCount} restantes)
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
