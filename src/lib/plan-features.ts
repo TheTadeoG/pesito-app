@@ -72,7 +72,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: [
       "Todas las funciones del Plan Esencial +",
       "Aumentos masivos de precios en segundos",
-      "Reportes avanzados de ganancias",
+      "Reportes avanzados",
       "Mirá tu negocio en vivo",
       "Hasta 2 sucursales",
       "Hasta 6 usuarios y 6 cajas",
@@ -94,6 +94,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Nuevo",
     features: ["Todas las funciones del Plan Pro +", "Soporte prioritario 24/7"],
     soon: [
+      "Reportes avanzados con IA",
       "Sugerencia de precios",
       "Análisis de competencia y mercado",
       "Qué reponer y cuándo",
@@ -217,6 +218,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     rows: [
       { label: "Soporte prioritario", values: { gratis: false, esencial: false, pro: true, ia: "24/7" } },
       ...[
+        "Reportes avanzados con IA",
         "Sugerencia de precios",
         "Análisis de competidores y del mercado",
         "Recomendaciones de reposición",

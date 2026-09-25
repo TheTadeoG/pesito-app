@@ -132,6 +132,7 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Ganancias separadas por sucursal (reportes) — Plan Pro.
 - [ ] Balanzas conectadas — Plan Pro (`scales`). En el POS ya hay un botón "Balanza (próximamente)".
 - [ ] Catálogo online (1 por negocio) — Plan Pro (`onlineCatalog`).
+- [ ] Reportes avanzados con IA — Plan IA (`aiReports`).
 - [ ] Sugerencia de precios — Plan IA (`priceSuggestions`).
 - [ ] Análisis de competidores y del mercado — Plan IA (`marketAnalysis`).
 - [ ] Recomendaciones de reposición — Plan IA (`restockRecommendations`; pantalla /recomendaciones "muy pronto").
