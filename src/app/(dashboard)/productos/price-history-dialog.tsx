@@ -58,19 +58,21 @@ function PriceHistoryContent({ product, onClose }: { product: Product; onClose: 
       {rows.map((row, i) => (
         <div
           key={row.id}
-          className="flex items-center justify-between gap-3 rounded-xl border border-border px-3.5 py-2.5"
+          className="flex flex-col gap-2 rounded-xl border border-border px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
         >
-          <div className="min-w-0">
-            <p className="text-sm text-foreground">
+          <div className="min-w-0 flex-1">
+            <p className="whitespace-nowrap text-sm text-foreground">
               <span className="text-muted-foreground line-through">
                 {formatCurrency(row.oldPrice)}
               </span>{" "}
               → <span className="font-semibold">{formatCurrency(row.newPrice)}</span>
             </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {formatDateTime(row.changedAt)}
-              {row.changedByLabel && ` · ${row.changedByLabel}`}
-            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(row.changedAt)}</p>
+            {row.changedByLabel && (
+              <p className="truncate text-xs text-muted-foreground" title={row.changedByLabel}>
+                {row.changedByLabel}
+              </p>
+            )}
           </div>
           {i !== 0 && (
             <Button
@@ -79,6 +81,7 @@ function PriceHistoryContent({ product, onClose }: { product: Product; onClose: 
               onClick={() => handleRevert(row)}
               disabled={revertingId === row.id}
               title={`Volver a ${formatCurrency(row.newPrice)}`}
+              className="shrink-0 self-start whitespace-nowrap sm:self-auto"
             >
               <Undo2 className="h-3.5 w-3.5" />
               Volver a este precio
