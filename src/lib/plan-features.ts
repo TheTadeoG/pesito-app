@@ -39,7 +39,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     // preguntas frecuentes.
     features: [
       FREE_PLAN_SALES_LIMIT_LABEL,
-      "Caja diaria y fiado de tus clientes",
+      "Caja diaria y fiado",
       "Stock y compras a proveedores",
       "Reportes básicos de ventas",
       "1 usuario y 1 caja",
@@ -55,12 +55,12 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: [
       "Todas las funciones del Plan Gratis +",
       "Ventas ilimitadas",
-      "Control de stock: mínimos, aviso de faltantes y lista para reponer",
+      "Control de stock y reposición",
       "Cuentas corrientes de clientes y proveedores",
-      "Ventas y diferencias de caja de cada empleado",
+      "Control de caja por empleado",
       "Hasta 2 usuarios y 2 cajas",
     ],
-    soon: ["Productos con variantes (talles y colores), combos y kits"],
+    soon: ["Talles, combos y kits"],
   },
   pro: {
     plan: "pro",
@@ -71,10 +71,10 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Más elegido",
     features: [
       "Todas las funciones del Plan Esencial +",
-      "Aumentá precios y costos en segundos, por proveedor o marca (y lo deshacés si te equivocás)",
-      "Reportes avanzados: ganancias, ventas a pérdida, comparación de períodos e historial de caja",
-      "En vivo: mirá tu negocio desde tu casa, en el momento",
-      "Hasta 2 sucursales, cada una con su stock",
+      "Aumentos masivos de precios en segundos",
+      "Reportes avanzados de ganancias",
+      "Tu negocio en vivo, desde tu casa",
+      "Hasta 2 sucursales",
       "Hasta 6 usuarios y 6 cajas",
       "Soporte prioritario",
     ],
@@ -82,7 +82,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Balanzas conectadas",
       "1 catálogo online",
       "Ofertas y promociones",
-      "Ganancias separadas por sucursal",
+      "Ganancias por sucursal",
     ],
   },
   ia: {
@@ -95,9 +95,9 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: ["Todas las funciones del Plan Pro +", "Soporte prioritario 24/7"],
     soon: [
       "Sugerencia de precios",
-      "Análisis de competidores y del mercado",
-      "Recomendaciones de reposición",
-      "Detección de productos de baja rotación",
+      "Análisis de competencia y mercado",
+      "Qué reponer y cuándo",
+      "Productos que no rotan",
     ],
   },
 };
