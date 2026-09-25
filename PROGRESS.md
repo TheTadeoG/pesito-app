@@ -76,6 +76,17 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 - Sin 0041 aplicada: no hay recordatorio por horario y guardar la hora da "No pudimos guardar el cambio."; el resto funciona.
 - Probado en local con "Almacén La Esquina": la suma por vendedor coincide con el total (1.211 + 1.177 = 2.388 ventas en 30 días) y el filtro de un vendedor muestra los mismos números que su fila.
 
+## Hecho: pantalla "En vivo" (etapa 1 de sucursales)
+
+- Nueva página `/en-vivo` (menú Análisis, sólo dueños/administradores). Muestra lo de hoy (día de Argentina): vendido, ventas, ticket, comparación con ayer a la misma hora, cajas abiertas, cada persona del equipo (estado de caja, efectivo en caja, ventas y monto de hoy, última venta, aviso si lleva más de 30 min sin vender con la caja abierta, faltante/sobrante al cerrar), ventas por hora y las últimas 10 ventas.
+- Migración 0042 (**falta aplicar en producción**): función `live_overview(p_org_id)` que devuelve todo en una consulta (~3,5 KB, ~100 ms con el almacén simulado) + índice `sales (org_id, created_at)`. Sólo owner/admin (un vendedor recibe error).
+- Se actualiza cada 30 s sólo con la pestaña visible; en segundo plano no consulta nada; al volver consulta en el momento y retoma cada 30 s. La consulta va directo del navegador a Supabase (no gasta invocaciones de Vercel). Con la pantalla abierta 8 h/día: ~29.000 consultas/mes por dueño, ~100 MB.
+- Sin 0042 aplicada, `/en-vivo` da error; el resto funciona.
+
+## En curso: sucursales (etapa 2)
+
+Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; la primera sucursal es de todos los planes y las adicionales son Pro; "En vivo" pasa a mostrar las sucursales y dentro de cada una sus vendedores.
+
 ## Pendiente
 
 - Speed Index en móvil: 3,8 s (naranja), el resto en verde.
@@ -94,7 +105,7 @@ Estas no están en ninguna consulta a la base ni en Vercel — son ideas de prod
 
 ### Sucursales / multi-usuario (a futuro)
 
-- Resumen por sucursal y cajas de cada sucursal.
+- Resumen por sucursal y cajas de cada sucursal (en curso, ver arriba).
 - Reportes por sucursal y por caja (por vendedor ya está).
 - Cambiar de sucursal desde el header del sidebar (dueños).
 - Cierres automáticos de caja por horario (los recordatorios ya están).

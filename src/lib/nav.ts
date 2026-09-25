@@ -4,6 +4,7 @@ import {
   CreditCard,
   LayoutGrid,
   LifeBuoy,
+  Radio,
   Settings,
   ShoppingBag,
   ShoppingCart,
@@ -60,7 +61,10 @@ export const navSections: NavSection[] = [
   },
   {
     title: "Análisis",
-    items: [{ href: "/reportes", label: "Reportes", icon: BarChart3 }],
+    items: [
+      { href: "/en-vivo", label: "En vivo", icon: Radio, adminOnly: true },
+      { href: "/reportes", label: "Reportes", icon: BarChart3 },
+    ],
   },
   {
     title: "IA",
@@ -99,6 +103,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/clientes": { title: "Clientes", description: "Tus clientes y sus cuentas." },
   "/proveedores": { title: "Proveedores", description: "Tus proveedores y sus cuentas." },
   "/usuarios": { title: "Usuarios", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
+  "/en-vivo": { title: "En vivo", description: "Cómo viene el día, vendedor por vendedor." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
   "/recomendaciones": { title: "Recomendaciones", description: "Sugerencias inteligentes para tu negocio." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },

@@ -719,6 +719,10 @@ export interface Database {
           payment_breakdown: Json;
         }[];
       };
+      live_overview: {
+        Args: { p_org_id: string };
+        Returns: Json;
+      };
       void_sale: {
         Args: { p_sale_id: string };
         Returns: undefined;
