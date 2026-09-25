@@ -37,16 +37,16 @@ export function PosMockup() {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              <button className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-muted-foreground">
+              <span className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-muted-foreground">
                 <Minus className="h-3 w-3" />
-              </button>
+              </span>
               <span className="w-4 text-center text-sm font-medium">{item.qty}</span>
-              <button className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-muted-foreground">
+              <span className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-muted-foreground">
                 <Plus className="h-3 w-3" />
-              </button>
-              <button className="ml-1 flex h-6 w-6 items-center justify-center rounded-md text-danger">
+              </span>
+              <span className="ml-1 flex h-6 w-6 items-center justify-center rounded-md text-danger">
                 <Trash2 className="h-3.5 w-3.5" />
-              </button>
+              </span>
             </div>
           </div>
         ))}

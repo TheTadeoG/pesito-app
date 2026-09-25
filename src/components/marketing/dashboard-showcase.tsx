@@ -547,18 +547,26 @@ export function DashboardShowcase() {
           </button>
         </div>
 
-        <div className="mt-4 flex items-center justify-center gap-2">
+        {/* Cada punto es chico, pero el botón mide 24px para que sea fácil
+            de tocar en el celu (Lighthouse: áreas táctiles). */}
+        <div className="mt-4 flex items-center justify-center gap-1">
           {slides.map((s, i) => (
             <button
               key={s.id}
               type="button"
               onClick={() => goTo(i)}
               aria-label={`Ver ${s.label}`}
-              className={cn(
-                "h-2 rounded-full transition-all",
-                active === i ? "w-6 bg-primary" : "w-2 bg-border hover:bg-muted-foreground/40"
-              )}
-            />
+              className="group flex h-6 min-w-6 items-center justify-center"
+            >
+              <span
+                className={cn(
+                  "h-2 rounded-full transition-all",
+                  active === i
+                    ? "w-6 bg-primary"
+                    : "w-2 bg-border group-hover:bg-muted-foreground/40"
+                )}
+              />
+            </button>
           ))}
         </div>
       </div>

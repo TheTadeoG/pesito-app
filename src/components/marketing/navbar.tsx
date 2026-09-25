@@ -41,8 +41,8 @@ export function Navbar() {
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <ThemeToggle />
-          <Link href="/login" aria-label="Ingresar">
-            <Button variant="ghost" size="sm">
+          <Link href="/login">
+            <Button variant="ghost" size="sm" aria-label="Ingresar">
               <LogIn className="h-4 w-4 sm:hidden" />
               <span className="hidden sm:inline">Ingresar</span>
             </Button>
