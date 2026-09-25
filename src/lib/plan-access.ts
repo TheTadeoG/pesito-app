@@ -22,7 +22,7 @@ export type PlanFeature =
   | "onlineCatalog"
   | "priceSigns"
   | "physicalInventory"
-  | "userPermissions"
+  | "userActivity"
   | "aiReports"
   | "priceSuggestions"
   | "marketAnalysis"
@@ -46,7 +46,7 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   onlineCatalog: "pro",
   priceSigns: "pro",
   physicalInventory: "pro",
-  userPermissions: "pro",
+  userActivity: "pro",
   aiReports: "ia",
   priceSuggestions: "ia",
   marketAnalysis: "ia",

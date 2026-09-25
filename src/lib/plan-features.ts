@@ -78,7 +78,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Soporte prioritario",
     ],
     soon: [
-      "Control por usuario: qué puede ver y hacer cada uno",
+      "Control por usuario: su stock, caja y diferencias",
       "Inventarios físicos",
       "Balanzas conectadas",
       "Carteles de precios para imprimir",
@@ -215,7 +215,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Ventas y diferencias de caja por empleado", values: fromEsencial },
       { label: "Historial completo de caja", values: fromPro },
       {
-        label: "Control por usuario: permisos de qué puede ver y hacer cada uno",
+        label: "Control por usuario: todos sus movimientos de stock, caja y diferencias",
         values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
       },
     ],
