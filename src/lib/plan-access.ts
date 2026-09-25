@@ -71,7 +71,7 @@ export const featureLabels: Record<PlanFeature, string> = {
   onlineCatalog: "El catálogo online",
   priceSigns: "Los carteles de precios para imprimir",
   physicalInventory: "Los inventarios físicos",
-  userPermissions: "El control por usuario",
+  userActivity: "El control por usuario",
   aiReports: "Los reportes avanzados con IA",
   priceSuggestions: "La sugerencia de precios",
   marketAnalysis: "El análisis de competidores y del mercado",
