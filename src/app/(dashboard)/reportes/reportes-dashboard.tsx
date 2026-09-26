@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  Lock,
   BarChart3,
   CreditCard,
   DollarSign,
@@ -26,6 +27,7 @@ import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 import { ListPager, usePager } from "@/components/dashboard/list-pager";
 import { PlanPill, ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { featureMinPlan } from "@/lib/plan-access";
+import { planLabels, type Plan } from "@/lib/subscription";
 import { cn, formatCurrency } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 import { reportesHref, type ReportPeriod } from "@/lib/report-periods";
@@ -197,8 +199,53 @@ export function ReportesDashboard({
   const isVisible = (id: WidgetId) => visible.has(id) && !hidden.has(id);
   const availableWidgets = WIDGETS.filter((w) => !hidden.has(w.id));
 
+  // Un solo aviso arriba con todo lo que el plan no incluye (los reportes
+  // bloqueados de abajo son tarjetas chicas, sin cartel propio).
+  const lockedGroups: { plan: Plan; text: string }[] = [
+    ...(data.teamLocked
+      ? [{ plan: featureMinPlan.teamReports, text: "Ventas y diferencias de caja por vendedor" }]
+      : []),
+    ...(!data.hasProAccess
+      ? [
+          {
+            plan: featureMinPlan.profitReports,
+            text: "Ganancia estimada, productos que más ganancia dejan, comparación con el período anterior y ventas a pérdida",
+          },
+        ]
+      : []),
+  ];
+
   return (
     <div className="space-y-6">
+      {lockedGroups.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1 space-y-1.5 text-sm">
+            <p className="flex items-center gap-2 font-semibold text-foreground">
+              <Lock className="h-4 w-4 text-muted-foreground" />
+              Sumá más reportes
+            </p>
+            {lockedGroups.map((g) => (
+              <p key={g.plan} className="flex items-start gap-2 text-muted-foreground">
+                <PlanPill plan={g.plan} className="mt-0.5" />
+                <span>{g.text}</span>
+              </p>
+            ))}
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <Link
+              href={`/suscribirse?plan=${lockedGroups[0].plan}`}
+              prefetch={false}
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover"
+            >
+              {`Pasate al Plan ${planLabels[lockedGroups[0].plan]}`}
+            </Link>
+            <Link href="/configuracion?tab=plan" prefetch={false} className="text-sm font-medium text-primary hover:underline">
+              Ver planes
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end">
         <Button variant="outline" size="sm" onClick={() => setShowCustomize(true)}>
           <Settings2 className="h-4 w-4" />
@@ -332,9 +379,10 @@ export function ReportesDashboard({
 
           {isVisible("topMargin") && !data.topByMargin && (
             <ProLockedCard
+              compact
               title="Productos que más ganancia dejan"
               preview="list"
-              description="Con los reportes avanzados ves cuánto ganás, qué te deja más plata y qué vendés a pérdida."
+              description="Qué productos te dejan más plata."
             />
           )}
           {isVisible("topMargin") && data.topByMargin && (
@@ -463,10 +511,11 @@ export function ReportesDashboard({
 
       {isVisible("sellers") && data.teamLocked && (
         <ProLockedCard
+          compact
           title="Ventas por vendedor"
           plan={featureMinPlan.teamReports}
           preview="bars"
-          description="Cuánto vende y cuánto gana cada empleado, y sus diferencias de caja."
+          description="Cuánto vende y cuánto gana cada empleado."
         />
       )}
 
@@ -538,7 +587,7 @@ export function ReportesDashboard({
       )}
 
       {isVisible("cashDiff") && data.teamLocked && (
-        <ProLockedCard title="Diferencias de caja por vendedor" plan={featureMinPlan.teamReports} preview="list" />
+        <ProLockedCard compact title="Diferencias de caja por vendedor" plan={featureMinPlan.teamReports} preview="list" />
       )}
 
       {isVisible("cashDiff") && data.cashDiffByUser && (
@@ -623,7 +672,7 @@ export function ReportesDashboard({
                 </CardContent>
               </Card>
             ) : (
-              <ProLockedCard title="Comparación con el período anterior" preview="comparison" />
+              <ProLockedCard compact title="Comparación con el período anterior" preview="comparison" />
             ))}
 
           {isVisible("lossProducts") &&
@@ -653,7 +702,7 @@ export function ReportesDashboard({
                 </CardContent>
               </Card>
             ) : (
-              <ProLockedCard title="Productos vendidos a pérdida" preview="list" />
+              <ProLockedCard compact title="Productos vendidos a pérdida" preview="list" />
             ))}
         </div>
       )}
