@@ -19,7 +19,6 @@ export type PlanFeature =
   | "productVariants"
   | "productImport"
   | "barcodeLabels"
-  | "costImport"
   | "promotions"
   | "scales"
   | "onlineCatalog"
@@ -46,7 +45,6 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   productVariants: "esencial",
   productImport: "esencial",
   barcodeLabels: "esencial",
-  costImport: "pro",
   promotions: "pro",
   scales: "pro",
   onlineCatalog: "pro",
@@ -74,7 +72,6 @@ export const featureLabels: Record<PlanFeature, string> = {
   productVariants: "Los talles y colores",
   productImport: "La carga masiva de productos con Excel",
   barcodeLabels: "La generación e impresión de códigos de barras",
-  costImport: "La importación de costos desde Excel",
   promotions: "Las ofertas y promociones",
   scales: "Las balanzas conectadas",
   onlineCatalog: "El catálogo online",
