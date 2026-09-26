@@ -124,7 +124,7 @@ Instaladas con `npx skills add` (quedan en `skills-lock.json`). Además de las q
 
 Nota: el buscador de skills.sh está bloqueado en este entorno (`npx skills find` no encuentra nada), pero `npx skills add owner/repo --skill <nombre>` funciona porque va por GitHub. El nombre de `--skill` es el `name:` del SKILL.md, no la carpeta (`--list` los muestra).
 
-## Hecho: seguridad (migración 0045)
+## Hecho: seguridad (migraciones 0045 y 0046, aplicadas en producción)
 
 Revisión con la checklist de 20 puntos. Ya estaba bien: claves (sólo la anon en el navegador), SQL injection (todo parametrizado), aislamiento entre negocios (RLS en las 31 tablas), /admin (requirePlatformAdmin + 404), `npm audit` limpio.
 Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados, y el flujo normal abrir/retirar/vender/cerrar OK):
