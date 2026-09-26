@@ -120,6 +120,20 @@ export async function signup(
     if (error.message.toLowerCase().includes("already registered")) {
       return { error: "Ya existe una cuenta con ese email. Iniciá sesión." };
     }
+    const code = (error as { code?: string }).code ?? "";
+    const message = error.message.toLowerCase();
+    console.error("signup", code, error.message);
+    if (code === "over_email_send_rate_limit" || message.includes("rate limit")) {
+      return {
+        error: "Se pidieron muchas cuentas en poco tiempo. Esperá unos minutos y probá de nuevo.",
+      };
+    }
+    if (code === "email_address_invalid" || message.includes("invalid")) {
+      return { error: "Ese email no es válido. Usá uno real: te mandamos un link para confirmarlo." };
+    }
+    if (code === "weak_password") {
+      return { error: "La contraseña es muy fácil de adivinar. Probá con otra más larga." };
+    }
     return { error: "No pudimos crear tu cuenta. Intentá de nuevo." };
   }
 
