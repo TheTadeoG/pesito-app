@@ -14,6 +14,8 @@ interface SidebarProps {
   orgName: string;
   memberName: string;
   roleLabel: string;
+  /** "Plan Pro", "Prueba Pro"… para que siempre se vea qué plan se tiene. */
+  planLabel: string;
   role: string;
   cashRegister: {
     openedAt: string;
@@ -29,6 +31,7 @@ export function Sidebar({
   orgName,
   memberName,
   roleLabel,
+  planLabel,
   role,
   cashRegister,
   branch,
@@ -50,6 +53,18 @@ export function Sidebar({
             <p className="truncate text-xs text-muted-foreground">{memberName}</p>
           )}
           <p className="text-xs text-muted-foreground">{roleLabel}</p>
+          {canSeeAdminItems ? (
+            <Link
+              href="/configuracion?tab=plan"
+              className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/15"
+            >
+              {planLabel}
+            </Link>
+          ) : (
+            <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              {planLabel}
+            </span>
+          )}
           {branch && <BranchSwitcher {...branch} />}
         </div>
       </div>

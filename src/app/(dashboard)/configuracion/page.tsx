@@ -24,8 +24,8 @@ import {
 import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 import { TwoFactorCard } from "@/app/(dashboard)/configuracion/two-factor-card";
-import { syncReturnedPreapproval } from "@/app/(dashboard)/configuracion/billing-actions";
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
+import { syncReturnedPayment } from "@/lib/billing";
 import { describeDevice } from "@/lib/login-events";
 
 function parseTab(value: string | undefined): ConfiguracionTab {
@@ -45,8 +45,9 @@ export default async function ConfiguracionPage({
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
 
   if (tab === "plan") {
-    // Vuelta de Mercado Pago: se aplica la suscripción sin esperar el aviso.
-    if (preapprovalId) await syncReturnedPreapproval(organization.id, preapprovalId);
+    // Vuelta de Mercado Pago (con o sin ?preapproval_id): se aplica lo que
+    // se haya pagado sin esperar el aviso.
+    if (isOrgAdmin(membership.role)) await syncReturnedPayment(organization.id, preapprovalId);
     const subscription = await getSubscription(supabase, organization.id);
     // Sólo importa contar esto cuando el límite de ventas realmente aplica
     // (plan gratis, sin prueba Pro activa) — evita una query de más al resto.

@@ -14,7 +14,13 @@ import {
   mercadoPagoErrorMessage,
   MercadoPagoError,
 } from "@/lib/mercadopago";
-import { applyPreapproval, buildExternalReference, chargeAmount, referenceOf } from "@/lib/billing";
+import {
+  applyPreapproval,
+  buildExternalReference,
+  chargeAmount,
+  recordCheckout,
+  syncPendingCheckouts,
+} from "@/lib/billing";
 
 export interface BillingActionResult {
   error?: string;
@@ -49,6 +55,7 @@ export async function startSubscription(
       backUrl: from === "alta" ? `${siteUrl}/suscribirse` : `${siteUrl}/configuracion?tab=plan`,
     });
     if (!checkout.init_point) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
+    await recordCheckout(organization.id, checkout.id, plan, cycle);
     return { url: checkout.init_point };
   } catch (e) {
     const detail = mercadoPagoErrorMessage(e);
@@ -95,17 +102,27 @@ export async function getUpdatePaymentUrl(): Promise<BillingActionResult> {
   }
 }
 
+export interface CheckoutStatus {
+  /** El plan pago quedó activo. */
+  active: boolean;
+  plan: Plan;
+}
+
 /**
- * Al volver de Mercado Pago (?preapproval_id=…): se consulta y se aplica al
- * toque, sin esperar el aviso. Sólo si la suscripción es de este negocio.
+ * Mientras la persona paga en Mercado Pago (en otra pestaña), la pantalla
+ * pregunta cada tanto si ya se pagó, para avisarle y seguir sola.
  */
-export async function syncReturnedPreapproval(orgId: string, preapprovalId: string): Promise<void> {
-  if (!mercadoPagoConfigured() || !/^[0-9a-zA-Z_-]{8,64}$/.test(preapprovalId)) return;
-  try {
-    const pre = await getPreapproval(preapprovalId);
-    if ((await referenceOf(pre))?.orgId !== orgId) return;
-    await applyPreapproval(pre);
-  } catch (e) {
-    console.error("syncReturnedPreapproval", e instanceof MercadoPagoError ? e.body : e);
+export async function checkPendingCheckout(): Promise<CheckoutStatus> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+  if (mercadoPagoConfigured()) {
+    await syncPendingCheckouts(organization.id).catch((e) =>
+      console.error("checkPendingCheckout", e instanceof MercadoPagoError ? e.body : e)
+    );
   }
+  const subscription = await getSubscription(supabase, organization.id);
+  return {
+    active: subscription.plan !== "gratis" && subscription.billing?.status === "active",
+    plan: subscription.plan,
+  };
 }

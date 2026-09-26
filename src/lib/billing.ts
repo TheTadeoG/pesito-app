@@ -4,9 +4,11 @@ import {
   getAuthorizedPayment,
   getPreapproval,
   getPreapprovalPlan,
+  searchPreapprovalsByPlan,
   type AuthorizedPayment,
   type Preapproval,
 } from "@/lib/mercadopago";
+import { mercadoPagoConfigured, MercadoPagoError } from "@/lib/mercadopago";
 import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
 import type { BillingCycle, Plan } from "@/lib/subscription";
 import type { Json } from "@/lib/database.types";
@@ -67,7 +69,7 @@ async function logEvent(
   detail: unknown
 ) {
   const admin = createAdminClient();
-  await admin.from("billing_events").insert({
+  const { error } = await admin.from("billing_events").insert({
     org_id: orgId,
     topic,
     mp_id: mpId,
@@ -75,6 +77,7 @@ async function logEvent(
     amount,
     detail: detail as Json,
   });
+  if (error) console.error("billing_events", error.message);
 }
 
 /**
@@ -104,7 +107,7 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
     const previousId = current?.mp_preapproval_id && current.mp_preapproval_id !== pre.id ? current.mp_preapproval_id : null;
     const periodEnd =
       pre.next_payment_date ?? addMonths(new Date(), ref.cycle === "anual" ? 12 : 1).toISOString();
-    await admin.from("organization_subscriptions").upsert(
+    const { error } = await admin.from("organization_subscriptions").upsert(
       {
         org_id: ref.orgId,
         plan: ref.plan,
@@ -119,6 +122,11 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
       },
       { onConflict: "org_id" }
     );
+    if (error) {
+      // Sin la migración 0047 no existen las columnas del cobro.
+      console.error("applyPreapproval", error.message);
+      throw new Error(`No pudimos guardar el plan: ${error.message}`);
+    }
     if ((current?.plan ?? "gratis") !== ref.plan) {
       await admin.from("plan_history").insert({
         org_id: ref.orgId,
@@ -216,4 +224,62 @@ export async function syncFromMercadoPago(topic: string, id: string): Promise<st
     return applyAuthorizedPayment(await getAuthorizedPayment(id));
   }
   return null;
+}
+
+const CHECKOUT_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** Anota un checkout abierto (el plan de Mercado Pago) para buscar después su pago. */
+export async function recordCheckout(orgId: string, checkoutId: string, plan: Plan, cycle: BillingCycle) {
+  await logEvent(orgId, "checkout", checkoutId, "pending", chargeAmount(plan, cycle), { plan, cycle });
+}
+
+/**
+ * Busca en Mercado Pago si se pagó alguno de los checkouts abiertos en los
+ * últimos días y lo aplica. Así el plan se activa aunque Mercado Pago no
+ * vuelva a Pesito con el id ni llegue el aviso (webhook).
+ * Devuelve true si activó algo.
+ */
+export async function syncPendingCheckouts(orgId: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const since = new Date(Date.now() - CHECKOUT_WINDOW_MS).toISOString();
+  const { data: events } = await admin
+    .from("billing_events")
+    .select("topic, mp_id")
+    .eq("org_id", orgId)
+    .in("topic", ["checkout", "checkout_done"])
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const done = new Set((events ?? []).filter((e) => e.topic === "checkout_done").map((e) => e.mp_id));
+  const pending = (events ?? []).filter((e) => e.topic === "checkout" && !done.has(e.mp_id)).slice(0, 3);
+
+  let activated = false;
+  for (const { mp_id: checkoutId } of pending) {
+    const found = await searchPreapprovalsByPlan(checkoutId);
+    const paid = found.find((p) => p.status === "authorized");
+    if (!paid) continue;
+    if ((await referenceOf(paid))?.orgId !== orgId) continue;
+    await applyPreapproval(paid);
+    await logEvent(orgId, "checkout_done", checkoutId, "authorized", null, { preapproval_id: paid.id });
+    activated = true;
+  }
+  return activated;
+}
+
+/**
+ * Al volver de Mercado Pago: con ?preapproval_id se aplica esa suscripción
+ * (sólo si es de este negocio); además se buscan los checkouts pagados, porque
+ * Mercado Pago no siempre vuelve con el id. Sólo servidor (no es una acción).
+ */
+export async function syncReturnedPayment(orgId: string, preapprovalId?: string): Promise<void> {
+  if (!mercadoPagoConfigured()) return;
+  try {
+    if (preapprovalId && /^[0-9a-zA-Z_-]{8,64}$/.test(preapprovalId)) {
+      const pre = await getPreapproval(preapprovalId);
+      if ((await referenceOf(pre))?.orgId === orgId) await applyPreapproval(pre);
+    }
+    await syncPendingCheckouts(orgId);
+  } catch (e) {
+    console.error("syncReturnedPayment", e instanceof MercadoPagoError ? e.body : e);
+  }
 }

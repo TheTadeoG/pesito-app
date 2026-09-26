@@ -136,6 +136,14 @@ export function getPreapprovalPlan(id: string): Promise<PreapprovalPlan> {
   return mp<PreapprovalPlan>(`/preapproval_plan/${encodeURIComponent(id)}`);
 }
 
+/** Suscripciones que se crearon pagando el checkout de un plan. */
+export async function searchPreapprovalsByPlan(planId: string): Promise<Preapproval[]> {
+  const res = await mp<{ results?: Preapproval[] }>(
+    `/preapproval/search?preapproval_plan_id=${encodeURIComponent(planId)}`
+  );
+  return res.results ?? [];
+}
+
 /** El mensaje de error que devolvió Mercado Pago, para mostrarlo. */
 export function mercadoPagoErrorMessage(e: unknown): string | null {
   if (!(e instanceof MercadoPagoError)) return null;

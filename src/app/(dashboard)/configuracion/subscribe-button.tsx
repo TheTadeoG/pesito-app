@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
-import type { BillingCycle, Plan } from "@/lib/subscription";
-import { startSubscription } from "@/app/(dashboard)/configuracion/billing-actions";
+import { planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
+import { useMercadoPagoCheckout } from "@/app/(dashboard)/configuracion/use-mp-checkout";
 
 export function SubscribeButton({
   plan,
@@ -25,19 +27,13 @@ export function SubscribeButton({
 }) {
   const [open, setOpen] = useState(false);
   const [cycle, setCycle] = useState<BillingCycle>("mensual");
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { status, error, checkoutUrl, activePlan, start, check, reset } = useMercadoPagoCheckout("configuracion");
 
-  async function handleContinue() {
-    setPending(true);
-    setError(null);
-    const result = await startSubscription(plan, cycle);
-    if (result.error || !result.url) {
-      setPending(false);
-      setError(result.error ?? "No pudimos conectar con Mercado Pago.");
-      return;
-    }
-    window.location.href = result.url;
+  function close() {
+    setOpen(false);
+    if (status === "active") router.refresh();
+    reset();
   }
 
   const options: { value: BillingCycle; title: string; price: string; note: string }[] = [
@@ -57,10 +53,45 @@ export function SubscribeButton({
       </Button>
       <Dialog
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={close}
         title={`Contratar el ${planName}`}
         description="Se paga con Mercado Pago, con débito automático. Cancelás cuando quieras desde acá."
       >
+        {status === "active" ? (
+          <div className="space-y-4">
+            <p className="flex items-center gap-2 rounded-xl bg-success-bg px-3 py-3 font-semibold text-success">
+              <CheckCircle2 className="h-5 w-5" />
+              {`¡Pago confirmado! Ya tenés el Plan ${planLabels[activePlan ?? plan]}.`}
+            </p>
+            <div className="flex justify-end">
+              <Button type="button" onClick={close}>
+                Listo
+              </Button>
+            </div>
+          </div>
+        ) : status === "waiting" ? (
+          <div className="space-y-3">
+            <p className="flex items-center gap-2 font-medium text-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Esperando tu pago en Mercado Pago…
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Terminá el pago en la pestaña de Mercado Pago. Cuando se confirme, lo vas a ver acá.
+            </p>
+            <div className="flex flex-wrap justify-end gap-2">
+              {checkoutUrl && (
+                <a href={checkoutUrl} target="_blank" rel="noopener noreferrer">
+                  <Button type="button" variant="ghost">
+                    Volver a abrir Mercado Pago
+                  </Button>
+                </a>
+              )}
+              <Button type="button" variant="outline" onClick={check}>
+                Ya pagué
+              </Button>
+            </div>
+          </div>
+        ) : (
         <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-2">
             {options.map((o) => (
@@ -88,14 +119,15 @@ export function SubscribeButton({
           {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={close}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleContinue} disabled={pending}>
-              {pending ? "Conectando…" : "Ir a Mercado Pago"}
+            <Button type="button" onClick={() => start(plan, cycle)} disabled={status === "opening"}>
+              {status === "opening" ? "Conectando…" : "Ir a Mercado Pago"}
             </Button>
           </div>
         </div>
+        )}
       </Dialog>
     </>
   );

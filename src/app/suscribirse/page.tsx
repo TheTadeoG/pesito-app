@@ -5,13 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { CheckoutSummary } from "@/app/(auth)/registro/checkout-summary";
 import { PayButton } from "@/app/suscribirse/pay-button";
-import { syncReturnedPreapproval } from "@/app/(dashboard)/configuracion/billing-actions";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels, type Plan } from "@/lib/subscription";
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
-import { chargeAmount } from "@/lib/billing";
+import { chargeAmount, syncReturnedPayment } from "@/lib/billing";
 import { formatCurrency } from "@/lib/utils";
 
 // Alta con un plan pago elegido en precios: después de crear el negocio se
@@ -35,7 +34,7 @@ export default async function SuscribirsePage({
   if (!isOrgAdmin(membership.role)) redirect("/pos");
 
   if (preapprovalId) {
-    await syncReturnedPreapproval(organization.id, preapprovalId);
+    await syncReturnedPayment(organization.id, preapprovalId);
     const supabase = await createClient();
     const subscription = await getSubscription(supabase, organization.id);
     const paid = subscription.billing?.status === "active" && subscription.plan !== "gratis";
