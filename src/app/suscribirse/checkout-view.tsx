@@ -24,28 +24,25 @@ import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { useMercadoPagoCheckout } from "@/app/(dashboard)/configuracion/use-mp-checkout";
 
 // Colores del panel izquierdo según el plan (el mismo acento que en precios).
-const themes: Record<Plan, { panel: string; ink: string; soft: string; icon: string; tick: string }> = {
-  gratis: { panel: "", ink: "", soft: "", icon: "", tick: "" },
+// Sin variantes "dark:": Pesito elige el tema con su propio selector, no con
+// el del sistema. Un tinte translúcido del color del plan sobre el fondo y
+// los textos con los colores del tema se leen bien en claro y en oscuro.
+const themes: Record<Plan, { panel: string; icon: string; tick: string }> = {
+  gratis: { panel: "", icon: "", tick: "" },
   esencial: {
-    panel: "from-emerald-50 via-emerald-100/60 to-teal-50 dark:from-emerald-950/50 dark:via-background dark:to-background",
-    ink: "text-emerald-950 dark:text-emerald-50",
-    soft: "text-emerald-900/70 dark:text-emerald-100/70",
+    panel: "from-emerald-500/20 via-emerald-500/10 to-teal-500/5",
     icon: "bg-primary text-primary-foreground shadow-primary/30",
-    tick: "bg-emerald-500/20",
+    tick: "bg-emerald-500/20 text-emerald-600",
   },
   pro: {
-    panel: "from-amber-50 via-amber-100/60 to-orange-50 dark:from-amber-950/40 dark:via-background dark:to-background",
-    ink: "text-amber-950 dark:text-amber-50",
-    soft: "text-amber-900/70 dark:text-amber-100/70",
+    panel: "from-amber-500/25 via-amber-500/10 to-orange-500/5",
     icon: "bg-amber-500 text-amber-950 shadow-amber-500/30",
-    tick: "bg-amber-500/20",
+    tick: "bg-amber-500/20 text-amber-600",
   },
   ia: {
-    panel: "from-violet-50 via-violet-100/60 to-fuchsia-50 dark:from-violet-950/50 dark:via-background dark:to-background",
-    ink: "text-violet-950 dark:text-violet-50",
-    soft: "text-violet-900/70 dark:text-violet-100/70",
+    panel: "from-violet-500/25 via-violet-500/10 to-fuchsia-500/5",
     icon: "bg-violet-500 text-white shadow-violet-500/30",
-    tick: "bg-violet-500/20",
+    tick: "bg-violet-500/20 text-violet-500",
   },
 };
 
@@ -94,11 +91,11 @@ export function CheckoutView(props: CheckoutViewProps) {
       {/* Panel del plan */}
       <section
         className={cn(
-          "flex flex-col gap-8 bg-gradient-to-br px-5 py-6 sm:px-10 lg:justify-between lg:py-10",
+          "flex flex-col gap-8 bg-background bg-gradient-to-br px-5 py-6 sm:px-10 lg:justify-between lg:py-10",
           theme.panel
         )}
       >
-        <div className={cn("flex items-center gap-3 text-sm", theme.soft)}>
+        <div className={cn("flex items-center gap-3 text-sm", "text-muted-foreground")}>
           {fromSignup ? (
             <Wordmark className="text-lg" />
           ) : (
@@ -115,28 +112,28 @@ export function CheckoutView(props: CheckoutViewProps) {
           >
             <Icon className="h-6 w-6" />
           </span>
-          <p className={cn("mt-5 text-sm font-medium", theme.soft)}>
+          <p className={cn("mt-5 text-sm font-medium", "text-muted-foreground")}>
             {current?.samePlan ? "Renovar el" : "Suscribirte al"}
           </p>
-          <h1 className={cn("text-3xl font-bold tracking-tight sm:text-4xl", theme.ink)}>{planName}</h1>
+          <h1 className={cn("text-3xl font-bold tracking-tight sm:text-4xl", "text-foreground")}>{planName}</h1>
           <p className="mt-3 flex items-baseline gap-2">
-            <span className={cn("text-4xl font-bold sm:text-5xl", theme.ink)}>
+            <span className={cn("text-4xl font-bold sm:text-5xl", "text-foreground")}>
               {formatCurrency(cycle === "anual" ? annualMonthly : monthly)}
             </span>
-            <span className={theme.soft}>por mes</span>
+            <span className={"text-muted-foreground"}>por mes</span>
           </p>
-          <p className={cn("mt-1 text-sm", theme.soft)}>
+          <p className={cn("mt-1 text-sm", "text-muted-foreground")}>
             {cycle === "anual"
               ? `${formatCurrency(prices.anual)} al año. Ahorrás ${formatCurrency(monthly * 12 - prices.anual)}.`
               : `O ${formatCurrency(annualMonthly)} por mes pagando anual (ahorrás ${formatCurrency(monthly * 12 - prices.anual)}).`}
           </p>
 
-          <p className={cn("mt-8 text-xs font-semibold uppercase tracking-wider", theme.soft)}>
+          <p className={cn("mt-8 text-xs font-semibold uppercase tracking-wider", "text-muted-foreground")}>
             {`Todo lo del Plan ${previousPlan[plan] ?? "Gratis"}, más:`}
           </p>
           <ul className="mt-3 space-y-3">
             {features.map((f) => (
-              <li key={f} className={cn("flex gap-3", theme.ink)}>
+              <li key={f} className={cn("flex gap-3", "text-foreground")}>
                 <span
                   className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full", theme.tick)}
                 >
@@ -148,7 +145,7 @@ export function CheckoutView(props: CheckoutViewProps) {
           </ul>
         </div>
 
-        <p className={cn("hidden items-center gap-2 text-xs lg:flex", theme.soft)}>
+        <p className={cn("hidden items-center gap-2 text-xs lg:flex", "text-muted-foreground")}>
           <ShieldCheck className="h-4 w-4 shrink-0" />
           Sin permanencia: lo cancelás cuando quieras desde Configuración → Plan.
         </p>
@@ -187,7 +184,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                     onClick={() => setCycle(c)}
                     className={cn(
                       "rounded-lg py-2 text-center transition-colors",
-                      cycle === c ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      cycle === c ? "bg-card font-semibold text-foreground shadow-sm ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {c === "mensual" ? "Mensual" : "Anual"}

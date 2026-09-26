@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyWebhookSignature } from "@/lib/mercadopago";
+import { MercadoPagoError, verifyWebhookSignature } from "@/lib/mercadopago";
 import { syncFromMercadoPago } from "@/lib/billing";
 
 // Avisos de Mercado Pago (suscripciones y sus cobros). Se verifica la firma
@@ -30,6 +30,11 @@ export async function POST(request: NextRequest) {
     const orgId = await syncFromMercadoPago(topic, dataId);
     return NextResponse.json({ ok: true, handled: Boolean(orgId) });
   } catch (e) {
+    // Id que no existe (p. ej. la notificación de prueba del panel, id 123456):
+    // no hay nada que aplicar y reintentar no sirve.
+    if (e instanceof MercadoPagoError && e.status === 404) {
+      return NextResponse.json({ ok: true, ignored: "no existe en Mercado Pago" });
+    }
     console.error("Webhook de Mercado Pago", topic, dataId, e);
     return NextResponse.json({ error: "no pudimos procesarlo" }, { status: 500 });
   }
