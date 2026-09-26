@@ -13,8 +13,8 @@ import {
 } from "@/lib/mercadopago";
 import { mercadoPagoConfigured, MercadoPagoError } from "@/lib/mercadopago";
 import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
-import type { BillingCycle, Plan } from "@/lib/subscription";
-import type { Json } from "@/lib/database.types";
+import { lapsedToFree, planOrder, PLAN_GRACE_DAYS, type BillingCycle, type Plan } from "@/lib/subscription";
+import type { Database, Json } from "@/lib/database.types";
 
 // Estado del cobro de los planes a partir de lo que dice Mercado Pago
 // (migración 0047). Siempre se consulta la API con nuestro token antes de
@@ -59,6 +59,32 @@ export async function referenceOf(pre: Preapproval) {
   const direct = parseExternalReference(pre.external_reference);
   if (direct || !pre.preapproval_plan_id) return direct;
   return parseExternalReference((await getPreapprovalPlan(pre.preapproval_plan_id)).external_reference);
+}
+
+type SubscriptionRow = Database["public"]["Tables"]["organization_subscriptions"]["Row"];
+
+/**
+ * Período de gracia al pasar a un plan más barato (0048): 7 días más con el
+ * plan que venía pagando. La prueba Pro no cuenta (el plan guardado es
+ * "gratis"). Sin la migración 0048 no se escribe nada (no existen las
+ * columnas y el guardado fallaría).
+ */
+function downgradeGraceFields(current: SubscriptionRow | null, newPlan: Plan) {
+  if (!current || !("grace_plan" in current)) return {};
+  const now = new Date();
+  const activeGrace =
+    current.grace_plan && current.plan_grace_until && new Date(current.plan_grace_until) > now
+      ? { plan: current.grace_plan as Plan, until: current.plan_grace_until }
+      : null;
+  const had: Plan = activeGrace?.plan ?? (lapsedToFree(current, now) ? "gratis" : current.plan);
+  if (had !== "gratis" && planOrder.indexOf(newPlan) < planOrder.indexOf(had)) {
+    return {
+      grace_plan: had as "esencial" | "pro" | "ia",
+      plan_grace_until:
+        activeGrace?.until ?? new Date(now.getTime() + PLAN_GRACE_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+    };
+  }
+  return { grace_plan: null, plan_grace_until: null };
 }
 
 function addMonths(date: Date, months: number): Date {
@@ -126,6 +152,7 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
         grace_until: current?.mp_preapproval_id === pre.id ? current.grace_until ?? null : null,
         payer_email: pre.payer_email ?? current?.payer_email ?? null,
         pro_trial_ends_at: null,
+        ...downgradeGraceFields(current, ref.plan),
       },
       { onConflict: "org_id" }
     );
@@ -273,6 +300,7 @@ export async function applyOneTimePayment(pay: Payment): Promise<string | null> 
       current_period_end: addMonths(base, ref.cycle === "anual" ? 12 : 1).toISOString(),
       grace_until: null,
       pro_trial_ends_at: null,
+      ...downgradeGraceFields(current, ref.plan),
     },
     { onConflict: "org_id" }
   );

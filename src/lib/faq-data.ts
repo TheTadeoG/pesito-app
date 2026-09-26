@@ -36,7 +36,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Cómo se pagan los planes?",
         answer:
-          "Con Mercado Pago, mensual o anual con 20% de descuento, de dos formas. Con débito automático (tarjeta de crédito, débito o dinero en cuenta) el plan se renueva solo y lo cancelás cuando quieras; seguís con el plan hasta el final del período pago. Si un cobro falla, Mercado Pago lo reintenta y tenés 7 días para regularizarlo antes de pasar al Plan Gratis, sin perder ningún dato. Con pago único pagás un mes o un año con tarjeta, dinero en cuenta o efectivo (Rapipago, Pago Fácil); no se renueva solo y Pesito te avisa antes de que venza. Se contrata al crear la cuenta o desde Configuración → Plan.",
+          "Con Mercado Pago, mensual o anual con 20% de descuento, de dos formas. Con débito automático (tarjeta de crédito, débito o dinero en cuenta) el plan se renueva solo y lo cancelás cuando quieras; seguís con el plan hasta el final del período pago. Si un cobro falla, Mercado Pago lo reintenta y tenés 7 días para regularizarlo antes de pasar al Plan Gratis, sin perder ningún dato. Con pago único pagás un mes o un año con tarjeta, dinero en cuenta o efectivo (Rapipago, Pago Fácil); no se renueva solo y Pesito te avisa antes de que venza. Si un plan pago vence sin renovarse, o pasás a un plan más barato, tenés 7 días de gracia con el plan anterior; después se aplican las funciones y el límite de usuarios del plan nuevo (los usuarios de más quedan pausados, sin perder datos). La prueba Pro de 14 días no tiene gracia. Se contrata al crear la cuenta o desde Configuración → Plan.",
       },
       {
         question: "¿Necesito instalar algo?",

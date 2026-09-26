@@ -47,9 +47,15 @@ export function UsuariosClient({
   branches,
   usersLimit,
   planName,
+  pausedIds,
+  pausingSoon,
 }: {
   usersLimit: number;
   planName: string;
+  /** Usuarios de más para el plan: no pueden entrar (lib/member-pause.ts). */
+  pausedIds: string[];
+  /** Bajó de plan: estos se pausan cuando termina la gracia. */
+  pausingSoon: { ids: string[]; date: string; nextPlan: string; nextLimit: number } | null;
   members: MemberRow[];
   invitations: InvitationRow[];
   currentUserId: string;
@@ -284,11 +290,21 @@ export function UsuariosClient({
             <p className="pt-1 text-sm text-foreground">
               {`Usuarios: ${usersUsed} de ${usersLimit} (${planName}). Las invitaciones pendientes también cuentan.`}
             </p>
-            {usersUsed > usersLimit && (
+            {pausedIds.length > 0 ? (
               <p className="rounded-xl bg-warning-bg px-3 py-2 text-sm text-warning">
-                Tenés más usuarios de los que incluye tu plan: los que ya están siguen andando, pero
-                para sumar otro tenés que pasar a un plan con más usuarios.
+                {`${pausedIds.length === 1 ? "Hay 1 usuario pausado" : `Hay ${pausedIds.length} usuarios pausados`} porque tu plan incluye ${usersLimit}: no ${pausedIds.length === 1 ? "puede" : "pueden"} entrar. Para reactivarlos, pasá a un plan con más usuarios o quitá a otros del equipo (se pausan los últimos que sumaste).`}
               </p>
+            ) : pausingSoon ? (
+              <p className="rounded-xl bg-warning-bg px-3 py-2 text-sm text-warning">
+                {`Bajaste al ${pausingSoon.nextPlan}, que incluye ${pausingSoon.nextLimit} ${pausingSoon.nextLimit === 1 ? "usuario" : "usuarios"}. Hasta el ${pausingSoon.date} siguen todos andando; después se ${pausingSoon.ids.length === 1 ? "pausa el marcado" : "pausan los marcados"} abajo (los últimos que sumaste). Para evitarlo, pasá a un plan con más usuarios o quitá a otros del equipo.`}
+              </p>
+            ) : (
+              usersUsed > usersLimit && (
+                <p className="rounded-xl bg-warning-bg px-3 py-2 text-sm text-warning">
+                  Tenés más usuarios o invitaciones de los que incluye tu plan: para sumar otro,
+                  pasá a un plan con más usuarios o quitá alguno.
+                </p>
+              )
             )}
           </div>
         </CardContent>
@@ -332,6 +348,16 @@ export function UsuariosClient({
                       {member.username ?? member.email ?? "Sin email"}
                       {isSelf && (
                         <span className="ml-1.5 text-xs text-muted-foreground">(vos)</span>
+                      )}
+                      {pausedIds.includes(member.id) && (
+                        <span className="ml-2 rounded-full bg-warning-bg px-2 py-0.5 text-[11px] font-semibold text-warning">
+                          Pausado
+                        </span>
+                      )}
+                      {pausingSoon?.ids.includes(member.id) && (
+                        <span className="ml-2 rounded-full bg-warning-bg px-2 py-0.5 text-[11px] font-semibold text-warning">
+                          {`Se pausa el ${pausingSoon.date}`}
+                        </span>
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground">

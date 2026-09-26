@@ -62,7 +62,7 @@ export function BillingStatus({
         </p>
         <p className="text-muted-foreground">
           {periodEnd
-            ? `Pago hasta el ${periodEnd}. No se renueva solo: después pasás al Plan Gratis si no lo renovás.`
+            ? `Pago hasta el ${periodEnd}. No se renueva solo: si no lo renovás, tenés 7 días más y después pasás al Plan Gratis.`
             : "No se renueva solo."}
         </p>
         {canManage && (
@@ -108,7 +108,7 @@ export function BillingStatus({
       {billing.status === "cancelled" && (
         <p className="text-muted-foreground">
           {periodEnd
-            ? `Cancelaste el débito automático. Seguís con el ${planName} hasta el ${periodEnd}; después pasás al Plan Gratis.`
+            ? `Cancelaste el débito automático. Seguís con el ${planName} hasta el ${periodEnd}; después tenés 7 días para renovarlo antes de pasar al Plan Gratis.`
             : "Cancelaste el débito automático."}
         </p>
       )}

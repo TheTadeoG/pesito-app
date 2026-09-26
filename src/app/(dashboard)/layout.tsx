@@ -172,7 +172,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </Link>
             </div>
           )}
-          {isOrgAdmin(membership.role) && expiringBilling && (
+          {isOrgAdmin(membership.role) && subscription.grace && (
+            <div className="mx-4 mt-4 rounded-2xl border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-foreground sm:mx-6 lg:mx-8">
+              {subscription.grace.kind === "downgrade"
+                ? `Pasaste al Plan ${planLabels[subscription.grace.nextPlan]}. Hasta el ${formatDate(subscription.grace.until)} seguís con las funciones y usuarios del Plan ${planLabels[subscription.grace.keepsPlan]}; después se aplican las del Plan ${planLabels[subscription.grace.nextPlan]}. `
+                : `Tu Plan ${planLabels[subscription.grace.keepsPlan]} venció. Tenés hasta el ${formatDate(subscription.grace.until)} para renovarlo; después el negocio pasa al Plan Gratis (sin perder datos). `}
+              <Link
+                href={
+                  subscription.grace.kind === "downgrade"
+                    ? "/configuracion?tab=plan"
+                    : `/suscribirse?plan=${subscription.grace.keepsPlan}&ciclo=${subscription.billing?.cycle ?? "mensual"}`
+                }
+                prefetch={false}
+                className="font-medium text-primary hover:underline"
+              >
+                {subscription.grace.kind === "downgrade" ? "Ver planes" : "Renovar"}
+              </Link>
+            </div>
+          )}
+          {isOrgAdmin(membership.role) && !subscription.grace && expiringBilling && (
             <div className="mx-4 mt-4 rounded-2xl border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-foreground sm:mx-6 lg:mx-8">
               {`Tu Plan ${planLabels[subscription.plan]} vence el ${formatDate(expiringBilling.currentPeriodEnd!)}. Si no lo renovás, el negocio pasa al Plan Gratis (sin perder datos). `}
               <Link

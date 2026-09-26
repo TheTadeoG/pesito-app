@@ -7,7 +7,9 @@ import { UsuariosClient } from "@/app/(dashboard)/usuarios/usuarios-client";
 import { siteUrl } from "@/lib/utils";
 import { getBranchContext } from "@/lib/branches";
 import { getSubscription, planLabels } from "@/lib/subscription";
-import { effectivePlan, limitsFor } from "@/lib/plan-access";
+import { effectivePlan, limitsFor, planLimits } from "@/lib/plan-access";
+import { pausedMembershipIds } from "@/lib/member-pause";
+import { formatDate } from "@/lib/utils";
 
 export default async function UsuariosPage() {
   const { organization, membership, userId } = await requireOrgContext();
@@ -49,6 +51,16 @@ export default async function UsuariosPage() {
     getSubscription(supabase, organization.id),
   ]);
 
+  // Usuarios de más para el plan: pausados ahora, o que se van a pausar al
+  // terminar la gracia por haber bajado de plan.
+  const memberRows = members ?? [];
+  const usersLimit = limitsFor(subscription).users;
+  const pausedNow = pausedMembershipIds(memberRows, usersLimit);
+  const grace = subscription.grace;
+  const pausedLater = grace
+    ? [...pausedMembershipIds(memberRows, planLimits[grace.nextPlan].users)].filter((id) => !pausedNow.has(id))
+    : [];
+
   return (
     <UsuariosClient
       members={members ?? []}
@@ -56,7 +68,18 @@ export default async function UsuariosPage() {
       currentUserId={userId}
       siteUrl={siteUrl}
       branches={branchContext.branches}
-      usersLimit={limitsFor(subscription).users}
+      usersLimit={usersLimit}
+      pausedIds={[...pausedNow]}
+      pausingSoon={
+        grace && pausedLater.length > 0
+          ? {
+              ids: pausedLater,
+              date: formatDate(grace.until),
+              nextPlan: `Plan ${planLabels[grace.nextPlan]}`,
+              nextLimit: planLimits[grace.nextPlan].users,
+            }
+          : null
+      }
       planName={`Plan ${planLabels[effectivePlan(subscription)]}${subscription.trialActive ? " (prueba)" : ""}`}
     />
   );

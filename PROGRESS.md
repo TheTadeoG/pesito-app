@@ -215,3 +215,10 @@ Estas no están en ninguna consulta a la base ni en Vercel — son ideas de prod
 Ojo: la base local y un `next start` de una sesión anterior pueden seguir vivos. Mirar `select version from supabase_migrations.schema_migrations` (aplicar las que falten con `psql -f`) y que el puerto 3000 no lo tenga otro proceso.
 
 No commitear `supabase/config.toml`, `supabase/.gitignore`, `supabase/.branches/` ni `.env.local`.
+
+## Hecho: período de gracia al bajar de plan (migración 0048)
+
+- Pasar a un plan más barato: 7 días con el plan anterior (`grace_plan` / `plan_grace_until`, lo escribe `downgradeGraceFields` en `lib/billing.ts`). Débito cancelado o pago único vencido: 7 días más después del fin del período. Cobro fallido: 7 días (0047). La prueba Pro no tiene gracia.
+- `org_effective_plan` (misma firma) y `lib/subscription.ts` (`grace`) aplican la misma regla. Avisos en el panel ("Pasaste al…", "Tu plan venció…").
+- Usuarios de más pasada la gracia: pausados los últimos que se sumaron, nunca el dueño (`lib/member-pause.ts`, controlado en `requireOrgContext` → `/cuenta-pausada`). Se ven como "Pausado" / "Se pausa el …" en Usuarios. Control sólo en la app (no en `is_org_member`, para no sumar una consulta a cada política).
+- Pendiente del usuario: correr 0048 en Supabase.

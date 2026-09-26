@@ -38,7 +38,16 @@ export interface SubscriptionInfo {
   trialActive: boolean;
   /** Cobro con Mercado Pago (null sin la migración 0047 o sin suscripción). */
   billing: BillingInfo | null;
+  /**
+   * Período de gracia al bajar de plan (0048): hasta `until` sigue valiendo
+   * `keepsPlan`; después, `nextPlan`. "downgrade": pasó a un plan más barato;
+   * "expired": venció lo pago sin renovar. La prueba Pro no tiene gracia.
+   */
+  grace: { kind: "downgrade" | "expired"; keepsPlan: Plan; nextPlan: Plan; until: string } | null;
 }
+
+export const PLAN_GRACE_DAYS = 7;
+const GRACE_MS = PLAN_GRACE_DAYS * 24 * 60 * 60 * 1000;
 
 type SubscriptionRow = {
   plan: Plan;
@@ -49,16 +58,32 @@ type SubscriptionRow = {
   current_period_end?: string | null;
   grace_until?: string | null;
   payer_email?: string | null;
+  grace_plan?: Plan | null;
+  plan_grace_until?: string | null;
 };
 
-/** Con un cobro fallido y la gracia vencida, o cancelada y el período terminado, vale Gratis. */
+/**
+ * Con un cobro fallido y la gracia vencida, o cancelada/pago único con el
+ * período terminado hace más de 7 días, vale Gratis (misma regla que
+ * org_effective_plan en la base, 0048).
+ */
 export function lapsedToFree(row: SubscriptionRow, now = new Date()): boolean {
   if (row.plan === "gratis") return false;
   if (row.payment_status === "past_due" && row.grace_until && new Date(row.grace_until) < now) return true;
-  if (row.payment_status === "cancelled" && row.current_period_end && new Date(row.current_period_end) < now) {
+  if (
+    row.payment_status === "cancelled" &&
+    row.current_period_end &&
+    new Date(row.current_period_end).getTime() + GRACE_MS < now.getTime()
+  ) {
     return true;
   }
   return false;
+}
+
+/** Bajó a un plan más barato y todavía está en los 7 días con el plan anterior. */
+function downgradeGrace(row: SubscriptionRow, now = new Date()): { plan: Plan; until: string } | null {
+  if (!row.grace_plan || !row.plan_grace_until || new Date(row.plan_grace_until) <= now) return null;
+  return { plan: row.grace_plan, until: row.plan_grace_until };
 }
 
 /**
@@ -79,8 +104,29 @@ export async function getSubscription(
     .maybeSingle();
   const data = raw as SubscriptionRow | null;
 
+  const now = new Date();
   const paidPlan: Plan = data?.plan ?? "gratis";
-  const plan: Plan = data && lapsedToFree(data) ? "gratis" : paidPlan;
+  const downgrade = data ? downgradeGrace(data, now) : null;
+  const plan: Plan = downgrade ? downgrade.plan : data && lapsedToFree(data, now) ? "gratis" : paidPlan;
+
+  let grace: SubscriptionInfo["grace"] = null;
+  if (downgrade) {
+    grace = { kind: "downgrade", keepsPlan: downgrade.plan, nextPlan: paidPlan, until: downgrade.until };
+  } else if (
+    data &&
+    paidPlan !== "gratis" &&
+    data.payment_status === "cancelled" &&
+    data.current_period_end &&
+    new Date(data.current_period_end) < now &&
+    plan !== "gratis"
+  ) {
+    grace = {
+      kind: "expired",
+      keepsPlan: paidPlan,
+      nextPlan: "gratis",
+      until: new Date(new Date(data.current_period_end).getTime() + GRACE_MS).toISOString(),
+    };
+  }
   const proTrialEndsAt = data?.pro_trial_ends_at ?? null;
   const trialActive =
     plan === "gratis" && proTrialEndsAt !== null && new Date(proTrialEndsAt) > new Date();
@@ -102,6 +148,7 @@ export async function getSubscription(
             payerEmail: data.payer_email ?? null,
           }
         : null,
+    grace,
   };
 }
 

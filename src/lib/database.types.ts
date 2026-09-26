@@ -534,6 +534,8 @@ export interface Database {
           current_period_end?: string | null;
           grace_until?: string | null;
           payer_email?: string | null;
+          grace_plan?: "esencial" | "pro" | "ia" | null;
+          plan_grace_until?: string | null;
         };
         Insert: {
           org_id: string;
@@ -546,6 +548,8 @@ export interface Database {
           current_period_end?: string | null;
           grace_until?: string | null;
           payer_email?: string | null;
+          grace_plan?: "esencial" | "pro" | "ia" | null;
+          plan_grace_until?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
         Relationships: [];

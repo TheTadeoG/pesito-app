@@ -19,6 +19,9 @@ export function BarChart({
   formatValue = formatCurrency,
 }: BarChartProps) {
   const max = Math.max(1, ...data.map((d) => d.value));
+  // Con muchas barras no entra el monto arriba de cada una (se pisaban,
+  // p. ej. 30 días en /admin): queda sólo en el cartel al pasar el mouse.
+  const valueLabels = showValueLabels && data.length <= 14;
 
   return (
     <div className="flex h-44 items-stretch justify-between gap-1">
@@ -48,7 +51,7 @@ export function BarChart({
             <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1 text-[11px] font-medium text-background opacity-0 shadow-md transition-opacity group-hover:opacity-100">
               {d.label} · {d.value > 0 ? formatValue(d.value) : "Sin ventas"}
             </div>
-            {showValueLabels && (
+            {valueLabels && (
               <span className="text-[10px] font-medium text-muted-foreground">
                 {d.value > 0 ? formatValue(d.value) : ""}
               </span>

@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isMembershipPaused } from "@/lib/member-pause";
 import type { Membership, Organization } from "@/lib/types";
 
 export interface CurrentOrgContext {
@@ -52,6 +53,12 @@ export const requireOrgContext = cache(async (): Promise<CurrentOrgContext> => {
 
   const firstName =
     typeof claims.user_metadata?.first_name === "string" ? claims.user_metadata.first_name : null;
+
+  // Usuario de más para el plan del negocio (bajó de plan y terminó la
+  // gracia): no entra hasta que el dueño haga lugar. El dueño nunca.
+  if (membershipRow.role !== "owner" && (await isMembershipPaused(supabase, organizations.id, membershipRow.id))) {
+    redirect("/cuenta-pausada");
+  }
 
   return {
     userId: claims.sub,
