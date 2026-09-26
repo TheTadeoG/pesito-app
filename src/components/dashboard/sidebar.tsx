@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { navSections, isNavItemActive } from "@/lib/nav";
+import { planIcons } from "@/lib/plan-visuals";
+import { planLabels, type Plan } from "@/lib/subscription";
 import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/marketing/wordmark";
@@ -14,8 +16,9 @@ interface SidebarProps {
   orgName: string;
   memberName: string;
   roleLabel: string;
-  /** "Plan Pro", "Prueba Pro"… para que siempre se vea qué plan se tiene. */
-  planLabel: string;
+  /** Plan que vale hoy (con la prueba Pro, "pro" y trial). */
+  plan: Plan;
+  trial: boolean;
   role: string;
   cashRegister: {
     openedAt: string;
@@ -31,7 +34,8 @@ export function Sidebar({
   orgName,
   memberName,
   roleLabel,
-  planLabel,
+  plan,
+  trial,
   role,
   cashRegister,
   branch,
@@ -52,19 +56,17 @@ export function Sidebar({
           {memberName && (
             <p className="truncate text-xs text-muted-foreground">{memberName}</p>
           )}
-          <p className="text-xs text-muted-foreground">{roleLabel}</p>
-          {canSeeAdminItems ? (
-            <Link
-              href="/configuracion?tab=plan"
-              className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/15"
-            >
-              {planLabel}
-            </Link>
-          ) : (
-            <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-              {planLabel}
-            </span>
-          )}
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {roleLabel}
+            <span aria-hidden>·</span>
+            {canSeeAdminItems ? (
+              <Link href="/configuracion?tab=plan" className="hover:underline">
+                <PlanTag plan={plan} trial={trial} />
+              </Link>
+            ) : (
+              <PlanTag plan={plan} trial={trial} />
+            )}
+          </p>
           {branch && <BranchSwitcher {...branch} />}
         </div>
       </div>
@@ -127,5 +129,24 @@ export function Sidebar({
         })}
       </nav>
     </aside>
+  );
+}
+
+// Color del texto de cada plan (el mismo acento que en precios).
+const planTagColors: Record<Plan, string> = {
+  gratis: "text-muted-foreground",
+  esencial: "text-primary",
+  pro: "text-amber-600",
+  ia: "text-violet-500",
+};
+
+/** Plan actual, discreto: ícono y nombre con el color del plan. */
+function PlanTag({ plan, trial }: { plan: Plan; trial: boolean }) {
+  const Icon = planIcons[plan];
+  return (
+    <span className={cn("inline-flex items-center gap-1 font-semibold", planTagColors[plan])}>
+      <Icon className="h-3 w-3" />
+      {trial ? "Prueba Pro" : planLabels[plan]}
+    </span>
   );
 }

@@ -137,9 +137,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           orgName={organization.name}
           memberName={memberName}
           roleLabel={roleLabel}
-          planLabel={
-            subscription.trialActive ? "Prueba Pro" : `Plan ${planLabels[subscription.plan]}`
-          }
+          plan={subscription.trialActive ? "pro" : subscription.plan}
+          trial={subscription.trialActive}
           role={membership.role}
           cashRegister={cashRegister}
           branch={branch}
