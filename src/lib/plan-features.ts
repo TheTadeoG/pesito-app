@@ -62,7 +62,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     ],
     soon: [
       "Carga masiva de productos con Excel",
-      "Generá e imprimí códigos de barras",
+      "Generá e imprimí códigos de barras y etiquetas",
       "Talles, combos y kits",
     ],
   },
