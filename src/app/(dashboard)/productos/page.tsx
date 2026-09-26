@@ -83,6 +83,7 @@ export default async function ProductosPage({
       <ProLockedCard
         title="Gestión de stock y reposición"
         plan={featureMinPlan.stockManagement}
+        preview="list"
         description="Stock mínimo por producto, aviso de lo que se está acabando, lista para reponer e historial de cada movimiento."
       />
     );

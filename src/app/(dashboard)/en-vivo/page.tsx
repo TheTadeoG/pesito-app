@@ -27,6 +27,7 @@ export default async function EnVivoPage() {
       <ProLockedCard
         title="En vivo"
         plan={featureMinPlan.liveView}
+        preview="bars"
         description="Mirá desde el celular cuánto se vende en este momento, en cada sucursal y con cada vendedor y su caja."
       />
     );

@@ -6,7 +6,6 @@ import {
   BarChart3,
   CreditCard,
   DollarSign,
-  Lock,
   Package,
   Receipt,
   Scale,
@@ -24,7 +23,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { BarChart, type BarChartDatum } from "@/components/dashboard/bar-chart";
 import { DonutChart } from "@/components/dashboard/donut-chart";
 import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
-import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
+import { PlanPill, ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { featureMinPlan } from "@/lib/plan-access";
 import { cn, formatCurrency } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
@@ -218,12 +217,16 @@ export function ReportesDashboard({
                     <div className="flex items-center gap-2">
                       {tile.locked ? (
                         <Link
-                          href="/configuracion?tab=plan"
+                          href="/suscribirse?plan=pro"
                           prefetch={false}
-                          className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary"
+                          title="La ganancia estimada está en el Plan Pro"
+                          className="flex items-center gap-2 hover:opacity-80"
                         >
-                          <Lock className="h-3.5 w-3.5" />
-                          {tile.value}
+                          {/* Monto de mentira, borroso: se ve que ahí hay un número. */}
+                          <span aria-hidden className="select-none text-xl font-bold text-foreground blur-[5px]">
+                            $ 000.000
+                          </span>
+                          <PlanPill plan="pro" />
                         </Link>
                       ) : (
                         <p className="truncate text-xl font-bold text-foreground">{tile.value}</p>
@@ -326,6 +329,7 @@ export function ReportesDashboard({
           {isVisible("topMargin") && !data.topByMargin && (
             <ProLockedCard
               title="Productos que más ganancia dejan"
+              preview="list"
               description="Con los reportes avanzados ves cuánto ganás, qué te deja más plata y qué vendés a pérdida."
             />
           )}
@@ -451,6 +455,7 @@ export function ReportesDashboard({
         <ProLockedCard
           title="Ventas por vendedor"
           plan={featureMinPlan.teamReports}
+          preview="bars"
           description="Cuánto vende y cuánto gana cada empleado, y sus diferencias de caja."
         />
       )}
@@ -523,7 +528,7 @@ export function ReportesDashboard({
       )}
 
       {isVisible("cashDiff") && data.teamLocked && (
-        <ProLockedCard title="Diferencias de caja por vendedor" plan={featureMinPlan.teamReports} />
+        <ProLockedCard title="Diferencias de caja por vendedor" plan={featureMinPlan.teamReports} preview="list" />
       )}
 
       {isVisible("cashDiff") && data.cashDiffByUser && (
@@ -608,7 +613,7 @@ export function ReportesDashboard({
                 </CardContent>
               </Card>
             ) : (
-              <ProLockedCard title="Comparación con el período anterior" />
+              <ProLockedCard title="Comparación con el período anterior" preview="comparison" />
             ))}
 
           {isVisible("lossProducts") &&
@@ -638,7 +643,7 @@ export function ReportesDashboard({
                 </CardContent>
               </Card>
             ) : (
-              <ProLockedCard title="Productos vendidos a pérdida" />
+              <ProLockedCard title="Productos vendidos a pérdida" preview="list" />
             ))}
         </div>
       )}
