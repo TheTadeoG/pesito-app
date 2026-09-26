@@ -23,6 +23,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { BarChart, type BarChartDatum } from "@/components/dashboard/bar-chart";
 import { DonutChart } from "@/components/dashboard/donut-chart";
 import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
+import { ListPager, usePager } from "@/components/dashboard/list-pager";
 import { PlanPill, ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { featureMinPlan } from "@/lib/plan-access";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -152,6 +153,9 @@ export function ReportesDashboard({
   period: ReportPeriod;
 }) {
   const [visible, setVisible] = useState<Set<WidgetId>>(new Set(ALL_WIDGET_IDS));
+  // "Quién te debe" puede ser muy largo: paginado, con el total arriba.
+  const debtorsPager = usePager(data.fiadoDebtors, "pesito-reportes-deudores-por-pagina");
+  const fiadoTotal = data.fiadoDebtors.reduce((sum, d) => sum + d.amount, 0);
   const [showCustomize, setShowCustomize] = useState(false);
 
   useEffect(() => {
@@ -370,6 +374,11 @@ export function ReportesDashboard({
               <CardHeader className="flex flex-row items-center gap-2">
                 <Wallet className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-base">Quién te debe</CardTitle>
+                {data.fiadoDebtors.length > 0 && (
+                  <span className="ml-auto text-right text-xs text-muted-foreground">
+                    {`${formatCurrency(fiadoTotal)} · ${data.fiadoDebtors.length} ${data.fiadoDebtors.length === 1 ? "cliente" : "clientes"}`}
+                  </span>
+                )}
               </CardHeader>
               <CardContent className="p-0">
                 {data.fiadoDebtors.length === 0 ? (
@@ -378,7 +387,7 @@ export function ReportesDashboard({
                   </p>
                 ) : (
                   <div className="divide-y divide-border">
-                    {data.fiadoDebtors.map((d) => (
+                    {debtorsPager.pageItems.map((d) => (
                       <div key={d.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
                         <div className="min-w-0">
                           <p className="truncate text-foreground">{d.name}</p>
@@ -397,6 +406,7 @@ export function ReportesDashboard({
                     ))}
                   </div>
                 )}
+                <ListPager {...debtorsPager} />
               </CardContent>
             </Card>
           )}
