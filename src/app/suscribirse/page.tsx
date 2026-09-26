@@ -43,7 +43,7 @@ export default async function SuscribirsePage({
 }) {
   const { plan: planParam, ciclo, metodo, desde } = await searchParams;
   const { organization, membership } = await requireOrgContext();
-  if (!isOrgAdmin(membership.role)) redirect("/pos");
+  if (!isOrgAdmin(membership.role)) redirect("/configuracion?tab=plan");
 
   const plan = PAID.find((p) => p === planParam);
   if (!plan) redirect("/configuracion?tab=plan");

@@ -650,6 +650,9 @@ export async function revertProductField(
 
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
+  if (!canUse(await getSubscription(supabase, organization.id), "priceRevert")) {
+    return { error: featureLockedMessage("priceRevert") };
+  }
 
   const { error } = await supabase
     .from("products")

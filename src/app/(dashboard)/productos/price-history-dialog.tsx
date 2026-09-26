@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Undo2 } from "lucide-react";
+import { Lock, Undo2 } from "lucide-react";
+import { PlanPill } from "@/components/dashboard/pro-locked-card";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
@@ -20,10 +21,13 @@ function HistoryList({
   product,
   field,
   onClose,
+  revertLocked,
 }: {
   product: Product;
   field: HistoryField;
   onClose: () => void;
+  /** Volver a un valor anterior: desde el Plan Pro (priceRevert). */
+  revertLocked: boolean;
 }) {
   const router = useRouter();
   const { showSuccess } = useToast();
@@ -38,14 +42,19 @@ function HistoryList({
       .finally(() => setLoading(false));
   }, [product.id, field]);
 
-  async function handleRevert(row: ProductHistoryRow) {
-    if (!confirm(`¿Volver el ${label} de "${product.name}" a ${formatCurrency(row.newValue)}?`))
-      return;
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleRevert(row: ProductHistoryRow, value: number) {
+    if (!confirm(`¿Volver el ${label} de "${product.name}" a ${formatCurrency(value)}?`)) return;
     setRevertingId(row.id);
-    const result = await revertProductField(product.id, field, row.newValue);
+    setError(null);
+    const result = await revertProductField(product.id, field, value);
     setRevertingId(null);
-    if (result.error) return;
-    showSuccess(field === "price" ? "Precio actualizado" : "Costo actualizado", formatCurrency(row.newValue));
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    showSuccess(field === "price" ? "Precio actualizado" : "Costo actualizado", formatCurrency(value));
     router.refresh();
     onClose();
   }
@@ -64,6 +73,7 @@ function HistoryList({
 
   return (
     <div className="max-h-96 space-y-2 overflow-y-auto">
+      {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
       {rows.map((row, i) => (
         <div
           key={row.id}
@@ -88,26 +98,55 @@ function HistoryList({
               </p>
             )}
           </div>
-          {i !== 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRevert(row)}
-              disabled={revertingId === row.id}
-              title={`Volver a ${formatCurrency(row.newValue)}`}
-              className="shrink-0 self-start whitespace-nowrap sm:self-auto"
-            >
-              <Undo2 className="h-3.5 w-3.5" />
-              Volver a este {label}
-            </Button>
-          )}
+          {(() => {
+            // La fila más nueva es el valor actual: se ofrece volver al
+            // anterior. Las demás: volver a ese valor.
+            const value = i === 0 ? row.oldValue : row.newValue;
+            const text = i === 0 ? `Volver al ${label} anterior` : `Volver a este ${label}`;
+            if (revertLocked) {
+              return (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  title={`Volver a un ${label} anterior está en el Plan Pro.`}
+                  className="shrink-0 self-start whitespace-nowrap sm:self-auto"
+                >
+                  <Lock className="h-3.5 w-3.5" />
+                  {text}
+                  <PlanPill plan="pro" />
+                </Button>
+              );
+            }
+            return (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRevert(row, value)}
+                disabled={revertingId === row.id}
+                title={`Volver a ${formatCurrency(value)}`}
+                className="shrink-0 self-start whitespace-nowrap sm:self-auto"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                {i === 0 ? `${text} (${formatCurrency(value)})` : text}
+              </Button>
+            );
+          })()}
         </div>
       ))}
     </div>
   );
 }
 
-function PriceHistoryContent({ product, onClose }: { product: Product; onClose: () => void }) {
+function PriceHistoryContent({
+  product,
+  onClose,
+  revertLocked,
+}: {
+  product: Product;
+  onClose: () => void;
+  revertLocked: boolean;
+}) {
   const [field, setField] = useState<HistoryField>("price");
 
   return (
@@ -130,7 +169,7 @@ function PriceHistoryContent({ product, onClose }: { product: Product; onClose: 
         ))}
       </div>
       {/* key: cada pestaña carga su propio historial */}
-      <HistoryList key={field} product={product} field={field} onClose={onClose} />
+      <HistoryList key={field} product={product} field={field} onClose={onClose} revertLocked={revertLocked} />
     </div>
   );
 }
@@ -138,9 +177,11 @@ function PriceHistoryContent({ product, onClose }: { product: Product; onClose: 
 export function PriceHistoryDialog({
   product,
   onClose,
+  revertLocked,
 }: {
   product: Product | null;
   onClose: () => void;
+  revertLocked: boolean;
 }) {
   return (
     <Dialog
@@ -149,7 +190,7 @@ export function PriceHistoryDialog({
       title="Historial de precios y costos"
       description={product ? product.name : ""}
     >
-      {product && <PriceHistoryContent key={product.id} product={product} onClose={onClose} />}
+      {product && <PriceHistoryContent key={product.id} product={product} onClose={onClose} revertLocked={revertLocked} />}
     </Dialog>
   );
 }

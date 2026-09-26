@@ -73,9 +73,9 @@ export default async function ProductosPage({
   }));
 
   const activeProducts = normalized.filter((p) => p.active);
-  const lowStockCount = stockLocked
-    ? 0
-    : activeProducts.filter((p) => p.stock <= p.min_stock).length;
+  // Se cuenta aunque el plan no tenga gestión de stock: el número en la
+  // pestaña invita a verlo (la pestaña muestra con qué plan se desbloquea).
+  const lowStockCount = activeProducts.filter((p) => p.stock <= p.min_stock).length;
 
   let content: React.ReactNode;
   if (tab === "stock" && stockLocked) {
@@ -133,6 +133,7 @@ export default async function ProductosPage({
         initialBrand={marca ?? null}
         orgId={organization.id}
         bulkLocked={!canUse(subscription, "bulkPriceChanges")}
+        revertLocked={!canUse(subscription, "priceRevert")}
         stockAlertsLocked={stockLocked}
       />
     );

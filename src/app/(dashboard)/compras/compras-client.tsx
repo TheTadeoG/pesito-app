@@ -16,6 +16,8 @@ import {
   Trash2,
   Wallet,
 } from "lucide-react";
+import { PlanPill } from "@/components/dashboard/pro-locked-card";
+import type { Plan } from "@/lib/subscription";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +78,8 @@ function paymentMethodOptionsWithCustom(
   value: PurchasePaymentMethod;
   label: string;
   icon: typeof Banknote;
+  /** Se muestra pero no se puede elegir: indica desde qué plan se desbloquea. */
+  lockedPlan?: Plan;
 }[] {
   return [
     { value: "efectivo", label: "Efectivo", icon: Banknote },
@@ -83,9 +87,12 @@ function paymentMethodOptionsWithCustom(
     { value: "transferencia", label: "Transferencia", icon: Landmark },
     { value: "qr", label: "QR", icon: QrCode },
     ...customMethods.map((name) => ({ value: name, label: name, icon: CircleDollarSign })),
-    ...(allowAccount
-      ? [{ value: "cuenta_corriente" as const, label: "Cuenta corriente", icon: Wallet }]
-      : []),
+    {
+      value: "cuenta_corriente" as const,
+      label: "Cuenta corriente",
+      icon: Wallet,
+      lockedPlan: allowAccount ? undefined : ("esencial" as const),
+    },
   ];
 }
 
@@ -961,7 +968,7 @@ export function ComprasClient({
                   <p className="text-xs text-muted-foreground">
                     Asigná cuánto se paga con cada medio hasta cubrir el total.
                   </p>
-                  {paymentMethodOptions.map((m) => {
+                  {paymentMethodOptions.filter((m) => !m.lockedPlan).map((m) => {
                     const disabled = m.value === "efectivo" && !hasOpenCaja;
                     return (
                       <div key={m.value} className="flex items-center gap-2">
@@ -1009,13 +1016,19 @@ export function ComprasClient({
               ) : (
                 <div className="grid grid-cols-5 gap-1.5">
                   {paymentMethodOptions.map((m) => {
-                    const disabled = m.value === "efectivo" && !hasOpenCaja;
+                    const disabled = (m.value === "efectivo" && !hasOpenCaja) || Boolean(m.lockedPlan);
                     return (
                       <button
                         key={m.value}
                         type="button"
                         disabled={disabled}
-                        title={disabled ? "Abrí tu caja para pagar en efectivo" : undefined}
+                        title={
+                          m.lockedPlan
+                            ? "La cuenta corriente con proveedores está en el Plan Esencial."
+                            : disabled
+                              ? "Abrí tu caja para pagar en efectivo"
+                              : undefined
+                        }
                         onClick={() => {
                           setSingleMethod(m.value);
                           setError(null);
@@ -1031,6 +1044,7 @@ export function ComprasClient({
                       >
                         <m.icon className="h-4 w-4" />
                         {m.label}
+                        {m.lockedPlan && <PlanPill plan={m.lockedPlan} />}
                       </button>
                     );
                   })}

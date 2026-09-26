@@ -1,10 +1,12 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import type { ReactNode } from "react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { getCashRegisterSummaries, sumCashBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
 import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
-import { canUse } from "@/lib/plan-access";
+import { canUse, featureMinPlan } from "@/lib/plan-access";
 import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
 import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/historial";
@@ -194,11 +196,28 @@ export default async function CajaPage() {
         />
         <div className="grid gap-6 lg:grid-cols-2">
           <DeudasFiadoOverview totalDebt={totalDebt} debtors={debtors} />
-          {canSupplierAccounts && (
+          {canSupplierAccounts ? (
             <CuentasPorPagarOverview totalDebt={totalOwed} creditors={creditors} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Cuentas por pagar a proveedores</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PlanLockNote plan={featureMinPlan.supplierAccounts}>
+                  Cuánto le debés a cada proveedor, con compras a cuenta corriente y pagos parciales.
+                </PlanLockNote>
+              </CardContent>
+            </Card>
           )}
         </div>
-        {canTeam && <RecurringDiscrepanciesOverview rows={recurringDiscrepancies} />}
+        {canTeam ? (
+          <RecurringDiscrepanciesOverview rows={recurringDiscrepancies} />
+        ) : (
+          <PlanLockNote plan={featureMinPlan.teamReports}>
+            Diferencias de caja por empleado: quién cierra con faltantes seguido y cuánto suma.
+          </PlanLockNote>
+        )}
       </>
     );
   }

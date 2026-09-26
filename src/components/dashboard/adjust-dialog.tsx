@@ -83,7 +83,14 @@ export function AdjustDialog({
       title="Ajustar stock"
       description={product ? `${product.name} · stock actual: ${product.stock}${product.unit}` : ""}
     >
-      <div className="space-y-4">
+      {/* form: Enter en cualquier campo confirma */}
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!pending && amount) handleSubmit();
+        }}
+      >
         <div className="inline-flex w-full rounded-xl border border-border bg-muted/50 p-1">
           {modes.map((m) => (
             <button
@@ -137,15 +144,14 @@ export function AdjustDialog({
             Cancelar
           </Button>
           <Button
-            type="button"
+            type="submit"
             variant={mode === "restar" ? "danger" : "primary"}
             disabled={pending || !amount}
-            onClick={handleSubmit}
           >
             {pending ? "Guardando…" : "Confirmar"}
           </Button>
         </div>
-      </div>
+      </form>
     </Dialog>
   );
 }

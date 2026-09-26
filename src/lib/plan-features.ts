@@ -215,6 +215,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Historial de precios de cada producto", values: everyPlan },
       { label: "Cuenta corriente con proveedores", values: fromEsencial },
       { label: "Aumentos masivos de precios y costos, con deshacer", values: fromPro },
+      { label: "Volver a un precio o costo anterior desde el historial", values: fromPro },
       { label: "Pases de mercadería entre sucursales", values: onlyIa },
     ],
   },

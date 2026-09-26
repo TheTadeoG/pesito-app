@@ -1,7 +1,7 @@
 "use client";
 
+import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { Pencil, Plus, Store } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -111,12 +111,9 @@ export function BranchesManager({
           </Button>
         </form>
       ) : (
-        <p className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-          Sumar más sucursales es del Plan IA.{" "}
-          <Link href="/configuracion?tab=plan" prefetch={false} className="font-medium text-primary underline">
-            Ver planes
-          </Link>
-        </p>
+        <PlanLockNote plan="ia">
+          Sumar más sucursales (cada una con su stock y sus cajas) es del Plan IA.
+        </PlanLockNote>
       )}
 
       {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}

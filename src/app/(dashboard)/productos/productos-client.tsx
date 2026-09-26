@@ -43,6 +43,7 @@ import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
+import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 
 type SupplierOption = Pick<Supplier, "id" | "name">;
 
@@ -137,6 +138,7 @@ export function ProductosClient({
   initialBrand,
   orgId,
   bulkLocked,
+  revertLocked,
   stockAlertsLocked,
 }: {
   orgId: string;
@@ -147,6 +149,8 @@ export function ProductosClient({
   initialBrand: string | null;
   // El plan no incluye aumentos masivos: los botones abren el aviso del plan.
   bulkLocked: boolean;
+  /** Volver a un precio o costo anterior (Plan Pro). */
+  revertLocked: boolean;
   // Sin gestión de stock (Plan Gratis): no se avisa ni se filtra por stock bajo.
   stockAlertsLocked: boolean;
 }) {
@@ -235,10 +239,9 @@ export function ProductosClient({
     return Array.from(names).sort((a, b) => a.localeCompare(b, "es"));
   }, [localBrands, products, brandFilter]);
 
-  const lowStockProducts = useMemo(
-    () => (stockAlertsLocked ? [] : products.filter(isLowStock)),
-    [products, stockAlertsLocked],
-  );
+  // Con el plan sin gestión de stock igual se cuentan (y se avisa en la
+  // campanita), pero la lista queda bloqueada con el plan que la trae.
+  const lowStockProducts = useMemo(() => products.filter(isLowStock), [products]);
   const lowStockCount = lowStockProducts.length;
   const lossProducts = useMemo(
     () => products.filter(isSellingAtLoss),
@@ -535,7 +538,15 @@ export function ProductosClient({
                 </Select>
               </div>
 
-              {!stockAlertsLocked && (
+              {stockAlertsLocked ? (
+                <div className="flex items-center justify-between rounded-xl border border-dashed border-border px-3.5 py-2.5 text-sm text-muted-foreground">
+                  <span>
+                    Stock bajo
+                    {lowStockCount > 0 && ` (${lowStockCount})`}
+                  </span>
+                  <PlanPill plan="esencial" />
+                </div>
+              ) : (
               <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
                 <span className="text-foreground">
                   Stock bajo
@@ -945,6 +956,10 @@ export function ProductosClient({
               <p className="text-sm text-muted-foreground">
                 Ningún producto está por debajo de su stock mínimo.
               </p>
+            ) : stockAlertsLocked ? (
+              <PlanLockNote plan="esencial">
+                {`${lowStockProducts.length === 1 ? "Hay 1 producto" : `Hay ${lowStockProducts.length} productos`} por debajo del stock mínimo. Ver cuáles, reponerlos y recibir estos avisos es del Plan Esencial.`}
+              </PlanLockNote>
             ) : (
               <div className="divide-y divide-border rounded-xl border border-border">
                 {lowStockProducts.map((product) => (
@@ -1033,6 +1048,7 @@ export function ProductosClient({
       <PriceHistoryDialog
         product={priceHistoryProduct}
         onClose={() => setPriceHistoryProduct(null)}
+        revertLocked={revertLocked}
       />
 
       <Dialog

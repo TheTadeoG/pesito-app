@@ -1,8 +1,9 @@
 "use client";
 
+import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Lock, Package, Pencil, Plus, Search, Trash2, Wallet, X } from "lucide-react";
+import { Package, Pencil, Plus, Search, Trash2, Wallet, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,17 +144,10 @@ export function ProveedoresClient({
           </Card>
         </div>
       ) : (
-        <Card>
-          <CardContent className="flex flex-wrap items-center gap-3 py-4 text-sm text-muted-foreground">
-            <Lock className="h-4 w-4" />
-            <span className="flex-1">
-              La cuenta corriente con proveedores (cuánto les debés y a quién) está en el Plan Esencial.
-            </span>
-            <Link href="/configuracion?tab=plan" prefetch={false} className="font-medium text-primary hover:underline">
-              Ver planes
-            </Link>
-          </CardContent>
-        </Card>
+        <PlanLockNote plan="esencial">
+          Cuenta corriente con proveedores: cuánto les debés en total, a quién más, compras a cuenta y
+          pagos parciales. Está en el Plan Esencial.
+        </PlanLockNote>
       )}
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">

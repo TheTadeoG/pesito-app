@@ -8,6 +8,7 @@ export type PlanFeature =
   | "stockManagement"
   | "supplierAccounts"
   | "bulkPriceChanges"
+  | "priceRevert"
   | "profitReports"
   | "liveView"
   | "teamReports"
@@ -36,6 +37,7 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   stockManagement: "esencial",
   supplierAccounts: "esencial",
   bulkPriceChanges: "pro",
+  priceRevert: "pro",
   profitReports: "pro",
   liveView: "pro",
   teamReports: "esencial",
@@ -63,6 +65,7 @@ export const featureLabels: Record<PlanFeature, string> = {
   stockManagement: "La gestión de stock y reposición",
   supplierAccounts: "La cuenta corriente con proveedores",
   bulkPriceChanges: "Los aumentos masivos de precios y costos",
+  priceRevert: "Volver a un precio o costo anterior",
   profitReports: "Los reportes avanzados de ganancias",
   liveView: "La pantalla En vivo",
   teamReports: "Los reportes por empleado",

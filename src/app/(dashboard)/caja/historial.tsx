@@ -54,8 +54,8 @@ export function CajaHistorial({
         {limitedTo !== undefined && (
           <p className="text-xs text-muted-foreground">
             {`Ves los últimos ${limitedTo} cierres. El historial completo está en el Plan Pro. `}
-            <Link href="/configuracion?tab=plan" prefetch={false} className="font-medium text-primary hover:underline">
-              Ver planes
+            <Link href="/suscribirse?plan=pro" prefetch={false} className="font-medium text-primary hover:underline">
+              Pasate al Plan Pro
             </Link>
           </p>
         )}
