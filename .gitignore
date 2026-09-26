@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# graphify (mapa del código, se regenera solo al empezar cada sesión)
+graphify-out/

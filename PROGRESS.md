@@ -112,6 +112,8 @@ Decidido con el usuario: una sola sesión trabaja esto; **stock por sucursal**; 
 
 ## Skills del proyecto (`.agents/skills`, con acceso en `.claude/skills`)
 
+- graphify: mapa (grafo) del código en `graphify-out/` para encontrar relaciones sin leer todo. El CLI se instala y el mapa se regenera solo al arrancar cada sesión (`.claude/hooks/graphify-setup.sh`, en segundo plano). `graphify-out/` no se commitea.
+
 Instaladas con `npx skills add` (quedan en `skills-lock.json`). Además de las que ya estaban (docx, pdf, pptx, xlsx, frontend-design, webapp-testing, mcp-builder, skill-creator, find-skills):
 
 - `design-taste-frontend` (Leonxlnx/taste-skill): diseño "anti-plantilla" para landing, portfolios y rediseños. Ella misma aclara que **no** es para dashboards ni tablas: usarla para la web pública, no para el panel.

@@ -1,0 +1,7 @@
+# Graphify (mapa del código): sólo la app, las migraciones y los docs del proyecto.
+.agents/
+.claude/
+public/
+graphify-out/
+skills-lock.json
+package-lock.json
