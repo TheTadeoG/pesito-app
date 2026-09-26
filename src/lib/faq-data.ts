@@ -89,8 +89,8 @@ export const faqCategories: FaqCategory[] = [
           "En todos los planes, cada venta descuenta el stock sola y cada compra lo suma. Desde el Plan Esencial le ponés a cada producto un stock mínimo y Pesito te avisa cuáles están por acabarse, con la lista para reponer; y los ajustes a mano (roturas, vencidos, conteos) quedan registrados con el motivo en el historial de movimientos.",
       },
       {
-        question: "¿Cómo actualizo los precios cuando hay aumentos?",
-        answer: `Con los aumentos masivos del ${pro.name}: subís un porcentaje o un monto a los precios o costos de todos los productos de un proveedor o de una marca de una sola vez (y si te equivocaste, lo deshacés). En todos los planes cada producto guarda su historial de precios, y al registrar una compra podés actualizar el precio de venta con el costo nuevo.`,
+        question: "¿Puedo subir los precios de todos los productos de una vez?",
+        answer: `Sí, con los aumentos masivos del ${pro.name}: elegís un proveedor o una marca, ponés el porcentaje o el monto, y se actualizan en segundos los precios (o los costos) de todos sus productos. Si te equivocaste, lo deshacés. En todos los planes cada producto guarda su historial de precios, y al registrar una compra podés actualizar el precio de venta con el costo nuevo.`,
       },
       {
         question: "¿Puedo registrar las compras a mis proveedores?",
@@ -166,7 +166,7 @@ const featuredQuestions = [
   "¿Qué diferencia hay entre los planes?",
   "¿Necesito instalar algo?",
   "¿Puedo usar lector de código de barras?",
-  "¿Cómo actualizo los precios cuando hay aumentos?",
+  "¿Puedo subir los precios de todos los productos de una vez?",
   "¿Qué pasa si un cliente me debe (fiado)?",
   "¿Sirve si tengo varias sucursales?",
   "¿Imprime tickets? ¿Hace factura electrónica?",
