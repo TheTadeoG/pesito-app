@@ -3,7 +3,6 @@ import { Fredoka, Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { siteUrl } from "@/lib/utils";
 import { ScrollToTopOnNavigate } from "@/components/scroll-to-top-on-navigate";
-import { CookieConsent } from "@/components/marketing/cookie-consent";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -94,7 +93,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <ScrollToTopOnNavigate />
         {children}
-        <CookieConsent />
         <SpeedInsights />
       </body>
     </html>
