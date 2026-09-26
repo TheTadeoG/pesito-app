@@ -6,11 +6,9 @@ import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
 import type { Plan } from "@/lib/subscription";
 
 // Resumen tipo "checkout" para cuando se llega a /registro eligiendo un
-// plan puntual desde precios. Todavía no hay pasarela de pago conectada
-// (sin credenciales de MercadoPago), así que el método de pago se muestra
-// como referencia — "muy pronto" — y lo que en verdad pasa al enviar el
-// formulario es la misma prueba gratis de 14 días que ya existe, para no
-// mostrar un cobro que en realidad no se procesa.
+// plan puntual desde precios. La cuenta arranca con la prueba de 14 días y
+// el plan se contrata después desde Configuración → Plan, con Mercado Pago
+// (débito automático). Acá no se cobra nada.
 export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean }) {
   const def = planDefinitions[plan];
   const Icon = planIcons[plan];
@@ -63,8 +61,7 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
         <div className="rounded-xl bg-accent/40 p-4 text-sm">
           <p className="font-medium text-accent-foreground">Empezás con 14 días gratis</p>
           <p className="mt-1 text-accent-foreground/80">
-            No te cobramos nada hoy. Vas a poder confirmar el {def.name} desde Configuración
-            cuando quieras.
+            {`No te cobramos nada hoy. Cuando quieras, contratás el ${def.name} desde Configuración → Plan.`}
           </p>
         </div>
 
@@ -77,14 +74,12 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
               <CreditCard className="h-4 w-4 text-muted-foreground" />
               MercadoPago
             </span>
-            <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Muy pronto
-            </span>
+            <span className="shrink-0 text-xs text-muted-foreground">Débito automático</span>
           </div>
           <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Estamos habilitando el cobro automático. Por ahora creá tu cuenta y arrancá gratis —
-            te avisamos antes de cobrarte.
+            Pagás con tarjeta o dinero en cuenta de Mercado Pago. Cancelás cuando quieras desde
+            Configuración.
           </p>
         </div>
       </CardContent>

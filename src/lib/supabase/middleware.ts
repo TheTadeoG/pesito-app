@@ -26,6 +26,8 @@ const PUBLIC_PATHS = [
   "/sitemap.xml",
   "/robots.txt",
   "/llms.txt",
+  // Avisos de Mercado Pago (cobro de los planes): verifican su propia firma.
+  "/api/mercadopago",
   // Archivos que buscan los crawlers y agentes de IA (ai-catalog.json, etc.):
   // si no existen, que respondan 404 y no la página de login.
   "/.well-known",

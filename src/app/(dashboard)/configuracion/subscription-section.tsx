@@ -8,19 +8,31 @@ import type { PlanHistoryEntry, SubscriptionInfo } from "@/lib/subscription";
 import { FREE_PLAN_MONTHLY_SALES_LIMIT, planLabels, planOrder } from "@/lib/subscription";
 import { planDefinitions, getPlanOwnFeatures } from "@/lib/plan-features";
 import { planAccents, planIcons, PlanTierBadge } from "@/lib/plan-visuals";
+import { chargeAmount } from "@/lib/billing";
+import { SubscribeButton } from "@/app/(dashboard)/configuracion/subscribe-button";
+import { BillingStatus } from "@/app/(dashboard)/configuracion/billing-status";
 
 export function SubscriptionSection({
   subscription,
   monthlySalesCount,
   planHistory,
+  canManage,
+  paymentsEnabled,
+  defaultEmail,
 }: {
   subscription: SubscriptionInfo;
+  /** Dueño o administrador: contrata, cambia o cancela el plan. */
+  canManage: boolean;
+  /** Mercado Pago configurado (MP_ACCESS_TOKEN). */
+  paymentsEnabled: boolean;
+  defaultEmail: string;
   // Sólo se calcula (en el server) cuando hace falta mostrarlo: plan
   // gratis y sin prueba Pro activa.
   monthlySalesCount: number | null;
   planHistory: PlanHistoryEntry[];
 }) {
   const current = planDefinitions[subscription.plan];
+  const billing = subscription.billing;
   const currentAccent = planAccents[subscription.plan];
   const CurrentIcon = planIcons[subscription.plan];
   const limitReached =
@@ -79,6 +91,17 @@ export function SubscriptionSection({
               </Badge>
             )}
           </div>
+
+          {billing && billing.paidPlan !== "gratis" && (
+            <div className="mt-4 border-t border-border/60 pt-4">
+              <BillingStatus
+                billing={billing}
+                amount={chargeAmount(billing.paidPlan, billing.cycle ?? "mensual")}
+                planName={planDefinitions[billing.paidPlan].name}
+                canManage={canManage}
+              />
+            </div>
+          )}
 
           {trialDaysLeft !== null && subscription.proTrialEndsAt && (
             <div className="mt-4 grid gap-2.5 border-t border-border/60 pt-4 sm:grid-cols-2">
@@ -259,7 +282,20 @@ export function SubscriptionSection({
                       </li>
                     ))}
                   </ul>
-                  {canSwitch && (
+                  {canSwitch && canManage && paymentsEnabled && (
+                    <SubscribeButton
+                      plan={plan}
+                      planName={def.name}
+                      monthlyPrice={chargeAmount(plan, "mensual")}
+                      annualPrice={chargeAmount(plan, "anual")}
+                      defaultEmail={billing?.payerEmail ?? defaultEmail}
+                      variant={accent.buttonVariant}
+                      label={
+                        subscription.plan === "gratis" ? `Contratar ${def.name}` : `Cambiar al ${def.name}`
+                      }
+                    />
+                  )}
+                  {canSwitch && canManage && !paymentsEnabled && (
                     <a
                       href={`mailto:soporte@pesito.app?subject=${encodeURIComponent(
                         `Quiero pasarme al ${def.name}`
@@ -269,6 +305,11 @@ export function SubscriptionSection({
                         Pasate a {def.name}
                       </Button>
                     </a>
+                  )}
+                  {canSwitch && !canManage && (
+                    <p className="text-center text-xs text-muted-foreground">
+                      Lo contrata el dueño o un administrador.
+                    </p>
                   )}
                 </div>
               );

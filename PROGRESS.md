@@ -139,6 +139,14 @@ Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados
 - `login_events` (0046): cada ingreso con su dispositivo (cookie `pesito-device`); aviso en el panel a dueños/admins por ingresos desde un dispositivo nuevo (48 h) y "Últimos ingresos" en Configuración → Seguridad.
 - Cabeceras de seguridad en `next.config.ts` (X-Frame-Options, frame-ancestors, nosniff, HSTS, Referrer/Permissions-Policy).
 
+## Hecho: cobro de los planes con Mercado Pago (migración 0047)
+
+- Suscripciones sin plan asociado (`/preapproval`, pago pendiente): Configuración → Plan → "Contratar"/"Cambiar al" → mensual o anual (12 meses con 20% menos, débito automático cada 12 meses) → email de la cuenta de Mercado Pago (tiene que coincidir con el que paga) → `init_point`.
+- `lib/mercadopago.ts` (API + firma de avisos), `lib/billing.ts` (aplica suscripciones y cobros; `external_reference` = `org|plan|ciclo`), webhook `/api/mercadopago/webhook` (público, verifica `x-signature` y siempre re-consulta la API), acciones en `configuracion/billing-actions.ts` (contratar, cancelar, actualizar medio de pago, sincronizar al volver con `?preapproval_id=`).
+- Estados en `organization_subscriptions`: `payment_status` active / past_due (gracia 7 días) / cancelled (sigue hasta `current_period_end`). `org_effective_plan` (base) y `getSubscription` (app) bajan a Gratis al vencer; no hay tarea programada.
+- Cambio de plan = suscripción nueva; al autorizarse se cancela la anterior (sin prorrateo).
+- Configuración pendiente del lado del usuario: `MP_ACCESS_TOKEN` y `MP_WEBHOOK_SECRET` en Vercel; en Mercado Pago → Tus integraciones → Webhooks: URL `https://www.pesito.com.ar/api/mercadopago/webhook`, eventos "Planes y suscripciones".
+
 ## Funciones pendientes (tasklist)
 
 Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: controlarla con `canUse` (ya tiene su plan en `featureMinPlan`), sacarle el "Pronto" en `plan-features.ts` (cards y `planComparison`), `faq-data.ts`, blog y páginas por rubro.
@@ -159,7 +167,6 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Análisis de competidores y del mercado — Plan IA (`marketAnalysis`).
 - [ ] Recomendaciones de reposición — Plan IA (`restockRecommendations`; pantalla /recomendaciones "muy pronto").
 - [ ] Detección de productos de baja rotación — Plan IA (`lowRotation`; pantalla /baja-rotacion "muy pronto").
-- [ ] Cobro de los planes: el checkout de /registro dice "Muy pronto" (no hay pasarela de pago conectada).
 - [ ] Factura electrónica ARCA/AFIP: la web dice que no existe (no está anunciada como "Pronto").
 
 Técnicas pendientes:

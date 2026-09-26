@@ -34,6 +34,11 @@ export const faqCategories: FaqCategory[] = [
         answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma hasta 2 sucursales con su propio stock, soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar la carga masiva de productos con Excel, generar e imprimir códigos de barras, productos con variantes (talles y colores), combos y kits; el Pro, control por usuario (todos los movimientos de stock y de caja de cada uno, con sus diferencias), inventarios físicos, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones; y el IA, ganancias por sucursal, reportes avanzados con IA, sugerencia de precios y análisis de competidores y del mercado. Pagando anual tenés un 20% de descuento.`,
       },
       {
+        question: "¿Cómo se pagan los planes?",
+        answer:
+          "Con Mercado Pago, con débito automático: mensual, o anual con 20% de descuento. Podés pagar con tarjeta de crédito, débito o dinero en cuenta. Lo contratás desde Configuración → Plan y lo cancelás cuando quieras; seguís con el plan hasta el final del período pago. Si un cobro falla, Mercado Pago lo reintenta y tenés 7 días para regularizarlo antes de pasar al Plan Gratis, sin perder ningún dato.",
+      },
+      {
         question: "¿Necesito instalar algo?",
         answer:
           "No. Pesito funciona desde el navegador en la computadora, la tablet o el celular. Creás tu cuenta y en unos minutos ya podés vender.",

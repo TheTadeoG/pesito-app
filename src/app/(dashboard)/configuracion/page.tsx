@@ -24,6 +24,8 @@ import {
 import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 import { TwoFactorCard } from "@/app/(dashboard)/configuracion/two-factor-card";
+import { syncReturnedPreapproval } from "@/app/(dashboard)/configuracion/billing-actions";
+import { mercadoPagoConfigured } from "@/lib/mercadopago";
 import { describeDevice } from "@/lib/login-events";
 
 function parseTab(value: string | undefined): ConfiguracionTab {
@@ -33,9 +35,9 @@ function parseTab(value: string | undefined): ConfiguracionTab {
 export default async function ConfiguracionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; preapproval_id?: string }>;
 }) {
-  const { tab: tabParam } = await searchParams;
+  const { tab: tabParam, preapproval_id: preapprovalId } = await searchParams;
   const tab = parseTab(tabParam);
   const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
@@ -43,6 +45,8 @@ export default async function ConfiguracionPage({
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
 
   if (tab === "plan") {
+    // Vuelta de Mercado Pago: se aplica la suscripción sin esperar el aviso.
+    if (preapprovalId) await syncReturnedPreapproval(organization.id, preapprovalId);
     const subscription = await getSubscription(supabase, organization.id);
     // Sólo importa contar esto cuando el límite de ventas realmente aplica
     // (plan gratis, sin prueba Pro activa) — evita una query de más al resto.
@@ -58,6 +62,9 @@ export default async function ConfiguracionPage({
           subscription={subscription}
           monthlySalesCount={monthlySalesCount}
           planHistory={planHistory}
+          canManage={isOrgAdmin(membership.role)}
+          paymentsEnabled={mercadoPagoConfigured()}
+          defaultEmail={email && !email.endsWith("@vendedores.pesito.app") ? email : ""}
         />
       </div>
     );

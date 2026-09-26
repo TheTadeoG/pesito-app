@@ -14,13 +14,51 @@ export const planLabels: Record<Plan, string> = {
 // Mismos planes y orden que la página de precios (src/components/marketing/pricing.tsx).
 export const planOrder: Plan[] = ["gratis", "esencial", "pro", "ia"];
 
+export type BillingCycle = "mensual" | "anual";
+export type PaymentStatus = "active" | "past_due" | "cancelled";
+
+export interface BillingInfo {
+  /** Plan contratado (puede no valer más si venció la gracia o el período). */
+  paidPlan: Plan;
+  cycle: BillingCycle | null;
+  status: PaymentStatus | null;
+  mpPreapprovalId: string | null;
+  currentPeriodEnd: string | null;
+  graceUntil: string | null;
+  payerEmail: string | null;
+}
+
 export interface SubscriptionInfo {
+  /** Plan que vale hoy (misma regla que org_effective_plan en la base, 0047). */
   plan: Plan;
   proTrialEndsAt: string | null;
   /** El negocio tiene funciones Pro activas ahora: por plan pago o por prueba vigente. */
   hasProAccess: boolean;
   /** Está en plan gratis y todavía le queda tiempo de prueba Pro. */
   trialActive: boolean;
+  /** Cobro con Mercado Pago (null sin la migración 0047 o sin suscripción). */
+  billing: BillingInfo | null;
+}
+
+type SubscriptionRow = {
+  plan: Plan;
+  pro_trial_ends_at: string | null;
+  billing_cycle?: string | null;
+  mp_preapproval_id?: string | null;
+  payment_status?: string | null;
+  current_period_end?: string | null;
+  grace_until?: string | null;
+  payer_email?: string | null;
+};
+
+/** Con un cobro fallido y la gracia vencida, o cancelada y el período terminado, vale Gratis. */
+export function lapsedToFree(row: SubscriptionRow, now = new Date()): boolean {
+  if (row.plan === "gratis") return false;
+  if (row.payment_status === "past_due" && row.grace_until && new Date(row.grace_until) < now) return true;
+  if (row.payment_status === "cancelled" && row.current_period_end && new Date(row.current_period_end) < now) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -32,13 +70,17 @@ export async function getSubscription(
   supabase: SupabaseClient<Database>,
   orgId: string
 ): Promise<SubscriptionInfo> {
-  const { data } = await supabase
+  // "*": con la migración 0047 trae también los datos del cobro; sin ella,
+  // pedirlos por nombre haría fallar la consulta.
+  const { data: raw } = await supabase
     .from("organization_subscriptions")
-    .select("plan, pro_trial_ends_at")
+    .select("*")
     .eq("org_id", orgId)
     .maybeSingle();
+  const data = raw as SubscriptionRow | null;
 
-  const plan: Plan = data?.plan ?? "gratis";
+  const paidPlan: Plan = data?.plan ?? "gratis";
+  const plan: Plan = data && lapsedToFree(data) ? "gratis" : paidPlan;
   const proTrialEndsAt = data?.pro_trial_ends_at ?? null;
   const trialActive =
     plan === "gratis" && proTrialEndsAt !== null && new Date(proTrialEndsAt) > new Date();
@@ -48,6 +90,18 @@ export async function getSubscription(
     proTrialEndsAt,
     hasProAccess: plan === "pro" || plan === "ia" || trialActive,
     trialActive,
+    billing:
+      data && data.payment_status
+        ? {
+            paidPlan,
+            cycle: (data.billing_cycle as BillingCycle | null) ?? null,
+            status: data.payment_status as PaymentStatus,
+            mpPreapprovalId: data.mp_preapproval_id ?? null,
+            currentPeriodEnd: data.current_period_end ?? null,
+            graceUntil: data.grace_until ?? null,
+            payerEmail: data.payer_email ?? null,
+          }
+        : null,
   };
 }
 

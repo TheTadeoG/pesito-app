@@ -528,14 +528,50 @@ export interface Database {
           plan: "gratis" | "esencial" | "pro" | "ia";
           pro_trial_ends_at: string | null;
           updated_at: string;
+          billing_cycle?: "mensual" | "anual" | null;
+          mp_preapproval_id?: string | null;
+          payment_status?: "active" | "past_due" | "cancelled" | null;
+          current_period_end?: string | null;
+          grace_until?: string | null;
+          payer_email?: string | null;
         };
         Insert: {
           org_id: string;
           plan?: "gratis" | "esencial" | "pro" | "ia";
           pro_trial_ends_at?: string | null;
           updated_at?: string;
+          billing_cycle?: "mensual" | "anual" | null;
+          mp_preapproval_id?: string | null;
+          payment_status?: "active" | "past_due" | "cancelled" | null;
+          current_period_end?: string | null;
+          grace_until?: string | null;
+          payer_email?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
+        Relationships: [];
+      };
+      billing_events: {
+        Row: {
+          id: string;
+          org_id: string | null;
+          topic: string;
+          mp_id: string;
+          status: string | null;
+          amount: number | null;
+          detail: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id?: string | null;
+          topic: string;
+          mp_id: string;
+          status?: string | null;
+          amount?: number | null;
+          detail?: Json | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["billing_events"]["Insert"]>;
         Relationships: [];
       };
       login_events: {

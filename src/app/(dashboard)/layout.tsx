@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
@@ -155,6 +156,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
             />
           )}
           <NewDeviceAlert logins={newDeviceLogins} />
+          {isOrgAdmin(membership.role) && subscription.billing?.status === "past_due" && (
+            <div className="mx-4 mt-4 rounded-2xl border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-foreground sm:mx-6 lg:mx-8">
+              {`No pudimos cobrar tu plan con Mercado Pago${
+                subscription.billing.graceUntil
+                  ? `: si no se paga antes del ${formatDateTime(subscription.billing.graceUntil)}, el negocio pasa al Plan Gratis`
+                  : ""
+              }. `}
+              <Link href="/configuracion?tab=plan" prefetch={false} className="font-medium text-primary hover:underline">
+                Actualizar medio de pago
+              </Link>
+            </div>
+          )}
           {subscription.plan === "gratis" && subscription.proTrialEndsAt && (
             <ProTrialBanner proTrialEndsAt={subscription.proTrialEndsAt} />
           )}
