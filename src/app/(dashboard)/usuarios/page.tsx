@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { UsuariosClient } from "@/app/(dashboard)/usuarios/usuarios-client";
 import { siteUrl } from "@/lib/utils";
 import { getBranchContext } from "@/lib/branches";
+import { getSubscription, planLabels } from "@/lib/subscription";
+import { effectivePlan, limitsFor } from "@/lib/plan-access";
 
 export default async function UsuariosPage() {
   const { organization, membership, userId } = await requireOrgContext();
@@ -28,7 +30,7 @@ export default async function UsuariosPage() {
 
   const supabase = await createClient();
 
-  const [{ data: members }, { data: invitations }, branchContext] = await Promise.all([
+  const [{ data: members }, { data: invitations }, branchContext, subscription] = await Promise.all([
     supabase
       .from("memberships")
       // "*": con la migración 0043 trae también branch_id; sin ella, pedirlo
@@ -44,6 +46,7 @@ export default async function UsuariosPage() {
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false }),
     getBranchContext(),
+    getSubscription(supabase, organization.id),
   ]);
 
   return (
@@ -53,6 +56,8 @@ export default async function UsuariosPage() {
       currentUserId={userId}
       siteUrl={siteUrl}
       branches={branchContext.branches}
+      usersLimit={limitsFor(subscription).users}
+      planName={`Plan ${planLabels[effectivePlan(subscription)]}${subscription.trialActive ? " (prueba)" : ""}`}
     />
   );
 }

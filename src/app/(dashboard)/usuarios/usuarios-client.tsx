@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { Copy, Info, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,7 +45,11 @@ export function UsuariosClient({
   currentUserId,
   siteUrl,
   branches,
+  usersLimit,
+  planName,
 }: {
+  usersLimit: number;
+  planName: string;
   members: MemberRow[];
   invitations: InvitationRow[];
   currentUserId: string;
@@ -228,8 +232,68 @@ export function UsuariosClient({
     setEditResult({ username: result.username, password: result.password ?? null });
   }
 
+  const usersUsed = members.length + invitations.length;
+  const hasBranches = branches.length > 1;
+
   return (
     <div className="space-y-6">
+      <Card>
+        <CardContent className="grid gap-5 py-5 lg:grid-cols-3">
+          <div className="space-y-1.5">
+            <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              Rol: qué puede hacer cada uno
+            </p>
+            <ul className="space-y-1.5 text-sm text-muted-foreground">
+              <li>
+                <span className="font-medium text-foreground">{`${roleLabels.owner}: `}</span>
+                todo. Hay uno solo por negocio y nadie le puede cambiar el rol ni quitarlo.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">{`${roleLabels.admin}: `}</span>
+                casi lo mismo que el dueño: gestiona usuarios, ve En vivo y los reportes de todo el
+                equipo, y cambia de sucursal.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">{`${roleLabels.vendedor}: `}</span>
+                vende, abre y cierra su propia caja, carga compras y clientes. No gestiona
+                usuarios ni ve En vivo.
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold text-foreground">Sucursal asignada</p>
+            <p className="text-sm text-muted-foreground">
+              {hasBranches
+                ? "Es el local donde trabaja esa persona: su caja, sus ventas y el stock que descuenta son de esa sucursal. Los vendedores trabajan siempre en la suya; dueños y administradores pueden cambiar de sucursal desde el menú."
+                : "Si sumás más locales (Plan IA), acá elegís en qué sucursal trabaja cada persona: su caja, sus ventas y el stock que descuenta."}
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold text-foreground">Cómo ingresa cada uno</p>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Usuario y contraseña: </span>
+              lo creás vos, sin email (ej. juan#4821). Podés cambiarle la contraseña cuando quieras.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Invitación por link: </span>
+              la persona se registra con su propio email. El link vence a los 7 días.
+            </p>
+            <p className="pt-1 text-sm text-foreground">
+              {`Usuarios: ${usersUsed} de ${usersLimit} (${planName}). Las invitaciones pendientes también cuentan.`}
+            </p>
+            {usersUsed > usersLimit && (
+              <p className="rounded-xl bg-warning-bg px-3 py-2 text-sm text-warning">
+                Tenés más usuarios de los que incluye tu plan: los que ya están siguen andando, pero
+                para sumar otro tenés que pasar a un plan con más usuarios.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" onClick={() => setShowDirectCreate(true)}>
           <UserPlus className="h-4 w-4" />
@@ -247,6 +311,14 @@ export function UsuariosClient({
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-border">
+            <div className="hidden items-center justify-between gap-3 px-5 py-2 text-xs font-medium text-muted-foreground sm:flex">
+              <span>Persona y cómo ingresa</span>
+              <span className="flex gap-2">
+                {hasBranches && <span className="w-40">Sucursal asignada</span>}
+                <span className="w-40">Rol</span>
+                <span className="w-[5.5rem]" />
+              </span>
+            </div>
             {members.map((member) => {
               const isSelf = member.user_id === currentUserId;
               const isOwner = member.role === "owner";
@@ -262,13 +334,16 @@ export function UsuariosClient({
                         <span className="ml-1.5 text-xs text-muted-foreground">(vos)</span>
                       )}
                     </p>
-                    {member.username && (
-                      <p className="text-xs text-muted-foreground">Usuario interno</p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {member.username
+                        ? "Ingresa con usuario y contraseña"
+                        : "Ingresa con su email"}
+                    </p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
                     {branches.length > 1 && !isOwner && (
+                      <div className="w-40">
                       <Select
                         value={member.branch_id ?? mainBranchId}
                         onChange={(e) => handleBranchChange(member.id, e.target.value)}
@@ -282,10 +357,12 @@ export function UsuariosClient({
                           </option>
                         ))}
                       </Select>
+                      </div>
                     )}
                     {isOwner ? (
                       <Badge tone="accent">{roleLabels.owner}</Badge>
                     ) : (
+                      <div className="w-40">
                       <Select
                         value={member.role}
                         onChange={(e) =>
@@ -297,6 +374,7 @@ export function UsuariosClient({
                         <option value="admin">{roleLabels.admin}</option>
                         <option value="vendedor">{roleLabels.vendedor}</option>
                       </Select>
+                      </div>
                     )}
                     {!isOwner && member.username && (
                       <Button
