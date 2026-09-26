@@ -76,6 +76,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es"
       // El script de abajo pone data-theme antes de que React hidrate.
       suppressHydrationWarning
+      // Next 16 ya no apaga el "scroll-behavior: smooth" de globals.css al
+      // cambiar de página: el salto arriba se animaba y, al volver a la
+      // landing desde una página scrolleada, se cortaba a mitad de camino
+      // (quedaba abajo). Con esto Next lo apaga durante la navegación; los
+      // anclas (#precios, etc.) siguen siendo suaves.
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} h-full antialiased`}
     >
       <head>

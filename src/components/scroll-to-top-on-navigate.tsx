@@ -15,7 +15,9 @@ export function ScrollToTopOnNavigate() {
   const pathname = usePathname();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // "instant": el html tiene scroll-behavior smooth (para los anclas) y
+    // una animación hasta arriba se corta si la página nueva es más larga.
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname]);
 
   return null;
