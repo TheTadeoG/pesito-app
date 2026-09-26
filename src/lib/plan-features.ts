@@ -60,7 +60,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Control de caja por empleado",
       "Hasta 2 usuarios y 2 cajas",
     ],
-    soon: ["Carga masiva de productos con Excel", "Talles, combos y kits"],
+    soon: [
+      "Carga masiva de productos con Excel",
+      "Generá e imprimí códigos de barras",
+      "Talles, combos y kits",
+    ],
   },
   pro: {
     plan: "pro",
@@ -164,6 +168,10 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Venta por unidad o por peso", values: everyPlan },
       { label: "Efectivo, tarjeta, transferencia, QR y pago mixto", values: everyPlan },
       { label: "Ticket de venta (no fiscal)", values: everyPlan },
+      {
+        label: "Generar e imprimir códigos de barras para productos que no tienen",
+        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+      },
       {
         label: "Balanzas conectadas",
         values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },

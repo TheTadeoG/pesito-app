@@ -31,7 +31,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Qué diferencia hay entre los planes?",
-        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma hasta 2 sucursales con su propio stock, soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar la carga masiva de productos con Excel, productos con variantes (talles y colores), combos y kits; el Pro, importar costos desde Excel, control por usuario (todos los movimientos de stock y de caja de cada uno, con sus diferencias), inventarios físicos, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones; y el IA, ganancias por sucursal, reportes avanzados con IA, sugerencia de precios y análisis de competidores y del mercado. Pagando anual tenés un 20% de descuento.`,
+        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores, las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma hasta 2 sucursales con su propio stock, soporte prioritario 24/7 y, próximamente, herramientas con inteligencia artificial. Próximamente, el Esencial va a sumar la carga masiva de productos con Excel, generar e imprimir códigos de barras, productos con variantes (talles y colores), combos y kits; el Pro, importar costos desde Excel, control por usuario (todos los movimientos de stock y de caja de cada uno, con sus diferencias), inventarios físicos, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones; y el IA, ganancias por sucursal, reportes avanzados con IA, sugerencia de precios y análisis de competidores y del mercado. Pagando anual tenés un 20% de descuento.`,
       },
       {
         question: "¿Necesito instalar algo?",
@@ -56,7 +56,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo usar lector de código de barras?",
         answer:
-          "Sí. Escaneás el producto y se suma al carrito al instante. Si un producto no tiene código, lo buscás por nombre en el mismo buscador.",
+          "Sí. Escaneás el producto y se suma al carrito al instante. Si un producto no tiene código, lo buscás por nombre en el mismo buscador. Pronto, desde el Plan Esencial, vas a poder generarle un código de barras e imprimir la etiqueta.",
       },
       {
         question: "¿Puedo vender por peso (fiambre, verdura, carne)?",

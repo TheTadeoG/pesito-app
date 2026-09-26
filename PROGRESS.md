@@ -128,6 +128,7 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 
 - [ ] Carga masiva de productos con Excel (importar el catálogo desde una planilla) — Plan Esencial (`productImport`).
 - [ ] Importar costos desde Excel (actualizar costos con la lista del proveedor) — Plan Pro (`costImport`).
+- [ ] Generar e imprimir códigos de barras (para productos sin código, con etiqueta imprimible) — Plan Esencial (`barcodeLabels`). Hoy el código es sólo un campo opcional del producto.
 - [ ] Combos y kits — Plan Esencial (`productBundles`). En la card del Esencial: "Talles, combos y kits".
 - [ ] Talles y colores como variantes de un producto — Plan Esencial (`productVariants`). Mencionado también en /como-funciona, /comparacion y /pesito-para/indumentaria.
 - [ ] Ofertas y promociones — Plan Pro (`promotions`).
