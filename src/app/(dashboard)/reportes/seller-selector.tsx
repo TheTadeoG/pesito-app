@@ -2,15 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui/select";
-import { reportesHref, type ReportPeriod } from "@/lib/report-periods";
+import { reportesHref, type ReportQuery } from "@/lib/report-periods";
 
 export function SellerSelector({
-  period,
+  query,
   sellerId,
   sellers,
   sellerLabel,
 }: {
-  period: ReportPeriod;
+  query: ReportQuery;
   sellerId: string | null;
   sellers: { id: string; label: string }[];
   sellerLabel: string | null;
@@ -28,7 +28,7 @@ export function SellerSelector({
       <Select
         aria-label="Vendedor"
         value={sellerId ?? ""}
-        onChange={(e) => router.push(reportesHref(period, e.target.value || null))}
+        onChange={(e) => router.push(reportesHref(query, e.target.value || null))}
       >
         <option value="">Todos los vendedores</option>
         {options.map((s) => (

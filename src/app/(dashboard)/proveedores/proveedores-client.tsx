@@ -145,8 +145,8 @@ export function ProveedoresClient({
         </div>
       ) : (
         <PlanLockNote plan="esencial">
-          Cuenta corriente con proveedores: cuánto les debés en total, a quién más, compras a cuenta y
-          pagos parciales. Está en el Plan Esencial.
+          Con el Plan Esencial llevás la cuenta corriente con cada proveedor: cuánto les debés, a
+          quién más, compras a cuenta y pagos parciales.
         </PlanLockNote>
       )}
 

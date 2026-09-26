@@ -112,7 +112,8 @@ export function BranchesManager({
         </form>
       ) : (
         <PlanLockNote plan="ia">
-          Sumar más sucursales (cada una con su stock y sus cajas) es del Plan IA.
+          ¿Tenés otro local? Con el Plan IA manejás hasta 2 sucursales desde Pesito, cada una con su
+          propio stock y sus cajas.
         </PlanLockNote>
       )}
 

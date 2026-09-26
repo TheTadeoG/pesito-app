@@ -224,6 +224,8 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     rows: [
       { label: "Caja diaria con cierre y arqueo", values: everyPlan },
       { label: "Clientes con fiado (cuenta corriente)", values: everyPlan },
+      { label: "Reportes con fechas a medida", values: fromEsencial },
+      { label: "Comparar con el período anterior o el año pasado", values: fromPro },
       { label: "En vivo: ventas del momento por sucursal y vendedor", values: fromPro },
       { label: "Ventas y diferencias de caja por empleado", values: fromEsencial },
       { label: "Historial completo de caja", values: fromPro },

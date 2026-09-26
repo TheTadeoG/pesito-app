@@ -205,7 +205,8 @@ export default async function CajaPage() {
               </CardHeader>
               <CardContent>
                 <PlanLockNote plan={featureMinPlan.supplierAccounts}>
-                  Cuánto le debés a cada proveedor, con compras a cuenta corriente y pagos parciales.
+                  Con el Plan Esencial ves cuánto le debés a cada proveedor, con compras a cuenta y
+                  pagos parciales.
                 </PlanLockNote>
               </CardContent>
             </Card>
@@ -215,7 +216,8 @@ export default async function CajaPage() {
           <RecurringDiscrepanciesOverview rows={recurringDiscrepancies} />
         ) : (
           <PlanLockNote plan={featureMinPlan.teamReports}>
-            Diferencias de caja por empleado: quién cierra con faltantes seguido y cuánto suma.
+            Con el Plan Esencial ves las diferencias de caja de cada empleado: quién cierra con
+            faltantes seguido y cuánto suma.
           </PlanLockNote>
         )}
       </>

@@ -30,7 +30,7 @@ import { featureMinPlan } from "@/lib/plan-access";
 import { planLabels, type Plan } from "@/lib/subscription";
 import { cn, formatCurrency } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
-import { reportesHref, type ReportPeriod } from "@/lib/report-periods";
+import { reportesHref, type ReportQuery } from "@/lib/report-periods";
 
 const WIDGETS = [
   { id: "tiles", label: "Indicadores principales" },
@@ -43,7 +43,7 @@ const WIDGETS = [
   { id: "topCustomers", label: "Mejores clientes" },
   { id: "sellers", label: "Ventas por vendedor" },
   { id: "cashDiff", label: "Diferencias de caja por vendedor" },
-  { id: "periodComparison", label: "Comparación con el período anterior (Pro)" },
+  { id: "periodComparison", label: "Comparación de períodos (Pro)" },
   { id: "lossProducts", label: "Productos vendidos a pérdida (Pro)" },
   { id: "recentSales", label: "Últimas ventas" },
 ] as const;
@@ -115,6 +115,8 @@ export interface ReportesData {
   // Los dos siguientes vienen en null cuando el negocio no tiene acceso Pro
   // (no vale la pena calcularlos en el servidor si no se van a mostrar).
   periodComparison: { ingresos: number; deltaPct: number | null } | null;
+  /** "el período anterior" / "el mismo período del año pasado"; null = sin comparar. */
+  comparisonLabel: string | null;
   lossProducts: LossProductRow[] | null;
 }
 
@@ -149,10 +151,10 @@ function TrendBadge({ deltaPct, size = "md" }: { deltaPct: number; size?: "sm" |
 
 export function ReportesDashboard({
   data,
-  period,
+  query,
 }: {
   data: ReportesData;
-  period: ReportPeriod;
+  query: ReportQuery;
 }) {
   const [visible, setVisible] = useState<Set<WidgetId>>(new Set(ALL_WIDGET_IDS));
   // "Quién te debe" puede ser muy largo: paginado, con el total arriba.
@@ -191,6 +193,8 @@ export function ReportesDashboard({
   // "Ventas por vendedor" con uno solo elegido repetiría los indicadores.
   const hidden = new Set<WidgetId>();
   if (data.cashDiffByUser === null && !data.teamLocked) hidden.add("cashDiff");
+  // Eligió "No comparar": no se muestra la comparación.
+  if (data.hasProAccess && data.comparisonLabel === null) hidden.add("periodComparison");
   if ((data.sellerRows === null && !data.teamLocked) || data.sellerLabel !== null) hidden.add("sellers");
   if (data.sellerLabel !== null) {
     hidden.add("fiadoDebtors");
@@ -535,7 +539,7 @@ export function ReportesDashboard({
                 {data.sellerRows.map((row) => (
                   <Link
                     key={row.userId}
-                    href={reportesHref(period, row.userId)}
+                    href={reportesHref(query, row.userId)}
                     title={`Ver el reporte de ${row.userLabel}`}
                     className="block px-5 py-3 text-sm hover:bg-muted"
                   >
@@ -656,18 +660,18 @@ export function ReportesDashboard({
               <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-base">Comparación con el período anterior</CardTitle>
+                  <CardTitle className="text-base">{`Comparación con ${data.comparisonLabel ?? "el período anterior"}`}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {data.periodComparison.deltaPct === null ? (
                     <p className="text-sm text-muted-foreground">
-                      No hubo ventas en el período anterior para comparar.
+                      {`No hubo ventas en ${data.comparisonLabel ?? "el período anterior"} para comparar.`}
                     </p>
                   ) : (
                     <TrendBadge deltaPct={data.periodComparison.deltaPct} />
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Período anterior: {formatCurrency(data.periodComparison.ingresos)}
+                    {`Ingresos en ${data.comparisonLabel ?? "el período anterior"}: ${formatCurrency(data.periodComparison.ingresos)}`}
                   </p>
                 </CardContent>
               </Card>

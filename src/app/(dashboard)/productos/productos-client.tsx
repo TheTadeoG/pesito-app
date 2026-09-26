@@ -958,7 +958,7 @@ export function ProductosClient({
               </p>
             ) : stockAlertsLocked ? (
               <PlanLockNote plan="esencial">
-                {`${lowStockProducts.length === 1 ? "Hay 1 producto" : `Hay ${lowStockProducts.length} productos`} por debajo del stock mínimo. Ver cuáles, reponerlos y recibir estos avisos es del Plan Esencial.`}
+                {`${lowStockProducts.length === 1 ? "Hay 1 producto" : `Hay ${lowStockProducts.length} productos`} por debajo del stock mínimo. Con el Plan Esencial ves cuáles son y te avisamos a tiempo para reponer.`}
               </PlanLockNote>
             ) : (
               <div className="divide-y divide-border rounded-xl border border-border">

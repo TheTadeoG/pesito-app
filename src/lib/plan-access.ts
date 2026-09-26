@@ -10,6 +10,7 @@ export type PlanFeature =
   | "bulkPriceChanges"
   | "priceRevert"
   | "profitReports"
+  | "customReportRange"
   | "liveView"
   | "teamReports"
   | "cashHistory"
@@ -39,6 +40,7 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   bulkPriceChanges: "pro",
   priceRevert: "pro",
   profitReports: "pro",
+  customReportRange: "esencial",
   liveView: "pro",
   teamReports: "esencial",
   cashHistory: "pro",
@@ -67,6 +69,7 @@ export const featureLabels: Record<PlanFeature, string> = {
   bulkPriceChanges: "Los aumentos masivos de precios y costos",
   priceRevert: "Volver a un precio o costo anterior",
   profitReports: "Los reportes avanzados de ganancias",
+  customReportRange: "Elegir fechas a medida en Reportes",
   liveView: "La pantalla En vivo",
   teamReports: "Los reportes por empleado",
   cashHistory: "El historial completo de caja",

@@ -1,8 +1,8 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
-import { daysSince, getPeriodRange, resolvePeriod } from "@/lib/report-periods";
-import { ARG_TZ, argHour } from "@/lib/timezone";
+import { getCompareRange, getReportRange, resolveReportQuery } from "@/lib/report-periods";
+import { ARG_TZ, argDateString, argHour } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { SellerSelector } from "@/app/(dashboard)/reportes/seller-selector";
 import {
@@ -27,6 +27,13 @@ const paymentLabels: Record<string, string> = {
   fiado: "Fiado",
 };
 
+function monthLabel(key: string) {
+  const [y, m] = key.split("-");
+  return new Intl.DateTimeFormat("es-AR", { month: "short", year: "2-digit", timeZone: "UTC" }).format(
+    new Date(Date.UTC(Number(y), Number(m) - 1, 15))
+  );
+}
+
 function dayLabel(date: Date) {
   return new Intl.DateTimeFormat("es-AR", {
     weekday: "short",
@@ -38,16 +45,20 @@ function dayLabel(date: Date) {
 export default async function ReportesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; vendedor?: string }>;
+  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; comparar?: string; vendedor?: string }>;
 }) {
-  const { period: periodParam, vendedor: vendedorParam } = await searchParams;
-  const period = resolvePeriod(periodParam);
-  const { start, label: periodLabel, groupBy } = getPeriodRange(period);
+  const params = await searchParams;
+  const vendedorParam = params.vendedor;
 
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const isManager = membership.role === "owner" || membership.role === "admin";
   const subscription = await getSubscription(supabase, organization.id);
+  // Fechas a medida: desde el Plan Esencial (sin él, vuelve a 30 días).
+  const canCustomRange = canUse(subscription, "customReportRange");
+  const query = resolveReportQuery(params, { allowCustom: canCustomRange });
+  const range = getReportRange(query);
+  const { start, end, label: periodLabel, groupBy } = range;
   // Ganancias y comparación de períodos: reporte de ganancias (Plan Pro).
   // Ventas y diferencias de caja por vendedor: reportes por empleado (Plan Pro).
   const canProfit = canUse(subscription, "profitReports");
@@ -67,7 +78,8 @@ export default async function ReportesPage({
       .select("id, user_id, total, payment_method, invoice_type, created_at, customer_id")
       .eq("org_id", organization.id)
       .eq("status", "completada")
-      .gte("created_at", start.toISOString());
+      .gte("created_at", start.toISOString())
+      .lt("created_at", end.toISOString());
     if (sellerId) query = query.eq("user_id", sellerId);
     return query
       .order("created_at", { ascending: false })
@@ -232,9 +244,23 @@ export default async function ReportesPage({
       hourTotals[hour] += sale.total;
     }
     revenueChart = hourTotals.map((value, hour) => ({ label: `${hour}h`, value }));
+  } else if (groupBy === "month") {
+    // Rangos largos (más de 3 meses): una barra por mes.
+    const monthTotals = new Map<string, number>();
+    for (const sale of sales) {
+      const key = argDateString(new Date(sale.created_at)).slice(0, 7);
+      monthTotals.set(key, (monthTotals.get(key) ?? 0) + sale.total);
+    }
+    const months: string[] = [];
+    const cursor = new Date(start);
+    while (cursor < end) {
+      const key = argDateString(cursor).slice(0, 7);
+      if (!months.includes(key)) months.push(key);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    revenueChart = months.map((key) => ({ label: monthLabel(key), value: monthTotals.get(key) ?? 0 }));
   } else {
-    const dayCount = daysSince(start);
-    const days = Array.from({ length: dayCount }, (_, i) => {
+    const days = Array.from({ length: range.days }, (_, i) => {
       const date = new Date(start);
       date.setUTCDate(date.getUTCDate() + i);
       return date;
@@ -286,7 +312,8 @@ export default async function ReportesPage({
         .select("user_id, expected_amount, closing_amount")
         .eq("org_id", organization.id)
         .eq("status", "cerrada")
-        .gte("closed_at", start.toISOString());
+        .gte("closed_at", start.toISOString())
+        .lt("closed_at", end.toISOString());
       if (sellerId) query = query.eq("user_id", sellerId);
       return query.order("id").range(from, to);
     });
@@ -390,10 +417,10 @@ export default async function ReportesPage({
     ventasPct: number | null;
     ticketPct: number | null;
   } | null = null;
-  if (canProfit) {
-    // eslint-disable-next-line react-hooks/purity
-    const durationMs = Date.now() - start.getTime();
-    const previousStart = new Date(start.getTime() - durationMs);
+  const compareRange = canProfit ? getCompareRange(range, query.compare) : null;
+  if (compareRange) {
+    const previousStart = compareRange.start;
+    const previousEnd = compareRange.end;
     const previousSalesRaw = await fetchAll((from, to) => {
       let query = supabase
         .from("sales")
@@ -401,7 +428,7 @@ export default async function ReportesPage({
         .eq("org_id", organization.id)
         .eq("status", "completada")
         .gte("created_at", previousStart.toISOString())
-        .lt("created_at", start.toISOString());
+        .lt("created_at", previousEnd.toISOString());
       if (sellerId) query = query.eq("user_id", sellerId);
       return query.order("id").range(from, to);
     });
@@ -502,16 +529,24 @@ export default async function ReportesPage({
     hasProAccess: canProfit,
     teamLocked: isManager && !canTeam,
     periodComparison,
+    comparisonLabel: compareRange?.label ?? null,
     lossProducts,
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <PeriodSelector period={period} sellerId={sellerId} />
+        <PeriodSelector
+          query={query}
+          sellerId={sellerId}
+          rangeLabel={periodLabel.replace(/^del |^el /, "")}
+          today={argDateString()}
+          canCustomRange={canCustomRange}
+          canCompare={canProfit}
+        />
         {memberLabelsById && (
           <SellerSelector
-            period={period}
+            query={query}
             sellerId={sellerId}
             sellers={Array.from(memberLabelsById.entries())
               .map(([id, label]) => ({ id, label }))
@@ -527,7 +562,7 @@ export default async function ReportesPage({
           de todo el negocio y no se muestran.
         </p>
       )}
-      <ReportesDashboard data={data} period={period} />
+      <ReportesDashboard data={data} query={query} />
     </div>
   );
 }

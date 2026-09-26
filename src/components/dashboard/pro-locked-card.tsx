@@ -233,10 +233,13 @@ export function PlanLockNote({
   plan,
   children,
   className,
+  cta,
 }: {
   plan: Plan;
   children: React.ReactNode;
   className?: string;
+  /** Texto del link (por defecto "Conocé el Plan X"). */
+  cta?: string;
 }) {
   return (
     <div
@@ -249,7 +252,7 @@ export function PlanLockNote({
       <div className="min-w-0 flex-1 text-foreground">
         {children}{" "}
         <Link href={upgradeHref(plan)} prefetch={false} className="font-semibold text-primary hover:underline">
-          {`Pasate al Plan ${planLabels[plan]}`}
+          {cta ?? `Conocé el Plan ${planLabels[plan]}`}
         </Link>
       </div>
     </div>
