@@ -73,16 +73,16 @@ export function SubscribeButton({
           <div className="space-y-3">
             <p className="flex items-center gap-2 font-medium text-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Esperando tu pago en Mercado Pago…
+              Esperando la confirmación del pago…
             </p>
             <p className="text-sm text-muted-foreground">
-              Terminá el pago en la pestaña de Mercado Pago. Cuando se confirme, lo vas a ver acá.
+              Terminá el pago en la otra pestaña. Cuando se confirme, lo vas a ver acá.
             </p>
             <div className="flex flex-wrap justify-end gap-2">
               {checkoutUrl && (
                 <a href={checkoutUrl} target="_blank" rel="noopener noreferrer">
                   <Button type="button" variant="ghost">
-                    Volver a abrir Mercado Pago
+                    Volver a abrir el pago
                   </Button>
                 </a>
               )}
@@ -112,8 +112,8 @@ export function SubscribeButton({
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Te llevamos al checkout de Mercado Pago: pagás con tarjeta o entrando a tu cuenta de
-            Mercado Pago, y volvés a Pesito con el plan activo.
+            Pagás con tarjeta o con tu cuenta de Mercado Pago en una pestaña segura. Apenas se
+            confirma, el plan se activa acá.
           </p>
 
           {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
@@ -123,7 +123,9 @@ export function SubscribeButton({
               Cancelar
             </Button>
             <Button type="button" onClick={() => start(plan, cycle)} disabled={status === "opening"}>
-              {status === "opening" ? "Conectando…" : "Ir a Mercado Pago"}
+              {status === "opening"
+                ? "Abriendo el pago…"
+                : `Pagar ${formatCurrency(cycle === "anual" ? annualPrice : monthlyPrice)}`}
             </Button>
           </div>
         </div>

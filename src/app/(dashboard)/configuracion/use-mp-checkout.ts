@@ -17,6 +17,7 @@ export function useMercadoPagoCheckout(from: "configuracion" | "alta") {
   const [error, setError] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [activePlan, setActivePlan] = useState<Plan | null>(null);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const checking = useRef(false);
 
   const start = useCallback(
@@ -26,12 +27,13 @@ export function useMercadoPagoCheckout(from: "configuracion" | "alta") {
       // Se abre ya (dentro del clic) para que el navegador no la bloquee.
       const tab = window.open("", "_blank");
       const result = await startSubscription(plan, cycle, from);
-      if (result.error || !result.url) {
+      if (result.error || !result.url || !result.checkoutId) {
         tab?.close();
         setStatus("idle");
         setError(result.error ?? "No pudimos conectar con Mercado Pago.");
         return;
       }
+      setCheckoutId(result.checkoutId);
       if (!tab) {
         window.location.href = result.url;
         return;
@@ -45,18 +47,18 @@ export function useMercadoPagoCheckout(from: "configuracion" | "alta") {
   );
 
   const check = useCallback(async () => {
-    if (checking.current) return;
+    if (checking.current || !checkoutId) return;
     checking.current = true;
     try {
-      const res = await checkPendingCheckout();
-      if (res.active) {
+      const res = await checkPendingCheckout(checkoutId);
+      if (res.paid) {
         setActivePlan(res.plan);
         setStatus("active");
       }
     } finally {
       checking.current = false;
     }
-  }, []);
+  }, [checkoutId]);
 
   useEffect(() => {
     if (status !== "waiting") return;

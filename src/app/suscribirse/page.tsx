@@ -72,12 +72,12 @@ export default async function SuscribirsePage({
           <CardHeader>
             <CardTitle>{`Pagá tu Plan ${planLabels[plan]}`}</CardTitle>
             <CardDescription>
-              {`Tu cuenta ya está creada. Te llevamos a Mercado Pago para pagar ${amount} ${cycle === "anual" ? "por año" : "por mes"}: podés pagar con tarjeta o entrando a tu cuenta de Mercado Pago. Después volvés a Pesito con el plan activo.`}
+              {`Tu cuenta ya está creada. Pagás ${amount} ${cycle === "anual" ? "por año" : "por mes"} con tarjeta o con tu cuenta de Mercado Pago, en una pestaña segura. Apenas se confirma, entrás a Pesito con el plan activo.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {mercadoPagoConfigured() ? (
-              <PayButton plan={plan} cycle={cycle} label={`Pagar ${amount} con Mercado Pago`} />
+              <PayButton plan={plan} cycle={cycle} label={`Pagar ${amount}`} />
             ) : (
               <p className="rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">
                 El cobro con Mercado Pago todavía no está disponible. Podés entrar y contratar el plan

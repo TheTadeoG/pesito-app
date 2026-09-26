@@ -233,16 +233,20 @@ export async function recordCheckout(orgId: string, checkoutId: string, plan: Pl
   await logEvent(orgId, "checkout", checkoutId, "pending", chargeAmount(plan, cycle), { plan, cycle });
 }
 
-/**
- * Busca en Mercado Pago si se pagó alguno de los checkouts abiertos en los
- * últimos días y lo aplica. Así el plan se activa aunque Mercado Pago no
- * vuelva a Pesito con el id ni llegue el aviso (webhook).
- * Devuelve true si activó algo.
- */
-export async function syncPendingCheckouts(orgId: string): Promise<boolean> {
+/** Si el checkout se pagó, aplica la suscripción. true = pagado. */
+async function applyCheckoutIfPaid(orgId: string, checkoutId: string): Promise<boolean> {
+  const found = await searchPreapprovalsByPlan(checkoutId);
+  const paid = found.find((p) => p.status === "authorized");
+  if (!paid || (await referenceOf(paid))?.orgId !== orgId) return false;
+  await applyPreapproval(paid);
+  await logEvent(orgId, "checkout_done", checkoutId, "authorized", null, { preapproval_id: paid.id });
+  return true;
+}
+
+async function checkoutEvents(orgId: string) {
   const admin = createAdminClient();
   const since = new Date(Date.now() - CHECKOUT_WINDOW_MS).toISOString();
-  const { data: events } = await admin
+  const { data } = await admin
     .from("billing_events")
     .select("topic, mp_id")
     .eq("org_id", orgId)
@@ -250,20 +254,32 @@ export async function syncPendingCheckouts(orgId: string): Promise<boolean> {
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(20);
-  const done = new Set((events ?? []).filter((e) => e.topic === "checkout_done").map((e) => e.mp_id));
-  const pending = (events ?? []).filter((e) => e.topic === "checkout" && !done.has(e.mp_id)).slice(0, 3);
+  const events = data ?? [];
+  const done = new Set(events.filter((e) => e.topic === "checkout_done").map((e) => e.mp_id));
+  const opened = new Set(events.filter((e) => e.topic === "checkout").map((e) => e.mp_id));
+  return { done, opened };
+}
 
-  let activated = false;
-  for (const { mp_id: checkoutId } of pending) {
-    const found = await searchPreapprovalsByPlan(checkoutId);
-    const paid = found.find((p) => p.status === "authorized");
-    if (!paid) continue;
-    if ((await referenceOf(paid))?.orgId !== orgId) continue;
-    await applyPreapproval(paid);
-    await logEvent(orgId, "checkout_done", checkoutId, "authorized", null, { preapproval_id: paid.id });
-    activated = true;
-  }
-  return activated;
+/**
+ * Busca en Mercado Pago si se pagó alguno de los checkouts abiertos en los
+ * últimos días y lo aplica. Así el plan se activa aunque Mercado Pago no
+ * vuelva a Pesito con el id ni llegue el aviso (webhook).
+ */
+export async function syncPendingCheckouts(orgId: string): Promise<void> {
+  const { done, opened } = await checkoutEvents(orgId);
+  const pending = [...opened].filter((id) => !done.has(id)).slice(0, 3);
+  for (const checkoutId of pending) await applyCheckoutIfPaid(orgId, checkoutId);
+}
+
+/**
+ * ¿Se pagó este checkout puntual? (el que se abrió desde la pantalla). Sólo
+ * mira checkouts de este negocio. Un plan que ya se tenía no cuenta.
+ */
+export async function isCheckoutPaid(orgId: string, checkoutId: string): Promise<boolean> {
+  const { done, opened } = await checkoutEvents(orgId);
+  if (done.has(checkoutId)) return true;
+  if (!opened.has(checkoutId)) return false;
+  return applyCheckoutIfPaid(orgId, checkoutId);
 }
 
 /**
