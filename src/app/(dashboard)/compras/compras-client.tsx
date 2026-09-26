@@ -1151,6 +1151,7 @@ export function ComprasClient({
       </Dialog>
 
       <ProductForm
+        orgId={orgId}
         key={`new-${newProductKey}`}
         open={showNewProduct}
         onClose={() => setShowNewProduct(false)}

@@ -135,9 +135,11 @@ export function ProductosClient({
   brands,
   suppliers,
   initialBrand,
+  orgId,
   bulkLocked,
   stockAlertsLocked,
 }: {
+  orgId: string;
   products: Product[];
   brands: Pick<Brand, "id" | "name">[];
   suppliers: SupplierOption[];
@@ -910,6 +912,7 @@ export function ProductosClient({
       </Card>
 
       <ProductForm
+        orgId={orgId}
         key={editing?.id ?? `new-${formKey}`}
         open={formOpen}
         onClose={() => setFormOpen(false)}

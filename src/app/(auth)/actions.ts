@@ -3,6 +3,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { isEmailIdentifier, usernameToEmail } from "@/lib/internal-auth";
 
 export interface AuthActionState {
@@ -16,7 +18,7 @@ export async function login(
 ): Promise<AuthActionState> {
   const identifier = String(formData.get("identifier") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "") || "/pos";
+  const next = safeNextPath(String(formData.get("next") ?? ""), "/pos");
 
   if (!identifier || !password) {
     return { error: "Completá tu email/usuario y tu contraseña." };
@@ -24,8 +26,12 @@ export async function login(
 
   const email = isEmailIdentifier(identifier) ? identifier : usernameToEmail(identifier);
   const supabase = await createClient();
+  // El contador de intentos fallidos sólo lo toca el servidor (migración
+  // 0045): si se pudiera llamar con la clave pública, cualquiera podría
+  // resetearlo para probar contraseñas sin límite, o bloquear cuentas ajenas.
+  const admin = createAdminClient();
 
-  const { data: lockoutRows } = await supabase.rpc("check_login_lockout", { p_email: email });
+  const { data: lockoutRows } = await admin.rpc("check_login_lockout", { p_email: email });
   const lockout = lockoutRows?.[0];
   if (lockout?.locked) {
     const minutes = Math.max(1, Math.ceil((lockout.retry_after_seconds ?? 0) / 60));
@@ -39,11 +45,11 @@ export async function login(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    await supabase.rpc("register_login_failure", { p_email: email });
+    await admin.rpc("register_login_failure", { p_email: email });
     return { error: "Email/usuario o contraseña incorrectos." };
   }
 
-  await supabase.rpc("register_login_success", { p_email: email });
+  await admin.rpc("register_login_success", { p_email: email });
 
   redirect(next);
 }

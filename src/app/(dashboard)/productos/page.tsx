@@ -131,6 +131,7 @@ export default async function ProductosPage({
         brands={brands ?? []}
         suppliers={suppliers ?? []}
         initialBrand={marca ?? null}
+        orgId={organization.id}
         bulkLocked={!canUse(subscription, "bulkPriceChanges")}
         stockAlertsLocked={stockLocked}
       />

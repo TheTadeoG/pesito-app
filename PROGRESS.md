@@ -122,6 +122,18 @@ Instaladas con `npx skills add` (quedan en `skills-lock.json`). Además de las q
 
 Nota: el buscador de skills.sh está bloqueado en este entorno (`npx skills find` no encuentra nada), pero `npx skills add owner/repo --skill <nombre>` funciona porque va por GitHub. El nombre de `--skill` es el `name:` del SKILL.md, no la carpeta (`--list` los muestra).
 
+## Hecho: seguridad (migración 0045)
+
+Revisión con la checklist de 20 puntos. Ya estaba bien: claves (sólo la anon en el navegador), SQL injection (todo parametrizado), aislamiento entre negocios (RLS en las 31 tablas), /admin (requirePlatformAdmin + 404), `npm audit` limpio.
+Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados, y el flujo normal abrir/retirar/vender/cerrar OK):
+- Caja: cerrada = intocable; sólo quien la abrió o un admin la cierra; el esperado lo calcula la base (`cash_register_summaries`); movimientos de caja no se editan ni borran; no se borran cajas.
+- Saldos de clientes/proveedores y stock (con sucursales) sólo cambian vía funciones del sistema (`is_direct_write()`: current_user authenticated/anon). Sin insert directo de ventas/compras.
+- Imágenes: carpeta `<org_id>/` por negocio, sólo imágenes, 5 MB. La app sube a esa carpeta (`ProductForm` recibe `orgId`).
+- Bloqueo de ingreso: las RPC de login_lockouts sólo con service role (la app usa `createAdminClient`).
+- Plan y límites en la base: `require_plan`, `plan_limit`, `require_user_slot` (mismos valores que `plan-access.ts`) en aumentos masivos, En vivo, cuenta corriente de proveedores, sucursales, pases, invitaciones/usuarios y cajas abiertas.
+- `?next=` del login y del mail de confirmación sólo acepta rutas internas (`lib/safe-redirect.ts`).
+- Backups: el plan gratis de Supabase no tiene copias diarias; pendiente cuando se pase a Supabase Pro.
+
 ## Funciones pendientes (tasklist)
 
 Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: controlarla con `canUse` (ya tiene su plan en `featureMinPlan`), sacarle el "Pronto" en `plan-features.ts` (cards y `planComparison`), `faq-data.ts`, blog y páginas por rubro.

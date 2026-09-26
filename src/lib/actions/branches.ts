@@ -31,6 +31,8 @@ function friendly(message: string | undefined, fallback: string) {
     "no tiene productos",
     "mayor a cero",
     "no tenés permiso",
+    "Necesitás el Plan",
+    "Tu plan incluye",
   ];
   if (known.some((k) => message.includes(k))) {
     return message.charAt(0).toUpperCase() + message.slice(1) + ".";

@@ -16,5 +16,6 @@
   - La web pública no importa código del panel (íconos, nav, etc.): cuida la velocidad (PageSpeed).
   - Usar "negocio", no "comercio de barrio", en los textos de marca.
 - Planes (pedido del usuario, siempre): toda función nueva define qué planes la usan. Si no es para todos, se agrega a `featureMinPlan` en `src/lib/plan-access.ts` y se controla con `canUse` en la página/acción del servidor (aviso con `ProLockedCard`; la prueba Pro cuenta como Pro). Límites de usuarios/cajas/sucursales en `planLimits` (controles en `src/lib/plan-limits.ts`). Después, alinear los textos públicos: `plan-features.ts` (cards y tabla `planComparison`), `faq-data.ts`, blog y `llms.txt`. Lo que se anuncia y todavía no existe va como "Pronto" y a la tasklist "Funciones pendientes" de `PROGRESS.md`.
+- Seguridad: nada de dinero ni stock se escribe directo desde la app con el usuario: usar funciones `security definer` (la base rechaza con `is_direct_write()` los cambios de saldos, stock con sucursales y cajas cerradas; ver 0045). Una función nueva que dependa del plan: `perform public.require_plan(p_org_id, '<plan>', '<qué>')`. Redirecciones con `?next=`: `safeNextPath`.
 - Estado y pendientes del trabajo: ver `PROGRESS.md`.
 - Git: trabajar directo sobre la rama principal (`claude/sharp-carson-p8zpd2`, no hay `main`), sin ramas ni PRs. Commitear y pushear cada cambio terminado.

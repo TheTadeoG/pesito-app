@@ -170,6 +170,8 @@ type BrandOption = Pick<Brand, "id" | "name">;
 type SupplierOption = Pick<Supplier, "id" | "name">;
 
 interface ProductFormProps {
+  /** Las imágenes se guardan en la carpeta del negocio (ver migración 0045). */
+  orgId: string;
   open: boolean;
   onClose: () => void;
   product?: Product | null;
@@ -187,6 +189,7 @@ interface ProductFormProps {
 }
 
 export function ProductForm({
+  orgId,
   open,
   onClose,
   product,
@@ -258,7 +261,7 @@ export function ProductForm({
 
     const supabase = createClient();
     const extension = file.name.split(".").pop() || "jpg";
-    const path = `${crypto.randomUUID()}.${extension}`;
+    const path = `${orgId}/${crypto.randomUUID()}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("product-images")
