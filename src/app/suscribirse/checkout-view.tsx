@@ -426,7 +426,7 @@ function Confirmed({
         {periodEnd && (
           <p className="mt-2 text-sm text-muted-foreground">
             {method === "debito"
-              ? `Próximo cobro automático: ${formatDate(periodEnd)}.`
+              ? `Se renueva solo el ${formatDate(periodEnd)} con débito automático.`
               : `Queda pago hasta el ${formatDate(periodEnd)}. Te avisamos antes de que venza.`}
           </p>
         )}

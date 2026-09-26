@@ -34,6 +34,16 @@ export default async function PagoListoPage({
   const paid = subscription.plan !== "gratis" && Boolean(subscription.billing?.status) && subscription.billing?.status !== "past_due";
   const pending = !paid && (status === "pending" || status === "in_process");
 
+  // Débito automático: próxima renovación. Pago único: hasta cuándo quedó pago.
+  const billing = subscription.billing;
+  const periodEnd = billing?.currentPeriodEnd ? formatDate(billing.currentPeriodEnd) : null;
+  const autoDebit = billing?.status === "active" && Boolean(billing.mpPreapprovalId);
+  const periodText = periodEnd
+    ? autoDebit
+      ? `Se renueva solo el ${periodEnd} con débito automático. `
+      : `Pago hasta el ${periodEnd}. `
+    : "";
+
   const Icon = paid ? CheckCircle2 : pending ? Clock : Loader2;
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -49,7 +59,7 @@ export default async function PagoListoPage({
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {paid
-              ? `${subscription.billing?.currentPeriodEnd ? `Pago hasta el ${formatDate(subscription.billing.currentPeriodEnd)}. ` : ""}Ya podés cerrar esta pestaña y volver a Pesito.`
+              ? `${periodText}Ya podés cerrar esta pestaña y volver a Pesito.`
               : pending
                 ? "Cuando pagues y Mercado Pago lo acredite, el plan se activa solo."
                 : "Suele tardar unos segundos. Cuando se confirme, el plan se activa solo en Pesito."}
