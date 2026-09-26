@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckoutSummary } from "@/app/(auth)/registro/checkout-summary";
-import { PayButton } from "@/app/suscribirse/pay-button";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
-import { getSubscription, planLabels, type Plan } from "@/lib/subscription";
+import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
-import { chargeAmount, syncReturnedPayment } from "@/lib/billing";
-import { formatCurrency } from "@/lib/utils";
+import { chargeAmount, type PaymentMethod } from "@/lib/billing";
+import { getPlanOwnFeatures } from "@/lib/plan-features";
+import { CheckoutView } from "@/app/suscribirse/checkout-view";
 
-// Alta con un plan pago elegido en precios: después de crear el negocio se
-// paga con Mercado Pago y recién ahí se entra a Pesito. Mercado Pago vuelve
-// acá (?preapproval_id=…) y se aplica la suscripción sin esperar el aviso.
+// Pantalla de pago de un plan. Se llega desde Configuración → Plan
+// ("Contratar") y, al crear la cuenta con un plan elegido en precios, como
+// último paso del alta (?desde=alta). El pago se hace en Mercado Pago en
+// otra pestaña; esta pantalla espera la confirmación y sigue sola.
 
 export const metadata: Metadata = {
   title: "Pagá tu plan",
@@ -24,81 +21,74 @@ export const metadata: Metadata = {
 
 const PAID: Plan[] = ["esencial", "pro", "ia"];
 
+function addMonths(date: Date, months: number) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
+function longDate(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Argentina/Buenos_Aires",
+  }).format(date);
+}
+
 export default async function SuscribirsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; ciclo?: string; preapproval_id?: string }>;
+  searchParams: Promise<{ plan?: string; ciclo?: string; metodo?: string; desde?: string }>;
 }) {
-  const { plan: planParam, ciclo, preapproval_id: preapprovalId } = await searchParams;
+  const { plan: planParam, ciclo, metodo, desde } = await searchParams;
   const { organization, membership } = await requireOrgContext();
   if (!isOrgAdmin(membership.role)) redirect("/pos");
 
-  if (preapprovalId) {
-    await syncReturnedPayment(organization.id, preapprovalId);
-    const supabase = await createClient();
-    const subscription = await getSubscription(supabase, organization.id);
-    const paid = subscription.billing?.status === "active" && subscription.plan !== "gratis";
-
-    return (
-      <Shell>
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>{paid ? "¡Listo! Tu plan está activo" : "Estamos confirmando tu pago"}</CardTitle>
-            <CardDescription>
-              {paid
-                ? `Ya tenés el Plan ${planLabels[subscription.plan]}. Se renueva solo con Mercado Pago y lo manejás desde Configuración → Plan.`
-                : "Mercado Pago todavía no nos confirmó el pago. Suele tardar unos segundos: cuando llegue, el plan se activa solo. Lo ves en Configuración → Plan."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/pos?bienvenida=1">
-              <Button className="w-full">Entrar a Pesito</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </Shell>
-    );
-  }
-
   const plan = PAID.find((p) => p === planParam);
-  if (!plan) redirect("/pos");
-  const cycle = ciclo === "anual" ? "anual" : "mensual";
-  const amount = formatCurrency(chargeAmount(plan, cycle));
+  if (!plan) redirect("/configuracion?tab=plan");
+  const cycle: BillingCycle = ciclo === "anual" ? "anual" : "mensual";
+  const method: PaymentMethod = metodo === "unico" ? "unico" : "debito";
+
+  const supabase = await createClient();
+  const subscription = await getSubscription(supabase, organization.id);
+  const billing = subscription.billing;
+
+  // Fechas que se muestran en el resumen (calculadas acá para que el
+  // servidor y el navegador muestren lo mismo). El pago único del mismo plan
+  // se suma a lo que ya estaba pago.
+  const now = new Date();
+  const paidUntil =
+    subscription.plan === plan && billing?.currentPeriodEnd && new Date(billing.currentPeriodEnd) > now
+      ? new Date(billing.currentPeriodEnd)
+      : now;
+  const dates = {
+    mensual: { debito: longDate(addMonths(now, 1)), unico: longDate(addMonths(paidUntil, 1)) },
+    anual: { debito: longDate(addMonths(now, 12)), unico: longDate(addMonths(paidUntil, 12)) },
+  };
+
+  const current =
+    subscription.plan !== "gratis" && billing
+      ? {
+          planName: planLabels[subscription.plan],
+          autoDebit: billing.status === "active" || billing.status === "past_due",
+          samePlan: subscription.plan === plan,
+        }
+      : null;
 
   return (
-    <Shell>
-      <div className="grid w-full max-w-4xl items-start gap-6 lg:grid-cols-[1fr_22rem]">
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>{`Pagá tu Plan ${planLabels[plan]}`}</CardTitle>
-            <CardDescription>
-              {`Tu cuenta ya está creada. Pagás ${amount} ${cycle === "anual" ? "por año" : "por mes"} con tarjeta o con tu cuenta de Mercado Pago, en una pestaña segura. Apenas se confirma, entrás a Pesito con el plan activo.`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {mercadoPagoConfigured() ? (
-              <PayButton plan={plan} cycle={cycle} label={`Pagar ${amount}`} />
-            ) : (
-              <p className="rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">
-                El cobro con Mercado Pago todavía no está disponible. Podés entrar y contratar el plan
-                más tarde desde Configuración → Plan.
-              </p>
-            )}
-            <p className="text-center text-sm text-muted-foreground">
-              <Link href="/pos?bienvenida=1" className="hover:underline">
-                Prefiero empezar con el Plan Gratis
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
-        <CheckoutSummary plan={plan} annual={cycle === "anual"} />
-      </div>
-    </Shell>
-  );
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">{children}</div>
+    <CheckoutView
+      plan={plan}
+      initialCycle={cycle}
+      initialMethod={method}
+      fromSignup={desde === "alta"}
+      features={getPlanOwnFeatures(plan)
+        .filter((f) => !f.includes("(pronto)"))
+        .slice(0, 5)}
+      prices={{ mensual: chargeAmount(plan, "mensual"), anual: chargeAmount(plan, "anual") }}
+      dates={dates}
+      current={current}
+      paymentsEnabled={mercadoPagoConfigured()}
+    />
   );
 }

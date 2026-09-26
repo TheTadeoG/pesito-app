@@ -58,7 +58,7 @@ export async function createKiosco(
   const selectedPlan = user.user_metadata?.selected_plan;
   if (typeof selectedPlan === "string" && ["esencial", "pro", "ia"].includes(selectedPlan)) {
     const cycle = user.user_metadata?.selected_cycle === "anual" ? "anual" : "mensual";
-    redirect(`/suscribirse?plan=${selectedPlan}&ciclo=${cycle}`);
+    redirect(`/suscribirse?plan=${selectedPlan}&ciclo=${cycle}&desde=alta`);
   }
 
   redirect("/pos?bienvenida=1");

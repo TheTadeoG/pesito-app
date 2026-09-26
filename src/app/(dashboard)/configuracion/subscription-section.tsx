@@ -283,9 +283,6 @@ export function SubscriptionSection({
                   {canSwitch && canManage && paymentsEnabled && (
                     <SubscribeButton
                       plan={plan}
-                      planName={def.name}
-                      monthlyPrice={chargeAmount(plan, "mensual")}
-                      annualPrice={chargeAmount(plan, "anual")}
                       variant={accent.buttonVariant}
                       label={
                         subscription.plan === "gratis" ? `Contratar ${def.name}` : `Cambiar al ${def.name}`

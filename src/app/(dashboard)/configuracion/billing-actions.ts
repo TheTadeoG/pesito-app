@@ -5,21 +5,26 @@ import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
+import crypto from "crypto";
 import { siteUrl } from "@/lib/utils";
 import {
   cancelPreapproval,
   createPreapprovalPlan,
+  createPreference,
   getPreapproval,
   mercadoPagoConfigured,
   mercadoPagoErrorMessage,
   MercadoPagoError,
+  usingTestCredentials,
 } from "@/lib/mercadopago";
 import {
   applyPreapproval,
   buildExternalReference,
   chargeAmount,
+  checkoutState,
   recordCheckout,
-  isCheckoutPaid,
+  type CheckoutState,
+  type PaymentMethod,
 } from "@/lib/billing";
 
 export interface BillingActionResult {
@@ -32,32 +37,51 @@ export interface BillingActionResult {
 const PAID: Plan[] = ["esencial", "pro", "ia"];
 
 /**
- * Arma el checkout de Mercado Pago para el plan y devuelve el link: ahí la
- * persona paga con tarjeta o iniciando sesión en Mercado Pago (no hace falta
- * pedirle antes el email). El plan se activa cuando Mercado Pago avisa que
- * la suscripción quedó autorizada (webhook o al volver a Pesito).
- * `from`: a dónde vuelve después de pagar (Configuración o el alta nueva).
+ * Arma el pago en Mercado Pago y devuelve el link (se abre en otra pestaña):
+ * - débito automático: checkout de un plan de suscripción (tarjeta o cuenta
+ *   de Mercado Pago, sin pedir antes el email);
+ * - pago único: Checkout Pro por un mes o un año (tarjeta, dinero en cuenta
+ *   o efectivo), sin renovación automática.
+ * El plan se activa cuando se confirma el pago (la pantalla pregunta, llega
+ * el aviso o se vuelve a Pesito).
  */
 export async function startSubscription(
   plan: Plan,
   cycle: BillingCycle,
-  from: "configuracion" | "alta" = "configuracion"
+  method: PaymentMethod = "debito"
 ): Promise<BillingActionResult> {
   const { organization, membership } = await requireOrgContext();
   if (!isOrgAdmin(membership.role)) return { error: "Sólo el dueño o un administrador puede contratar un plan." };
   if (!PAID.includes(plan) || (cycle !== "mensual" && cycle !== "anual")) return { error: "Elegí un plan válido." };
+  if (method !== "debito" && method !== "unico") return { error: "Elegí cómo querés pagar." };
   if (!mercadoPagoConfigured()) return { error: "El cobro con Mercado Pago todavía no está configurado." };
 
+  const backUrl = `${siteUrl}/suscribirse/listo`;
+  const amount = chargeAmount(plan, cycle);
   try {
+    if (method === "unico") {
+      const ref = `${buildExternalReference(organization.id, plan, cycle)}|u${crypto.randomBytes(6).toString("hex")}`;
+      const pref = await createPreference({
+        title: `Pesito — Plan ${planLabels[plan]} (${cycle === "anual" ? "1 año" : "1 mes"})`,
+        externalReference: ref,
+        amount,
+        backUrl,
+      });
+      const url = usingTestCredentials() ? pref.sandbox_init_point ?? pref.init_point : pref.init_point;
+      if (!url) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
+      await recordCheckout(organization.id, pref.id, { plan, cycle, method, ref });
+      return { url, checkoutId: pref.id };
+    }
+
     const checkout = await createPreapprovalPlan({
       reason: `Pesito — Plan ${planLabels[plan]} (${cycle})`,
       externalReference: buildExternalReference(organization.id, plan, cycle),
       frequencyMonths: cycle === "anual" ? 12 : 1,
-      amount: chargeAmount(plan, cycle),
-      backUrl: from === "alta" ? `${siteUrl}/suscribirse` : `${siteUrl}/configuracion?tab=plan`,
+      amount,
+      backUrl,
     });
     if (!checkout.init_point) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
-    await recordCheckout(organization.id, checkout.id, plan, cycle);
+    await recordCheckout(organization.id, checkout.id, { plan, cycle, method });
     return { url: checkout.init_point, checkoutId: checkout.id };
   } catch (e) {
     const detail = mercadoPagoErrorMessage(e);
@@ -105,9 +129,10 @@ export async function getUpdatePaymentUrl(): Promise<BillingActionResult> {
 }
 
 export interface CheckoutStatus {
-  /** Se pagó este checkout y el plan quedó activo. */
-  paid: boolean;
+  /** paid: se pagó y el plan quedó activo; pending: pago en efectivo sin acreditar. */
+  state: CheckoutState;
   plan: Plan;
+  periodEnd: string | null;
 }
 
 /**
@@ -117,13 +142,13 @@ export interface CheckoutStatus {
 export async function checkPendingCheckout(checkoutId: string): Promise<CheckoutStatus> {
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
-  let paid = false;
-  if (mercadoPagoConfigured() && typeof checkoutId === "string" && checkoutId.length <= 64) {
-    paid = await isCheckoutPaid(organization.id, checkoutId).catch((e) => {
+  let state: CheckoutState = "none";
+  if (mercadoPagoConfigured() && typeof checkoutId === "string" && checkoutId.length <= 80) {
+    state = await checkoutState(organization.id, checkoutId).catch((e: unknown) => {
       console.error("checkPendingCheckout", e instanceof MercadoPagoError ? e.body : e);
-      return false;
+      return "none" as const;
     });
   }
   const subscription = await getSubscription(supabase, organization.id);
-  return { paid, plan: subscription.plan };
+  return { state, plan: subscription.plan, periodEnd: subscription.billing?.currentPeriodEnd ?? null };
 }

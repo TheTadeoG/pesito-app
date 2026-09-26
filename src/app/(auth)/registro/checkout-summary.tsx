@@ -60,7 +60,7 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
         <div className="rounded-xl bg-accent/40 p-4 text-sm">
           <p className="font-medium text-accent-foreground">Cómo sigue</p>
           <p className="mt-1 text-accent-foreground/80">
-            {`Creás tu cuenta, pagás el ${def.name} en Mercado Pago y entrás a Pesito con el plan activo. Se renueva solo ${annual ? "cada año" : "cada mes"}.`}
+            {`Creás tu cuenta, pagás el ${def.name} con Mercado Pago y entrás a Pesito con el plan activo.`}
           </p>
         </div>
 
@@ -73,12 +73,12 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
               <CreditCard className="h-4 w-4 text-muted-foreground" />
               MercadoPago
             </span>
-            <span className="shrink-0 text-xs text-muted-foreground">Débito automático</span>
+            <span className="shrink-0 text-xs text-muted-foreground">Débito automático o pago único</span>
           </div>
           <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Pagás con tarjeta o con tu cuenta de Mercado Pago. Cancelás cuando quieras desde
-            Configuración.
+            Con débito automático se renueva solo y lo cancelás cuando quieras. Con pago único
+            pagás también en efectivo y renovás a mano.
           </p>
         </div>
       </CardContent>

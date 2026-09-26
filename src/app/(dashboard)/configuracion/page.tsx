@@ -47,7 +47,7 @@ export default async function ConfiguracionPage({
   if (tab === "plan") {
     // Vuelta de Mercado Pago (con o sin ?preapproval_id): se aplica lo que
     // se haya pagado sin esperar el aviso.
-    if (isOrgAdmin(membership.role)) await syncReturnedPayment(organization.id, preapprovalId);
+    if (isOrgAdmin(membership.role)) await syncReturnedPayment(organization.id, { preapprovalId });
     const subscription = await getSubscription(supabase, organization.id);
     // Sólo importa contar esto cuando el límite de ventas realmente aplica
     // (plan gratis, sin prueba Pro activa) — evita una query de más al resto.

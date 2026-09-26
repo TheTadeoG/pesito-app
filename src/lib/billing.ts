@@ -3,8 +3,11 @@ import {
   cancelPreapproval,
   getAuthorizedPayment,
   getPreapproval,
+  getPayment,
   getPreapprovalPlan,
+  searchPaymentsByReference,
   searchPreapprovalsByPlan,
+  type Payment,
   type AuthorizedPayment,
   type Preapproval,
 } from "@/lib/mercadopago";
@@ -33,15 +36,19 @@ export function buildExternalReference(orgId: string, plan: Plan, cycle: Billing
   return `${orgId}|${plan}|${cycle}`;
 }
 
+/**
+ * Lee la external_reference. Los pagos únicos llevan un cuarto campo
+ * ("u<id>") para poder buscar ese pago puntual.
+ */
 export function parseExternalReference(
   ref: string | null | undefined
-): { orgId: string; plan: Plan; cycle: BillingCycle } | null {
+): { orgId: string; plan: Plan; cycle: BillingCycle; oneTime: boolean } | null {
   if (!ref) return null;
-  const [orgId, plan, cycle] = String(ref).split("|");
+  const [orgId, plan, cycle, tag] = String(ref).split("|");
   if (!/^[0-9a-f-]{36}$/i.test(orgId ?? "")) return null;
   if (!PAID_PLANS.includes(plan as Plan)) return null;
   if (cycle !== "mensual" && cycle !== "anual") return null;
-  return { orgId, plan: plan as Plan, cycle };
+  return { orgId, plan: plan as Plan, cycle, oneTime: Boolean(tag?.startsWith("u")) };
 }
 
 /**
@@ -215,6 +222,80 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
   return ref.orgId;
 }
 
+/**
+ * Pago único (Checkout Pro): el plan queda pago por un mes o un año, sin
+ * renovación automática. Se guarda como payment_status "cancelled" sin
+ * suscripción (mp_preapproval_id null): org_effective_plan lo pasa a Gratis
+ * al terminar el período. Si todavía le quedaba tiempo del mismo plan, se
+ * suma a continuación. Cada pago se aplica una sola vez.
+ */
+export async function applyOneTimePayment(pay: Payment): Promise<string | null> {
+  const ref = parseExternalReference(pay.external_reference);
+  if (!ref?.oneTime) return null;
+  if (pay.status !== "approved") return ref.orgId;
+  const admin = createAdminClient();
+
+  const { data: already } = await admin
+    .from("billing_events")
+    .select("id")
+    .eq("topic", "payment_applied")
+    .eq("mp_id", String(pay.id))
+    .limit(1);
+  if (already?.length) return ref.orgId;
+  if (Number(pay.transaction_amount) + 0.01 < chargeAmount(ref.plan, ref.cycle)) {
+    console.error("Pago único con monto menor al del plan", pay.id, pay.transaction_amount);
+    await logEvent(ref.orgId, "payment", String(pay.id), "monto_invalido", pay.transaction_amount, pay);
+    return ref.orgId;
+  }
+
+  const { data: current } = await admin
+    .from("organization_subscriptions")
+    .select("*")
+    .eq("org_id", ref.orgId)
+    .maybeSingle();
+
+  const now = new Date();
+  const currentEnd = current?.current_period_end ? new Date(current.current_period_end) : null;
+  const base =
+    current?.plan === ref.plan && currentEnd && currentEnd > now && current.payment_status !== "past_due"
+      ? currentEnd
+      : now;
+  const previousId =
+    current?.mp_preapproval_id && current.payment_status !== "cancelled" ? current.mp_preapproval_id : null;
+
+  const { error } = await admin.from("organization_subscriptions").upsert(
+    {
+      org_id: ref.orgId,
+      plan: ref.plan,
+      billing_cycle: ref.cycle,
+      mp_preapproval_id: null,
+      payment_status: "cancelled",
+      current_period_end: addMonths(base, ref.cycle === "anual" ? 12 : 1).toISOString(),
+      grace_until: null,
+      pro_trial_ends_at: null,
+    },
+    { onConflict: "org_id" }
+  );
+  if (error) {
+    console.error("applyOneTimePayment", error.message);
+    throw new Error(`No pudimos guardar el plan: ${error.message}`);
+  }
+  await logEvent(ref.orgId, "payment_applied", String(pay.id), pay.status, pay.transaction_amount, pay);
+  if ((current?.plan ?? "gratis") !== ref.plan) {
+    await admin.from("plan_history").insert({
+      org_id: ref.orgId,
+      from_plan: current?.plan ?? "gratis",
+      to_plan: ref.plan,
+      changed_by: null,
+    });
+  }
+  // Pasó de débito automático a pago único: el débito deja de cobrarse.
+  if (previousId) {
+    await cancelPreapproval(previousId).catch((e) => console.error("No pudimos cancelar el débito anterior", e));
+  }
+  return ref.orgId;
+}
+
 /** Trae el recurso de Mercado Pago y lo aplica. */
 export async function syncFromMercadoPago(topic: string, id: string): Promise<string | null> {
   if (topic === "subscription_preapproval" || topic === "preapproval") {
@@ -223,24 +304,49 @@ export async function syncFromMercadoPago(topic: string, id: string): Promise<st
   if (topic === "subscription_authorized_payment" || topic === "authorized_payment") {
     return applyAuthorizedPayment(await getAuthorizedPayment(id));
   }
+  if (topic === "payment") {
+    return applyOneTimePayment(await getPayment(id));
+  }
   return null;
 }
 
 const CHECKOUT_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 
-/** Anota un checkout abierto (el plan de Mercado Pago) para buscar después su pago. */
-export async function recordCheckout(orgId: string, checkoutId: string, plan: Plan, cycle: BillingCycle) {
-  await logEvent(orgId, "checkout", checkoutId, "pending", chargeAmount(plan, cycle), { plan, cycle });
+export type PaymentMethod = "debito" | "unico";
+export type CheckoutState = "paid" | "pending" | "none";
+
+interface CheckoutDetail {
+  plan: Plan;
+  cycle: BillingCycle;
+  method: PaymentMethod;
+  /** external_reference del pago único. */
+  ref?: string;
 }
 
-/** Si el checkout se pagó, aplica la suscripción. true = pagado. */
-async function applyCheckoutIfPaid(orgId: string, checkoutId: string): Promise<boolean> {
+/** Anota un checkout abierto para buscar después su pago. */
+export async function recordCheckout(orgId: string, checkoutId: string, detail: CheckoutDetail) {
+  await logEvent(orgId, "checkout", checkoutId, "pending", chargeAmount(detail.plan, detail.cycle), detail);
+}
+
+/** ¿Se pagó el checkout? Si se pagó, lo aplica. */
+async function applyCheckoutIfPaid(orgId: string, checkoutId: string, detail: CheckoutDetail): Promise<CheckoutState> {
+  if (detail.method === "unico") {
+    if (!detail.ref) return "none";
+    const payments = await searchPaymentsByReference(detail.ref);
+    const approved = payments.find((p) => p.status === "approved");
+    if (approved) {
+      if ((await applyOneTimePayment(approved)) !== orgId) return "none";
+      await logEvent(orgId, "checkout_done", checkoutId, "approved", null, { payment_id: approved.id });
+      return "paid";
+    }
+    return payments.some((p) => p.status === "pending" || p.status === "in_process") ? "pending" : "none";
+  }
   const found = await searchPreapprovalsByPlan(checkoutId);
   const paid = found.find((p) => p.status === "authorized");
-  if (!paid || (await referenceOf(paid))?.orgId !== orgId) return false;
+  if (!paid || (await referenceOf(paid))?.orgId !== orgId) return "none";
   await applyPreapproval(paid);
   await logEvent(orgId, "checkout_done", checkoutId, "authorized", null, { preapproval_id: paid.id });
-  return true;
+  return "paid";
 }
 
 async function checkoutEvents(orgId: string) {
@@ -248,7 +354,7 @@ async function checkoutEvents(orgId: string) {
   const since = new Date(Date.now() - CHECKOUT_WINDOW_MS).toISOString();
   const { data } = await admin
     .from("billing_events")
-    .select("topic, mp_id")
+    .select("topic, mp_id, detail")
     .eq("org_id", orgId)
     .in("topic", ["checkout", "checkout_done"])
     .gte("created_at", since)
@@ -256,7 +362,14 @@ async function checkoutEvents(orgId: string) {
     .limit(20);
   const events = data ?? [];
   const done = new Set(events.filter((e) => e.topic === "checkout_done").map((e) => e.mp_id));
-  const opened = new Set(events.filter((e) => e.topic === "checkout").map((e) => e.mp_id));
+  const opened = new Map(
+    events
+      .filter((e) => e.topic === "checkout")
+      .map((e) => {
+        const d = (e.detail ?? {}) as Partial<CheckoutDetail>;
+        return [e.mp_id, { ...d, method: d.method ?? "debito" } as CheckoutDetail] as const;
+      })
+  );
   return { done, opened };
 }
 
@@ -267,32 +380,41 @@ async function checkoutEvents(orgId: string) {
  */
 export async function syncPendingCheckouts(orgId: string): Promise<void> {
   const { done, opened } = await checkoutEvents(orgId);
-  const pending = [...opened].filter((id) => !done.has(id)).slice(0, 3);
-  for (const checkoutId of pending) await applyCheckoutIfPaid(orgId, checkoutId);
+  const pending = [...opened].filter(([id]) => !done.has(id)).slice(0, 3);
+  for (const [checkoutId, detail] of pending) await applyCheckoutIfPaid(orgId, checkoutId, detail);
 }
 
 /**
- * ¿Se pagó este checkout puntual? (el que se abrió desde la pantalla). Sólo
+ * ¿Se pagó este checkout puntual (el que se abrió desde la pantalla)? Sólo
  * mira checkouts de este negocio. Un plan que ya se tenía no cuenta.
  */
-export async function isCheckoutPaid(orgId: string, checkoutId: string): Promise<boolean> {
+export async function checkoutState(orgId: string, checkoutId: string): Promise<CheckoutState> {
   const { done, opened } = await checkoutEvents(orgId);
-  if (done.has(checkoutId)) return true;
-  if (!opened.has(checkoutId)) return false;
-  return applyCheckoutIfPaid(orgId, checkoutId);
+  if (done.has(checkoutId)) return "paid";
+  const detail = opened.get(checkoutId);
+  if (!detail) return "none";
+  return applyCheckoutIfPaid(orgId, checkoutId, detail);
 }
 
 /**
- * Al volver de Mercado Pago: con ?preapproval_id se aplica esa suscripción
- * (sólo si es de este negocio); además se buscan los checkouts pagados, porque
- * Mercado Pago no siempre vuelve con el id. Sólo servidor (no es una acción).
+ * Al volver de Mercado Pago: se aplica lo que venga en la URL (suscripción o
+ * pago, sólo si es de este negocio) y además se buscan los checkouts pagados,
+ * porque Mercado Pago no siempre vuelve con el id. Sólo servidor.
  */
-export async function syncReturnedPayment(orgId: string, preapprovalId?: string): Promise<void> {
+export async function syncReturnedPayment(
+  orgId: string,
+  ids: { preapprovalId?: string; paymentId?: string } = {}
+): Promise<void> {
   if (!mercadoPagoConfigured()) return;
+  const valid = (v?: string) => Boolean(v && /^[0-9a-zA-Z_-]{4,64}$/.test(v));
   try {
-    if (preapprovalId && /^[0-9a-zA-Z_-]{8,64}$/.test(preapprovalId)) {
-      const pre = await getPreapproval(preapprovalId);
+    if (valid(ids.preapprovalId)) {
+      const pre = await getPreapproval(ids.preapprovalId!);
       if ((await referenceOf(pre))?.orgId === orgId) await applyPreapproval(pre);
+    }
+    if (valid(ids.paymentId)) {
+      const pay = await getPayment(ids.paymentId!);
+      if (parseExternalReference(pay.external_reference)?.orgId === orgId) await applyOneTimePayment(pay);
     }
     await syncPendingCheckouts(orgId);
   } catch (e) {

@@ -144,6 +144,52 @@ export async function searchPreapprovalsByPlan(planId: string): Promise<Preappro
   return res.results ?? [];
 }
 
+export interface Payment {
+  id: number;
+  status: "approved" | "pending" | "in_process" | "authorized" | "rejected" | "cancelled" | "refunded" | "charged_back";
+  external_reference: string | null;
+  transaction_amount: number;
+  date_approved: string | null;
+}
+
+/**
+ * Pago único (Checkout Pro): un mes o un año del plan, sin renovación
+ * automática. Acepta tarjeta, dinero en cuenta y efectivo.
+ */
+export async function createPreference(input: {
+  title: string;
+  externalReference: string;
+  amount: number;
+  backUrl: string;
+}): Promise<{ id: string; init_point?: string; sandbox_init_point?: string }> {
+  return mp("/checkout/preferences", {
+    method: "POST",
+    body: JSON.stringify({
+      items: [{ id: "plan", title: input.title, quantity: 1, unit_price: input.amount, currency_id: "ARS" }],
+      external_reference: input.externalReference,
+      back_urls: { success: input.backUrl, pending: input.backUrl, failure: input.backUrl },
+      auto_return: "approved",
+      statement_descriptor: "PESITO",
+    }),
+  });
+}
+
+export function getPayment(id: string): Promise<Payment> {
+  return mp<Payment>(`/v1/payments/${encodeURIComponent(id)}`);
+}
+
+export async function searchPaymentsByReference(ref: string): Promise<Payment[]> {
+  const res = await mp<{ results?: Payment[] }>(
+    `/v1/payments/search?external_reference=${encodeURIComponent(ref)}&sort=date_created&criteria=desc`
+  );
+  return res.results ?? [];
+}
+
+/** Con credenciales de prueba, Mercado Pago usa el link de sandbox. */
+export function usingTestCredentials(): boolean {
+  return (process.env.MP_ACCESS_TOKEN ?? "").startsWith("TEST-");
+}
+
 /** El mensaje de error que devolvió Mercado Pago, para mostrarlo. */
 export function mercadoPagoErrorMessage(e: unknown): string | null {
   if (!(e instanceof MercadoPagoError)) return null;

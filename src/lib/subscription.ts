@@ -163,3 +163,14 @@ export async function getMonthlySalesCount(
 
   return count ?? 0;
 }
+
+/**
+ * Plan pago sin renovación automática (pago único o débito cancelado) que
+ * vence en los próximos 5 días: para avisar que hay que renovarlo.
+ */
+export function expiringPaidPlan(subscription: SubscriptionInfo): BillingInfo | null {
+  const billing = subscription.billing;
+  if (subscription.plan === "gratis" || billing?.status !== "cancelled" || !billing.currentPeriodEnd) return null;
+  const left = new Date(billing.currentPeriodEnd).getTime() - Date.now();
+  return left < 5 * 24 * 60 * 60 * 1000 ? billing : null;
+}

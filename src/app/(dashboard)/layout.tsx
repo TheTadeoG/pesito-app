@@ -16,13 +16,13 @@ import { RefreshAfterSale } from "@/components/dashboard/refresh-after-sale";
 import { CashCloseReminder } from "@/components/dashboard/cash-close-reminder";
 import { getUpcomingCommercialDates } from "@/lib/commercial-dates";
 import { argDateString } from "@/lib/timezone";
-import { getSubscription, planLabels } from "@/lib/subscription";
+import { expiringPaidPlan, getSubscription, planLabels } from "@/lib/subscription";
 import { canUse, featureMinPlan, type PlanFeature } from "@/lib/plan-access";
 import { getBranchContext } from "@/lib/branches";
 import { cookies } from "next/headers";
 import { isOrgAdmin } from "@/lib/roles";
 import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
-import { formatDateTime } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { NewDeviceAlert, type NewDeviceLogin } from "@/components/dashboard/new-device-alert";
 
 export const metadata: Metadata = {
@@ -124,6 +124,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   );
   const memberName = greetingName || membership.username || email || "";
 
+  const expiringBilling = expiringPaidPlan(subscription);
+
   return (
     <ToastProvider>
       <Suspense fallback={null}>
@@ -168,6 +170,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
               }. `}
               <Link href="/configuracion?tab=plan" prefetch={false} className="font-medium text-primary hover:underline">
                 Actualizar medio de pago
+              </Link>
+            </div>
+          )}
+          {isOrgAdmin(membership.role) && expiringBilling && (
+            <div className="mx-4 mt-4 rounded-2xl border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-foreground sm:mx-6 lg:mx-8">
+              {`Tu Plan ${planLabels[subscription.plan]} vence el ${formatDate(expiringBilling.currentPeriodEnd!)}. Si no lo renovás, el negocio pasa al Plan Gratis (sin perder datos). `}
+              <Link
+                href={`/suscribirse?plan=${subscription.plan}&ciclo=${expiringBilling.cycle ?? "mensual"}`}
+                prefetch={false}
+                className="font-medium text-primary hover:underline"
+              >
+                Renovar
               </Link>
             </div>
           )}
