@@ -23,6 +23,8 @@ import {
 } from "@/lib/subscription";
 import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
+import { TwoFactorCard } from "@/app/(dashboard)/configuracion/two-factor-card";
+import { describeDevice } from "@/lib/login-events";
 
 function parseTab(value: string | undefined): ConfiguracionTab {
   return value === "plan" ? "plan" : "negocio";
@@ -61,7 +63,13 @@ export default async function ConfiguracionPage({
     );
   }
 
-  const [{ data: memberships }, { data: paymentMethods }, branchContext, subscription] = await Promise.all([
+  const [
+    { data: memberships },
+    { data: paymentMethods },
+    branchContext,
+    subscription,
+    { data: loginEvents },
+  ] = await Promise.all([
     supabase
       .from("memberships")
       .select("id, user_id, role, email, username, created_at")
@@ -74,7 +82,19 @@ export default async function ConfiguracionPage({
       .order("created_at"),
     getBranchContext(),
     getSubscription(supabase, organization.id),
+    // Administradores: los del equipo; el resto, los propios (RLS, 0046).
+    supabase
+      .from("login_events")
+      .select("id, user_id, user_agent, new_device, created_at")
+      .eq("org_id", organization.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
+  const memberLabel = (id: string) => {
+    if (id === userId) return "Vos";
+    const m = (memberships ?? []).find((x) => x.user_id === id);
+    return m?.username ?? m?.email ?? "Usuario eliminado";
+  };
 
   return (
     <div className="space-y-6">
@@ -146,6 +166,38 @@ export default async function ConfiguracionPage({
           <CardContent className="space-y-4">
             <p className="text-sm text-foreground">{email}</p>
             <AccountIds orgCode={organization.org_code} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Seguridad</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <TwoFactorCard />
+            {loginEvents && loginEvents.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-foreground">Últimos ingresos</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {isOrgAdmin(membership.role)
+                    ? "Los de todo el equipo. Si ves un dispositivo nuevo que no reconocés, cambiá la contraseña de esa persona."
+                    : "Los tuyos. Si ves un dispositivo nuevo que no reconocés, cambiá tu contraseña."}
+                </p>
+                <div className="mt-3 divide-y divide-border rounded-xl border border-border">
+                  {loginEvents.map((e) => (
+                    <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                      <span className="text-foreground">
+                        {`${memberLabel(e.user_id)} · ${describeDevice(e.user_agent)}`}
+                      </span>
+                      <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {e.new_device && <Badge tone="warning">Dispositivo nuevo</Badge>}
+                        {formatDateTime(e.created_at)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -1,10 +1,12 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeNextPath } from "@/lib/safe-redirect";
+import { recordLogin } from "@/lib/login-events";
+import { MFA_COOKIE } from "@/lib/supabase/cookie-options";
 import { isEmailIdentifier, usernameToEmail } from "@/lib/internal-auth";
 
 export interface AuthActionState {
@@ -42,7 +44,7 @@ export async function login(
     };
   }
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     await admin.rpc("register_login_failure", { p_email: email });
@@ -50,6 +52,25 @@ export async function login(
   }
 
   await admin.rpc("register_login_success", { p_email: email });
+  if (signIn.user) await recordLogin(signIn.user.id);
+
+  // Con la verificación en dos pasos activada, falta el código de la app.
+  // La cookie MFA_COOKIE le avisa al middleware que esta sesión la necesita
+  // (la sesión en sí no guarda los factores); se borra si no hay.
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const hasTotp = Boolean(factors?.totp.some((f) => f.status === "verified"));
+  const cookieStore = await cookies();
+  if (hasTotp) {
+    cookieStore.set(MFA_COOKIE, "1", {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    redirect(`/login/verificar?next=${encodeURIComponent(next)}`);
+  }
+  cookieStore.delete(MFA_COOKIE);
 
   redirect(next);
 }

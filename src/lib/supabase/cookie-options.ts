@@ -3,3 +3,10 @@
 export const SESSION_COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 400,
 };
+
+/**
+ * La persona tiene activada la verificación en dos pasos: el middleware
+ * manda a /login/verificar mientras la sesión no tenga el código (aal2).
+ * La pone el login; la base exige el código igual (migración 0046).
+ */
+export const MFA_COOKIE = "pesito-mfa";

@@ -133,6 +133,9 @@ Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados
 - Plan y límites en la base: `require_plan`, `plan_limit`, `require_user_slot` (mismos valores que `plan-access.ts`) en aumentos masivos, En vivo, cuenta corriente de proveedores, sucursales, pases, invitaciones/usuarios y cajas abiertas.
 - `?next=` del login y del mail de confirmación sólo acepta rutas internas (`lib/safe-redirect.ts`).
 - Backups: el plan gratis de Supabase no tiene copias diarias; pendiente cuando se pase a Supabase Pro.
+- Migración 0046: verificación en dos pasos OPCIONAL (TOTP, Configuración → Seguridad). `is_org_member`/`is_org_admin` exigen `aal2` sólo a quien la activó (`mfa_ok()`), así que sin el código la base no muestra nada. El login consulta los factores y deja la cookie `pesito-mfa` para que el middleware mande a `/login/verificar`. En Supabase de producción TOTP viene activado por defecto (Authentication → Multi-Factor).
+- `login_events` (0046): cada ingreso con su dispositivo (cookie `pesito-device`); aviso en el panel a dueños/admins por ingresos desde un dispositivo nuevo (48 h) y "Últimos ingresos" en Configuración → Seguridad.
+- Cabeceras de seguridad en `next.config.ts` (X-Frame-Options, frame-ancestors, nosniff, HSTS, Referrer/Permissions-Policy).
 
 ## Funciones pendientes (tasklist)
 

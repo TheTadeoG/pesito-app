@@ -538,6 +538,30 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
         Relationships: [];
       };
+      login_events: {
+        Row: {
+          id: string;
+          org_id: string | null;
+          user_id: string;
+          device_id: string;
+          user_agent: string | null;
+          ip: string | null;
+          new_device: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id?: string | null;
+          user_id: string;
+          device_id: string;
+          user_agent?: string | null;
+          ip?: string | null;
+          new_device?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["login_events"]["Insert"]>;
+        Relationships: [];
+      };
       plan_history: {
         Row: {
           id: string;

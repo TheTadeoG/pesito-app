@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
-import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
+import { MFA_COOKIE, SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
 
 // Rutas públicas: landing + todo lo de "Recursos" (SEO/GEO, pensado para
 // alguien que todavía no nos conoce y no tiene por qué estar logueado) más
@@ -90,6 +90,24 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublicPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // Verificación en dos pasos: con la app de códigos activada y la sesión
+  // sin el código todavía, primero a /login/verificar. La base igual no
+  // muestra datos del negocio sin el código (migración 0046); esto es para
+  // que la persona llegue a la pantalla correcta (sin ir al servidor de Auth:
+  // el login deja la cookie MFA_COOKIE cuando la cuenta tiene el código).
+  if (
+    user &&
+    user.aal !== "aal2" &&
+    request.cookies.get(MFA_COOKIE)?.value === "1" &&
+    !isPublicPath(request.nextUrl.pathname)
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login/verificar";
+    url.search = "";
     url.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }

@@ -18,6 +18,11 @@ import { argDateString } from "@/lib/timezone";
 import { getSubscription, planLabels } from "@/lib/subscription";
 import { canUse, featureMinPlan, type PlanFeature } from "@/lib/plan-access";
 import { getBranchContext } from "@/lib/branches";
+import { cookies } from "next/headers";
+import { isOrgAdmin } from "@/lib/roles";
+import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
+import { formatDateTime } from "@/lib/utils";
+import { NewDeviceAlert, type NewDeviceLogin } from "@/components/dashboard/new-device-alert";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -29,7 +34,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Independientes entre sí (ninguna depende del resultado de la otra):
   // van en paralelo en vez de una atrás de la otra.
-  const [subscription, { data: openRegister }, branchContext] = await Promise.all([
+  const cookieStore = await cookies();
+  const thisDevice = cookieStore.get(DEVICE_COOKIE)?.value ?? "";
+  const [subscription, { data: openRegister }, branchContext, { data: newDeviceRows }] = await Promise.all([
     getSubscription(supabase, organization.id),
     supabase
       .from("cash_registers")
@@ -39,6 +46,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .eq("status", "abierta")
       .maybeSingle(),
     getBranchContext(),
+    // Dueños/administradores: ingresos desde dispositivos nuevos (48 h),
+    // sin contar este mismo dispositivo.
+    isOrgAdmin(membership.role)
+      ? supabase
+          .from("login_events")
+          .select("id, user_id, user_agent, device_id, created_at")
+          .eq("org_id", organization.id)
+          .eq("new_device", true)
+          // eslint-disable-next-line react-hooks/purity
+          .gte("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+          .order("created_at", { ascending: false })
+          .limit(5)
+      : Promise.resolve({ data: null }),
   ]);
   const branch = branchContext.current
     ? {
@@ -79,6 +99,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
     firstName || (membership.username ? membership.username.split("#")[0] : null) || null;
   const greetingName = greetingNameRaw ? capitalizeWords(greetingNameRaw) : null;
   const roleLabel = roleLabels[membership.role] ?? membership.role;
+  const newDeviceLogins: NewDeviceLogin[] = [];
+  if (newDeviceRows && newDeviceRows.length > 0) {
+    const others = newDeviceRows.filter((r) => r.device_id !== thisDevice);
+    const ids = Array.from(new Set(others.map((r) => r.user_id)));
+    const { data: people } = ids.length
+      ? await supabase.from("memberships").select("user_id, username, email").eq("org_id", organization.id).in("user_id", ids)
+      : { data: [] };
+    for (const r of others) {
+      const person = (people ?? []).find((p) => p.user_id === r.user_id);
+      newDeviceLogins.push({
+        id: r.id,
+        who: r.user_id === userId ? "vos" : person?.username ?? person?.email ?? "alguien del equipo",
+        device: describeDevice(r.user_agent),
+        at: formatDateTime(r.created_at),
+      });
+    }
+  }
   const lockedFeatures = Object.fromEntries(
     (Object.keys(featureMinPlan) as PlanFeature[])
       .filter((f) => !canUse(subscription, f))
@@ -117,6 +154,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               closeTime={organization.cash_close_time ?? null}
             />
           )}
+          <NewDeviceAlert logins={newDeviceLogins} />
           {subscription.plan === "gratis" && subscription.proTrialEndsAt && (
             <ProTrialBanner proTrialEndsAt={subscription.proTrialEndsAt} />
           )}
