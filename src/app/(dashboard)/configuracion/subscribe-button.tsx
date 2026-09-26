@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { BillingCycle, Plan } from "@/lib/subscription";
 import { startSubscription } from "@/app/(dashboard)/configuracion/billing-actions";
@@ -14,7 +12,6 @@ export function SubscribeButton({
   planName,
   monthlyPrice,
   annualPrice,
-  defaultEmail,
   variant,
   label,
 }: {
@@ -23,20 +20,18 @@ export function SubscribeButton({
   monthlyPrice: number;
   /** Total que se cobra una vez por año. */
   annualPrice: number;
-  defaultEmail: string;
   variant: React.ComponentProps<typeof Button>["variant"];
   label: string;
 }) {
   const [open, setOpen] = useState(false);
   const [cycle, setCycle] = useState<BillingCycle>("mensual");
-  const [email, setEmail] = useState(defaultEmail);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleContinue() {
     setPending(true);
     setError(null);
-    const result = await startSubscription(plan, cycle, email);
+    const result = await startSubscription(plan, cycle);
     if (result.error || !result.url) {
       setPending(false);
       setError(result.error ?? "No pudimos conectar con Mercado Pago.");
@@ -85,22 +80,10 @@ export function SubscribeButton({
             ))}
           </div>
 
-          <div>
-            <Label htmlFor="mp-email" required>
-              Email de tu cuenta de Mercado Pago
-            </Label>
-            <Input
-              id="mp-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Tiene que ser el mismo con el que vas a pagar en Mercado Pago; si no coincide, Mercado
-              Pago rechaza el pago.
-            </p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Te llevamos al checkout de Mercado Pago: pagás con tarjeta o entrando a tu cuenta de
+            Mercado Pago, y volvés a Pesito con el plan activo.
+          </p>
 
           {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
 
@@ -108,7 +91,7 @@ export function SubscribeButton({
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleContinue} disabled={pending || !email.trim()}>
+            <Button type="button" onClick={handleContinue} disabled={pending}>
               {pending ? "Conectando…" : "Ir a Mercado Pago"}
             </Button>
           </div>

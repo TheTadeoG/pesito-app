@@ -36,6 +36,7 @@ async function mp<T>(path: string, init: RequestInit = {}): Promise<T> {
   });
   const text = await res.text();
   if (!res.ok) {
+    console.error("Mercado Pago", res.status, path, text.slice(0, 500));
     throw new MercadoPagoError(`Mercado Pago ${res.status} en ${path}`, res.status, text.slice(0, 500));
   }
   return JSON.parse(text) as T;
@@ -45,6 +46,7 @@ export interface Preapproval {
   id: string;
   status: "pending" | "authorized" | "paused" | "cancelled" | "canceled";
   external_reference: string | null;
+  preapproval_plan_id?: string | null;
   payer_email?: string | null;
   init_point?: string;
   next_payment_date?: string | null;
@@ -91,6 +93,58 @@ export async function createPreapproval(input: {
       status: "pending",
     }),
   });
+}
+
+export interface PreapprovalPlan {
+  id: string;
+  external_reference: string | null;
+  init_point?: string;
+}
+
+/**
+ * Crea un plan de suscripción para un cobro puntual (un negocio, un plan,
+ * un ciclo) y devuelve su link de checkout. A diferencia de la suscripción
+ * "sin plan asociado", no hace falta saber de antemano el email de Mercado
+ * Pago: la persona entra al checkout y paga con tarjeta o iniciando sesión.
+ * La suscripción que se crea al pagar trae preapproval_plan_id, y el plan
+ * guarda nuestra external_reference.
+ */
+export async function createPreapprovalPlan(input: {
+  reason: string;
+  externalReference: string;
+  frequencyMonths: number;
+  amount: number;
+  backUrl: string;
+}): Promise<PreapprovalPlan> {
+  return mp<PreapprovalPlan>("/preapproval_plan", {
+    method: "POST",
+    body: JSON.stringify({
+      reason: input.reason,
+      external_reference: input.externalReference,
+      auto_recurring: {
+        frequency: input.frequencyMonths,
+        frequency_type: "months",
+        transaction_amount: input.amount,
+        currency_id: "ARS",
+      },
+      back_url: input.backUrl,
+    }),
+  });
+}
+
+export function getPreapprovalPlan(id: string): Promise<PreapprovalPlan> {
+  return mp<PreapprovalPlan>(`/preapproval_plan/${encodeURIComponent(id)}`);
+}
+
+/** El mensaje de error que devolvió Mercado Pago, para mostrarlo. */
+export function mercadoPagoErrorMessage(e: unknown): string | null {
+  if (!(e instanceof MercadoPagoError)) return null;
+  try {
+    const body = JSON.parse(e.body) as { message?: string; error?: string };
+    return body.message || body.error || null;
+  } catch {
+    return e.body || null;
+  }
 }
 
 export function getPreapproval(id: string): Promise<Preapproval> {

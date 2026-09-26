@@ -64,7 +64,6 @@ export default async function ConfiguracionPage({
           planHistory={planHistory}
           canManage={isOrgAdmin(membership.role)}
           paymentsEnabled={mercadoPagoConfigured()}
-          defaultEmail={email && !email.endsWith("@vendedores.pesito.app") ? email : ""}
         />
       </div>
     );

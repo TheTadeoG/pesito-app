@@ -8,17 +8,13 @@ import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib
 import { siteUrl } from "@/lib/utils";
 import {
   cancelPreapproval,
-  createPreapproval,
+  createPreapprovalPlan,
   getPreapproval,
   mercadoPagoConfigured,
+  mercadoPagoErrorMessage,
   MercadoPagoError,
 } from "@/lib/mercadopago";
-import {
-  applyPreapproval,
-  buildExternalReference,
-  chargeAmount,
-  parseExternalReference,
-} from "@/lib/billing";
+import { applyPreapproval, buildExternalReference, chargeAmount, referenceOf } from "@/lib/billing";
 
 export interface BillingActionResult {
   error?: string;
@@ -28,38 +24,40 @@ export interface BillingActionResult {
 const PAID: Plan[] = ["esencial", "pro", "ia"];
 
 /**
- * Crea la suscripción en Mercado Pago y devuelve el link para que la persona
- * cargue su tarjeta o dinero en cuenta. El plan se activa cuando Mercado
- * Pago avisa que quedó autorizada (webhook o al volver a Pesito).
+ * Arma el checkout de Mercado Pago para el plan y devuelve el link: ahí la
+ * persona paga con tarjeta o iniciando sesión en Mercado Pago (no hace falta
+ * pedirle antes el email). El plan se activa cuando Mercado Pago avisa que
+ * la suscripción quedó autorizada (webhook o al volver a Pesito).
+ * `from`: a dónde vuelve después de pagar (Configuración o el alta nueva).
  */
 export async function startSubscription(
   plan: Plan,
   cycle: BillingCycle,
-  payerEmail: string
+  from: "configuracion" | "alta" = "configuracion"
 ): Promise<BillingActionResult> {
   const { organization, membership } = await requireOrgContext();
   if (!isOrgAdmin(membership.role)) return { error: "Sólo el dueño o un administrador puede contratar un plan." };
   if (!PAID.includes(plan) || (cycle !== "mensual" && cycle !== "anual")) return { error: "Elegí un plan válido." };
   if (!mercadoPagoConfigured()) return { error: "El cobro con Mercado Pago todavía no está configurado." };
-  const email = payerEmail.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Ingresá el email de tu cuenta de Mercado Pago." };
-  }
 
   try {
-    const pre = await createPreapproval({
+    const checkout = await createPreapprovalPlan({
       reason: `Pesito — Plan ${planLabels[plan]} (${cycle})`,
       externalReference: buildExternalReference(organization.id, plan, cycle),
-      payerEmail: email,
       frequencyMonths: cycle === "anual" ? 12 : 1,
       amount: chargeAmount(plan, cycle),
-      backUrl: `${siteUrl}/configuracion?tab=plan`,
+      backUrl: from === "alta" ? `${siteUrl}/suscribirse` : `${siteUrl}/configuracion?tab=plan`,
     });
-    if (!pre.init_point) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
-    return { url: pre.init_point };
+    if (!checkout.init_point) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
+    return { url: checkout.init_point };
   } catch (e) {
+    const detail = mercadoPagoErrorMessage(e);
     console.error("startSubscription", e instanceof MercadoPagoError ? e.body : e);
-    return { error: "No pudimos conectar con Mercado Pago. Probá de nuevo en un rato." };
+    return {
+      error: detail
+        ? `Mercado Pago rechazó el pedido: ${detail}`
+        : "No pudimos conectar con Mercado Pago. Probá de nuevo en un rato.",
+    };
   }
 }
 
@@ -105,7 +103,7 @@ export async function syncReturnedPreapproval(orgId: string, preapprovalId: stri
   if (!mercadoPagoConfigured() || !/^[0-9a-zA-Z_-]{8,64}$/.test(preapprovalId)) return;
   try {
     const pre = await getPreapproval(preapprovalId);
-    if (parseExternalReference(pre.external_reference)?.orgId !== orgId) return;
+    if ((await referenceOf(pre))?.orgId !== orgId) return;
     await applyPreapproval(pre);
   } catch (e) {
     console.error("syncReturnedPreapproval", e instanceof MercadoPagoError ? e.body : e);

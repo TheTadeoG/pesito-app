@@ -3,6 +3,7 @@ import {
   cancelPreapproval,
   getAuthorizedPayment,
   getPreapproval,
+  getPreapprovalPlan,
   type AuthorizedPayment,
   type Preapproval,
 } from "@/lib/mercadopago";
@@ -41,6 +42,16 @@ export function parseExternalReference(
   return { orgId, plan: plan as Plan, cycle };
 }
 
+/**
+ * De qué negocio/plan/ciclo es una suscripción: la external_reference viene
+ * en la suscripción o, si se pagó desde el checkout de un plan, en el plan.
+ */
+export async function referenceOf(pre: Preapproval) {
+  const direct = parseExternalReference(pre.external_reference);
+  if (direct || !pre.preapproval_plan_id) return direct;
+  return parseExternalReference((await getPreapprovalPlan(pre.preapproval_plan_id)).external_reference);
+}
+
 function addMonths(date: Date, months: number): Date {
   const d = new Date(date);
   d.setMonth(d.getMonth() + months);
@@ -75,7 +86,7 @@ async function logEvent(
  * - pending: todavía no cargó el medio de pago; no cambia nada.
  */
 export async function applyPreapproval(pre: Preapproval): Promise<string | null> {
-  const ref = parseExternalReference(pre.external_reference);
+  const ref = await referenceOf(pre);
   if (!ref) return null;
   const admin = createAdminClient();
 
@@ -159,7 +170,7 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
   const admin = createAdminClient();
   let ref = parseExternalReference(ap.external_reference);
   if (!ref && ap.preapproval_id) {
-    ref = parseExternalReference((await getPreapproval(ap.preapproval_id)).external_reference);
+    ref = await referenceOf(await getPreapproval(ap.preapproval_id));
   }
   if (!ref) return null;
 

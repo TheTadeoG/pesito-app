@@ -141,7 +141,8 @@ Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados
 
 ## Hecho: cobro de los planes con Mercado Pago (migración 0047)
 
-- Suscripciones sin plan asociado (`/preapproval`, pago pendiente): Configuración → Plan → "Contratar"/"Cambiar al" → mensual o anual (12 meses con 20% menos, débito automático cada 12 meses) → email de la cuenta de Mercado Pago (tiene que coincidir con el que paga) → `init_point`.
+- Checkout con plan (`/preapproval_plan`, uno por cobro con `external_reference` = `org|plan|ciclo`): Configuración → Plan → "Contratar"/"Cambiar al" → mensual o anual (12 meses con 20% menos, débito automático cada 12 meses) → `init_point`. No se pide el email de Mercado Pago: en el checkout pagan con tarjeta o iniciando sesión. La suscripción que se crea trae `preapproval_plan_id` y de ahí se saca el negocio (`referenceOf` en `lib/billing.ts`).
+- Alta con plan pago desde precios: `/registro?plan=&anual=` guarda `selected_plan`/`selected_cycle` en el usuario → onboarding crea el negocio → `/suscribirse` (paga con Mercado Pago, vuelve ahí con `?preapproval_id` y entra al POS). Link discreto para seguir con el Plan Gratis.
 - `lib/mercadopago.ts` (API + firma de avisos), `lib/billing.ts` (aplica suscripciones y cobros; `external_reference` = `org|plan|ciclo`), webhook `/api/mercadopago/webhook` (público, verifica `x-signature` y siempre re-consulta la API), acciones en `configuracion/billing-actions.ts` (contratar, cancelar, actualizar medio de pago, sincronizar al volver con `?preapproval_id=`).
 - Estados en `organization_subscriptions`: `payment_status` active / past_due (gracia 7 días) / cancelled (sigue hasta `current_period_end`). `org_effective_plan` (base) y `getSubscription` (app) bajan a Gratis al vencer; no hay tarea programada.
 - Cambio de plan = suscripción nueva; al autorizarse se cancela la anterior (sin prorrateo).

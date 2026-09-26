@@ -54,5 +54,12 @@ export async function createKiosco(
     return { error: "No pudimos crear tu cuenta. Intentá de nuevo." };
   }
 
+  // Eligió un plan pago en precios: primero se cobra, después entra.
+  const selectedPlan = user.user_metadata?.selected_plan;
+  if (typeof selectedPlan === "string" && ["esencial", "pro", "ia"].includes(selectedPlan)) {
+    const cycle = user.user_metadata?.selected_cycle === "anual" ? "anual" : "mensual";
+    redirect(`/suscribirse?plan=${selectedPlan}&ciclo=${cycle}`);
+  }
+
   redirect("/pos?bienvenida=1");
 }

@@ -5,10 +5,9 @@ import { planIcons, planAccents } from "@/lib/plan-visuals";
 import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
 import type { Plan } from "@/lib/subscription";
 
-// Resumen tipo "checkout" para cuando se llega a /registro eligiendo un
-// plan puntual desde precios. La cuenta arranca con la prueba de 14 días y
-// el plan se contrata después desde Configuración → Plan, con Mercado Pago
-// (débito automático). Acá no se cobra nada.
+// Resumen del plan elegido en precios (en /registro y en /suscribirse):
+// después de crear la cuenta se paga con Mercado Pago (débito automático)
+// y recién ahí se entra a Pesito.
 export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean }) {
   const def = planDefinitions[plan];
   const Icon = planIcons[plan];
@@ -59,9 +58,9 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
         </div>
 
         <div className="rounded-xl bg-accent/40 p-4 text-sm">
-          <p className="font-medium text-accent-foreground">Empezás con 14 días gratis</p>
+          <p className="font-medium text-accent-foreground">Cómo sigue</p>
           <p className="mt-1 text-accent-foreground/80">
-            {`No te cobramos nada hoy. Cuando quieras, contratás el ${def.name} desde Configuración → Plan.`}
+            {`Creás tu cuenta, pagás el ${def.name} en Mercado Pago y entrás a Pesito con el plan activo. Se renueva solo ${annual ? "cada año" : "cada mes"}.`}
           </p>
         </div>
 
@@ -78,7 +77,7 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
           </div>
           <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Pagás con tarjeta o dinero en cuenta de Mercado Pago. Cancelás cuando quieras desde
+            Pagás con tarjeta o con tu cuenta de Mercado Pago. Cancelás cuando quieras desde
             Configuración.
           </p>
         </div>

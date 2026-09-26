@@ -18,14 +18,12 @@ export function SubscriptionSection({
   planHistory,
   canManage,
   paymentsEnabled,
-  defaultEmail,
 }: {
   subscription: SubscriptionInfo;
   /** Dueño o administrador: contrata, cambia o cancela el plan. */
   canManage: boolean;
   /** Mercado Pago configurado (MP_ACCESS_TOKEN). */
   paymentsEnabled: boolean;
-  defaultEmail: string;
   // Sólo se calcula (en el server) cuando hace falta mostrarlo: plan
   // gratis y sin prueba Pro activa.
   monthlySalesCount: number | null;
@@ -288,7 +286,6 @@ export function SubscriptionSection({
                       planName={def.name}
                       monthlyPrice={chargeAmount(plan, "mensual")}
                       annualPrice={chargeAmount(plan, "anual")}
-                      defaultEmail={billing?.payerEmail ?? defaultEmail}
                       variant={accent.buttonVariant}
                       label={
                         subscription.plan === "gratis" ? `Contratar ${def.name}` : `Cambiar al ${def.name}`

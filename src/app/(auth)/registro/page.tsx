@@ -36,10 +36,14 @@ export default async function RegistroPage({
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Creá tu cuenta</CardTitle>
-            <CardDescription>Último paso antes de arrancar tu prueba del {planName}.</CardDescription>
+            <CardDescription>{`Creá tu cuenta y después pagás el ${planName} con Mercado Pago.`}</CardDescription>
           </CardHeader>
           <CardContent>
-            <SignupForm submitLabel={`Crear cuenta y empezar mi prueba`} />
+            <SignupForm
+              submitLabel="Crear cuenta y continuar al pago"
+              plan={plan}
+              cycle={anual === "1" ? "anual" : "mensual"}
+            />
           </CardContent>
         </Card>
         <CheckoutSummary plan={plan} annual={anual === "1"} />

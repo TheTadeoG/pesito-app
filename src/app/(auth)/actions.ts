@@ -86,6 +86,11 @@ export async function signup(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  // Plan pago elegido en precios: se guarda en la cuenta para cobrarlo
+  // apenas se cree el negocio (sobrevive a la confirmación por email).
+  const selectedPlan = String(formData.get("plan") ?? "");
+  const paidPlan = ["esencial", "pro", "ia"].includes(selectedPlan) ? selectedPlan : null;
+  const selectedCycle = formData.get("cycle") === "anual" ? "anual" : "mensual";
 
   if (!email || !password || !firstName || !lastName || !phone || !businessName) {
     return { error: "Completá todos los campos." };
@@ -111,6 +116,7 @@ export async function signup(
         phone,
         first_name: firstName,
         last_name: lastName,
+        ...(paidPlan ? { selected_plan: paidPlan, selected_cycle: selectedCycle } : {}),
       },
       emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent("/onboarding")}`,
     },

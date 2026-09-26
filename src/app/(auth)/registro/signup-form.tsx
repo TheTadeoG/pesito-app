@@ -11,7 +11,16 @@ import { PhoneInput } from "@/components/ui/phone-input";
 
 const initialState: AuthActionState = {};
 
-export function SignupForm({ submitLabel = "Crear mi cuenta gratis" }: { submitLabel?: string }) {
+export function SignupForm({
+  submitLabel = "Crear mi cuenta gratis",
+  plan,
+  cycle,
+}: {
+  submitLabel?: string;
+  /** Plan pago elegido en precios: después de crear la cuenta se cobra. */
+  plan?: string;
+  cycle?: "mensual" | "anual";
+}) {
   const [state, formAction, pending] = useActionState(signup, initialState);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,6 +43,8 @@ export function SignupForm({ submitLabel = "Crear mi cuenta gratis" }: { submitL
 
   return (
     <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
+      {plan && <input type="hidden" name="plan" value={plan} />}
+      {plan && cycle && <input type="hidden" name="cycle" value={cycle} />}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label htmlFor="firstName" required>
