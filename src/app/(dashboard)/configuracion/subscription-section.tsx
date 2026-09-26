@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Clock, History, Sparkles } from "lucide-react";
+import { Check, CheckCircle2, Clock, History, Sparkles, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -209,7 +209,7 @@ export function SubscriptionSection({
             <Sparkles className="h-4 w-4 shrink-0 text-primary" />
             <p className="text-sm font-semibold">Comparar planes</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-x-4 gap-y-7 pt-3 sm:grid-cols-2 lg:grid-cols-4">
             {planOrder.map((plan) => {
               const def = planDefinitions[plan];
               const accent = planAccents[plan];
@@ -218,14 +218,34 @@ export function SubscriptionSection({
               // El plan gratis no tiene flujo de "pasarte" por mail — es el
               // punto de partida, no algo que se contrate.
               const canSwitch = !isCurrent && plan !== "gratis";
+              // Recomendado: el "Más elegido", sólo si es una mejora sobre el plan actual.
+              const isRecommended =
+                def.badge === "Más elegido" &&
+                !isCurrent &&
+                planOrder.indexOf(plan) > planOrder.indexOf(subscription.plan);
               return (
                 <div
                   key={plan}
                   className={cn(
-                    "flex flex-col gap-3 rounded-xl border bg-card p-4",
-                    isCurrent ? cn(accent.border, accent.shadow) : "border-border"
+                    "relative flex flex-col gap-3 rounded-xl border bg-card p-4 pt-5",
+                    isCurrent
+                      ? "border-primary bg-primary/5 ring-2 ring-primary"
+                      : isRecommended
+                        ? "border-amber-400 shadow-xl shadow-amber-500/20 ring-2 ring-amber-400 lg:-translate-y-1"
+                        : "border-border"
                   )}
                 >
+                  {(isCurrent || isRecommended) && (
+                    <span
+                      className={cn(
+                        "absolute -top-3 left-1/2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold shadow-sm",
+                        isCurrent ? "bg-primary text-primary-foreground" : "bg-amber-500 text-amber-950"
+                      )}
+                    >
+                      {isCurrent ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Star className="h-3.5 w-3.5 fill-current" />}
+                      {isCurrent ? "Tu plan actual" : "Recomendado"}
+                    </span>
+                  )}
                   <div className="flex items-start justify-between gap-2">
                     <span
                       className={cn(
@@ -235,9 +255,7 @@ export function SubscriptionSection({
                     >
                       <Icon className="h-4 w-4" />
                     </span>
-                    {isCurrent ? (
-                      <Badge tone="accent">Tu plan</Badge>
-                    ) : (
+                    {!isCurrent && !isRecommended && (
                       def.badge && (
                         <span
                           className={cn(
@@ -280,6 +298,12 @@ export function SubscriptionSection({
                       </li>
                     ))}
                   </ul>
+                  {isCurrent && (
+                    <p className="flex items-center justify-center gap-1.5 rounded-lg bg-primary/10 py-1.5 text-sm font-semibold text-primary">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Es tu plan actual
+                    </p>
+                  )}
                   {canSwitch && canManage && paymentsEnabled && (
                     <SubscribeButton
                       plan={plan}
