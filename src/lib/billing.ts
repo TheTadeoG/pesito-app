@@ -5,6 +5,7 @@ import {
   getPreapproval,
   getPayment,
   getPreapprovalPlan,
+  searchAuthorizedPayments,
   searchPaymentsByReference,
   searchPreapprovalsByPlan,
   updatePreapprovalAmount,
@@ -195,8 +196,8 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
         changed_by: null,
       });
     }
-    // Promo del primer mes: ya se cobró el primer pago con el precio
-    // promocional; los siguientes, al precio normal.
+    // Promo del primer mes: con el primer cobro aprobado, los siguientes
+    // van al precio normal.
     await bumpPromoAmount(ref.orgId, pre, ref.plan, ref.cycle);
     // Cambio de plan: la suscripción vieja deja de cobrarse.
     if (previousId) {
@@ -257,6 +258,11 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
   if (current?.mp_preapproval_id && current.mp_preapproval_id !== ap.preapproval_id) return ref.orgId;
 
   if (paymentStatus === "approved") {
+    if (ap.preapproval_id) {
+      await bumpPromoAmount(ref.orgId, await getPreapproval(ap.preapproval_id), ref.plan, ref.cycle).catch((e) =>
+        console.error("bumpPromoAmount", e)
+      );
+    }
     const base = ap.debit_date ? new Date(ap.debit_date) : new Date();
     await admin
       .from("organization_subscriptions")
@@ -279,15 +285,20 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
 }
 
 /**
- * Si la suscripción salió de un checkout con la promo del primer mes y
- * todavía tiene el monto promocional, pasa los próximos cobros al precio
- * normal. Sólo esas: a nadie se le cambia el precio sin haber entrado por
- * la promo.
+ * Si la suscripción salió de un checkout con la promo del primer mes, todavía
+ * tiene el monto promocional y el primer cobro ya fue APROBADO, pasa los
+ * próximos cobros al precio normal. Hasta que se aprueba no se toca: si el
+ * primer cobro falla y Mercado Pago lo reintenta, se reintenta con la promo.
+ * Sólo esas suscripciones: a nadie se le cambia el precio sin haber entrado
+ * por la promo. Se llama al autorizarse la suscripción, al llegar cada cobro
+ * y en cada sincronización (no depende de un solo aviso).
  */
 async function bumpPromoAmount(orgId: string, pre: Preapproval, plan: Plan, cycle: BillingCycle) {
   const normal = chargeAmount(plan, cycle);
   const current = Number(pre.auto_recurring?.transaction_amount ?? normal);
   if (!pre.preapproval_plan_id || current >= normal) return;
+  const charges = await searchAuthorizedPayments(pre.id).catch(() => []);
+  if (!charges.some((c) => c.payment?.status === "approved")) return;
   const admin = createAdminClient();
   const { data } = await admin
     .from("billing_events")
@@ -484,6 +495,33 @@ export async function checkoutState(orgId: string, checkoutId: string): Promise<
 }
 
 /**
+ * Respaldo de la promo: si la suscripción actual salió de un checkout con
+ * promo y todavía no pasó al precio normal, se revisa si el primer cobro ya
+ * se aprobó (por si el aviso de ese cobro no llegó).
+ */
+async function ensurePromoEnded(orgId: string): Promise<void> {
+  const admin = createAdminClient();
+  const [{ data: events }, { data: sub }] = await Promise.all([
+    admin
+      .from("billing_events")
+      .select("topic, detail")
+      .eq("org_id", orgId)
+      .in("topic", ["checkout", "promo_ended"])
+      .limit(50),
+    admin.from("organization_subscriptions").select("*").eq("org_id", orgId).maybeSingle(),
+  ]);
+  const hadPromo = (events ?? []).some(
+    (e) => e.topic === "checkout" && (e.detail as { promo?: boolean; method?: string } | null)?.promo &&
+      (e.detail as { method?: string }).method !== "unico"
+  );
+  const ended = (events ?? []).some((e) => e.topic === "promo_ended");
+  if (!hadPromo || ended || !sub?.mp_preapproval_id || sub.payment_status === "cancelled") return;
+  const pre = await getPreapproval(sub.mp_preapproval_id);
+  const ref = await referenceOf(pre);
+  if (ref?.orgId === orgId) await bumpPromoAmount(orgId, pre, ref.plan, ref.cycle);
+}
+
+/**
  * Al volver de Mercado Pago: se aplica lo que venga en la URL (suscripción o
  * pago, sólo si es de este negocio) y además se buscan los checkouts pagados,
  * porque Mercado Pago no siempre vuelve con el id. Sólo servidor.
@@ -504,6 +542,7 @@ export async function syncReturnedPayment(
       if (parseExternalReference(pay.external_reference)?.orgId === orgId) await applyOneTimePayment(pay);
     }
     await syncPendingCheckouts(orgId);
+    await ensurePromoEnded(orgId);
   } catch (e) {
     console.error("syncReturnedPayment", e instanceof MercadoPagoError ? e.body : e);
   }

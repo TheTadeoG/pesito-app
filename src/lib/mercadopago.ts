@@ -205,6 +205,14 @@ export function getPreapproval(id: string): Promise<Preapproval> {
   return mp<Preapproval>(`/preapproval/${encodeURIComponent(id)}`);
 }
 
+/** Cobros de una suscripción (el primero y los siguientes). */
+export async function searchAuthorizedPayments(preapprovalId: string): Promise<AuthorizedPayment[]> {
+  const res = await mp<{ results?: AuthorizedPayment[] }>(
+    `/authorized_payments/search?preapproval_id=${encodeURIComponent(preapprovalId)}`
+  );
+  return res.results ?? [];
+}
+
 export function getAuthorizedPayment(id: string): Promise<AuthorizedPayment> {
   return mp<AuthorizedPayment>(`/authorized_payments/${encodeURIComponent(id)}`);
 }
