@@ -1,4 +1,5 @@
 import { planLabels, planOrder, type Plan, type SubscriptionInfo } from "@/lib/subscription";
+import { PRODUCT_LIMITS } from "@/lib/plan-features";
 
 // Fuente única de QUÉ puede usar cada plan dentro del sistema. Toda función
 // nueva que no sea para todos los planes se agrega acá (y en los textos de
@@ -101,10 +102,10 @@ export interface PlanLimits {
 }
 
 export const planLimits: Record<Plan, PlanLimits> = {
-  gratis: { users: 1, openRegisters: 1, branches: 1, products: 1000 },
-  esencial: { users: 2, openRegisters: 2, branches: 1, products: 4000 },
-  pro: { users: 6, openRegisters: 6, branches: 1, products: 12000 },
-  ia: { users: 6, openRegisters: 6, branches: 2, products: 20000 },
+  gratis: { users: 1, openRegisters: 1, branches: 1, products: PRODUCT_LIMITS.gratis },
+  esencial: { users: 2, openRegisters: 2, branches: 1, products: PRODUCT_LIMITS.esencial },
+  pro: { users: 6, openRegisters: 6, branches: 1, products: PRODUCT_LIMITS.pro },
+  ia: { users: 6, openRegisters: 6, branches: 2, products: PRODUCT_LIMITS.ia },
 };
 
 /** Plan con el que funciona hoy el negocio: la prueba Pro cuenta como Pro. */

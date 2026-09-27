@@ -35,6 +35,25 @@ export interface PlanDefinition {
 // en el texto de abajo sin que se desalinee.
 export const FREE_PLAN_SALES_LIMIT_LABEL = "150 ventas por mes";
 
+/**
+ * Máximo de productos activos por plan. Fuente única: la usan los textos
+ * públicos (acá) y el control del sistema (planLimits en lib/plan-access.ts);
+ * la base lo repite en plan_limit (migración 0049).
+ */
+export const PRODUCT_LIMITS: Record<Plan, number> = {
+  gratis: 1000,
+  esencial: 4000,
+  pro: 12000,
+  ia: 20000,
+};
+
+/** "4.000" (a mano: igual en el servidor y en el navegador). */
+export function thousands(n: number): string {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+const products = (plan: Plan) => `${thousands(PRODUCT_LIMITS[plan])} productos`;
+
 // Fuente única de los planes: la usan tanto la página pública de precios
 // (marketing/pricing.tsx, marketing/structured-data.tsx) como la sección
 // de Suscripción del panel, para que nunca queden desalineados.
@@ -54,7 +73,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Caja diaria y fiado",
       "Stock y compras a proveedores",
       "Reportes básicos de ventas",
-      "1 usuario y 1 caja",
+      `1 usuario, 1 caja y hasta ${products("gratis")}`,
     ],
   },
   esencial: {
@@ -72,7 +91,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Control de stock, alertas y reposición",
       "Cuentas corrientes de clientes y proveedores",
       "Control de caja por empleado",
-      "Hasta 2 usuarios y 2 cajas",
+      `Hasta ${products("esencial")}, 2 usuarios y 2 cajas`,
     ],
     soon: [
       "Carga masiva de productos con Excel",
@@ -94,7 +113,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Aumentos masivos de precios en segundos",
       "Reportes avanzados",
       "Mirá el negocio en vivo, desde casa, en tu celular",
-      "Hasta 6 usuarios y 6 cajas",
+      `Hasta ${products("pro")}, 6 usuarios y 6 cajas`,
       "Soporte prioritario",
     ],
     soon: [
@@ -117,7 +136,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Nuevo",
     features: [
       "Todas las funciones del Plan Pro +",
-      "Hasta 2 sucursales, cada una con su stock",
+      `Hasta ${products("ia")} y 2 sucursales, cada una con su stock`,
       "Soporte prioritario 24/7",
     ],
     soon: [
@@ -174,7 +193,15 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         values: { gratis: "150", esencial: "Ilimitadas", pro: "Ilimitadas", ia: "Ilimitadas" },
       },
       { label: "Usuarios", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
-      { label: "Productos activos", values: { gratis: "1.000", esencial: "4.000", pro: "12.000", ia: "20.000" } },
+      {
+        label: "Productos activos",
+        values: {
+          gratis: thousands(PRODUCT_LIMITS.gratis),
+          esencial: thousands(PRODUCT_LIMITS.esencial),
+          pro: thousands(PRODUCT_LIMITS.pro),
+          ia: thousands(PRODUCT_LIMITS.ia),
+        },
+      },
       { label: "Cajas", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
       { label: "Sucursales", values: { gratis: "1", esencial: "1", pro: "1", ia: "2" } },
     ],
