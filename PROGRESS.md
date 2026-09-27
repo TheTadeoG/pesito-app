@@ -229,3 +229,9 @@ No commitear `supabase/config.toml`, `supabase/.gitignore`, `supabase/.branches/
 - Débito automático: el plan de Mercado Pago se crea con el monto promo y, apenas se autoriza la suscripción (primer cobro hecho), `bumpPromoAmount` la pasa al precio normal (`PUT /preapproval/{id}`). Sólo las que salieron de un checkout con `promo: true`.
 - Pago único mensual: el primer pago con la promo; se acepta el monto promo en `applyOneTimePayment`.
 - Textos: landing, comparar planes, JSON-LD, FAQ, llms.txt, registro, Planes y la pantalla de pago.
+
+## Hecho: límite de productos por plan (migración 0049) y página Planes
+
+- Productos activos: Gratis 1.000, Esencial 4.000, Pro 12.000, IA 20.000 (`planLimits.products`; los desactivados no cuentan). Se controla al crear y al reactivar (`checkProductLimit`) y en la base (`guard_product_limit`, `plan_limit(..., 'products')`, misma firma). Cerca del límite se ve "X de Y productos"; al llegar, "Nuevo producto" lleva a contratar el plan siguiente.
+- Planes tiene su página (`/planes`); `/configuracion?tab=plan` redirige. Configuración queda sólo con los datos del negocio.
+- Pendiente del usuario: correr 0049 en Supabase (y 0048 si todavía no).

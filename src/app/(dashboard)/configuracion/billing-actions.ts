@@ -115,7 +115,7 @@ export async function cancelSubscription(): Promise<BillingActionResult> {
     console.error("cancelSubscription", e instanceof MercadoPagoError ? e.body : e);
     return { error: "No pudimos cancelar en Mercado Pago. Probá de nuevo en un rato." };
   }
-  revalidatePath("/configuracion");
+  revalidatePath("/planes");
   return {};
 }
 

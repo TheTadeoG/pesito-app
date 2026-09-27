@@ -60,7 +60,7 @@ export function Sidebar({
             {roleLabel}
             <span aria-hidden>·</span>
             {canSeeAdminItems ? (
-              <Link href="/configuracion?tab=plan" className="hover:underline">
+              <Link href="/planes" className="hover:underline">
                 <PlanTag plan={plan} trial={trial} />
               </Link>
             ) : (

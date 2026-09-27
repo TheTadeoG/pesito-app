@@ -4,7 +4,7 @@ import { fetchAll } from "@/lib/supabase/fetch-all";
 import { getBranchContext, withBranchStock } from "@/lib/branches";
 import { isOrgAdmin } from "@/lib/roles";
 import { getSubscription } from "@/lib/subscription";
-import { canUse, featureMinPlan } from "@/lib/plan-access";
+import { canUse, featureMinPlan, limitsFor, planForLimit } from "@/lib/plan-access";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { TransferButton } from "@/app/(dashboard)/productos/transfer-dialog";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
@@ -135,6 +135,11 @@ export default async function ProductosPage({
         orgId={organization.id}
         bulkLocked={!canUse(subscription, "bulkPriceChanges")}
         revertLocked={!canUse(subscription, "priceRevert")}
+        productUsage={{
+          used: activeProducts.length,
+          limit: limitsFor(subscription).products,
+          nextPlan: planForLimit("products", limitsFor(subscription).products + 1),
+        }}
         stockAlertsLocked={stockLocked}
       />
     );

@@ -243,7 +243,7 @@ export function ReportesDashboard({
             >
               {`Pasate al Plan ${planLabels[lockedGroups[0].plan]}`}
             </Link>
-            <Link href="/configuracion?tab=plan" prefetch={false} className="text-sm font-medium text-primary hover:underline">
+            <Link href="/planes" prefetch={false} className="text-sm font-medium text-primary hover:underline">
               Ver planes
             </Link>
           </div>

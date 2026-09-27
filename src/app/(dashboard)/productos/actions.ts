@@ -1,5 +1,6 @@
 "use server";
 
+import { checkProductLimit } from "@/lib/plan-limits";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
@@ -75,6 +76,20 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     image_url: input.imageUrl,
     default_supplier_id: input.defaultSupplierId,
   };
+
+  // Límite de productos activos del plan: al crear uno activo o al
+  // reactivar uno desactivado.
+  if (input.active) {
+    let activating = !input.id;
+    if (input.id) {
+      const { data: before } = await supabase.from("products").select("active").eq("id", input.id).maybeSingle();
+      activating = before?.active === false;
+    }
+    if (activating) {
+      const limitError = await checkProductLimit(supabase, organization.id);
+      if (limitError) return { error: limitError };
+    }
+  }
 
   if (input.id) {
     const { error } = await supabase.from("products").update(payload).eq("id", input.id);
@@ -176,6 +191,11 @@ export async function createSupplierQuick(name: string): Promise<{ error?: strin
 
 export async function toggleProductActive(id: string, active: boolean): Promise<ActionState> {
   const supabase = await createClient();
+  if (active) {
+    const { organization } = await requireOrgContext();
+    const limitError = await checkProductLimit(supabase, organization.id);
+    if (limitError) return { error: limitError };
+  }
   const { error } = await supabase.from("products").update({ active }).eq("id", id);
   if (error) return { error: "No pudimos actualizar el producto." };
 

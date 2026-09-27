@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -44,6 +45,7 @@ import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
+import type { Plan } from "@/lib/subscription";
 
 type SupplierOption = Pick<Supplier, "id" | "name">;
 
@@ -139,6 +141,7 @@ export function ProductosClient({
   orgId,
   bulkLocked,
   revertLocked,
+  productUsage,
   stockAlertsLocked,
 }: {
   orgId: string;
@@ -151,6 +154,8 @@ export function ProductosClient({
   bulkLocked: boolean;
   /** Volver a un precio o costo anterior (Plan Pro). */
   revertLocked: boolean;
+  /** Productos activos contra el límite del plan (y el plan que da más). */
+  productUsage: { used: number; limit: number; nextPlan: Plan | null };
   // Sin gestión de stock (Plan Gratis): no se avisa ni se filtra por stock bajo.
   stockAlertsLocked: boolean;
 }) {
@@ -580,10 +585,29 @@ export function ProductosClient({
               </label>
             </div>
           </FilterPanel>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Nuevo producto
-          </Button>
+          {/* Cerca del límite del plan: cuántos productos activos quedan. */}
+          {productUsage.used >= productUsage.limit * 0.8 && (
+            <span className="text-xs text-muted-foreground">
+              {`${productUsage.used.toLocaleString("es-AR")} de ${productUsage.limit.toLocaleString("es-AR")} productos`}
+            </span>
+          )}
+          {productUsage.used >= productUsage.limit && productUsage.nextPlan ? (
+            <Link
+              href={`/suscribirse?plan=${productUsage.nextPlan}`}
+              prefetch={false}
+              title={`Llegaste a los ${productUsage.limit.toLocaleString("es-AR")} productos activos de tu plan`}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-dashed border-border bg-card px-4 text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Nuevo producto
+              <PlanPill plan={productUsage.nextPlan} />
+            </Link>
+          ) : (
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Nuevo producto
+            </Button>
+          )}
         </div>
       </div>
 

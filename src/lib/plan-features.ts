@@ -174,6 +174,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         values: { gratis: "150", esencial: "Ilimitadas", pro: "Ilimitadas", ia: "Ilimitadas" },
       },
       { label: "Usuarios", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
+      { label: "Productos activos", values: { gratis: "1.000", esencial: "4.000", pro: "12.000", ia: "20.000" } },
       { label: "Cajas", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
       { label: "Sucursales", values: { gratis: "1", esencial: "1", pro: "1", ia: "2" } },
     ],

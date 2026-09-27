@@ -80,8 +80,8 @@ export const navSections: NavSection[] = [
   {
     title: "Sistema",
     items: [
-      { href: "/configuracion", label: "Configuración", icon: Settings, activeTab: null },
-      { href: "/configuracion?tab=plan", label: "Planes", icon: CreditCard, activeTab: "plan" },
+      { href: "/configuracion", label: "Configuración", icon: Settings },
+      { href: "/planes", label: "Planes", icon: CreditCard },
       { href: "/soporte", label: "Soporte", icon: LifeBuoy },
     ],
   },
@@ -112,6 +112,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/recomendaciones": { title: "Recomendaciones", description: "Sugerencias inteligentes para tu negocio." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },
   "/configuracion": { title: "Configuración", description: "Datos de tu negocio." },
+  "/planes": { title: "Planes", description: "Tu plan, los demás planes y cómo pagás." },
   "/soporte": { title: "Soporte", description: "¿Necesitás ayuda?" },
   "/caja": { title: "Mi Caja", description: "Apertura y cierre de caja." },
 };

@@ -11,7 +11,7 @@ function limitMessage(key: keyof PlanLimits, limit: number, what: string): strin
   const upgrade = next
     ? ` Para sumar más, pasá al Plan ${planLabels[next]}.`
     : " Si necesitás más, escribinos por WhatsApp.";
-  return `Tu plan incluye hasta ${limit} ${what}.${upgrade}`;
+  return `Tu plan incluye hasta ${limit.toLocaleString("es-AR")} ${what}.${upgrade}`;
 }
 
 /** Usuarios del negocio + invitaciones pendientes (cada una es un usuario más). */
@@ -50,6 +50,31 @@ export async function checkOpenRegisterLimit(
   const limit = limitsFor(subscription).openRegisters;
   if ((count ?? 0) < limit) return null;
   return limitMessage("openRegisters", limit, limit === 1 ? "caja abierta a la vez" : "cajas abiertas a la vez");
+}
+
+/** Productos activos del negocio (los desactivados no cuentan). */
+export async function getProductUsage(
+  supabase: SupabaseClient<Database>,
+  orgId: string
+): Promise<{ used: number; limit: number }> {
+  const [subscription, { count }] = await Promise.all([
+    getSubscription(supabase, orgId),
+    supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .eq("active", true),
+  ]);
+  return { used: count ?? 0, limit: limitsFor(subscription).products };
+}
+
+export async function checkProductLimit(
+  supabase: SupabaseClient<Database>,
+  orgId: string
+): Promise<string | null> {
+  const { used, limit } = await getProductUsage(supabase, orgId);
+  if (used < limit) return null;
+  return limitMessage("products", limit, "productos activos");
 }
 
 export async function checkBranchLimit(

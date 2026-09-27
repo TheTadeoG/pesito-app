@@ -96,13 +96,15 @@ export interface PlanLimits {
   /** Cajas abiertas a la vez en todo el negocio. */
   openRegisters: number;
   branches: number;
+  /** Productos activos (los desactivados no cuentan). */
+  products: number;
 }
 
 export const planLimits: Record<Plan, PlanLimits> = {
-  gratis: { users: 1, openRegisters: 1, branches: 1 },
-  esencial: { users: 2, openRegisters: 2, branches: 1 },
-  pro: { users: 6, openRegisters: 6, branches: 1 },
-  ia: { users: 6, openRegisters: 6, branches: 2 },
+  gratis: { users: 1, openRegisters: 1, branches: 1, products: 1000 },
+  esencial: { users: 2, openRegisters: 2, branches: 1, products: 4000 },
+  pro: { users: 6, openRegisters: 6, branches: 1, products: 12000 },
+  ia: { users: 6, openRegisters: 6, branches: 2, products: 20000 },
 };
 
 /** Plan con el que funciona hoy el negocio: la prueba Pro cuenta como Pro. */

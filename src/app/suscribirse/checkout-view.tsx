@@ -79,7 +79,7 @@ export function CheckoutView(props: CheckoutViewProps) {
   const amount = promoActive ? promoPrice! : prices[cycle];
   const monthly = prices.mensual;
   const annualMonthly = Math.round(monthly * (1 - ANNUAL_DISCOUNT));
-  const exitHref = fromSignup ? "/pos?bienvenida=1" : "/configuracion?tab=plan";
+  const exitHref = fromSignup ? "/pos?bienvenida=1" : "/planes";
   const busy = status !== "idle";
 
   // Pago confirmado: se muestra el aviso y se sigue solo. Carga completa
@@ -103,7 +103,7 @@ export function CheckoutView(props: CheckoutViewProps) {
           {fromSignup ? (
             <Wordmark className="text-lg" />
           ) : (
-            <Link href="/configuracion?tab=plan" className="flex items-center gap-2 hover:underline">
+            <Link href="/planes" className="flex items-center gap-2 hover:underline">
               <ArrowLeft className="h-4 w-4" />
               Volver a planes
             </Link>

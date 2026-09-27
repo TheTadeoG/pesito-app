@@ -167,7 +167,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   ? `: si no se paga antes del ${formatDateTime(subscription.billing.graceUntil)}, el negocio pasa al Plan Gratis`
                   : ""
               }. `}
-              <Link href="/configuracion?tab=plan" prefetch={false} className="font-medium text-primary hover:underline">
+              <Link href="/planes" prefetch={false} className="font-medium text-primary hover:underline">
                 Actualizar medio de pago
               </Link>
             </div>
@@ -180,7 +180,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <Link
                 href={
                   subscription.grace.kind === "downgrade"
-                    ? "/configuracion?tab=plan"
+                    ? "/planes"
                     : `/suscribirse?plan=${subscription.grace.keepsPlan}&ciclo=${subscription.billing?.cycle ?? "mensual"}`
                 }
                 prefetch={false}

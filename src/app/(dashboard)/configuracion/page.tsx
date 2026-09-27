@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { businessTypes } from "@/lib/business-types";
@@ -11,26 +12,14 @@ import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-
 import { CashCloseTimeForm } from "@/app/(dashboard)/configuracion/cash-close-time-form";
 import { normalizeCloseTime } from "@/lib/cash-reminder";
 import { isOrgAdmin } from "@/lib/roles";
-import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
-import { ConfiguracionTabs, type ConfiguracionTab } from "@/app/(dashboard)/configuracion/configuracion-tabs";
 import { canUse } from "@/lib/plan-access";
-import {
-  getSubscription,
-  getMonthlySalesCount,
-  getPlanHistory,
-  hasMonthlySalesLimit,
-} from "@/lib/subscription";
+import { getSubscription } from "@/lib/subscription";
 import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 import { TwoFactorCard } from "@/app/(dashboard)/configuracion/two-factor-card";
-import { mercadoPagoConfigured } from "@/lib/mercadopago";
-import { syncReturnedPayment } from "@/lib/billing";
 import { describeDevice } from "@/lib/login-events";
 
-function parseTab(value: string | undefined): ConfiguracionTab {
-  return value === "plan" ? "plan" : "negocio";
-}
 
 export default async function ConfiguracionPage({
   searchParams,
@@ -38,37 +27,16 @@ export default async function ConfiguracionPage({
   searchParams: Promise<{ tab?: string; preapproval_id?: string }>;
 }) {
   const { tab: tabParam, preapproval_id: preapprovalId } = await searchParams;
-  const tab = parseTab(tabParam);
+  const tab = tabParam;
+  // Planes tiene su propia página; los links viejos (y la vuelta de Mercado
+  // Pago de suscripciones anteriores) redirigen.
+  if (tab === "plan") {
+    redirect(preapprovalId ? `/planes?preapproval_id=${encodeURIComponent(preapprovalId)}` : "/planes");
+  }
   const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
 
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
-
-  if (tab === "plan") {
-    // Vuelta de Mercado Pago (con o sin ?preapproval_id): se aplica lo que
-    // se haya pagado sin esperar el aviso.
-    if (isOrgAdmin(membership.role)) await syncReturnedPayment(organization.id, { preapprovalId });
-    const subscription = await getSubscription(supabase, organization.id);
-    // Sólo importa contar esto cuando el límite de ventas realmente aplica
-    // (plan gratis, sin prueba Pro activa) — evita una query de más al resto.
-    const monthlySalesCount = hasMonthlySalesLimit(subscription)
-      ? await getMonthlySalesCount(supabase, organization.id)
-      : null;
-    const planHistory = await getPlanHistory(supabase, organization.id);
-
-    return (
-      <div className="space-y-6">
-        <ConfiguracionTabs active={tab} />
-        <SubscriptionSection
-          subscription={subscription}
-          monthlySalesCount={monthlySalesCount}
-          planHistory={planHistory}
-          canManage={isOrgAdmin(membership.role)}
-          paymentsEnabled={mercadoPagoConfigured()}
-        />
-      </div>
-    );
-  }
 
   const [
     { data: memberships },
@@ -105,8 +73,6 @@ export default async function ConfiguracionPage({
 
   return (
     <div className="space-y-6">
-      <ConfiguracionTabs active={tab} />
-
       <div className="max-w-2xl space-y-6">
         <Card>
           <CardHeader>

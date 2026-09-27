@@ -179,7 +179,7 @@ export function ProLockedCard({
           {`Pasate al Plan ${planName}`}
         </Link>
         <Link
-          href="/configuracion?tab=plan"
+          href="/planes"
           prefetch={false}
           className="text-sm font-medium text-primary hover:underline"
         >

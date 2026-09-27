@@ -43,10 +43,10 @@ export default async function SuscribirsePage({
 }) {
   const { plan: planParam, ciclo, metodo, desde } = await searchParams;
   const { organization, membership } = await requireOrgContext();
-  if (!isOrgAdmin(membership.role)) redirect("/configuracion?tab=plan");
+  if (!isOrgAdmin(membership.role)) redirect("/planes");
 
   const plan = PAID.find((p) => p === planParam);
-  if (!plan) redirect("/configuracion?tab=plan");
+  if (!plan) redirect("/planes");
   const cycle: BillingCycle = ciclo === "anual" ? "anual" : "mensual";
   const method: PaymentMethod = metodo === "unico" ? "unico" : "debito";
 
