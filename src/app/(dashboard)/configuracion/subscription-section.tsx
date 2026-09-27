@@ -3,8 +3,8 @@ import { Check, CheckCircle2, Clock, History, Sparkles, Star } from "lucide-reac
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatDateTime } from "@/lib/utils";
-import type { PlanHistoryEntry, SubscriptionInfo } from "@/lib/subscription";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import type { Plan, PlanHistoryEntry, SubscriptionInfo } from "@/lib/subscription";
 import { FREE_PLAN_MONTHLY_SALES_LIMIT, planLabels, planOrder } from "@/lib/subscription";
 import { planDefinitions, getPlanOwnFeatures } from "@/lib/plan-features";
 import { planAccents, planIcons, PlanTierBadge } from "@/lib/plan-visuals";
@@ -40,7 +40,11 @@ export function SubscriptionSection({
   // funciones exclusivas de Pro (no todo lo de Esencial, que hoy no tiene
   // nada gateado en código aparte del plan en sí) — se enumeran aparte,
   // marcadas como "Pro" y con la fecha en que se apagan.
-  const trialFeatures = subscription.trialActive ? getPlanOwnFeatures("pro") : [];
+  // Agrupadas por plan: la prueba es del Pro, que incluye lo del Esencial.
+  // Así se ve que parte de lo que se usa se conserva con el plan más barato.
+  const trialGroups: { plan: Plan; features: string[] }[] = subscription.trialActive
+    ? (["esencial", "pro"] as const).map((plan) => ({ plan, features: getPlanOwnFeatures(plan) }))
+    : [];
 
   const trialDaysLeft =
     subscription.trialActive && subscription.proTrialEndsAt
@@ -148,19 +152,30 @@ export function SubscriptionSection({
           </ul>
 
           {subscription.trialActive && (
-            <div className="mt-4 space-y-2.5 border-t border-border/60 pt-4">
-              <p className="text-xs text-muted-foreground">Además, por tu prueba:</p>
-              <ul className="grid gap-2.5 sm:grid-cols-2">
-                {trialFeatures.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                    <span>
-                      {feature}
-                      <PlanTierBadge plan="pro" />
-                    </span>
-                  </li>
-                ))}
-              </ul>
+            <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
+              <p className="text-xs text-muted-foreground">
+                {subscription.proTrialEndsAt
+                  ? `Además, por tu prueba, hasta el ${formatDate(subscription.proTrialEndsAt)} usás:`
+                  : "Además, por tu prueba, usás:"}
+              </p>
+              {trialGroups.map((group) => (
+                <div key={group.plan} className="space-y-2">
+                  <p className="flex flex-wrap items-center gap-2 text-xs font-semibold text-foreground">
+                    <PlanTierBadge plan={group.plan} />
+                    {group.plan === "esencial"
+                      ? `Las seguís teniendo con el Plan Esencial (${planDefinitions.esencial.priceLabel} por mes)`
+                      : `Sólo con el Plan Pro (${planDefinitions.pro.priceLabel} por mes)`}
+                  </p>
+                  <ul className="grid gap-2.5 sm:grid-cols-2">
+                    {group.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           )}
         </div>
