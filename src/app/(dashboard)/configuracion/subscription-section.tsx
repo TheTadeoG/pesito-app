@@ -161,8 +161,8 @@ export function SubscriptionSection({
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {trialDaysLeft !== null
-                    ? `Cuando termina (${trialDaysLeft === 0 ? "hoy" : `en ${trialDaysLeft} día${trialDaysLeft !== 1 ? "s" : ""}`}) volvés al Plan Gratis y dejás de tener esto. Elegí con qué plan te lo quedás:`
-                    : "Cuando termina volvés al Plan Gratis y dejás de tener esto. Elegí con qué plan te lo quedás:"}
+                    ? `Al finalizar la prueba (${trialDaysLeft === 0 ? "hoy" : `en ${trialDaysLeft} día${trialDaysLeft !== 1 ? "s" : ""}`}), tu negocio vuelve al Plan Gratis y deja de tener estas funciones. Para conservarlas, podés contratar:`
+                    : "Al finalizar la prueba, tu negocio vuelve al Plan Gratis y deja de tener estas funciones. Para conservarlas, podés contratar:"}
                 </p>
               </div>
               <div className="grid gap-3 lg:grid-cols-2">
@@ -171,20 +171,15 @@ export function SubscriptionSection({
                   return (
                     <div key={group.plan} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-foreground">
-                          {group.plan === "esencial" ? "Para quedártelas" : "Para quedarte con todo"}
-                        </p>
+                        <p className="font-semibold text-foreground">{def.name}</p>
                         <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", planTone[group.plan])}>
-                          {`${def.name} · ${def.priceLabel}/mes`}
+                          {`${def.priceLabel} por mes`}
                         </span>
                       </div>
+                      <p className="-mt-1 text-sm text-muted-foreground">
+                        {group.plan === "esencial" ? "Conservás:" : "Conservás todo lo del Plan Esencial, más:"}
+                      </p>
                       <ul className="flex-1 space-y-1.5">
-                        {group.plan === "pro" && (
-                          <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <Check className="mt-0.5 h-4 w-4 shrink-0" />
-                            Todo lo del Plan Esencial, más:
-                          </li>
-                        )}
                         {group.features.map((feature) => (
                           <li key={feature} className="flex items-start gap-2 text-sm text-foreground">
                             <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
