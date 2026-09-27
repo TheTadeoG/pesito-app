@@ -49,7 +49,7 @@ export function NewDeviceAlert({ logins }: { logins: NewDeviceLogin[] }) {
     <div className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-foreground sm:mx-6 lg:mx-8">
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
       <p className="flex-1">
-        {`Ingreso desde un dispositivo nuevo: ${first.who}, ${first.device}, ${first.at}${more}. ¿No lo reconocés? Cambiá la contraseña. `}
+        {`Ingreso desde un dispositivo nuevo: ${first.who}, ${first.device}, ${first.at}${more} — ¿No lo reconocés? Cambiá la contraseña. `}
         <Link href="/configuracion" prefetch={false} className="font-medium text-primary hover:underline">
           Ver ingresos
         </Link>

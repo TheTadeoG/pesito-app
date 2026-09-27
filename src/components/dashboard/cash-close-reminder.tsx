@@ -11,7 +11,8 @@ const STORAGE_KEY = "pesito-dismissed-cash-reminders";
 
 function reminderText(reminder: CashReminder, openedAt: string) {
   if (reminder.kind === "stale") {
-    return `Tu caja sigue abierta desde el ${formatDateTime(openedAt)}. Cerrala para que las cuentas de cada día den bien.`;
+    // Sin punto después de la hora: "p. m." ya termina en punto.
+    return `Tu caja sigue abierta desde el ${formatDateTime(openedAt)}: cerrala para que las cuentas de cada día den bien.`;
   }
   if (reminder.kind === "soon") {
     return `Faltan ${reminder.minutesLeft} minuto${reminder.minutesLeft !== 1 ? "s" : ""} para cerrar la caja (${reminder.closeTime}). Podés ir contando el efectivo.`;
