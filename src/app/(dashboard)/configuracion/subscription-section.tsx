@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { Check, CheckCircle2, Clock, History, Sparkles, Star } from "lucide-react";
+import { Check, CheckCircle2, Clock, Gift, History, Sparkles, Star } from "lucide-react";
+import { planTone } from "@/components/dashboard/pro-locked-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import type { Plan, PlanHistoryEntry, SubscriptionInfo } from "@/lib/subscription";
 import { FREE_PLAN_MONTHLY_SALES_LIMIT, planLabels, planOrder } from "@/lib/subscription";
 import { planDefinitions, getPlanOwnFeatures } from "@/lib/plan-features";
-import { planAccents, planIcons, PlanTierBadge } from "@/lib/plan-visuals";
+import { planAccents, planIcons } from "@/lib/plan-visuals";
 import { chargeAmount } from "@/lib/billing";
 import { SubscribeButton } from "@/app/(dashboard)/configuracion/subscribe-button";
 import { BillingStatus } from "@/app/(dashboard)/configuracion/billing-status";
@@ -152,30 +153,58 @@ export function SubscriptionSection({
           </ul>
 
           {subscription.trialActive && (
-            <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
-              <p className="text-xs text-muted-foreground">
-                {subscription.proTrialEndsAt
-                  ? `Además, por tu prueba, hasta el ${formatDate(subscription.proTrialEndsAt)} usás:`
-                  : "Además, por tu prueba, usás:"}
-              </p>
-              {trialGroups.map((group) => (
-                <div key={group.plan} className="space-y-2">
-                  <p className="flex flex-wrap items-center gap-2 text-xs font-semibold text-foreground">
-                    <PlanTierBadge plan={group.plan} />
-                    {group.plan === "esencial"
-                      ? `Las seguís teniendo con el Plan Esencial (${planDefinitions.esencial.priceLabel} por mes)`
-                      : `Sólo con el Plan Pro (${planDefinitions.pro.priceLabel} por mes)`}
-                  </p>
-                  <ul className="grid gap-2.5 sm:grid-cols-2">
-                    {group.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+            <div className="mt-4 space-y-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Gift className="h-4 w-4 text-amber-600" />
+                  Incluido en tu prueba gratis del Plan Pro
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {trialDaysLeft !== null
+                    ? `Cuando termina (${trialDaysLeft === 0 ? "hoy" : `en ${trialDaysLeft} día${trialDaysLeft !== 1 ? "s" : ""}`}) volvés al Plan Gratis y dejás de tener esto. Elegí con qué plan te lo quedás:`
+                    : "Cuando termina volvés al Plan Gratis y dejás de tener esto. Elegí con qué plan te lo quedás:"}
+                </p>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {trialGroups.map((group) => {
+                  const def = planDefinitions[group.plan];
+                  return (
+                    <div key={group.plan} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-foreground">
+                          {group.plan === "esencial" ? "Para quedártelas" : "Para quedarte con todo"}
+                        </p>
+                        <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", planTone[group.plan])}>
+                          {`${def.name} · ${def.priceLabel}/mes`}
+                        </span>
+                      </div>
+                      <ul className="flex-1 space-y-1.5">
+                        {group.plan === "pro" && (
+                          <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <Check className="mt-0.5 h-4 w-4 shrink-0" />
+                            Todo lo del Plan Esencial, más:
+                          </li>
+                        )}
+                        {group.features.map((feature) => (
+                          <li key={feature} className="flex items-start gap-2 text-sm text-foreground">
+                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      {canManage && paymentsEnabled && (
+                        <Link
+                          href={`/suscribirse?plan=${group.plan}`}
+                          prefetch={false}
+                          className="text-sm font-semibold text-primary hover:underline"
+                        >
+                          {`Contratar ${def.name}`}
+                        </Link>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
