@@ -7,6 +7,7 @@ import {
   getPreapprovalPlan,
   searchPaymentsByReference,
   searchPreapprovalsByPlan,
+  updatePreapprovalAmount,
   type Payment,
   type AuthorizedPayment,
   type Preapproval,
@@ -29,6 +30,31 @@ const PAID_PLANS: Plan[] = ["esencial", "pro", "ia"];
 export function chargeAmount(plan: Plan, cycle: BillingCycle): number {
   const monthly = planDefinitions[plan].price;
   return cycle === "anual" ? Math.round(monthly * (1 - ANNUAL_DISCOUNT)) * 12 : monthly;
+}
+
+/**
+ * Monto del primer cobro: con la promo de lanzamiento (primer mes, sólo
+ * mensual y sólo para quien nunca pagó un plan), el precio promocional.
+ */
+export function firstChargeAmount(plan: Plan, cycle: BillingCycle, promoEligible: boolean): number {
+  const promo = planDefinitions[plan].promoPrice;
+  return promoEligible && cycle === "mensual" && promo ? promo : chargeAmount(plan, cycle);
+}
+
+/** ¿El negocio nunca pagó un plan? (la promo del primer mes es sólo para él). */
+export async function isPromoEligible(orgId: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const [{ count: paid }, { data: sub }] = await Promise.all([
+    admin
+      .from("billing_events")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .in("topic", ["checkout_done", "payment_applied"]),
+    admin.from("organization_subscriptions").select("*").eq("org_id", orgId).maybeSingle(),
+  ]);
+  if ((paid ?? 0) > 0) return false;
+  // Ya tiene (o tuvo) una suscripción o un plan pago asignado.
+  return !sub?.mp_preapproval_id && (sub?.plan ?? "gratis") === "gratis";
 }
 
 /** "<org_id>|<plan>|<ciclo>" — lo que viaja en external_reference. */
@@ -169,6 +195,9 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
         changed_by: null,
       });
     }
+    // Promo del primer mes: ya se cobró el primer pago con el precio
+    // promocional; los siguientes, al precio normal.
+    await bumpPromoAmount(ref.orgId, pre, ref.plan, ref.cycle);
     // Cambio de plan: la suscripción vieja deja de cobrarse.
     if (previousId) {
       await cancelPreapproval(previousId).catch((e) => console.error("No pudimos cancelar la suscripción anterior", e));
@@ -250,6 +279,34 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
 }
 
 /**
+ * Si la suscripción salió de un checkout con la promo del primer mes y
+ * todavía tiene el monto promocional, pasa los próximos cobros al precio
+ * normal. Sólo esas: a nadie se le cambia el precio sin haber entrado por
+ * la promo.
+ */
+async function bumpPromoAmount(orgId: string, pre: Preapproval, plan: Plan, cycle: BillingCycle) {
+  const normal = chargeAmount(plan, cycle);
+  const current = Number(pre.auto_recurring?.transaction_amount ?? normal);
+  if (!pre.preapproval_plan_id || current >= normal) return;
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("billing_events")
+    .select("detail")
+    .eq("org_id", orgId)
+    .eq("topic", "checkout")
+    .eq("mp_id", pre.preapproval_plan_id)
+    .limit(1);
+  const detail = (data?.[0]?.detail ?? null) as { promo?: boolean } | null;
+  if (!detail?.promo) return;
+  try {
+    await updatePreapprovalAmount(pre.id, normal);
+    await logEvent(orgId, "promo_ended", pre.id, "updated", normal, { from: current, to: normal });
+  } catch (e) {
+    console.error("No pudimos pasar la suscripción al precio normal", pre.id, e);
+  }
+}
+
+/**
  * Pago único (Checkout Pro): el plan queda pago por un mes o un año, sin
  * renovación automática. Se guarda como payment_status "cancelled" sin
  * suscripción (mp_preapproval_id null): org_effective_plan lo pasa a Gratis
@@ -269,7 +326,7 @@ export async function applyOneTimePayment(pay: Payment): Promise<string | null> 
     .eq("mp_id", String(pay.id))
     .limit(1);
   if (already?.length) return ref.orgId;
-  if (Number(pay.transaction_amount) + 0.01 < chargeAmount(ref.plan, ref.cycle)) {
+  if (Number(pay.transaction_amount) + 0.01 < firstChargeAmount(ref.plan, ref.cycle, true)) {
     console.error("Pago único con monto menor al del plan", pay.id, pay.transaction_amount);
     await logEvent(ref.orgId, "payment", String(pay.id), "monto_invalido", pay.transaction_amount, pay);
     return ref.orgId;
@@ -347,13 +404,15 @@ interface CheckoutDetail {
   plan: Plan;
   cycle: BillingCycle;
   method: PaymentMethod;
+  /** Primer cobro con la promo del primer mes. */
+  promo?: boolean;
   /** external_reference del pago único. */
   ref?: string;
 }
 
 /** Anota un checkout abierto para buscar después su pago. */
 export async function recordCheckout(orgId: string, checkoutId: string, detail: CheckoutDetail) {
-  await logEvent(orgId, "checkout", checkoutId, "pending", chargeAmount(detail.plan, detail.cycle), detail);
+  await logEvent(orgId, "checkout", checkoutId, "pending", firstChargeAmount(detail.plan, detail.cycle, Boolean(detail.promo)), detail);
 }
 
 /** ¿Se pagó el checkout? Si se pagó, lo aplica. */

@@ -5,12 +5,24 @@ import type { Plan } from "@/lib/subscription";
 // que el monto mostrado en los dos lugares nunca se desalinee.
 export const ANNUAL_DISCOUNT = 0.2;
 
+/**
+ * Promo de lanzamiento: el primer mes de un plan pago, pagando mensual, sale
+ * `promoPrice` (quien nunca pagó un plan). Después, el precio normal. El
+ * anual no tiene esta promo (ya tiene el 20% menos).
+ */
+export function promoText(def: PlanDefinition): string | null {
+  return def.promoPrice && def.promoLabel ? `Primer mes ${def.promoLabel}, después ${def.priceLabel}` : null;
+}
+
 export interface PlanDefinition {
   plan: Plan;
   name: string;
   /** Precio mensual en ARS, IVA incluido. 0 para el plan gratis. */
   price: number;
   priceLabel: string;
+  /** Promo de lanzamiento: el primer mes (pago mensual) a este precio. */
+  promoPrice?: number;
+  promoLabel?: string;
   period: string;
   badge: string | null;
   features: string[];
@@ -48,8 +60,10 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
   esencial: {
     plan: "esencial",
     name: "Plan Esencial",
-    price: 15000,
-    priceLabel: "$15.000",
+    price: 17000,
+    priceLabel: "$17.000",
+    promoPrice: 15000,
+    promoLabel: "$15.000",
     period: "por mes · IVA incl.",
     badge: null,
     features: [
@@ -69,8 +83,10 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
   pro: {
     plan: "pro",
     name: "Plan Pro",
-    price: 25000,
-    priceLabel: "$25.000",
+    price: 29000,
+    priceLabel: "$29.000",
+    promoPrice: 25000,
+    promoLabel: "$25.000",
     period: "por mes · IVA incl.",
     badge: "Más elegido",
     features: [
@@ -93,8 +109,10 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
   ia: {
     plan: "ia",
     name: "Plan IA",
-    price: 28000,
-    priceLabel: "$28.000",
+    price: 34000,
+    priceLabel: "$34.000",
+    promoPrice: 28000,
+    promoLabel: "$28.000",
     period: "por mes · IVA incl.",
     badge: "Nuevo",
     features: [

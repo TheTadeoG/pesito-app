@@ -5,7 +5,7 @@ import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
-import { chargeAmount, type PaymentMethod } from "@/lib/billing";
+import { chargeAmount, firstChargeAmount, isPromoEligible, type PaymentMethod } from "@/lib/billing";
 import { getPlanOwnFeatures } from "@/lib/plan-features";
 import { CheckoutView } from "@/app/suscribirse/checkout-view";
 
@@ -51,7 +51,10 @@ export default async function SuscribirsePage({
   const method: PaymentMethod = metodo === "unico" ? "unico" : "debito";
 
   const supabase = await createClient();
-  const subscription = await getSubscription(supabase, organization.id);
+  const [subscription, promoEligible] = await Promise.all([
+    getSubscription(supabase, organization.id),
+    isPromoEligible(organization.id),
+  ]);
   const billing = subscription.billing;
 
   // Fechas que se muestran en el resumen (calculadas acá para que el
@@ -86,6 +89,7 @@ export default async function SuscribirsePage({
         .filter((f) => !f.includes("(pronto)"))
         .slice(0, 5)}
       prices={{ mensual: chargeAmount(plan, "mensual"), anual: chargeAmount(plan, "anual") }}
+      promoPrice={promoEligible ? firstChargeAmount(plan, "mensual", true) : null}
       dates={dates}
       current={current}
       paymentsEnabled={mercadoPagoConfigured()}

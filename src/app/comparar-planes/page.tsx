@@ -101,6 +101,11 @@ export default function CompararPlanesPage() {
                       <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
                         {plan.price === 0 ? "$0" : formatCurrency(plan.price)}
                       </span>
+                      {plan.promoPrice && (
+                        <span className="block text-[11px] font-medium text-primary">
+                          {`1er mes ${formatCurrency(plan.promoPrice)}`}
+                        </span>
+                      )}
                     </th>
                   ))}
                 </tr>

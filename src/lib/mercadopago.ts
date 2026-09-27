@@ -209,6 +209,17 @@ export function getAuthorizedPayment(id: string): Promise<AuthorizedPayment> {
   return mp<AuthorizedPayment>(`/authorized_payments/${encodeURIComponent(id)}`);
 }
 
+/**
+ * Cambia el monto de los próximos cobros de una suscripción (promo del
+ * primer mes: después del primer pago pasa al precio normal).
+ */
+export async function updatePreapprovalAmount(id: string, amount: number): Promise<void> {
+  await mp(`/preapproval/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify({ auto_recurring: { transaction_amount: amount, currency_id: "ARS" } }),
+  });
+}
+
 /** Cancela la suscripción (irreversible en Mercado Pago). */
 export async function cancelPreapproval(id: string): Promise<void> {
   try {

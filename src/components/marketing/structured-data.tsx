@@ -19,6 +19,9 @@ export function StructuredData() {
         name: planDefinitions[plan].name,
         price: String(planDefinitions[plan].price),
         priceCurrency: "ARS",
+        ...(planDefinitions[plan].promoLabel
+          ? { description: `Precio mensual, IVA incluido. Primer mes ${planDefinitions[plan].promoLabel} (promo de lanzamiento).` }
+          : {}),
       })),
     },
     {

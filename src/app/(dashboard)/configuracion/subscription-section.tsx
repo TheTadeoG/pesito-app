@@ -292,6 +292,12 @@ export function SubscriptionSection({
                       </span>{" "}
                       {def.plan !== "gratis" && def.period}
                     </p>
+                    {/* Promo del primer mes: para quien todavía no pagó un plan. */}
+                    {def.promoLabel && !subscription.billing && subscription.plan === "gratis" && (
+                      <p className="mt-1 w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                        {`Primer mes a ${def.promoLabel}`}
+                      </p>
+                    )}
                   </div>
                   <ul className="flex-1 space-y-1.5">
                     {def.features.map((feature) => (

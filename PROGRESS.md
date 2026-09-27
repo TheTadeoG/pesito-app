@@ -222,3 +222,10 @@ No commitear `supabase/config.toml`, `supabase/.gitignore`, `supabase/.branches/
 - `org_effective_plan` (misma firma) y `lib/subscription.ts` (`grace`) aplican la misma regla. Avisos en el panel ("Pasaste al…", "Tu plan venció…").
 - Usuarios de más pasada la gracia: pausados los últimos que se sumaron, nunca el dueño (`lib/member-pause.ts`, controlado en `requireOrgContext` → `/cuenta-pausada`). Se ven como "Pausado" / "Se pausa el …" en Usuarios. Control sólo en la app (no en `is_org_member`, para no sumar una consulta a cada política).
 - Pendiente del usuario: correr 0048 en Supabase.
+
+## Hecho: precios nuevos con promo del primer mes
+
+- Precios: Esencial $17.000, Pro $29.000, IA $34.000 (`plan-features.ts`). Promo de lanzamiento: el primer mes pagando mensual a $15.000 / $25.000 / $28.000 (`promoPrice`), sólo para quien nunca pagó un plan (`isPromoEligible` en `lib/billing.ts`). El anual no tiene promo (ya tiene 20% menos).
+- Débito automático: el plan de Mercado Pago se crea con el monto promo y, apenas se autoriza la suscripción (primer cobro hecho), `bumpPromoAmount` la pasa al precio normal (`PUT /preapproval/{id}`). Sólo las que salieron de un checkout con `promo: true`.
+- Pago único mensual: el primer pago con la promo; se acepta el monto promo en `applyOneTimePayment`.
+- Textos: landing, comparar planes, JSON-LD, FAQ, llms.txt, registro, Planes y la pantalla de pago.

@@ -57,6 +57,8 @@ export interface CheckoutViewProps {
   features: string[];
   /** Monto de cada cobro: mensual, o el total del año. */
   prices: Record<BillingCycle, number>;
+  /** Primer cobro mensual con la promo del primer mes; null si no aplica. */
+  promoPrice: number | null;
   /** Próximo cobro (débito) o hasta cuándo queda pago (pago único). */
   dates: Record<BillingCycle, Record<PaymentMethod, string>>;
   current: { planName: string; autoDebit: boolean; samePlan: boolean } | null;
@@ -64,7 +66,7 @@ export interface CheckoutViewProps {
 }
 
 export function CheckoutView(props: CheckoutViewProps) {
-  const { plan, fromSignup, features, prices, dates, current, paymentsEnabled } = props;
+  const { plan, fromSignup, features, prices, promoPrice, dates, current, paymentsEnabled } = props;
   const [cycle, setCycle] = useState<BillingCycle>(props.initialCycle);
   const [method, setMethod] = useState<PaymentMethod>(props.initialMethod);
   const { status, error, checkoutUrl, activePlan, periodEnd, start, check } = useMercadoPagoCheckout();
@@ -72,7 +74,9 @@ export function CheckoutView(props: CheckoutViewProps) {
   const theme = themes[plan];
   const Icon = planIcons[plan];
   const planName = `Plan ${planLabels[plan]}`;
-  const amount = prices[cycle];
+  // Promo del primer mes: sólo pagando mensual.
+  const promoActive = cycle === "mensual" && promoPrice !== null && promoPrice < prices.mensual;
+  const amount = promoActive ? promoPrice! : prices[cycle];
   const monthly = prices.mensual;
   const annualMonthly = Math.round(monthly * (1 - ANNUAL_DISCOUNT));
   const exitHref = fromSignup ? "/pos?bienvenida=1" : "/configuracion?tab=plan";
@@ -122,6 +126,13 @@ export function CheckoutView(props: CheckoutViewProps) {
             </span>
             <span className={"text-muted-foreground"}>por mes</span>
           </p>
+          {promoPrice !== null && (
+            <p className="mt-2 inline-flex rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+              {cycle === "mensual"
+                ? `Promo de lanzamiento: el primer mes ${formatCurrency(promoPrice)}`
+                : `Pagando mensual, el primer mes sale ${formatCurrency(promoPrice)}`}
+            </p>
+          )}
           <p className={cn("mt-1 text-sm", "text-muted-foreground")}>
             {cycle === "anual"
               ? `${formatCurrency(prices.anual)} al año. Ahorrás ${formatCurrency(monthly * 12 - prices.anual)}.`
@@ -230,8 +241,19 @@ export function CheckoutView(props: CheckoutViewProps) {
                 </div>
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">{method === "debito" ? "Próximo cobro" : "Pago hasta el"}</dt>
-                  <dd className="text-foreground">{dates[cycle][method]}</dd>
+                  <dd className="text-foreground">
+                    {method === "debito" && promoActive
+                      ? `${dates[cycle][method]} · ${formatCurrency(prices.mensual)}`
+                      : dates[cycle][method]}
+                  </dd>
                 </div>
+                {promoActive && (
+                  <p className="text-xs text-muted-foreground">
+                    {method === "debito"
+                      ? `Promo del primer mes: después se debita ${formatCurrency(prices.mensual)} por mes.`
+                      : `Promo del primer mes: al renovar, ${formatCurrency(prices.mensual)} por mes.`}
+                  </p>
+                )}
               </dl>
 
               {status === "waiting" || status === "pending" ? (
@@ -252,7 +274,9 @@ export function CheckoutView(props: CheckoutViewProps) {
                     <>
                       <Lock className="h-4 w-4" />
                       {method === "debito"
-                        ? `Suscribirme por ${formatCurrency(amount)}${cycle === "anual" ? "/año" : "/mes"}`
+                        ? promoActive
+                          ? `Suscribirme: ${formatCurrency(amount)} el primer mes`
+                          : `Suscribirme por ${formatCurrency(amount)}${cycle === "anual" ? "/año" : "/mes"}`
                         : `Pagar ${formatCurrency(amount)}`}
                     </>
                   )}

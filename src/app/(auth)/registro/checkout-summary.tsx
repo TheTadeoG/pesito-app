@@ -44,6 +44,11 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
             </span>
             <span className="text-sm text-muted-foreground">por mes</span>
           </div>
+          {!annual && def.promoPrice && (
+            <p className="mt-1.5 w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              {`Promo de lanzamiento: el primer mes ${formatCurrency(def.promoPrice)}`}
+            </p>
+          )}
           {annual && (
             <p className="mt-1 text-xs text-muted-foreground">
               {formatCurrency(annualMonthlyPrice * 12)} facturados una vez al año

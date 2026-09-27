@@ -19,7 +19,7 @@ export function GET() {
   // aclaran como tales, para que ninguna IA las dé por disponibles).
   const plans = [planDefinitions.gratis, ...paidPlanDefinitions]
     .map((p) => {
-      const price = p.price === 0 ? "gratis, sin tarjeta y sin vencimiento" : `${p.priceLabel} por mes, IVA incluido (20% menos pagando anual)`;
+      const price = p.price === 0 ? "gratis, sin tarjeta y sin vencimiento" : `${p.priceLabel} por mes, IVA incluido (20% menos pagando anual)${p.promoLabel ? `; promo de lanzamiento: el primer mes pagando mensual sale ${p.promoLabel}` : ""}`;
       const soon = p.soon?.length ? `; próximamente: ${p.soon.join(", ")}` : "";
       const features = p.features.map((f) =>
         f.startsWith("Todas las funciones del ") ? `todo lo del ${f.slice(24).replace(" +", "")}, más` : f

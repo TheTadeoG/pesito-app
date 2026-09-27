@@ -28,6 +28,7 @@ const plans = paidPlanDefinitions.map((def) => {
     plan: def.plan,
     name: def.name,
     price: def.price,
+    promoPrice: def.promoPrice ?? null,
     badge: def.badge,
     previous: includesPrevious ? first.replace("Todas las funciones del ", "").replace(" +", "") : null,
     features: includesPrevious ? rest : def.features,
@@ -188,6 +189,11 @@ export function Pricing() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {annual ? "por mes · facturado anual, IVA incl." : "por mes · IVA incl."}
               </p>
+              {!annual && plan.promoPrice && (
+                <p className="mt-2 w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  {`Primer mes a ${formatCurrency(plan.promoPrice)}`}
+                </p>
+              )}
               {annual && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatCurrency(annualMonthlyPrice * 12)} facturados una vez al año

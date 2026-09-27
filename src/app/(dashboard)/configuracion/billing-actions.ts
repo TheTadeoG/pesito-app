@@ -6,6 +6,7 @@ import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import crypto from "crypto";
+import { planDefinitions } from "@/lib/plan-features";
 import { siteUrl } from "@/lib/utils";
 import {
   cancelPreapproval,
@@ -20,8 +21,9 @@ import {
 import {
   applyPreapproval,
   buildExternalReference,
-  chargeAmount,
   checkoutState,
+  firstChargeAmount,
+  isPromoEligible,
   recordCheckout,
   type CheckoutState,
   type PaymentMethod,
@@ -57,31 +59,35 @@ export async function startSubscription(
   if (!mercadoPagoConfigured()) return { error: "El cobro con Mercado Pago todavía no está configurado." };
 
   const backUrl = `${siteUrl}/suscribirse/listo`;
-  const amount = chargeAmount(plan, cycle);
+  // Promo del primer mes (mensual, para quien nunca pagó un plan).
+  const promo = cycle === "mensual" && (await isPromoEligible(organization.id));
+  const amount = firstChargeAmount(plan, cycle, promo);
   try {
     if (method === "unico") {
       const ref = `${buildExternalReference(organization.id, plan, cycle)}|u${crypto.randomBytes(6).toString("hex")}`;
       const pref = await createPreference({
-        title: `Pesito — Plan ${planLabels[plan]} (${cycle === "anual" ? "1 año" : "1 mes"})`,
+        title: `Pesito — Plan ${planLabels[plan]} (${cycle === "anual" ? "1 año" : promo ? "primer mes, promo" : "1 mes"})`,
         externalReference: ref,
         amount,
         backUrl,
       });
       const url = usingTestCredentials() ? pref.sandbox_init_point ?? pref.init_point : pref.init_point;
       if (!url) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
-      await recordCheckout(organization.id, pref.id, { plan, cycle, method, ref });
+      await recordCheckout(organization.id, pref.id, { plan, cycle, method, ref, promo });
       return { url, checkoutId: pref.id };
     }
 
     const checkout = await createPreapprovalPlan({
-      reason: `Pesito — Plan ${planLabels[plan]} (${cycle})`,
+      reason: promo
+        ? `Pesito — Plan ${planLabels[plan]} (primer mes ${planDefinitions[plan].promoLabel}, después ${planDefinitions[plan].priceLabel})`
+        : `Pesito — Plan ${planLabels[plan]} (${cycle})`,
       externalReference: buildExternalReference(organization.id, plan, cycle),
       frequencyMonths: cycle === "anual" ? 12 : 1,
       amount,
       backUrl,
     });
     if (!checkout.init_point) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
-    await recordCheckout(organization.id, checkout.id, { plan, cycle, method });
+    await recordCheckout(organization.id, checkout.id, { plan, cycle, method, promo });
     return { url: checkout.init_point, checkoutId: checkout.id };
   } catch (e) {
     const detail = mercadoPagoErrorMessage(e);
