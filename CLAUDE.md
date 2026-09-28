@@ -20,4 +20,4 @@
 - Seguridad: nada de dinero ni stock se escribe directo desde la app con el usuario: usar funciones `security definer` (la base rechaza con `is_direct_write()` los cambios de saldos, stock con sucursales y cajas cerradas; ver 0045). Una función nueva que dependa del plan: `perform public.require_plan(p_org_id, '<plan>', '<qué>')`. Redirecciones con `?next=`: `safeNextPath`.
 - Graphify (`graphify-out/`, se regenera solo al empezar la sesión): usarlo sólo cuando no se sabe cómo se llama algo en el código o para ver qué más toca un cambio (`graphify query "…"`, `graphify explain "X"`, `graphify path "A" "B"`). Para ubicar algo por nombre, buscar directo (más barato, medido).
 - Estado y pendientes del trabajo: ver `PROGRESS.md`.
-- Git: trabajar directo sobre la rama principal (`claude/sharp-carson-p8zpd2`, no hay `main`), sin ramas ni PRs. Commitear y pushear cada cambio terminado.
+- Git: trabajar directo sobre la rama principal (`main`), sin ramas ni PRs. La rama vieja `claude/sharp-carson-p8zpd2` ya no se usa. Commitear y pushear cada cambio terminado.
