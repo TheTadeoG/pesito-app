@@ -93,3 +93,38 @@ export async function updateLandingStatsOffsets(input: {
   revalidatePath("/");
   return { success: true };
 }
+
+export interface MarketInsightInput {
+  title: string;
+  body: string;
+  businessType: string | null;
+  source: string;
+}
+
+/** Carga una nota del análisis de mercado (Plan IA). Sólo platform admin. */
+export async function createMarketInsight(input: MarketInsightInput): Promise<ActionState> {
+  await requirePlatformAdmin();
+  const title = input.title.trim();
+  const body = input.body.trim();
+  if (title.length < 3 || title.length > 140) return { error: "El título tiene que tener entre 3 y 140 caracteres." };
+  if (body.length < 10 || body.length > 4000) return { error: "El texto tiene que tener entre 10 y 4000 caracteres." };
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("market_insights").insert({
+    title,
+    body,
+    business_type: input.businessType || null,
+    source: input.source.trim() || null,
+  });
+  if (error) return { error: "No pudimos guardar la nota." };
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function deleteMarketInsight(id: string): Promise<ActionState> {
+  await requirePlatformAdmin();
+  const { error } = await createAdminClient().from("market_insights").delete().eq("id", id);
+  if (error) return { error: "No pudimos borrar la nota." };
+  revalidatePath("/admin");
+  return { success: true };
+}

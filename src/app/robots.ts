@@ -18,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
         "/reportes",
         "/recomendaciones",
         "/baja-rotacion",
+        "/mercado",
         "/configuracion",
         "/soporte",
         "/caja",

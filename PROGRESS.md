@@ -169,8 +169,6 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Balanzas conectadas — Plan Pro (`scales`). En el POS ya hay un botón "Balanza (próximamente)".
 - [ ] Carteles de precios para imprimir, que se arman solos con el precio actual — Plan Pro (`priceSigns`).
 - [ ] Catálogo online (1 por negocio) — Plan Pro (`onlineCatalog`).
-- [ ] Reportes avanzados con IA — Plan IA (`aiReports`).
-- [ ] Análisis de competidores y del mercado — Plan IA (`marketAnalysis`).
 - [ ] Factura electrónica ARCA/AFIP: la web dice que no existe (no está anunciada como "Pronto").
 
 Técnicas pendientes:
@@ -240,4 +238,6 @@ No commitear `supabase/config.toml`, `supabase/.gitignore`, `supabase/.branches/
 - Reposición: ritmo de los últimos 30 días, stock para 14 días, nunca menos que el mínimo; agrupado por proveedor habitual con pedido para WhatsApp. Sin proveedor asignado queda en "Sin proveedor asignado".
 - Precios: costo que subió después del último cambio de precio (mismo margen), vendido a pérdida o con menos de 10% (margen de la marca o del negocio); "Aplicar" cambia `products.price` (queda en el historial). Sólo dueño/admin.
 - Migración 0050 (**falta aplicar en producción**): `product_sales_stats(p_org_id, p_days, p_branch_id)` (exige plan IA con `require_plan`). Sin 0050 las pantallas dan error.
-- Texto público alineado (`plan-features`, comparar planes, FAQ, llms.txt, landing, indumentaria). Quedan como "Pronto" en el Plan IA: reportes avanzados con IA, análisis de competencia y ganancias por sucursal.
+- Reportes avanzados con IA (`aiReports`): tarjeta "Resumen del período" arriba de Reportes, escrita con reglas fijas sobre los números del período (`src/lib/report-insights.ts`: tendencia, margen, mejor día y hora pico, producto estrella, ventas a pérdida, medio de cobro, fiado). Sin modelo ni conexión externa. Sin el plan, aviso con `PlanLockNote`.
+- Análisis de mercado (`marketAnalysis`): pantalla `/mercado` (menú IA) con notas que carga Pesito desde `/admin` → "Análisis de mercado" (tabla `market_insights`, migración 0051, **falta aplicar**; lectura por `market_insights_for`, que exige plan IA y filtra por rubro). El contenido lo juntamos nosotros (con IA o a mano); los clientes no se conectan a ninguna IA. Cargar sólo información verificada y con fuente.
+- Texto público alineado (`plan-features`, comparar planes, FAQ, llms.txt, landing, indumentaria). Quedan como "Pronto" en el Plan IA sólo las ganancias por sucursal. Análisis de competidores puntuales NO existe y se quitó del texto público (llms.txt lo aclara).

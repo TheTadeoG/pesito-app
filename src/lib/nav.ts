@@ -3,6 +3,7 @@ import type { PlanFeature } from "@/lib/plan-access";
 import {
   BarChart3,
   CreditCard,
+  Globe,
   LayoutGrid,
   LifeBuoy,
   Radio,
@@ -75,6 +76,7 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/recomendaciones", label: "Recomendaciones", icon: Sparkles, feature: "restockRecommendations" },
       { href: "/baja-rotacion", label: "Baja rotación", icon: TrendingDown, feature: "lowRotation" },
+      { href: "/mercado", label: "Mercado", icon: Globe, feature: "marketAnalysis" },
     ],
   },
   {
@@ -111,6 +113,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
   "/recomendaciones": { title: "Recomendaciones", description: "Qué comprar y qué precios revisar." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },
+  "/mercado": { title: "Mercado", description: "Novedades y precios de referencia de tu rubro." },
   "/configuracion": { title: "Configuración", description: "Datos de tu negocio." },
   "/planes": { title: "Planes", description: "Tu plan, los demás planes y cómo pagás." },
   "/soporte": { title: "Soporte", description: "¿Necesitás ayuda?" },

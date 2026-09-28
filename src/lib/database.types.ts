@@ -122,6 +122,28 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
         Relationships: [];
       };
+      market_insights: {
+        Row: {
+          id: string;
+          title: string;
+          body: string;
+          business_type: string | null;
+          source: string | null;
+          published_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          body: string;
+          business_type?: string | null;
+          source?: string | null;
+          published_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["market_insights"]["Insert"]>;
+        Relationships: [];
+      };
       bulk_price_changes: {
         Row: {
           id: string;
@@ -813,6 +835,17 @@ export interface Database {
           p_payments?: Json | null;
         };
         Returns: string;
+      };
+      market_insights_for: {
+        Args: { p_org_id: string };
+        Returns: {
+          id: string;
+          title: string;
+          body: string;
+          business_type: string | null;
+          source: string | null;
+          published_at: string;
+        }[];
       };
       product_sales_stats: {
         Args: { p_org_id: string; p_days: number; p_branch_id?: string | null };

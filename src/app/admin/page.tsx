@@ -24,6 +24,7 @@ import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { OrgPlanManager } from "@/app/admin/org-plan-manager";
 import { LandingStatsManager } from "@/app/admin/landing-stats-manager";
+import { MarketInsightsManager } from "@/app/admin/market-insights-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,13 @@ const tileIcons = {
 export default async function AdminPage() {
   await requirePlatformAdmin();
   const admin = createAdminClient();
+
+  // Sin la migración 0051 la consulta da error y la lista queda vacía.
+  const { data: marketInsightsRaw } = await admin
+    .from("market_insights")
+    .select("id, title, business_type, published_at")
+    .order("published_at", { ascending: false })
+    .limit(50);
 
   const [
     { data: orgsRaw },
@@ -742,6 +750,15 @@ export default async function AdminPage() {
                 montoOffset: Number(landingStatsRow?.monto_offset ?? 0),
               }}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Análisis de mercado (Plan IA)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MarketInsightsManager items={marketInsightsRaw ?? []} />
           </CardContent>
         </Card>
 

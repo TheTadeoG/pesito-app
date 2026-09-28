@@ -141,11 +141,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Sugerencia de precios cuando sube el costo",
       "Qué reponer y cuánto, con el pedido para WhatsApp",
       "Productos que no rotan y plata parada",
+      "Resumen escrito de cada período en Reportes",
+      "Novedades y precios de referencia de tu rubro",
     ],
     soon: [
       "Ganancias por sucursal",
-      "Reportes avanzados con IA",
-      "Análisis de competencia y mercado",
     ],
   },
 };
@@ -300,13 +300,8 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Sugerencia de precios", values: onlyIa },
       { label: "Recomendaciones de reposición", values: onlyIa },
       { label: "Detección de productos de baja rotación", values: onlyIa },
-      ...[
-        "Reportes avanzados con IA",
-        "Análisis de competidores y del mercado",
-      ].map((label) => ({
-        label,
-        values: { gratis: false, esencial: false, pro: false, ia: "Pronto" } as Record<Plan, ComparisonValue>,
-      })),
+      { label: "Resumen escrito de cada período en Reportes", values: onlyIa },
+      { label: "Novedades y precios de referencia de tu rubro", values: onlyIa },
     ],
   },
 ];
