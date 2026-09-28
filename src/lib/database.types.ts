@@ -814,6 +814,16 @@ export interface Database {
         };
         Returns: string;
       };
+      product_sales_stats: {
+        Args: { p_org_id: string; p_days: number; p_branch_id?: string | null };
+        Returns: {
+          product_id: string;
+          qty_sold: number;
+          revenue: number;
+          sale_days: number;
+          last_sold_at: string | null;
+        }[];
+      };
       cash_register_summaries: {
         Args: { p_register_ids: string[] };
         Returns: {

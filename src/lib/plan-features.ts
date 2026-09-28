@@ -138,14 +138,14 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Todas las funciones del Plan Pro +",
       `Hasta ${products("ia")} y 2 sucursales, cada una con su stock`,
       "Soporte prioritario 24/7",
+      "Sugerencia de precios cuando sube el costo",
+      "Qué reponer y cuánto, con el pedido para WhatsApp",
+      "Productos que no rotan y plata parada",
     ],
     soon: [
       "Ganancias por sucursal",
       "Reportes avanzados con IA",
-      "Sugerencia de precios",
       "Análisis de competencia y mercado",
-      "Qué reponer y cuándo",
-      "Productos que no rotan",
     ],
   },
 };
@@ -297,12 +297,12 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     title: "Soporte e inteligencia artificial",
     rows: [
       { label: "Soporte prioritario", values: { gratis: false, esencial: false, pro: true, ia: "24/7" } },
+      { label: "Sugerencia de precios", values: onlyIa },
+      { label: "Recomendaciones de reposición", values: onlyIa },
+      { label: "Detección de productos de baja rotación", values: onlyIa },
       ...[
         "Reportes avanzados con IA",
-        "Sugerencia de precios",
         "Análisis de competidores y del mercado",
-        "Recomendaciones de reposición",
-        "Detección de productos de baja rotación",
       ].map((label) => ({
         label,
         values: { gratis: false, esencial: false, pro: false, ia: "Pronto" } as Record<Plan, ComparisonValue>,

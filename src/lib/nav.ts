@@ -73,8 +73,8 @@ export const navSections: NavSection[] = [
   {
     title: "IA",
     items: [
-      { href: "/recomendaciones", label: "Recomendaciones", icon: Sparkles, badge: "Pronto" },
-      { href: "/baja-rotacion", label: "Baja rotación", icon: TrendingDown, badge: "Pronto" },
+      { href: "/recomendaciones", label: "Recomendaciones", icon: Sparkles, feature: "restockRecommendations" },
+      { href: "/baja-rotacion", label: "Baja rotación", icon: TrendingDown, feature: "lowRotation" },
     ],
   },
   {
@@ -109,7 +109,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/usuarios": { title: "Usuarios", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
   "/en-vivo": { title: "En vivo", description: "Cómo viene el día, vendedor por vendedor." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
-  "/recomendaciones": { title: "Recomendaciones", description: "Sugerencias inteligentes para tu negocio." },
+  "/recomendaciones": { title: "Recomendaciones", description: "Qué comprar y qué precios revisar." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },
   "/configuracion": { title: "Configuración", description: "Datos de tu negocio." },
   "/planes": { title: "Planes", description: "Tu plan, los demás planes y cómo pagás." },
