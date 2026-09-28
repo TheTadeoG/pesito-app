@@ -1,4 +1,4 @@
-import { CreditCard, ShieldCheck } from "lucide-react";
+import { Check, CreditCard, Lock, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn, formatCurrency } from "@/lib/utils";
 import { planIcons, planAccents } from "@/lib/plan-visuals";
@@ -40,13 +40,20 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
         <div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-3xl font-bold text-foreground">
-              {formatCurrency(displayedPrice)}
+              {formatCurrency(!annual && def.promoPrice ? def.promoPrice : displayedPrice)}
             </span>
-            <span className="text-sm text-muted-foreground">por mes</span>
+            {!annual && def.promoPrice && (
+              <span className="text-sm text-muted-foreground line-through">
+                {formatCurrency(monthlyPrice)}
+              </span>
+            )}
+            {!(!annual && def.promoPrice) && (
+              <span className="text-sm text-muted-foreground">por mes</span>
+            )}
           </div>
           {!annual && def.promoPrice && (
-            <p className="mt-1.5 w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-              {`Promo de lanzamiento: el primer mes ${formatCurrency(def.promoPrice)}`}
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {`El primer mes (promo de lanzamiento). Desde el mes 2: ${formatCurrency(monthlyPrice)} por mes.`}
             </p>
           )}
           {annual && (
@@ -85,6 +92,27 @@ export function CheckoutSummary({ plan, annual }: { plan: Plan; annual: boolean 
             Con débito automático se renueva solo y lo cancelás cuando quieras. Con pago único
             pagás también en efectivo y renovás a mano.
           </p>
+        </div>
+
+        <div className="rounded-xl border border-border p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Lock className="h-4 w-4 text-success" />
+            Pago seguro
+          </p>
+          <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+              Pagás en Mercado Pago. Pesito no ve ni guarda los datos de tu tarjeta.
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+              Cancelás cuando quieras, sin permanencia.
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+              Tus datos viajan cifrados (HTTPS).
+            </li>
+          </ul>
         </div>
       </CardContent>
     </Card>

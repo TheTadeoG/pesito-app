@@ -178,22 +178,21 @@ export function Pricing() {
               </div>
               <div className="mt-2 flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold text-foreground">
-                  {formatCurrency(displayedPrice)}
+                  {formatCurrency(!annual && plan.promoPrice ? plan.promoPrice : displayedPrice)}
                 </span>
-                {annual && (
+                {(annual || plan.promoPrice) && (
                   <span className="text-sm text-muted-foreground line-through">
                     {formatCurrency(monthlyPrice)}
                   </span>
                 )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                {annual ? "por mes · facturado anual, IVA incl." : "por mes · IVA incl."}
+                {annual
+                  ? "por mes · facturado anual, IVA incl."
+                  : plan.promoPrice
+                    ? `el primer mes, después ${formatCurrency(monthlyPrice)} por mes · IVA incl.`
+                    : "por mes · IVA incl."}
               </p>
-              {!annual && plan.promoPrice && (
-                <p className="mt-2 w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                  {`Primer mes a ${formatCurrency(plan.promoPrice)}`}
-                </p>
-              )}
               {annual && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatCurrency(annualMonthlyPrice * 12)} facturados una vez al año
