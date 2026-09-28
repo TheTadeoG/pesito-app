@@ -44,7 +44,7 @@ const features = [
     icon: Sparkles,
     title: "Recomendaciones con IA",
     description:
-      "Pronto, con el Plan IA: sugerencia de precios, reposición y productos de baja rotación, para que tu capital no quede dormido en la góndola.",
+      "Con el Plan IA: sugerencia de precios cuando sube el costo, qué reponer y cuánto, y los productos de baja rotación, para que tu capital no quede dormido en la góndola.",
   },
   {
     icon: ScanBarcode,

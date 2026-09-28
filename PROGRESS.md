@@ -169,11 +169,6 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Balanzas conectadas — Plan Pro (`scales`). En el POS ya hay un botón "Balanza (próximamente)".
 - [ ] Carteles de precios para imprimir, que se arman solos con el precio actual — Plan Pro (`priceSigns`).
 - [ ] Catálogo online (1 por negocio) — Plan Pro (`onlineCatalog`).
-- [ ] Reportes avanzados con IA — Plan IA (`aiReports`).
-- [ ] Sugerencia de precios — Plan IA (`priceSuggestions`).
-- [ ] Análisis de competidores y del mercado — Plan IA (`marketAnalysis`).
-- [ ] Recomendaciones de reposición — Plan IA (`restockRecommendations`; pantalla /recomendaciones "muy pronto").
-- [ ] Detección de productos de baja rotación — Plan IA (`lowRotation`; pantalla /baja-rotacion "muy pronto").
 - [ ] Factura electrónica ARCA/AFIP: la web dice que no existe (no está anunciada como "Pronto").
 
 Técnicas pendientes:
@@ -235,3 +230,14 @@ No commitear `supabase/config.toml`, `supabase/.gitignore`, `supabase/.branches/
 - Productos activos: Gratis 1.000, Esencial 4.000, Pro 12.000, IA 20.000 (`planLimits.products`; los desactivados no cuentan). Se controla al crear y al reactivar (`checkProductLimit`) y en la base (`guard_product_limit`, `plan_limit(..., 'products')`, misma firma). Cerca del límite se ve "X de Y productos"; al llegar, "Nuevo producto" lleva a contratar el plan siguiente.
 - Planes tiene su página (`/planes`); `/configuracion?tab=plan` redirige. Configuración queda sólo con los datos del negocio.
 - Pendiente del usuario: correr 0049 en Supabase (y 0048 si todavía no).
+
+## Hecho: funciones del Plan IA sin modelo (migración 0050)
+
+- Baja rotación (`/baja-rotacion`, `lowRotation`), Recomendaciones (`/recomendaciones`: reposición `restockRecommendations` + precios `priceSuggestions`). Son cuentas sobre las ventas, sin llamar a ningún modelo de IA: `src/lib/product-insights.ts`. Los planes bloquean con `ProLockedCard`; el menú muestra el plan.
+- Baja rotación: productos con stock, más viejos que el período (60/90/180 días), sin ventas o con stock para más de 6 meses; ordenados por plata parada (stock × costo).
+- Reposición: ritmo de los últimos 30 días, stock para 14 días, nunca menos que el mínimo; agrupado por proveedor habitual con pedido para WhatsApp. Sin proveedor asignado queda en "Sin proveedor asignado".
+- Precios: costo que subió después del último cambio de precio (mismo margen), vendido a pérdida o con menos de 10% (margen de la marca o del negocio); "Aplicar" cambia `products.price` (queda en el historial). Sólo dueño/admin.
+- Migración 0050 (aplicada en producción el 2026-09-28): `product_sales_stats(p_org_id, p_days, p_branch_id)` (exige plan IA con `require_plan`). Sin 0050 las pantallas dan error.
+- Reportes avanzados con IA (`aiReports`): tarjeta "Resumen del período" arriba de Reportes, escrita con reglas fijas sobre los números del período (`src/lib/report-insights.ts`: tendencia, margen, mejor día y hora pico, producto estrella, ventas a pérdida, medio de cobro, fiado). Sin modelo ni conexión externa. Sin el plan, aviso con `PlanLockNote`.
+- Análisis de mercado (`marketAnalysis`): pantalla `/mercado` (menú IA) con notas que carga Pesito desde `/admin` → "Análisis de mercado" (tabla `market_insights`, migración 0051, aplicada en producción el 2026-09-28; lectura por `market_insights_for`, que exige plan IA y filtra por rubro). El contenido lo juntamos nosotros (con IA o a mano); los clientes no se conectan a ninguna IA. Cargar sólo información verificada y con fuente.
+- Texto público alineado (`plan-features`, comparar planes, FAQ, llms.txt, landing, indumentaria). Quedan como "Pronto" en el Plan IA sólo las ganancias por sucursal. Análisis de competidores puntuales NO existe y se quitó del texto público (llms.txt lo aclara).

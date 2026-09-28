@@ -198,7 +198,7 @@ export const rubroPages: RubroPage[] = [
       },
       {
         title: "Detección de baja rotación",
-        description: "Pronto, el Plan IA te va a avisar qué prendas no se están vendiendo, para que puedas liquidarlas a tiempo.",
+        description: "Con el Plan IA ves qué prendas hace meses no se venden y cuánta plata tenés parada en ellas, para liquidarlas a tiempo.",
       },
       {
         title: "Cuenta corriente de clientes",

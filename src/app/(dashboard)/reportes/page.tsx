@@ -16,7 +16,11 @@ import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { getMemberLabelsById } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
-import { canUse } from "@/lib/plan-access";
+import { canUse, featureMinPlan } from "@/lib/plan-access";
+import { buildReportInsights } from "@/lib/report-insights";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
+import { Sparkles } from "lucide-react";
 
 const paymentLabels: Record<string, string> = {
   efectivo: "Efectivo",
@@ -485,6 +489,22 @@ export default async function ReportesPage({
     };
   }
 
+  const aiSummary = canUse(subscription, "aiReports")
+    ? buildReportInsights({
+        sales,
+        ingresos,
+        ganancia: gananciaEstimada,
+        deltaPct: periodComparison?.deltaPct ?? null,
+        comparisonLabel: compareRange?.label ?? null,
+        topByQuantity,
+        topByMargin,
+        lossProducts: lossProducts ?? [],
+        paymentBreakdown,
+        fiadoOwed: fiadoDebtors.reduce((n, d) => n + d.amount, 0),
+        singleDay: groupBy === "hour",
+      })
+    : null;
+
   const data: ReportesData = {
     periodLabel,
     tiles: [
@@ -561,6 +581,25 @@ export default async function ReportesPage({
           <span className="font-medium text-foreground">{sellerLabel}</span>. Fiado y stock son
           de todo el negocio y no se muestran.
         </p>
+      )}
+      {aiSummary ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <Sparkles className="h-4 w-4 text-violet-500" />
+            <CardTitle className="text-base">Resumen del período</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc space-y-1.5 pl-5 text-sm text-foreground">
+              {aiSummary.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : (
+        <PlanLockNote plan={featureMinPlan.aiReports}>
+          El Plan IA te escribe un resumen de cada período: cómo vendiste, tu mejor día y horario, qué te deja más plata y qué vendés a pérdida.
+        </PlanLockNote>
       )}
       <ReportesDashboard data={data} query={query} />
     </div>
