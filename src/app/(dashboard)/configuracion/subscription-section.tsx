@@ -311,17 +311,22 @@ export function SubscriptionSection({
                   <div>
                     <p className="font-semibold text-foreground">{def.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      <span className="text-base font-bold text-foreground">
-                        {def.priceLabel}
-                      </span>{" "}
-                      {def.plan !== "gratis" && def.period}
+                      {/* Promo del primer mes: para quien todavía no pagó un plan. */}
+                      {def.promoLabel && !subscription.billing && subscription.plan === "gratis" ? (
+                        <>
+                          <span className="text-base font-bold text-foreground">{def.promoLabel}</span>{" "}
+                          <span className="line-through">{def.priceLabel}</span>
+                          <span className="block text-xs">{`el primer mes, después ${def.priceLabel} ${def.period}`}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-base font-bold text-foreground">
+                            {def.priceLabel}
+                          </span>{" "}
+                          {def.plan !== "gratis" && def.period}
+                        </>
+                      )}
                     </p>
-                    {/* Promo del primer mes: para quien todavía no pagó un plan. */}
-                    {def.promoLabel && !subscription.billing && subscription.plan === "gratis" && (
-                      <p className="mt-1 w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                        {`Primer mes a ${def.promoLabel}`}
-                      </p>
-                    )}
                   </div>
                   <ul className="flex-1 space-y-1.5">
                     {def.features.map((feature) => (

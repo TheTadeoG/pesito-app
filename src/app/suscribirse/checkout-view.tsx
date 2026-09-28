@@ -122,15 +122,18 @@ export function CheckoutView(props: CheckoutViewProps) {
           <h1 className={cn("text-3xl font-bold tracking-tight sm:text-4xl", "text-foreground")}>{planName}</h1>
           <p className="mt-3 flex items-baseline gap-2">
             <span className={cn("text-4xl font-bold sm:text-5xl", "text-foreground")}>
-              {formatCurrency(cycle === "anual" ? annualMonthly : monthly)}
+              {formatCurrency(promoActive ? promoPrice! : cycle === "anual" ? annualMonthly : monthly)}
             </span>
-            <span className={"text-muted-foreground"}>por mes</span>
+            {promoActive && (
+              <span className="text-lg text-muted-foreground line-through">{formatCurrency(monthly)}</span>
+            )}
+            {!promoActive && <span className={"text-muted-foreground"}>por mes</span>}
           </p>
           {promoPrice !== null && (
-            <p className="mt-2 inline-flex rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+            <p className="mt-2 text-sm text-muted-foreground">
               {cycle === "mensual"
-                ? `Promo de lanzamiento: el primer mes ${formatCurrency(promoPrice)}`
-                : `Pagando mensual, el primer mes sale ${formatCurrency(promoPrice)}`}
+                ? `El primer mes (promo de lanzamiento). Desde el mes 2: ${formatCurrency(monthly)} por mes.`
+                : `Pagando mensual, el primer mes sale ${formatCurrency(promoPrice)}.`}
             </p>
           )}
           <p className={cn("mt-1 text-sm", "text-muted-foreground")}>
