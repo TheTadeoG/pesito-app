@@ -62,30 +62,33 @@ export function RestockSummary({
   );
 }
 
-/** Barra de cuántos días alcanza el stock, contra los días que se quiere cubrir. */
-export function DaysBar({
-  daysLeft,
-  targetDays,
+/**
+ * Barra de cobertura: qué parte de lo que se quiere tener ya hay. Va con un
+ * texto que dice qué mide ("Alcanza 7 de 14 días" o "Stock 3 de 10 del
+ * mínimo"), porque sola no se entiende. Llena = cubierto; vacía = sin nada.
+ */
+export function CoverageBar({
+  share,
   urgency,
+  caption,
 }: {
-  daysLeft: number | null;
-  targetDays: number;
+  /** Entre 0 (nada) y 1 (cubierto). */
+  share: number;
   urgency: "sin-stock" | "urgente" | "pronto";
+  caption: string;
 }) {
-  if (daysLeft === null) return null;
-  const share = Math.max(0, Math.min(1, daysLeft / Math.max(1, targetDays)));
+  const clamped = Math.max(0, Math.min(1, share));
   const fill =
     urgency === "pronto" ? "bg-primary" : urgency === "urgente" ? "bg-amber-500" : "bg-danger";
   return (
-    <div
-      className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-muted"
-      role="img"
-      aria-label={`Alcanza ${Math.floor(daysLeft)} de ${targetDays} días`}
-    >
-      <div
-        className={cn("h-full rounded-full", fill)}
-        style={{ width: `${Math.max(share * 100, urgency === "sin-stock" ? 0 : 4)}%` }}
-      />
+    <div className="mt-1 flex items-center gap-2">
+      <div className="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-muted" role="img" aria-label={caption}>
+        <div
+          className={cn("h-full rounded-full", fill)}
+          style={{ width: `${Math.max(clamped * 100, urgency === "sin-stock" ? 0 : 4)}%` }}
+        />
+      </div>
+      <span className="text-xs text-muted-foreground">{caption}</span>
     </div>
   );
 }

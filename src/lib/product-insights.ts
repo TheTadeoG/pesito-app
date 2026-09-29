@@ -39,6 +39,8 @@ export interface InsightsBase {
   supplierNames: Map<string, string>;
   /** Días que tarda en llegar un pedido de cada proveedor (0052); sólo los que lo cargaron. */
   supplierLeadDays: Map<string, number>;
+  /** Teléfono y mail de cada proveedor, para mandar el pedido. */
+  supplierContacts: Map<string, { phone: string | null; email: string | null }>;
   /** Pedido mínimo de cada proveedor en pesos (0054); sólo los que lo cargaron. */
   supplierMinOrder: Map<string, number>;
   /** Lo que ya se pidió y todavía no llegó, por producto (0053). Lo carga quien lo use. */
@@ -122,6 +124,9 @@ export async function loadInsightsBase(
       (suppliers ?? [])
         .filter((s) => s.lead_time_days !== null && s.lead_time_days !== undefined)
         .map((s) => [s.id, Number(s.lead_time_days)])
+    ),
+    supplierContacts: new Map(
+      (suppliers ?? []).map((s) => [s.id, { phone: s.phone ?? null, email: s.email ?? null }])
     ),
     supplierMinOrder: new Map(
       (suppliers ?? [])
