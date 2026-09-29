@@ -163,7 +163,7 @@ function todayRows(group: FlowGroup): FlowRow[] {
   return urgent.length > 0 ? urgent : group.rows;
 }
 
-function SupplierRow({
+function SupplierCard({
   group,
   matches,
   onOpen,
@@ -183,40 +183,48 @@ function SupplierRow({
   const belowMin = group.minOrder !== null && cost > 0 && cost < group.minOrder;
 
   return (
-    <div className="flex flex-col gap-3 border-t border-border py-4 md:flex-row md:items-center md:gap-5">
-      <div className={cn("hidden w-1.5 shrink-0 self-stretch rounded-full md:block", hasUrgent ? "bg-danger" : "bg-muted-foreground/30")} />
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-3">
-          <p className="text-base font-semibold text-foreground">{group.supplierName}</p>
+    <Card className={cn("p-4", hasUrgent ? "border-danger/30" : "border-amber-500/30")}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-foreground">{group.supplierName}</p>
           <p className="text-xs text-muted-foreground">
             {group.leadDays !== null
-              ? `entregan en ${group.leadDays} ${plural(group.leadDays, "día", "días")}`
-              : "sin plazo de entrega cargado"}
+              ? `Entregan en ${group.leadDays} ${plural(group.leadDays, "día", "días")}`
+              : "Sin plazo de entrega cargado"}
+            {group.minOrder !== null && ` · pedido mínimo ${formatCurrency(group.minOrder)}`}
           </p>
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {shown.map((row) => (
-            <span
-              key={row.id}
-              className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-muted/70 px-3 py-1 text-sm"
-            >
-              <span className={cn("shrink-0 text-xs", stateChip[row.urgency].dot)} aria-hidden>
-                ●
-              </span>
-              <span className="truncate font-medium text-foreground">{row.name}</span>
-              <span className="shrink-0 text-muted-foreground">{shortState(row)}</span>
-            </span>
-          ))}
-          {rest > 0 && (
-            <span className="inline-flex items-center rounded-full bg-muted/70 px-3 py-1 text-sm text-muted-foreground">
-              {`+ ${rest} ${hasUrgent ? plural(rest, "que puede esperar", "que pueden esperar") : plural(rest, "más", "más")}`}
-            </span>
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold",
+            hasUrgent ? "bg-danger-bg text-danger" : "bg-amber-500/15 text-amber-600"
           )}
-        </div>
+        >
+          {hasUrgent ? "Pedilo hoy" : "Pedilo esta semana"}
+        </span>
       </div>
-      <div className="flex items-center justify-between gap-5 md:justify-end">
-        <div className="md:text-right">
-          <p className="text-lg font-extrabold text-foreground">{cost > 0 ? formatCurrency(cost) : "—"}</p>
+
+      <ul className="mt-3 space-y-1 text-sm">
+        {shown.map((row) => (
+          <li key={row.id} className="flex gap-2">
+            <span className={cn("shrink-0", stateChip[row.urgency].dot)} aria-hidden>
+              ●
+            </span>
+            <span className="min-w-0 truncate text-foreground">
+              {row.name} <span className="text-muted-foreground">— {shortState(row)}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {rest > 0 && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {`y ${rest} ${plural(rest, "producto más", "productos más")}${hasUrgent && !matches ? " que pueden esperar" : ""}`}
+        </p>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-lg font-bold text-foreground">{cost > 0 ? formatCurrency(cost) : "—"}</p>
           {belowMin && group.minOrder !== null ? (
             <p className="text-xs font-medium text-warning">
               {`Te faltan ${formatCurrency(group.minOrder - cost)} para el mínimo`}
@@ -227,12 +235,12 @@ function SupplierRow({
             </p>
           )}
         </div>
-        <Button variant={hasUrgent ? "primary" : "outline"} onClick={onOpen} className="shrink-0">
+        <Button variant={hasUrgent ? "primary" : "outline"} onClick={onOpen}>
           {hasUrgent ? "Revisar y pedir" : "Revisar"}
           {hasUrgent && <ArrowRight className="h-4 w-4" />}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -732,17 +740,14 @@ function SpendChart({ groups }: { groups: FlowGroup[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Todo junto: pestañas + pantalla de inicio + pedido
+// Todo junto: pantalla de inicio + pedido
 // ---------------------------------------------------------------------------
-
-type Tab = "pedir" | "camino" | "precios";
 
 export function RestockFlow({
   groups,
   orgName,
   targetDays,
   pendingCount,
-  priceCount,
   pendingBlock,
   pricesBlock,
   settingsBlock,
@@ -751,7 +756,6 @@ export function RestockFlow({
   orgName: string;
   targetDays: number;
   pendingCount: number;
-  priceCount: number;
   /** Pedidos en camino, ya armados por el servidor. */
   pendingBlock: ReactNode;
   /** Precios para revisar. */
@@ -759,11 +763,10 @@ export function RestockFlow({
   /** Ajustes de cálculo. */
   settingsBlock: ReactNode;
 }) {
-  const [tab, setTab] = useState<Tab>("pedir");
   const [activeKey, setActiveKey] = useState<string | null>(null);
   // "Empezar a pedir" recorre a los proveedores urgentes de a uno.
   const [queue, setQueue] = useState<string[]>([]);
-  // Buscador y filtros de la lista de proveedores.
+  // Buscador y filtros de los proveedores.
   const [search, setSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState<"todos" | "hoy" | "semana">("todos");
   const [supplierFilter, setSupplierFilter] = useState("");
@@ -800,17 +803,16 @@ export function RestockFlow({
       const ub = b.group.rows.some(isToday) ? 0 : 1;
       return ua - ub;
     });
-  const visibleUrgent = visible.filter((v) => v.group.rows.some(isToday));
-  const visibleCalm = visible.filter((v) => !v.group.rows.some(isToday));
-  const openGroup = (key: string) => {
-    setQueue([]);
-    setActiveKey(key);
-  };
 
   function start() {
     const keys = (urgentGroups.length > 0 ? urgentGroups : groups).map((g) => g.key);
     setQueue(keys);
     setActiveKey(keys[0] ?? null);
+  }
+
+  function openGroup(key: string) {
+    setQueue([]);
+    setActiveKey(key);
   }
 
   function back() {
@@ -821,11 +823,8 @@ export function RestockFlow({
   function done() {
     const index = activeKey ? queue.indexOf(activeKey) : -1;
     const next = index >= 0 ? queue.slice(index + 1).find((k) => groups.some((g) => g.key === k)) : undefined;
-    if (next) {
-      setActiveKey(next);
-    } else {
-      back();
-    }
+    if (next) setActiveKey(next);
+    else back();
   }
 
   if (active) {
@@ -843,242 +842,145 @@ export function RestockFlow({
     );
   }
 
-  const tabs: { id: Tab; label: string; count: number; alert?: boolean }[] = [
-    { id: "pedir", label: "Para pedir", count: toOrder, alert: urgentGroups.length > 0 },
-    { id: "camino", label: "En camino", count: pendingCount },
-    { id: "precios", label: "Precios para revisar", count: priceCount },
-  ];
-
   return (
-    <div className="space-y-5">
-      <div className="flex gap-1 overflow-x-auto border-b border-border" role="tablist">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "-mb-px flex shrink-0 items-center gap-2 border-b-[3px] px-4 py-2.5 text-sm font-semibold transition-colors",
-              tab === t.id
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {t.label}
-            {t.count > 0 && (
-              <span
-                className={cn(
-                  "min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-bold",
-                  t.alert && tab !== t.id ? "bg-danger-bg text-danger" : t.alert ? "bg-danger-bg text-danger" : "bg-muted text-muted-foreground"
-                )}
-              >
-                {t.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-6">
+      {groups.length === 0 ? (
+        <Card className="p-6">
+          <p className="text-lg font-bold text-foreground">No hace falta pedir nada por ahora</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            El stock alcanza para lo que venís vendiendo. Cuando haga falta, te lo avisamos acá.
+          </p>
+        </Card>
+      ) : (
+        <>
+          <Card className="p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-extrabold text-foreground">
+                  {urgentGroups.length > 0
+                    ? `Hoy tenés que pedirle a ${urgentGroups.length} ${plural(urgentGroups.length, "proveedor", "proveedores")}`
+                    : "Nada urgente, pero podés ir adelantando pedidos"}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {urgentProducts > 0
+                    ? `${urgentProducts} ${plural(urgentProducts, "producto se acaba", "productos se acaban")} antes de que llegue un pedido nuevo. Los demás pueden esperar.`
+                    : "Todo lo que sugerimos todavía te alcanza unos días."}
+                </p>
+              </div>
+              <Button size="lg" onClick={start}>
+                {toOrder > 1 ? `Empezar a pedir · 1 de ${toOrder}` : "Empezar a pedir"}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
 
-      {tab === "pedir" && (
-        <div className="space-y-5">
-          {groups.length === 0 ? (
-            <Card className="p-6">
-              <p className="text-lg font-bold text-foreground">No hace falta pedir nada por ahora</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                El stock alcanza para lo que venís vendiendo. Cuando haga falta, te lo avisamos acá.
-              </p>
-            </Card>
-          ) : (
-            <Card className="px-5 pb-2 pt-5">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <span
+            <div className="mt-5 space-y-3">
+              <Totals groups={groups} pendingCount={pendingCount} />
+              <SpendChart groups={groups} />
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <div className="relative min-w-[13rem] flex-1">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar producto o proveedor…"
+                  aria-label="Buscar producto o proveedor"
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex gap-0.5 rounded-xl border border-border bg-muted/40 p-0.5" role="group" aria-label="Urgencia">
+                {(
+                  [
+                    ["todos", "Todos"],
+                    ["hoy", "Para hoy"],
+                    ["semana", "Esta semana"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setUrgencyFilter(value)}
+                    aria-pressed={urgencyFilter === value}
                     className={cn(
-                      "text-5xl font-extrabold leading-none",
-                      urgentProducts > 0 ? "text-danger" : "text-foreground"
+                      "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                      urgencyFilter === value
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    {urgentProducts > 0 ? urgentProducts : groups.reduce((n, g) => n + g.rows.length, 0)}
-                  </span>
-                  <div>
-                    <p className="text-xl font-extrabold text-foreground">
-                      {urgentProducts > 0
-                        ? `${plural(urgentProducts, "producto", "productos")} para pedir hoy`
-                        : "productos para ir pidiendo esta semana"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {`a ${toOrder} ${plural(toOrder, "proveedor", "proveedores")}`}
-                      {urgentProducts > 0
-                        ? " · si no los pedís, se te acaban antes de que llegue el pedido"
-                        : " · todavía te alcanzan unos días"}
-                    </p>
-                  </div>
-                </div>
-                <Button size="lg" onClick={start}>
-                  {toOrder > 1 ? `Empezar a pedir · 1 de ${toOrder}` : "Empezar a pedir"}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <ol className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                {["Revisá lo que sugerimos", "Mandalo por WhatsApp", "Cuando llegue, cargá la compra"].map((label, i) => (
-                  <li key={label} className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white",
-                        i === 0 ? "bg-primary" : "bg-muted-foreground/40"
-                      )}
-                    >
-                      {i + 1}
-                    </span>
                     {label}
-                    {i < 2 && <span aria-hidden className="ml-1 hidden h-px w-6 bg-border sm:block" />}
-                  </li>
+                  </button>
                 ))}
-              </ol>
-
-              <div className="mt-5 space-y-3 border-t border-border pt-5">
-                <Totals groups={groups} pendingCount={pendingCount} />
-                <SpendChart groups={groups} />
               </div>
-
-              <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
-                <div className="relative min-w-[13rem] flex-1">
-                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar producto o proveedor…"
-                    aria-label="Buscar producto o proveedor"
-                    className="pl-10"
-                  />
-                </div>
-                <div className="flex gap-0.5 rounded-xl border border-border bg-muted/40 p-0.5" role="group" aria-label="Urgencia">
-                  {(
-                    [
-                      ["todos", "Todos"],
-                      ["hoy", "Para hoy"],
-                      ["semana", "Esta semana"],
-                    ] as const
-                  ).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setUrgencyFilter(value)}
-                      aria-pressed={urgencyFilter === value}
-                      className={cn(
-                        "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                        urgencyFilter === value
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <Select
-                  value={supplierFilter}
-                  onChange={(e) => setSupplierFilter(e.target.value)}
-                  aria-label="Filtrar por proveedor"
-                  className="sm:w-48"
+              <Select
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+                aria-label="Filtrar por proveedor"
+                className="sm:w-48"
+              >
+                <option value="">Todos los proveedores</option>
+                {groups.map((g) => (
+                  <option key={g.key} value={g.key}>
+                    {g.supplierName}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as "urgencia" | "monto" | "nombre")}
+                aria-label="Ordenar"
+                className="sm:w-44"
+              >
+                <option value="urgencia">Más urgente primero</option>
+                <option value="monto">Mayor monto primero</option>
+                <option value="nombre">Por nombre</option>
+              </Select>
+              {filtersActive && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("");
+                    setUrgencyFilter("todos");
+                    setSupplierFilter("");
+                  }}
                 >
-                  <option value="">Todos los proveedores</option>
-                  {groups.map((g) => (
-                    <option key={g.key} value={g.key}>
-                      {g.supplierName}
-                    </option>
-                  ))}
-                </Select>
-                <Select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as "urgencia" | "monto" | "nombre")}
-                  aria-label="Ordenar"
-                  className="sm:w-44"
-                >
-                  <option value="urgencia">Más urgente primero</option>
-                  <option value="monto">Mayor monto primero</option>
-                  <option value="nombre">Por nombre</option>
-                </Select>
-                {filtersActive && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSearch("");
-                      setUrgencyFilter("todos");
-                      setSupplierFilter("");
-                    }}
-                  >
-                    Limpiar
-                  </Button>
-                )}
-              </div>
-
-              {visible.length === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  No hay nada que coincida con esa búsqueda o esos filtros.
-                </p>
-              ) : (
-                <>
-                  {visibleUrgent.length > 0 && (
-                    <div className="mt-4">
-                      <p className="pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                        {sort === "urgencia" ? "Ordenados por urgencia" : "Con productos para hoy"}
-                      </p>
-                      {visibleUrgent.map((v) => (
-                        <SupplierRow
-                          key={v.group.key}
-                          group={v.group}
-                          matches={v.focus || urgencyFilter !== "todos" ? v.matches : undefined}
-                          onOpen={() => openGroup(v.group.key)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {visibleCalm.length > 0 && (
-                    <div className="mt-2">
-                      <p className="border-t border-border pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                        {visibleUrgent.length > 0 ? "Sin apuro · esta semana" : "Esta semana"}
-                      </p>
-                      {visibleCalm.map((v) => (
-                        <SupplierRow
-                          key={v.group.key}
-                          group={v.group}
-                          matches={v.focus || urgencyFilter !== "todos" ? v.matches : undefined}
-                          onOpen={() => openGroup(v.group.key)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
+                  Limpiar
+                </Button>
               )}
-            </Card>
-          )}
+            </div>
+          </Card>
 
-          {groups.some((g) => !g.supplierId) && (
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Truck className="h-3.5 w-3.5" />
-              Asignale un proveedor habitual a tus productos (en Productos) para armar el pedido de cada uno.
+          {visible.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No hay nada que coincida con esa búsqueda o esos filtros.
             </p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {visible.map((v) => (
+                <SupplierCard
+                  key={v.group.key}
+                  group={v.group}
+                  matches={v.focus || urgencyFilter !== "todos" ? v.matches : undefined}
+                  onOpen={() => openGroup(v.group.key)}
+                />
+              ))}
+            </div>
           )}
-          {settingsBlock}
-        </div>
+        </>
       )}
 
-      {tab === "camino" &&
-        (pendingBlock ?? (
-          <Card className="p-6">
-            <p className="font-semibold text-foreground">No tenés pedidos en camino</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Cuando mandes un pedido y lo marques como hecho, lo vas a ver acá hasta que llegue.
-            </p>
-          </Card>
-        ))}
+      {groups.some((g) => !g.supplierId) && (
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Truck className="h-3.5 w-3.5" />
+          Asignale un proveedor habitual a tus productos (en Productos) para armar el pedido de cada uno.
+        </p>
+      )}
 
-      {tab === "precios" && pricesBlock}
+      {pendingBlock}
+      {settingsBlock}
+      {pricesBlock}
     </div>
   );
 }

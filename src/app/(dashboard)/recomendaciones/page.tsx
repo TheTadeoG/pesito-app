@@ -158,7 +158,6 @@ export default async function RecomendacionesPage() {
       orgName={organization.name}
       targetDays={settings.targetDays}
       pendingCount={pendingOrders.length}
-      priceCount={pricesOn ? suggestions.length : 0}
       pendingBlock={pendingBlock}
       pricesBlock={pricesSection}
       settingsBlock={<RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} />}
