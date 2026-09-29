@@ -350,7 +350,17 @@ function SupplierPanel({
               {`Pedido ${progress.index} de ${progress.total}`}
             </span>
           )}
-          <span className="block truncate text-base font-bold text-foreground">{group.supplierName}</span>
+          <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <span className="truncate text-base font-bold text-foreground">{group.supplierName}</span>
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-xs font-bold",
+                hasUrgent ? "bg-danger-bg text-danger" : "bg-amber-500/15 text-amber-600"
+              )}
+            >
+              {hasUrgent ? "Pedilo hoy" : "Pedilo esta semana"}
+            </span>
+          </span>
           <span className="block truncate text-sm text-muted-foreground">
             {open
               ? group.supplierId
@@ -807,6 +817,12 @@ export function RestockFlow({
             <p className="py-6 text-center text-sm text-muted-foreground">No hay nada que coincida con esa búsqueda.</p>
           ) : (
             <Card className="overflow-hidden">
+              {visibleUrgent.length > 0 && (
+                <p className="flex items-center gap-2 bg-danger-bg/40 px-5 py-2 text-xs font-bold uppercase tracking-wide text-danger">
+                  <span className="h-2 w-2 rounded-full bg-danger" />
+                  {`Para pedir hoy · ${visibleUrgent.length} ${plural(visibleUrgent.length, "proveedor", "proveedores")}`}
+                </p>
+              )}
               {visibleUrgent.map((group) => {
                 const index = queue.indexOf(group.key);
                 return (
@@ -823,8 +839,9 @@ export function RestockFlow({
                 );
               })}
               {visibleWeek.length > 0 && (
-                <p className="border-t border-border bg-muted/30 px-5 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  {visibleUrgent.length > 0 ? "Sin apuro · esta semana" : "Esta semana"}
+                <p className="flex items-center gap-2 border-t border-border bg-amber-500/10 px-5 py-2 text-xs font-bold uppercase tracking-wide text-amber-600">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  {`Para pedir esta semana · ${visibleWeek.length} ${plural(visibleWeek.length, "proveedor", "proveedores")}`}
                 </p>
               )}
               {visibleWeek.map((group) => {
