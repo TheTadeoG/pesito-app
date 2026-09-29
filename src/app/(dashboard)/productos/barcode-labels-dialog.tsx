@@ -27,16 +27,27 @@ interface Props {
   products: LabelProduct[];
 }
 
-// Tamaños de etiqueta. "sheet" es una hoja A4 con varias etiquetas (para
-// imprimir en cualquier impresora y recortar); el resto es una etiqueta por
-// página, para etiqueteras térmicas.
+// Tamaños de etiqueta. En "hoja A4" se imprimen tantas como entren en la hoja
+// (para cualquier impresora, y después se recortan); en "rollo" va una
+// etiqueta por página, para etiqueteras térmicas.
 const SIZES = {
-  "50x30": { label: "Etiquetera 50 × 30 mm", width: 50, height: 30, sheet: false },
-  "60x40": { label: "Etiquetera 60 × 40 mm", width: 60, height: 40, sheet: false },
-  "100x50": { label: "Etiquetera 100 × 50 mm", width: 100, height: 50, sheet: false },
-  a4: { label: "Hoja A4 (3 columnas, para recortar)", width: 63, height: 36, sheet: true },
+  "50x30": { label: "50 × 30 mm", width: 50, height: 30 },
+  "60x40": { label: "60 × 40 mm", width: 60, height: 40 },
+  "70x37": { label: "70 × 37 mm", width: 70, height: 37 },
+  "100x50": { label: "100 × 50 mm", width: 100, height: 50 },
 } as const;
 type SizeKey = keyof typeof SIZES;
+type Output = "a4" | "roll";
+
+// Hoja A4 con 5 mm de margen: 200 × 287 mm útiles.
+const SHEET_MARGIN = 5;
+const SHEET_WIDTH = 210 - SHEET_MARGIN * 2;
+const SHEET_HEIGHT = 297 - SHEET_MARGIN * 2;
+function labelsPerSheet(width: number, height: number) {
+  const cols = Math.max(1, Math.floor(SHEET_WIDTH / width));
+  const rows = Math.max(1, Math.floor(SHEET_HEIGHT / height));
+  return { cols, rows, total: cols * rows };
+}
 
 const MAX_LABELS = 2000;
 
@@ -47,6 +58,7 @@ export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copies, setCopies] = useState(1);
   const [size, setSize] = useState<SizeKey>("50x30");
+  const [output, setOutput] = useState<Output>("a4");
   const [showPrice, setShowPrice] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +142,9 @@ export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
   }, [printing]);
 
   const spec = SIZES[size];
+  const sheet = output === "a4";
+  const perSheet = labelsPerSheet(spec.width, spec.height);
+  const sheetsNeeded = Math.ceil(totalLabels / perSheet.total);
   const labels = printing
     ? printable.flatMap((p) =>
         Array.from({ length: Math.max(1, copies) }, (_, i) => ({
@@ -234,7 +249,14 @@ export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="lbl-size">Tamaño</Label>
+              <Label htmlFor="lbl-output">Imprimir en</Label>
+              <Select id="lbl-output" value={output} onChange={(e) => setOutput(e.target.value as Output)}>
+                <option value="a4">Hoja A4 (varias por hoja)</option>
+                <option value="roll">Rollo de etiquetera (una por etiqueta)</option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="lbl-size">Tamaño de la etiqueta</Label>
               <Select id="lbl-size" value={size} onChange={(e) => setSize(e.target.value as SizeKey)}>
                 {Object.entries(SIZES).map(([key, s]) => (
                   <option key={key} value={key}>
@@ -254,6 +276,11 @@ export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
                 onChange={(e) => setCopies(Math.min(500, Math.max(1, Number(e.target.value) || 1)))}
               />
             </div>
+            <p className="self-end pb-2 text-xs text-muted-foreground">
+              {sheet
+                ? `Entran ${perSheet.total} por hoja (${perSheet.cols} × ${perSheet.rows}).${totalLabels > 0 ? ` Necesitás ${sheetsNeeded} hoja${sheetsNeeded === 1 ? "" : "s"}.` : ""}`
+                : "Cada etiqueta sale en su propia página, del tamaño elegido."}
+            </p>
           </div>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
             <input
@@ -286,14 +313,14 @@ export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
               .label-print-root { display: none; }
               @media print {
                 body > *:not(.label-print-root) { display: none !important; }
-                .label-print-root { display: ${spec.sheet ? "grid" : "block"} !important; background: #fff; color: #000; }
-                @page { size: ${spec.sheet ? "A4" : `${spec.width}mm ${spec.height}mm`}; margin: ${spec.sheet ? "8mm" : "0"}; }
+                .label-print-root { display: ${sheet ? "grid" : "block"} !important; background: #fff; color: #000; }
+                @page { size: ${sheet ? "A4" : `${spec.width}mm ${spec.height}mm`}; margin: ${sheet ? `${SHEET_MARGIN}mm` : "0"}; }
                 ${
-                  spec.sheet
-                    ? `.label-print-root { grid-template-columns: repeat(3, ${spec.width}mm); gap: 0; justify-content: center; }`
+                  sheet
+                    ? `.label-print-root { grid-template-columns: repeat(${perSheet.cols}, ${spec.width}mm); grid-auto-rows: ${spec.height}mm; gap: 0; justify-content: start; align-content: start; }`
                     : ""
                 }
-                .label-print-item { width: ${spec.width}mm; height: ${spec.height}mm; box-sizing: border-box; padding: 1.5mm 2mm; overflow: hidden; break-inside: avoid; page-break-after: ${spec.sheet ? "auto" : "always"}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-family: Arial, sans-serif; ${spec.sheet ? "outline: 0.1mm dashed #bbb;" : ""} }
+                .label-print-item { width: ${spec.width}mm; height: ${spec.height}mm; box-sizing: border-box; padding: 1.5mm 2mm; overflow: hidden; break-inside: avoid; page-break-after: ${sheet ? "auto" : "always"}; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-family: Arial, sans-serif; ${sheet ? "outline: 0.1mm dashed #bbb;" : ""} }
                 .label-print-name { font-size: ${spec.height >= 40 ? 10 : 8}pt; font-weight: 700; line-height: 1.1; max-height: 2.3em; overflow: hidden; width: 100%; }
                 .label-print-price { font-size: ${spec.height >= 40 ? 13 : 10}pt; font-weight: 700; margin-top: 0.5mm; }
                 .label-print-item svg { width: 100%; height: auto; max-height: ${Math.round(spec.height * 0.55)}mm; }
