@@ -158,7 +158,9 @@ function Timeline({
 // Pantalla 1: qué pedir hoy
 // ---------------------------------------------------------------------------
 
-function todayRows(group: FlowGroup): FlowRow[] {
+/** Lo que entra en el pedido por defecto: lo de hoy, o todo si se pidió incluir lo de esta semana. */
+function todayRows(group: FlowGroup, includeWeek = false): FlowRow[] {
+  if (includeWeek) return group.rows;
   const urgent = group.rows.filter(isToday);
   return urgent.length > 0 ? urgent : group.rows;
 }
@@ -167,6 +169,7 @@ function SupplierCard({
   group,
   matches,
   skipped,
+  includeWeek,
   onOpen,
 }: {
   group: FlowGroup;
@@ -174,11 +177,13 @@ function SupplierCard({
   matches?: FlowRow[];
   /** Se salteó en esta vuelta de "Empezar a pedir". */
   skipped?: boolean;
+  /** Incluir en el pedido también lo que todavía alcanza unos días. */
+  includeWeek?: boolean;
   onOpen: () => void;
 }) {
   const urgent = group.rows.filter(isToday);
   const hasUrgent = urgent.length > 0;
-  const main = todayRows(group);
+  const main = todayRows(group, includeWeek);
   const listed = matches && matches.length > 0 ? matches : main;
   const shown = listed.slice(0, 2);
   const rest = (matches && matches.length > 0 ? matches.length : group.rows.length) - shown.length;
@@ -228,7 +233,7 @@ function SupplierCard({
       </ul>
       {rest > 0 && (
         <p className="mt-1 text-xs text-muted-foreground">
-          {`y ${rest} ${plural(rest, "producto más", "productos más")}${hasUrgent && !matches ? " que pueden esperar" : ""}`}
+          {`y ${rest} ${plural(rest, "producto más", "productos más")}${hasUrgent && !matches && !includeWeek ? " que pueden esperar" : ""}`}
         </p>
       )}
 
@@ -382,8 +387,11 @@ function OrderSheet({
   onDone,
   onSkip,
   progress,
+  includeWeek,
 }: {
   group: FlowGroup;
+  /** Arrancar con todo incluido (también lo que alcanza unos días). */
+  includeWeek: boolean;
   /** Para elegir a quién se le pide cuando los productos no tienen proveedor habitual. */
   suppliers: SupplierOption[];
   orgName: string;
@@ -409,7 +417,7 @@ function OrderSheet({
   const leadDays = leadDaysValue ?? 0;
   // Por defecto entra lo que hay que pedir hoy (o todo, si nada es urgente).
   const [included, setIncluded] = useState<Set<string>>(
-    () => new Set(todayRows(group).map((r) => r.id))
+    () => new Set(todayRows(group, includeWeek).map((r) => r.id))
   );
   const [amounts, setAmounts] = useState<Record<string, number>>({});
   const [showRest, setShowRest] = useState(false);
@@ -824,6 +832,8 @@ export function RestockFlow({
   // Proveedores salteados en esta vuelta, y el aviso al terminar.
   const [skipped, setSkipped] = useState<string[]>([]);
   const [skipNotice, setSkipNotice] = useState<string[] | null>(null);
+  // Sumar al pedido también lo que todavía alcanza unos días (esta semana).
+  const [includeWeek, setIncludeWeek] = useState(false);
   // Buscador y filtros de los proveedores.
   const [search, setSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState<"todos" | "hoy" | "semana">("todos");
@@ -833,7 +843,11 @@ export function RestockFlow({
 
   const urgentGroups = groups.filter((g) => g.rows.some(isToday));
   const urgentProducts = groups.reduce((n, g) => n + g.rows.filter(isToday).length, 0);
-  const toOrder = urgentGroups.length > 0 ? urgentGroups.length : groups.length;
+  const weekProducts = groups.reduce((n, g) => n + g.rows.filter((r) => !isToday(r)).length, 0);
+  // Sin urgentes todo es "de esta semana", así que el interruptor sólo hace falta si hay de las dos.
+  const canIncludeWeek = urgentProducts > 0 && weekProducts > 0;
+  const withWeek = includeWeek && canIncludeWeek;
+  const toOrder = urgentGroups.length > 0 && !withWeek ? urgentGroups.length : groups.length;
 
   const query = normalize(search.trim());
   const filtersActive = query !== "" || urgencyFilter !== "todos" || supplierFilter !== "";
@@ -863,7 +877,7 @@ export function RestockFlow({
     });
 
   function start() {
-    const keys = (urgentGroups.length > 0 ? urgentGroups : groups).map((g) => g.key);
+    const keys = (urgentGroups.length > 0 && !withWeek ? urgentGroups : groups).map((g) => g.key);
     setQueue(keys);
     setSkipped([]);
     setSkipNotice(null);
@@ -909,6 +923,7 @@ export function RestockFlow({
       <OrderSheet
         key={active.key}
         group={active}
+        includeWeek={withWeek}
         suppliers={suppliers}
         orgName={orgName}
         targetDays={targetDays}
@@ -968,6 +983,37 @@ export function RestockFlow({
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
+
+            {canIncludeWeek && (
+              <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/40 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Pedir también lo de esta semana
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {`${weekProducts} ${plural(weekProducts, "producto más que todavía alcanza", "productos más que todavía alcanzan")} unos días. Activado, entran en cada pedido y en "Empezar a pedir".`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={withWeek}
+                  aria-label="Pedir también lo de esta semana"
+                  onClick={() => setIncludeWeek((v) => !v)}
+                  className={cn(
+                    "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                    withWeek ? "bg-primary" : "bg-muted-foreground/30"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                      withWeek ? "translate-x-5" : "translate-x-0.5"
+                    )}
+                  />
+                </button>
+              </div>
+            )}
 
             <div className="mt-5 space-y-3">
               <Totals groups={groups} pendingCount={pendingCount} />
@@ -1060,6 +1106,7 @@ export function RestockFlow({
                   group={v.group}
                   matches={v.focus || urgencyFilter !== "todos" ? v.matches : undefined}
                   skipped={skipNotice?.includes(v.group.supplierName)}
+                  includeWeek={withWeek}
                   onOpen={() => openGroup(v.group.key)}
                 />
               ))}
