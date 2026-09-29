@@ -897,10 +897,10 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
 
       {lostTotal > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
-          <ChartCard title="Qué pasa si no pedís" hint={`Estimado para los próximos ${HORIZON} días`}>
+          <ChartCard title="Qué pasa si no pedís" hint={`Estimación para los próximos ${HORIZON} días`}>
             <p className="flex flex-wrap items-baseline gap-x-2">
               <span className="text-3xl font-extrabold text-danger">{formatCurrency(lostTotal)}</span>
-              <span className="text-sm text-muted-foreground">en ventas que dejarías de hacer</span>
+              <span className="text-sm text-muted-foreground">en ventas que podrías perder</span>
             </p>
             <ul className="mt-3 space-y-2">
               {lostBySupplier.map((r) => (
@@ -913,9 +913,18 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Lo que vendés por día × los días que te quedarías sin mercadería, al precio de venta.
-            </p>
+            <div className="mt-3 rounded-lg bg-muted/60 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              <p>
+                <span className="font-semibold text-foreground">Es una estimación, no un dato exacto.</span> Para cada
+                producto que se te acaba en los próximos 7 días, contamos los días que quedaría sin stock y
+                multiplicamos por lo que vendés por día y por su precio.
+              </p>
+              <p className="mt-1">
+                Ejemplo: vendés 5 por día a $ 1.000 y te alcanza para 2 días. En los 5 días siguientes sin stock
+                dejarías de vender 5 × 5 × $ 1.000 = $ 25.000.
+              </p>
+              <p className="mt-1">Puede ser menos si tus clientes se llevan otra cosa en su lugar.</p>
+            </div>
           </ChartCard>
 
           <ChartCard title="Los que más vendés y se te acaban" hint="Los que más duelen si faltan">
