@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { Minus, Plus } from "lucide-react";
 import { useToast } from "@/components/toast/toast-provider";
 import { updateRestockSettings } from "@/app/(dashboard)/recomendaciones/actions";
@@ -9,6 +9,11 @@ import type { RestockSettings } from "@/lib/product-insights";
 const EXAMPLE_PER_DAY = 1;
 const EXAMPLE_LEAD = 3;
 const EXAMPLE_STOCK = 2;
+
+// Valor que se edita arriba, resaltado dentro del ejemplo.
+function Edited({ children }: { children: ReactNode }) {
+  return <b className="rounded bg-primary/15 px-1 font-extrabold text-primary">{children}</b>;
+}
 
 // Número con − y +: se ve a la legua que se puede cambiar.
 function DaysStepper({
@@ -168,10 +173,16 @@ export function RestockSettingsBar({
         <div className="mt-3 rounded-xl border border-primary/20 bg-accent/50 px-4 py-3 text-sm text-foreground">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ejemplo con estos números</p>
           <p className="mt-1.5">
-            {`Vendés ${EXAMPLE_PER_DAY} por día (mirando ${windowDays} días), el proveedor entrega en ${EXAMPLE_LEAD} días y tenés ${EXAMPLE_STOCK}:`}
+            {`Vendés ${EXAMPLE_PER_DAY} por día (mirando `}
+            <Edited>{`${windowDays} días`}</Edited>
+            {`), el proveedor entrega en ${EXAMPLE_LEAD} días y tenés ${EXAMPLE_STOCK}:`}
           </p>
           <p className="mt-1.5 leading-relaxed">
-            {`Cubrir ${targetDays} + ${EXAMPLE_LEAD} de espera + ${safetyDays} de reserva = ${totalDays} días`}
+            {"Cubrir "}
+            <Edited>{targetDays}</Edited>
+            {` + ${EXAMPLE_LEAD} de espera + `}
+            <Edited>{safetyDays}</Edited>
+            {` de reserva = ${totalDays} días`}
             <br />
             {`Necesitás ${EXAMPLE_PER_DAY} × ${totalDays} = ${need}, y tenés ${EXAMPLE_STOCK}`}
             <br />
