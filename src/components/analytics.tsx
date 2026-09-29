@@ -7,7 +7,8 @@ import { usePathname } from "next/navigation";
 // (ventas, clientes, plata) nunca se mide ni se graba: Clarity graba pantallas.
 // Los IDs vienen de variables de entorno; sin ID, no se carga nada.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
-const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID;
+// El ID de Clarity es público (va en el código de la página); la variable de entorno tiene prioridad.
+const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID || "ypq5dy1wzx";
 
 const PUBLIC_PATHS = [
   "/blog",
