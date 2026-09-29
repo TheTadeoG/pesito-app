@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, Search, SkipForward, Truck, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, SkipForward, Truck, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/toast/toast-provider";
 import { createRestockOrder } from "@/app/(dashboard)/recomendaciones/actions";
@@ -833,13 +832,6 @@ function rowCost(row: FlowRow): number {
 function groupCost(rows: FlowRow[]): number {
   return rows.reduce((n, r) => n + rowCost(r), 0);
 }
-function normalize(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
 /** Cuánto se pediría a cada proveedor, separando lo de hoy de lo de esta semana. */
 function SpendChart({ groups }: { groups: FlowGroup[] }) {
   const rows = groups
@@ -909,7 +901,6 @@ export function RestockFlow({
   // Proveedores salteados en esta vuelta, y el aviso al terminar.
   const [skipped, setSkipped] = useState<string[]>([]);
   const [skipNotice, setSkipNotice] = useState<string[] | null>(null);
-  const [search, setSearch] = useState("");
   const active = groups.find((g) => g.key === activeKey) ?? null;
 
   const urgentGroups = groups.filter((g) => g.rows.some(isToday));
@@ -919,17 +910,7 @@ export function RestockFlow({
   const weekProducts = weekGroups.reduce((n, g) => n + g.rows.length, 0);
   const weekCost = weekGroups.reduce((n, g) => n + groupCost(g.rows), 0);
 
-  const query = normalize(search.trim());
-  const visible = groups
-    .map((g) => {
-      const supplierMatch = query !== "" && normalize(g.supplierName).includes(query);
-      const matches =
-        query === "" || supplierMatch
-          ? g.rows
-          : g.rows.filter((r) => normalize(`${r.name} ${r.brand ?? ""}`).includes(query));
-      return { group: g, matches, focus: query !== "" && !supplierMatch };
-    })
-    .filter((v) => v.matches.length > 0);
+  const visible = groups.map((g) => ({ group: g, matches: g.rows, focus: false }));
   const visibleUrgent = visible.filter((v) => v.group.rows.some(isToday));
   const visibleWeek = visible.filter((v) => !v.group.rows.some(isToday));
 
@@ -1122,24 +1103,12 @@ export function RestockFlow({
               <SpendChart groups={groups} />
             </div>
 
-            <div className="mt-5 flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar producto o proveedor…"
-                  aria-label="Buscar producto o proveedor"
-                  className="pl-10"
-                />
-              </div>
-            </div>
             {settingsBlock}
           </Card>
 
           {visible.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No hay nada que coincida con esa búsqueda.
+              Por ahora no hay nada para pedir.
             </p>
           ) : (
             <>
