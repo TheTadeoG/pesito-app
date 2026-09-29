@@ -4,6 +4,7 @@ import { fetchAll } from "@/lib/supabase/fetch-all";
 import { getBranchContext, withBranchStock } from "@/lib/branches";
 import { getSubscription } from "@/lib/subscription";
 import { canUse } from "@/lib/plan-access";
+import { loadPendingOrders } from "@/lib/restock-orders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComprasClient } from "@/app/(dashboard)/compras/compras-client";
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
@@ -13,9 +14,9 @@ const RECENT_PURCHASES_LIMIT = 20;
 export default async function ComprasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ producto?: string }>;
+  searchParams: Promise<{ producto?: string; pedido?: string }>;
 }) {
-  const { producto: preselectedProductId } = await searchParams;
+  const { producto: preselectedProductId, pedido: restockOrderId } = await searchParams;
   const { userId, organization } = await requireOrgContext();
   const supabase = await createClient();
 
@@ -108,6 +109,21 @@ export default async function ComprasPage({
     accountAmount: purchase.account_amount,
   }));
 
+  // "Llegó → cargar la compra" desde Recomendaciones: la compra arranca con
+  // los productos y cantidades que faltaban recibir de ese pedido.
+  let prefill: { supplierId: string | null; lines: { productId: string; quantity: number }[] } | null = null;
+  if (restockOrderId) {
+    const order = (await loadPendingOrders(supabase, organization.id)).find((o) => o.id === restockOrderId);
+    if (order) {
+      prefill = {
+        supplierId: order.supplierId,
+        lines: order.items
+          .map((i) => ({ productId: i.productId, quantity: i.quantity - i.received }))
+          .filter((l) => l.quantity > 0),
+      };
+    }
+  }
+
   return (
     <div className="space-y-6">
       <ComprasClient
@@ -126,6 +142,7 @@ export default async function ComprasPage({
           "supplierAccounts"
         )}
         preselectedProductId={preselectedProductId ?? null}
+        prefill={prefill}
       />
 
       <Card>

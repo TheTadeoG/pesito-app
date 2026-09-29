@@ -1,4 +1,3 @@
-import { Truck } from "lucide-react";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { getBranchContext } from "@/lib/branches";
@@ -19,7 +18,6 @@ import {
 } from "@/lib/product-insights";
 import { PriceSuggestions } from "@/app/(dashboard)/recomendaciones/price-suggestions";
 import { RestockSettingsPanel } from "@/app/(dashboard)/recomendaciones/restock-settings";
-import { PendingOrderCard } from "@/app/(dashboard)/recomendaciones/restock-orders";
 import { RestockFlow } from "@/app/(dashboard)/recomendaciones/restock-flow";
 import { buildFlowGroups, buildSupplierOptions } from "@/lib/restock-view";
 
@@ -69,38 +67,20 @@ export default async function RecomendacionesPage() {
 
   const flowGroups = buildFlowGroups(groups, base, settings);
 
-  // Lo que ya se pidió y no llegó (0053): se ve en la pantalla de inicio.
-  const pendingBlock =
-    pendingOrders.length > 0 ? (
-      <div className="space-y-2">
-        <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Truck className="h-4 w-4 text-muted-foreground" />
-          {`En camino (${pendingOrders.length})`}
-        </p>
-        {pendingOrders.map((order) => (
-          <PendingOrderCard
-            key={order.id}
-            order={{
-              id: order.id,
-              supplierName: base.supplierNames.get(order.supplierId) ?? "Proveedor",
-              createdLabel: formatDate(order.createdAt),
-              expectedLabel: order.expectedAt ? formatDate(order.expectedAt) : null,
-              overdue: isOrderOverdue(order),
-              items: order.items
-                .filter((i) => i.quantity - i.received > 0)
-                .map((i) => {
-                  const unit = base.products.find((p) => p.id === i.productId)?.unit ?? "u";
-                  return { name: i.name, remaining: formatQty(i.quantity - i.received, unit) };
-                }),
-            }}
-          />
-        ))}
-        <p className="text-xs text-muted-foreground">
-          Se cierran solos cuando cargás una compra a ese proveedor. Lo que ya viene en camino no se
-          vuelve a sugerir.
-        </p>
-      </div>
-    ) : null;
+  // Lo que ya se pidió y no llegó (0053): pestaña "Esperando".
+  const pendingViews = pendingOrders.map((order) => ({
+    id: order.id,
+    supplierName: base.supplierNames.get(order.supplierId) ?? "Proveedor",
+    createdLabel: formatDate(order.createdAt),
+    expectedLabel: order.expectedAt ? formatDate(order.expectedAt) : null,
+    overdue: isOrderOverdue(order),
+    items: order.items
+      .filter((i) => i.quantity - i.received > 0)
+      .map((i) => {
+        const unit = base.products.find((p) => p.id === i.productId)?.unit ?? "u";
+        return { name: i.name, remaining: formatQty(i.quantity - i.received, unit) };
+      }),
+  }));
 
   const pricesSection = (
     <section className="space-y-3">
@@ -157,11 +137,9 @@ export default async function RecomendacionesPage() {
       groups={flowGroups}
       suppliers={buildSupplierOptions(base)}
       orgName={organization.name}
-      targetDays={settings.targetDays}
-      pendingCount={pendingOrders.length}
-      pendingBlock={pendingBlock}
+      pending={pendingViews}
+      settingsBlock={<RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} defaultOpen />}
       pricesBlock={pricesSection}
-      settingsBlock={<RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} />}
     />
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -52,11 +53,15 @@ export function PendingOrderCard({ order }: { order: PendingOrderView }) {
             <p className="text-xs font-medium text-danger">Ya pasó la fecha estimada: fijate si llegó.</p>
           )}
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={() => close("recibido")} disabled={pending}>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Link
+            href={`/compras?pedido=${order.id}`}
+            prefetch={false}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover"
+          >
             <Check className="h-3.5 w-3.5" />
-            Llegó
-          </Button>
+            Llegó → cargar la compra
+          </Link>
           <Button variant="ghost" size="sm" onClick={() => close("cancelado")} disabled={pending}>
             <X className="h-3.5 w-3.5" />
             Cancelar
@@ -71,6 +76,14 @@ export function PendingOrderCard({ order }: { order: PendingOrderView }) {
           </li>
         ))}
       </ul>
+      <button
+        type="button"
+        onClick={() => close("recibido")}
+        disabled={pending}
+        className="mt-1.5 block text-xs text-muted-foreground hover:text-foreground hover:underline disabled:opacity-60"
+      >
+        Llegó, pero no lo voy a cargar como compra
+      </button>
       {order.items.length > 3 && (
         <button
           type="button"

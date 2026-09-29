@@ -14,12 +14,15 @@ import type { RestockSettings } from "@/lib/product-insights";
 export function RestockSettingsPanel({
   settings,
   canEdit,
+  defaultOpen = false,
 }: {
   settings: RestockSettings;
   canEdit: boolean;
+  /** Arranca desplegado (cuando se llega con el engranaje). */
+  defaultOpen?: boolean;
 }) {
   const { showSuccess, showWarning } = useToast();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [target, setTarget] = useState(String(settings.targetDays));
   const [window, setWindow] = useState(String(settings.windowDays));
   const [safety, setSafety] = useState(String(settings.safetyDays));

@@ -103,7 +103,9 @@ export interface RestockOrderInput {
  * Guarda un pedido hecho a un proveedor ("Ya lo pedí"): mientras está en
  * camino, la recomendación no vuelve a sugerir esos productos.
  */
-export async function createRestockOrder(input: RestockOrderInput): Promise<{ error?: string }> {
+export async function createRestockOrder(
+  input: RestockOrderInput
+): Promise<{ error?: string; orderId?: string }> {
   const { organization, userId } = await requireOrgContext();
   const supabase = await createClient();
   if (!canUse(await getSubscription(supabase, organization.id), "restockRecommendations")) {
@@ -164,7 +166,7 @@ export async function createRestockOrder(input: RestockOrderInput): Promise<{ er
   }
 
   revalidatePath("/recomendaciones");
-  return {};
+  return { orderId: order.id };
 }
 
 /** Cierra a mano un pedido en camino: llegó completo o se canceló. */

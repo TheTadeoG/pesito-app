@@ -105,6 +105,8 @@ interface ComprasClientProps {
   supplierAccountsEnabled: boolean;
   // Viene de tocar "Comprar" en el aviso de stock bajo de Productos.
   preselectedProductId?: string | null;
+  // Viene de "Llegó → cargar la compra" en Recomendaciones (pedido en camino).
+  prefill?: { supplierId: string | null; lines: { productId: string; quantity: number }[] } | null;
 }
 
 export function ComprasClient({
@@ -115,6 +117,7 @@ export function ComprasClient({
   customPaymentMethods,
   supplierAccountsEnabled,
   preselectedProductId,
+  prefill,
 }: ComprasClientProps) {
   const paymentMethodOptions = useMemo(
     () => paymentMethodOptionsWithCustom(customPaymentMethods, supplierAccountsEnabled),
@@ -248,6 +251,19 @@ export function ComprasClient({
     router.replace("/compras");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preselectedProductId]);
+
+  useEffect(() => {
+    if (!prefill) return;
+    for (const line of prefill.lines) {
+      const product = localProducts.find((p) => p.id === line.productId);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (product) addProduct(product, line.quantity);
+    }
+    if (prefill.supplierId) setSupplierId(prefill.supplierId);
+    // Se limpia el query param para que un refresh no vuelva a cargarlo.
+    router.replace("/compras");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill]);
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
