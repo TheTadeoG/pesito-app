@@ -167,9 +167,9 @@ export function RestockSettingsBar({
         <div className="mt-3 rounded-xl border border-primary/20 bg-accent/50 px-4 py-3 text-sm text-foreground">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ejemplo con estos números</p>
           <p className="mt-1.5">
-            {`Vendés ${EXAMPLE_PER_DAY} por día (mirando `}
+            {`Un producto que vendés ${EXAMPLE_PER_DAY} unidad por día (mirando `}
             <Edited>{`${windowDays} días`}</Edited>
-            {`), el proveedor entrega en ${EXAMPLE_LEAD} días y tenés ${EXAMPLE_STOCK}:`}
+            {`). El proveedor tarda ${EXAMPLE_LEAD} días en entregar y hoy te quedan ${EXAMPLE_STOCK} unidades:`}
           </p>
           <p className="mt-1.5 leading-relaxed">
             {"Te tiene que durar "}
@@ -178,9 +178,9 @@ export function RestockSettingsBar({
             <Edited>{safetyDays}</Edited>
             {` extra = ${totalDays} días`}
             <br />
-            {`Necesitás ${EXAMPLE_PER_DAY} × ${totalDays} = ${need}, y tenés ${EXAMPLE_STOCK}`}
+            {`Necesitás ${EXAMPLE_PER_DAY} × ${totalDays} = ${need} unidades, y ya tenés ${EXAMPLE_STOCK}`}
             <br />
-            <span className="font-bold text-primary">{`→ Pedirías ${toBuy}`}</span>
+            <span className="font-bold text-primary">{`→ Pedirías ${toBuy} unidades`}</span>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             El plazo de entrega se carga en cada proveedor y las unidades por bulto en cada producto.
