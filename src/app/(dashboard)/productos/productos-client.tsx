@@ -19,6 +19,7 @@ import {
   Receipt,
   ScanBarcode,
   Search,
+  ShoppingCart,
   SlidersHorizontal,
   Trash2,
   TrendingUp,
@@ -53,6 +54,9 @@ import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import type { Plan } from "@/lib/subscription";
 
 type SupplierOption = Pick<Supplier, "id" | "name">;
+
+// Cuántos productos con stock bajo se listan en Alertas.
+const ALERT_STOCK_ROWS = 5;
 
 const COLUMNS = [
   { id: "brand", label: "Marca" },
@@ -151,6 +155,7 @@ export function ProductosClient({
   importLocked,
   labelsLocked,
   canManageCatalog,
+  restockLocked,
 }: {
   orgId: string;
   products: Product[];
@@ -172,6 +177,8 @@ export function ProductosClient({
   labelsLocked: boolean;
   /** Sólo quien administra el negocio carga o imprime en masa. */
   canManageCatalog: boolean;
+  /** Sin recomendaciones de reposición (Plan IA): "Comprar" va a Compras en vez de a Recomendaciones. */
+  restockLocked: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -266,6 +273,18 @@ export function ProductosClient({
   // campanita), pero la lista queda bloqueada con el plan que la trae.
   const lowStockProducts = useMemo(() => products.filter(isLowStock), [products]);
   const lowStockCount = lowStockProducts.length;
+  // Para el aviso de alertas: primero lo más urgente (sin stock y lo más
+  // lejos del mínimo), y sólo unos pocos; el resto se ve en Comprar.
+  const lowStockTop = useMemo(
+    () =>
+      [...lowStockProducts]
+        .sort(
+          (a, b) =>
+            a.stock / Math.max(a.min_stock, 1) - b.stock / Math.max(b.min_stock, 1) || a.stock - b.stock
+        )
+        .slice(0, ALERT_STOCK_ROWS),
+    [lowStockProducts]
+  );
   const lossProducts = useMemo(
     () => products.filter(isSellingAtLoss),
     [products],
@@ -1029,39 +1048,64 @@ export function ProductosClient({
                 {`${lowStockProducts.length === 1 ? "Hay 1 producto" : `Hay ${lowStockProducts.length} productos`} por debajo del stock mínimo. Con el Plan Esencial ves cuáles son y te avisamos a tiempo para reponer.`}
               </PlanLockNote>
             ) : (
-              <div className="divide-y divide-border rounded-xl border border-border">
-                {lowStockProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {product.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Stock:{" "}
-                        <span className="font-medium text-danger">
-                          {product.stock}
-                          {product.unit}
-                        </span>
-                        {" · "}Mínimo: {product.min_stock}
-                        {product.unit}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setAdjusting(product);
-                        setAlertsOpen(false);
-                      }}
+              <div>
+                <div className="divide-y divide-border rounded-xl border border-border">
+                  {lowStockTop.map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
                     >
-                      <SlidersHorizontal className="h-3.5 w-3.5" />
-                      Ajustar
-                    </Button>
-                  </div>
-                ))}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Stock:{" "}
+                          <span className="font-medium text-danger">
+                            {product.stock}
+                            {product.unit}
+                          </span>
+                          {" · "}Mínimo: {product.min_stock}
+                          {product.unit}
+                        </p>
+                      </div>
+                      <Link
+                        href={restockLocked ? "/compras" : "/recomendaciones"}
+                        prefetch={false}
+                        onClick={() => setAlertsOpen(false)}
+                        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                      >
+                        <ShoppingCart className="h-3.5 w-3.5" />
+                        Comprar
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {lowStockProducts.length > lowStockTop.length
+                      ? `Se muestran los ${lowStockTop.length} más urgentes de ${lowStockProducts.length}.`
+                      : ""}
+                  </p>
+                  <Link
+                    href={restockLocked ? "/compras" : "/recomendaciones"}
+                    prefetch={false}
+                    onClick={() => setAlertsOpen(false)}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    {restockLocked
+                      ? "Ir a Compras"
+                      : lowStockProducts.length > lowStockTop.length
+                        ? `Ver las ${lowStockProducts.length} recomendaciones de compra`
+                        : "Ver recomendaciones de compra"}
+                  </Link>
+                </div>
+                {restockLocked && (
+                  <PlanLockNote plan="ia">
+                    Con el Plan IA ves cuánto comprar de cada producto y a qué proveedor, con el pedido
+                    listo para mandar por WhatsApp.
+                  </PlanLockNote>
+                )}
               </div>
             )}
           </div>

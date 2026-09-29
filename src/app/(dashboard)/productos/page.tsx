@@ -144,6 +144,7 @@ export default async function ProductosPage({
         importLocked={!canUse(subscription, "productImport")}
         labelsLocked={!canUse(subscription, "barcodeLabels")}
         canManageCatalog={isOrgAdmin(membership.role)}
+        restockLocked={!canUse(subscription, "restockRecommendations")}
       />
     );
   }
