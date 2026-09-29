@@ -132,20 +132,15 @@ export function RestockSettingsBar({
     ) : (
       <b>{`${shown} días`}</b>
     );
-  const op = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const words = (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-foreground">
-      <span className={op}>Cuánto pedir</span>
-      <span>Que me dure</span>
-      {stepper("Días que tiene que durar la mercadería", target, setTarget, settings.targetDays, 1, 90)}
-      <span className="text-lg font-bold text-muted-foreground">+</span>
-      <span>colchón</span>
-      {stepper("Días de colchón", safety, setSafety, settings.safetyDays, 0, 30)}
-      <span className="text-lg font-bold text-muted-foreground">=</span>
-      <b>{`${targetDays + safetyDays} días`}</b>
-      <span className="text-muted-foreground">(+ lo que tarda cada proveedor)</span>
-      <span className="text-muted-foreground">·</span>
-      <span>ventas de los últimos</span>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm text-foreground">
+      <span className="font-bold">¿Cuánto pedir?</span>
+      <span>Lo suficiente para vender</span>
+      {stepper("Días de venta que querés tener después de que llegue el pedido", target, setTarget, settings.targetDays, 1, 90)}
+      <span>después de que llegue el pedido, más</span>
+      {stepper("Días extra por si se demora", safety, setSafety, settings.safetyDays, 0, 30)}
+      <span>extra por si se demora.</span>
+      <span>· Miramos tus ventas de los últimos</span>
       {stepper("Días de ventas a mirar", window, setWindow, settings.windowDays, 7, 180)}
     </div>
   );
@@ -181,7 +176,7 @@ export function RestockSettingsBar({
             <Edited>{targetDays}</Edited>
             {` + ${EXAMPLE_LEAD} de espera + `}
             <Edited>{safetyDays}</Edited>
-            {` de colchón = ${totalDays} días`}
+            {` extra = ${totalDays} días`}
             <br />
             {`Necesitás ${EXAMPLE_PER_DAY} × ${totalDays} = ${need}, y tenés ${EXAMPLE_STOCK}`}
             <br />
