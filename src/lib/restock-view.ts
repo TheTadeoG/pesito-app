@@ -29,7 +29,7 @@ export interface FlowRow {
   suggestedAmount: number;
   unitCost: number | null;
   /** Por qué se sugiere esa cantidad, en una frase. */
-  why: string;
+  why: WhyCalc;
 }
 
 export interface FlowGroup {
@@ -57,6 +57,19 @@ export interface SupplierOption {
 
 const MAX_ROWS = 60;
 
+/** La cuenta detrás de la cantidad, lista para mostrarla como renglones. */
+export interface WhyCalc {
+  perDay: string | null;
+  parts: { label: string; days: number }[];
+  totalDays: number;
+  need: string;
+  have: string;
+  onOrder: string | null;
+  buy: string;
+  /** Cuando no hay ventas o manda el stock mínimo. */
+  note: string | null;
+}
+
 export function arrivalLabel(leadDays: number | null, now: Date = new Date()): string | null {
   if (leadDays === null || leadDays <= 0) return null;
   const date = new Date(now.getTime() + leadDays * 24 * 60 * 60 * 1000);
@@ -74,41 +87,45 @@ function days(n: number): string {
   return `${n} día${n === 1 ? "" : "s"}`;
 }
 
-function whyText(row: RestockRow, leadDays: number, settings: RestockSettings): string {
+function whyText(row: RestockRow, leadDays: number, settings: RestockSettings): WhyCalc {
   const { product, perDay, onOrder } = row;
   const stock = Math.max(0, product.stock);
-  const have = `Tenés ${formatQty(stock, product.unit)}${onOrder > 0 ? ` y ya vienen ${formatQty(onOrder, product.unit)} en camino` : ""}`;
   const buy =
     row.packs && row.packSize
       ? `${row.packs} bulto${row.packs === 1 ? "" : "s"} de ${formatQty(row.packSize, product.unit)} (${formatQty(row.suggestedQty, product.unit)})`
       : formatQty(row.suggestedQty, product.unit);
+  const base = {
+    have: formatQty(stock, product.unit),
+    onOrder: onOrder > 0 ? formatQty(onOrder, product.unit) : null,
+    buy,
+  };
 
   if (perDay <= 0) {
-    return `No vendiste este producto en los últimos ${days(settings.windowDays)}, así que usamos el stock mínimo que cargaste (${formatQty(product.min_stock, product.unit)}). ${have}, así que conviene pedir ${buy}.`;
+    return {
+      ...base,
+      perDay: null,
+      parts: [],
+      totalDays: 0,
+      need: formatQty(product.min_stock, product.unit),
+      note: `No vendiste este producto en los últimos ${days(settings.windowDays)}, así que usamos el stock mínimo que cargaste.`,
+    };
   }
-  const waitDays = leadDays + settings.safetyDays;
-  const raw = perDay * (settings.targetDays + waitDays);
-  const wanted = Math.max(raw, product.min_stock);
-  const lines = [`Vendés unos ${formatQty(perDay, product.unit)} por día.`];
-  if (waitDays > 0) {
-    const cause =
-      leadDays > 0 && settings.safetyDays > 0
-        ? `el pedido tarda ${days(leadDays)} en llegar y sumamos ${days(settings.safetyDays)} de margen`
-        : leadDays > 0
-          ? `el pedido tarda ${days(leadDays)} en llegar`
-          : `dejamos ${days(settings.safetyDays)} de margen`;
-    lines.push(`Hasta que llegue, ${cause}: vas a vender unos ${formatQty(perDay * waitDays, product.unit)}.`);
-  }
-  lines.push(
-    `Después querés tener para ${days(settings.targetDays)} más: otros ${formatQty(perDay * settings.targetDays, product.unit)}.`
-  );
-  lines.push(
-    wanted > raw
-      ? `Como tu stock mínimo es ${formatQty(product.min_stock, product.unit)}, apuntamos a tener eso.`
-      : `En total necesitás ${formatQty(wanted, product.unit)}.`
-  );
-  lines.push(`${have}, así que conviene pedir ${buy}.`);
-  return lines.join("\n");
+  const parts = [
+    { label: "Para que te dure después de que llegue", days: settings.targetDays },
+    ...(leadDays > 0 ? [{ label: "Lo que tarda en llegar", days: leadDays }] : []),
+    ...(settings.safetyDays > 0 ? [{ label: "De reserva, por si se demora", days: settings.safetyDays }] : []),
+  ];
+  const totalDays = parts.reduce((n, part) => n + part.days, 0);
+  const raw = perDay * totalDays;
+  const minWins = product.min_stock > raw;
+  return {
+    ...base,
+    perDay: formatQty(perDay, product.unit),
+    parts,
+    totalDays,
+    need: formatQty(Math.max(raw, product.min_stock), product.unit),
+    note: minWins ? `Como tu stock mínimo (${formatQty(product.min_stock, product.unit)}) es mayor, apuntamos a tener eso.` : null,
+  };
 }
 
 export function buildFlowGroups(

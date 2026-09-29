@@ -259,6 +259,54 @@ function SupplierCard({
 // Pantalla 2: armar el pedido a un proveedor
 // ---------------------------------------------------------------------------
 
+function WhyBox({ calc }: { calc: FlowRow["why"] }) {
+  const line = "flex items-baseline justify-between gap-4 py-1";
+  return (
+    <div className="mt-2.5 max-w-md rounded-xl bg-muted/60 px-4 py-3 text-sm text-foreground">
+      {calc.perDay !== null && (
+        <>
+          <div className={line}>
+            <span>Vendés por día</span>
+            <span className="font-semibold">{calc.perDay}</span>
+          </div>
+          <div className="border-t border-border/70 py-1">
+            <p className="py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Días a cubrir</p>
+            {calc.parts.map((part) => (
+              <div key={part.label} className={`${line} text-muted-foreground`}>
+                <span>{`+ ${part.label}`}</span>
+                <span>{`${part.days} ${part.days === 1 ? "día" : "días"}`}</span>
+              </div>
+            ))}
+            <div className={`${line} font-semibold`}>
+              <span>Total</span>
+              <span>{`${calc.totalDays} días`}</span>
+            </div>
+          </div>
+        </>
+      )}
+      <div className={`${line} border-t border-border/70`}>
+        <span>{calc.perDay !== null ? `Necesitás (${calc.perDay} × ${calc.totalDays})` : "Necesitás"}</span>
+        <span className="font-semibold">{calc.need}</span>
+      </div>
+      <div className={line}>
+        <span>− Tenés ahora</span>
+        <span className="font-semibold">{calc.have}</span>
+      </div>
+      {calc.onOrder && (
+        <div className={line}>
+          <span>− Ya viene en camino</span>
+          <span className="font-semibold">{calc.onOrder}</span>
+        </div>
+      )}
+      <div className={`${line} border-t-2 border-border font-bold`}>
+        <span>= Conviene pedir</span>
+        <span className="text-primary">{calc.buy}</span>
+      </div>
+      {calc.note && <p className="mt-1 text-xs text-muted-foreground">{calc.note}</p>}
+    </div>
+  );
+}
+
 function OrderRow({
   row,
   amount,
@@ -377,7 +425,7 @@ function OrderRow({
         </div>
       </div>
       {why && (
-        <div className="mt-2.5 whitespace-pre-line rounded-xl bg-muted/60 px-3.5 py-2.5 text-sm text-foreground">{row.why}</div>
+        <WhyBox calc={row.why} />
       )}
     </div>
   );
