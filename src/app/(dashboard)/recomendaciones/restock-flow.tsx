@@ -486,6 +486,14 @@ function OrderSheet({
 
   return (
     <div className="space-y-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Volver a la lista
+      </button>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <Card className="p-5">
           <div className="flex items-start justify-between gap-3">
@@ -502,22 +510,15 @@ function OrderSheet({
                   : "Cargale el plazo de entrega al proveedor para saber cuándo llega."}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-3">
-              {onSkip && (
+            {onSkip && (
+              <div className="shrink-0 text-right">
                 <Button variant="outline" size="sm" onClick={onSkip}>
+                  Saltear y seguir con el próximo
                   <SkipForward className="h-3.5 w-3.5" />
-                  Saltear este proveedor
                 </Button>
-              )}
-              <button
-                type="button"
-                onClick={onBack}
-                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Volver
-              </button>
-            </div>
+                <p className="mt-1 text-xs text-muted-foreground">No pedirle nada ahora</p>
+              </div>
+            )}
           </div>
 
           {inToday.length > 0 && (
