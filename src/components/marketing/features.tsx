@@ -98,9 +98,9 @@ export function Features() {
       </div>
 
       <StaggerIn className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        {/* Cobro: la celda alta de la izquierda */}
-        <div className={`${cell} flex flex-col sm:col-span-2 lg:col-span-2 lg:row-span-2`}>
-          <Preview className="min-h-[27rem] flex-1">
+        {/* Cobro */}
+        <div className={`${cell} flex flex-col sm:col-span-2 lg:col-span-2`}>
+          <Preview className="min-h-[19.5rem] flex-1">
             <TicketPrinter />
           </Preview>
           <Caption icon={ShoppingCart} title="Cobrá en segundos">
@@ -109,8 +109,8 @@ export function Features() {
         </div>
 
         {/* Caja */}
-        <div className={`${cell} sm:col-span-2 lg:col-span-4`}>
-          <Preview className="h-52">
+        <div className={`${cell} flex flex-col sm:col-span-2 lg:col-span-4`}>
+          <Preview className="min-h-52 flex-1">
             <CashBills />
           </Preview>
           <Caption icon={Wallet} title="Caja sin sorpresas">
@@ -120,7 +120,7 @@ export function Features() {
 
         {/* Stock: aviso con acción */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-56">
+          <Preview className="h-60">
             <div className="flex h-full flex-col justify-center gap-2.5 p-3.5">
               <div className="rounded-xl border border-warning/40 bg-card p-3 shadow-sm">
                 <span className="rounded-full bg-warning-bg px-2 py-0.5 text-[10px] font-bold text-warning">
@@ -145,7 +145,7 @@ export function Features() {
 
         {/* Fiado: la lista de clientes */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-56">
+          <Preview className="h-60">
             <div className="space-y-2 p-4 [mask-image:linear-gradient(to_bottom,#000_72%,transparent)]">
               {debtors.map((d, i) => (
                 <div
@@ -175,7 +175,7 @@ export function Features() {
 
         {/* Caja de cada empleado */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-72">
+          <Preview className="h-60">
             <div className="flex h-full flex-col justify-center gap-2.5 p-4">
               {cashiers.map((c) => (
                 <div key={c.name} className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 shadow-sm">
@@ -247,7 +247,7 @@ export function Features() {
         </div>
 
         {/* Excel y etiquetas */}
-        <div className={`${cell} lg:col-span-2`}>
+        <div className={`${cell} sm:col-span-2 lg:col-span-3`}>
           <Preview className="h-72">
             <div className="flex h-full flex-col items-center justify-center gap-2 p-4">
               <div className="w-36 shrink-0 rounded-lg border border-border bg-card p-2 shadow-sm">
@@ -276,7 +276,7 @@ export function Features() {
         </div>
 
         {/* En vivo: como se ve desde un celular */}
-        <div className={`${cell} lg:col-span-2`}>
+        <div className={`${cell} sm:col-span-2 lg:col-span-3`}>
           <Preview className="h-72">
             <div className="flex h-full items-end justify-center overflow-hidden">
               <div className="w-44 translate-y-2 rounded-t-[1.6rem] border-2 border-b-0 border-foreground/80 bg-card px-3 pb-6 pt-2 shadow-xl">
