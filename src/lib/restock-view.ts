@@ -19,6 +19,9 @@ export interface FlowRow {
   minStock: number;
   stockLabel: string;
   daysLeft: number | null;
+  /** Cuánto se vende por día (0 si no se vendió en el período) y a qué precio. */
+  perDay: number;
+  price: number;
   urgency: RestockRow["urgency"];
   lowHistory: boolean;
   /** "12 u" si ya hay un pedido sin recibir de este producto. */
@@ -155,6 +158,8 @@ export function buildFlowGroups(
         minStock: r.product.min_stock,
         stockLabel: formatQty(Math.max(0, r.product.stock), r.product.unit),
         daysLeft: r.daysLeft,
+        perDay: r.perDay,
+        price: r.product.price,
         urgency: r.urgency,
         lowHistory: r.lowHistory,
         onOrderLabel: r.onOrder > 0 ? formatQty(r.onOrder, r.product.unit) : null,

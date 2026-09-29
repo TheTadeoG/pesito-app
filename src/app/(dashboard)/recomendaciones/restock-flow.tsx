@@ -832,41 +832,154 @@ function rowCost(row: FlowRow): number {
 function groupCost(rows: FlowRow[]): number {
   return rows.reduce((n, r) => n + rowCost(r), 0);
 }
-/** Cuánto se pediría a cada proveedor, separando lo de hoy de lo de esta semana. */
-function SpendChart({ groups }: { groups: FlowGroup[] }) {
-  const rows = groups
-    .map((g) => ({
-      key: g.key,
-      name: g.supplierName,
-      today: groupCost(g.rows.filter(isToday)),
-      week: groupCost(g.rows.filter((r) => !isToday(r))),
-    }))
-    .filter((r) => r.today + r.week > 0)
-    .sort((a, b) => b.today + b.week - (a.today + a.week))
-    .slice(0, 6);
-  if (rows.length === 0) return null;
-  const max = Math.max(...rows.map((r) => r.today + r.week), 1);
+const HORIZON = 7; // días que se miran para "qué pasa si no pedís"
+
+/** Ventas que se perderían en los próximos días si no se repone (estimado: ritmo × días sin stock × precio). */
+function lostSales(row: FlowRow): number {
+  if (row.perDay <= 0 || row.price <= 0) return 0;
+  const left = row.urgency === "sin-stock" ? 0 : row.daysLeft;
+  if (left === null || left >= HORIZON) return 0;
+  return row.perDay * row.price * (HORIZON - left);
+}
+
+function ChartCard({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
     <div className="rounded-xl border border-border px-4 py-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-foreground">Cuánto pedirías a cada proveedor</p>
-        <p className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span><span className="text-danger">●</span> Para hoy</span>
-          <span><span className="text-amber-500">●</span> Esta semana</span>
-        </p>
-      </div>
-      <ul className="mt-2.5 space-y-2">
-        {rows.map((r) => (
-          <li key={r.key} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm">
-            <span className="truncate text-foreground">{r.name}</span>
-            <span className="flex h-2.5 overflow-hidden rounded-full bg-muted" style={{ width: "100%" }}>
-              <span className="h-full bg-danger" style={{ width: `${(r.today / max) * 100}%` }} />
-              <span className="h-full bg-amber-500" style={{ width: `${(r.week / max) * 100}%` }} />
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      <div className="mt-2.5">{children}</div>
+    </div>
+  );
+}
+
+/** Los gráficos de arriba: cuánto es urgente, qué se pierde si no se pide, qué duele más y cuándo se acaba cada cosa. */
+function RestockCharts({ groups }: { groups: FlowGroup[] }) {
+  const all = groups.flatMap((g) => g.rows.map((r) => ({ row: r, supplier: g.supplierName })));
+  const todayCost = groups.reduce((n, g) => n + groupCost(g.rows.filter(isToday)), 0);
+  const weekCost = groups.reduce((n, g) => n + groupCost(g.rows.filter((r) => !isToday(r))), 0);
+  const totalCost = todayCost + weekCost;
+
+  const lostBySupplier = groups
+    .map((g) => ({ key: g.key, name: g.supplierName, value: g.rows.reduce((n, r) => n + lostSales(r), 0) }))
+    .filter((r) => r.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 4);
+  const lostTotal = all.reduce((n, x) => n + lostSales(x.row), 0);
+  const lostMax = Math.max(...lostBySupplier.map((r) => r.value), 1);
+
+  const topProducts = all
+    .filter((x) => lostSales(x.row) > 0)
+    .sort((a, b) => b.row.perDay * b.row.price - a.row.perDay * a.row.price)
+    .slice(0, 5);
+
+  // Cuántos productos se acaban cada día (los que ya están sin stock cuentan como "hoy").
+  const buckets = Array.from({ length: HORIZON }, () => ({ today: 0, week: 0 }));
+  for (const { row } of all) {
+    if (row.perDay <= 0) continue;
+    const left = row.urgency === "sin-stock" ? 0 : row.daysLeft;
+    if (left === null || left >= HORIZON) continue;
+    buckets[Math.floor(left)][isToday(row) ? "today" : "week"] += 1;
+  }
+  const bucketMax = Math.max(...buckets.map((b) => b.today + b.week), 1);
+  const dayLabel = (i: number) => (i === 0 ? "Hoy" : i === 1 ? "Mañana" : `En ${i}`);
+
+  if (totalCost <= 0 && lostTotal <= 0) return null;
+  return (
+    <div className="space-y-3">
+      {totalCost > 0 && (
+        <div className="rounded-xl border border-border px-4 py-3">
+          <p className="text-sm font-semibold text-foreground">{`Tu pedido total: ${formatCurrency(totalCost)}`}</p>
+          <div className="mt-2.5 flex h-4 overflow-hidden rounded-full bg-muted">
+            <span className="h-full bg-danger" style={{ width: `${(todayCost / totalCost) * 100}%` }} />
+            <span className="h-full bg-amber-500" style={{ width: `${(weekCost / totalCost) * 100}%` }} />
+          </div>
+          <div className="mt-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-sm">
+            <span>
+              <span className="text-danger">●</span>{" "}
+              {`Hoy ${formatCurrency(todayCost)} · ${Math.round((todayCost / totalCost) * 100)}%`}
             </span>
-            <span className="font-semibold text-foreground">{formatCurrency(r.today + r.week)}</span>
-          </li>
-        ))}
-      </ul>
+            <span>
+              <span className="text-amber-500">●</span>{" "}
+              {`Esta semana ${formatCurrency(weekCost)} · ${Math.round((weekCost / totalCost) * 100)}%`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {lostTotal > 0 && (
+        <div className="grid gap-3 md:grid-cols-2">
+          <ChartCard title="Qué pasa si no pedís" hint={`Estimado para los próximos ${HORIZON} días`}>
+            <p className="flex flex-wrap items-baseline gap-x-2">
+              <span className="text-3xl font-extrabold text-danger">{formatCurrency(lostTotal)}</span>
+              <span className="text-sm text-muted-foreground">en ventas que dejarías de hacer</span>
+            </p>
+            <ul className="mt-3 space-y-2">
+              {lostBySupplier.map((r) => (
+                <li key={r.key} className="grid grid-cols-[minmax(0,8rem)_1fr_auto] items-center gap-3 text-sm">
+                  <span className="truncate text-foreground">{r.name}</span>
+                  <span className="h-2.5 overflow-hidden rounded-full bg-muted">
+                    <span className="block h-full bg-danger" style={{ width: `${(r.value / lostMax) * 100}%` }} />
+                  </span>
+                  <span className="font-semibold text-foreground">{formatCurrency(r.value)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Lo que vendés por día × los días que te quedarías sin mercadería, al precio de venta.
+            </p>
+          </ChartCard>
+
+          <ChartCard title="Los que más vendés y se te acaban" hint="Los que más duelen si faltan">
+            <ul className="space-y-2">
+              {topProducts.map(({ row }) => {
+                const out = row.urgency === "sin-stock";
+                const left = out ? 0 : (row.daysLeft ?? 0);
+                return (
+                  <li key={row.id} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm">
+                    <span className="truncate text-foreground">{row.name}</span>
+                    <span className="h-2.5 overflow-hidden rounded-full bg-muted">
+                      <span
+                        className={cn("block h-full", left < 2 ? "bg-danger" : "bg-amber-500")}
+                        style={{ width: `${Math.max(left, 0) / HORIZON * 100}%` }}
+                      />
+                    </span>
+                    <span className="whitespace-nowrap text-xs text-muted-foreground">
+                      <span className={cn("font-bold", left < 2 ? "text-danger" : "text-amber-600")}>
+                        {out ? "Sin stock" : `${num(left)} ${plural(left, "día", "días")}`}
+                      </span>
+                      {` · ${withUnit(row.perDay, row.unit)} por día`}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </ChartCard>
+        </div>
+      )}
+
+      {buckets.some((b) => b.today + b.week > 0) && (
+        <ChartCard title="Lo que se te va acabando, día por día" hint="Cantidad de productos que se quedan sin stock cada día">
+          <div className="grid grid-cols-7 items-end gap-2 text-center" style={{ height: 96 }}>
+            {buckets.map((b, i) => {
+              const n = b.today + b.week;
+              return (
+                <div key={i} className="flex h-full flex-col justify-end">
+                  {n > 0 && <span className="text-sm font-bold text-foreground">{n}</span>}
+                  <div className="flex flex-col-reverse overflow-hidden rounded-t-md" style={{ height: `${(n / bucketMax) * 70}%` }}>
+                    <span className="bg-danger" style={{ height: `${n ? (b.today / n) * 100 : 0}%` }} />
+                    <span className="bg-amber-500" style={{ height: `${n ? (b.week / n) * 100 : 0}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-1 grid grid-cols-7 gap-2 border-t border-border pt-1 text-center text-xs text-muted-foreground">
+            {buckets.map((_, i) => (
+              <span key={i}>{dayLabel(i)}</span>
+            ))}
+          </div>
+        </ChartCard>
+      )}
     </div>
   );
 }
@@ -1100,7 +1213,7 @@ export function RestockFlow({
             </div>
 
             <div className="mt-5">
-              <SpendChart groups={groups} />
+              <RestockCharts groups={groups} />
             </div>
 
             {settingsBlock}
