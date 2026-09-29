@@ -65,6 +65,7 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 ## Hecho: aumento de costo que sube también el precio
 
 - Migración 0040 (aplicada en producción el 2026-09-25): `bulk_increase_cost_with_price`. En "Aumentar costos", la casilla "Aumentar también el precio de venta en la misma proporción" sube cada precio × costo nuevo / costo anterior (con % es el mismo %; con monto fijo, cada producto en su proporción). Sólo productos con costo > 0. Deja un aumento de costo y otro de precio, cada uno se deshace por separado; el de precio con monto fijo figura como "Proporcional al costo".
+- Historial de aumentos: un aumento de costo que subió también el precio muestra "Con aumento de precio (N productos)", y al deshacerlo hay una casilla "Deshacer también el aumento de precio" (sin tildar por defecto). El vínculo no se guarda: se deduce porque el costo y el precio de la misma tanda tienen la misma fecha y hora y el mismo proveedor o marca. Sin migración. Son dos deshacer independientes: si falla el segundo, el costo queda deshecho y se avisa.
 - Sin 0040 aplicada, marcar la casilla da error ("No pudimos actualizar los costos y precios"); sin marcarla funciona como antes.
 
 ## Hecho: reportes por vendedor y recordatorio de cierre de caja

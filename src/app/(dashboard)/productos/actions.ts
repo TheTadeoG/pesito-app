@@ -464,12 +464,22 @@ async function memberLabels(
   );
 }
 
+/** El aumento de la otra columna que se hizo junto con éste (costo con precio, migración 0040). */
+export interface LinkedBulkChange {
+  id: string;
+  /** "price": un aumento de costo que subió también el precio. "cost": un aumento de precio que vino de subir el costo. */
+  kind: "price" | "cost";
+  productCount: number;
+  reverted: boolean;
+}
+
 export interface BulkChangeRow extends BulkChangeInfo {
   id: string;
   productCount: number;
   createdAt: string;
   createdByLabel: string | null;
   reverted: boolean;
+  linked: LinkedBulkChange | null;
 }
 
 export async function getRecentBulkChanges(field: "price" | "cost"): Promise<BulkChangeRow[]> {
@@ -488,27 +498,68 @@ export async function getRecentBulkChanges(field: "price" | "cost"): Promise<Bul
 
   if (!rows || rows.length === 0) return [];
 
+  // "Aumentar costos" con la casilla del precio deja dos registros (costo y
+  // precio) creados en la misma transacción, o sea con la misma fecha y hora
+  // y el mismo proveedor o marca. Así se sabe cuál acompaña a cuál.
+  const otherField = field === "cost" ? "price" : "cost";
+  const { data: others } = await supabase
+    .from("bulk_price_changes")
+    .select("id, supplier_id, brand, product_count, created_at, reverted_at")
+    .eq("org_id", organization.id)
+    .eq("field", otherField)
+    .in("created_at", rows.map((r) => r.created_at));
+
   const [info, members] = await Promise.all([
     describeBulkChanges(supabase, rows),
     memberLabels(supabase, organization.id, rows.map((r) => r.created_by)),
   ]);
 
-  return rows.map((r) => ({
-    id: r.id,
-    ...info.get(r.id)!,
-    productCount: r.product_count,
-    createdAt: r.created_at,
-    createdByLabel: r.created_by ? members.get(r.created_by) ?? null : null,
-    reverted: r.reverted_at !== null,
-  }));
+  return rows.map((r) => {
+    const match = (others ?? []).find(
+      (o) => o.created_at === r.created_at && o.supplier_id === r.supplier_id && o.brand === r.brand
+    );
+    return {
+      id: r.id,
+      ...info.get(r.id)!,
+      productCount: r.product_count,
+      createdAt: r.created_at,
+      createdByLabel: r.created_by ? members.get(r.created_by) ?? null : null,
+      reverted: r.reverted_at !== null,
+      linked: match
+        ? {
+            id: match.id,
+            kind: otherField,
+            productCount: match.product_count,
+            reverted: match.reverted_at !== null,
+          }
+        : null,
+    };
+  });
 }
 
 export interface RevertBulkChangeResult extends ActionState {
   reverted?: number;
   skipped?: number;
+  /** Si se pidió deshacer también el aumento que lo acompañaba: cómo salió. */
+  linked?: { reverted: number; skipped: number; error?: string };
 }
 
-export async function revertBulkChange(bulkChangeId: string): Promise<RevertBulkChangeResult> {
+function revertErrorMessage(message: string | undefined): string {
+  if (message?.includes("ya se deshizo")) return "Ese aumento ya se deshizo.";
+  if (message?.includes("30 días")) return "Sólo se pueden deshacer aumentos de los últimos 30 días.";
+  return "No pudimos deshacer el aumento.";
+}
+
+/**
+ * Deshace un aumento masivo. Con `alsoLinkedId` deshace además el que se hizo
+ * junto con éste (el aumento de precio de un aumento de costo): son dos
+ * deshacer independientes, así que si el segundo falla el primero queda hecho
+ * y se avisa.
+ */
+export async function revertBulkChange(
+  bulkChangeId: string,
+  alsoLinkedId?: string
+): Promise<RevertBulkChangeResult> {
   await requireOrgContext();
   const supabase = await createClient();
 
@@ -516,17 +567,23 @@ export async function revertBulkChange(bulkChangeId: string): Promise<RevertBulk
     p_bulk_change_id: bulkChangeId,
   });
 
-  if (error || !data) {
-    if (error?.message.includes("ya se deshizo")) return { error: "Ese aumento ya se deshizo." };
-    if (error?.message.includes("30 días")) {
-      return { error: "Sólo se pueden deshacer aumentos de los últimos 30 días." };
-    }
-    return { error: "No pudimos deshacer el aumento." };
+  if (error || !data) return { error: revertErrorMessage(error?.message) };
+
+  const result: RevertBulkChangeResult = { reverted: data.reverted, skipped: data.skipped };
+
+  if (alsoLinkedId) {
+    const { data: linkedData, error: linkedError } = await supabase.rpc("revert_bulk_price_change", {
+      p_bulk_change_id: alsoLinkedId,
+    });
+    result.linked =
+      linkedError || !linkedData
+        ? { reverted: 0, skipped: 0, error: revertErrorMessage(linkedError?.message) }
+        : { reverted: linkedData.reverted, skipped: linkedData.skipped };
   }
 
   revalidatePath("/productos");
   revalidatePath("/pos");
-  return { reverted: data.reverted, skipped: data.skipped };
+  return result;
 }
 
 export interface ProductHistoryRow {

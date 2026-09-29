@@ -19,12 +19,16 @@ interface LabelProduct {
   name: string;
   barcode: string | null;
   price: number;
+  brand: string | null;
+  supplierId: string | null;
 }
 
 interface Props {
   open: boolean;
   onClose: () => void;
   products: LabelProduct[];
+  brands: string[];
+  suppliers: { id: string; name: string }[];
 }
 
 // Tamaños de etiqueta. En "hoja A4" se imprimen tantas como entren en la hoja
@@ -51,10 +55,12 @@ function labelsPerSheet(width: number, height: number) {
 
 const MAX_LABELS = 2000;
 
-export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
+export function BarcodeLabelsDialog({ open, onClose, products, brands, suppliers }: Props) {
   const { showSuccess } = useToast();
   const [search, setSearch] = useState("");
   const [onlyMissing, setOnlyMissing] = useState(false);
+  const [brandFilter, setBrandFilter] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copies, setCopies] = useState(1);
   const [size, setSize] = useState<SizeKey>("50x30");
@@ -71,10 +77,12 @@ export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
     const q = search.trim().toLowerCase();
     return products.filter((p) => {
       if (onlyMissing && (newCodes[p.id] ?? p.barcode)) return false;
+      if (brandFilter && p.brand !== brandFilter) return false;
+      if (supplierFilter && p.supplierId !== supplierFilter) return false;
       if (!q) return true;
       return p.name.toLowerCase().includes(q) || (newCodes[p.id] ?? p.barcode ?? "").includes(q);
     });
-  }, [products, search, onlyMissing, newCodes]);
+  }, [products, search, onlyMissing, brandFilter, supplierFilter, newCodes]);
 
   const selectedProducts = products.filter((p) => selected.has(p.id));
   const missing = selectedProducts.filter((p) => !codeOf(p));
@@ -189,6 +197,35 @@ export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
               {visible.length > 0 && visible.every((p) => selected.has(p.id)) ? "Quitar la selección" : `Elegir los ${visible.length.toLocaleString("es-AR")} de la lista`}
             </Button>
           </div>
+
+          {(brands.length > 0 || suppliers.length > 0) && (
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                aria-label="Filtrar por marca"
+                value={brandFilter}
+                onChange={(e) => setBrandFilter(e.target.value)}
+              >
+                <option value="">Todas las marcas</option>
+                {brands.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                aria-label="Filtrar por proveedor"
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+              >
+                <option value="">Todos los proveedores</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
 
           <div className="max-h-64 overflow-y-auto rounded-xl border border-border">
             {visible.length === 0 ? (

@@ -31,6 +31,8 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
   const [rows, setRows] = useState<BulkChangeRow[] | null>(null);
   const [revertingId, setRevertingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Aumentos de costo a los que se les tildó "deshacer también el aumento de precio".
+  const [alsoLinked, setAlsoLinked] = useState<Set<string>>(new Set());
   const fieldPlural = field === "price" ? "precios" : "costos";
 
   useEffect(() => {
@@ -38,22 +40,38 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
   }, [field]);
 
   async function handleRevert(row: BulkChangeRow) {
+    const withLinked = Boolean(row.linked && !row.linked.reverted && alsoLinked.has(row.id));
     if (
       !confirm(
-        `¿Deshacer el aumento de ${row.amountLabel} (${row.groupLabel})? Los ${row.productCount} productos vuelven al ${field === "price" ? "precio" : "costo"} que tenían antes.`
+        `¿Deshacer el aumento de ${row.amountLabel} (${row.groupLabel})? Los ${row.productCount} productos vuelven al ${field === "price" ? "precio" : "costo"} que tenían antes.` +
+          (withLinked && row.linked
+            ? ` También se deshace el aumento de precio que lo acompañó (${row.linked.productCount} producto${row.linked.productCount === 1 ? "" : "s"}).`
+            : "")
       )
     )
       return;
     setRevertingId(row.id);
     setError(null);
-    const result = await revertBulkChange(row.id);
+    const result = await revertBulkChange(row.id, withLinked ? row.linked?.id : undefined);
     setRevertingId(null);
     if (result.error) {
       setError(result.error);
       return;
     }
     setRows((current) =>
-      current ? current.map((r) => (r.id === row.id ? { ...r, reverted: true } : r)) : current
+      current
+        ? current.map((r) => {
+            if (r.id === row.id) {
+              return {
+                ...r,
+                reverted: true,
+                linked:
+                  r.linked && withLinked && !result.linked?.error ? { ...r.linked, reverted: true } : r.linked,
+              };
+            }
+            return r;
+          })
+        : current
     );
     const reverted = result.reverted ?? 0;
     const skipped = result.skipped ?? 0;
@@ -66,8 +84,14 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
           ? " 1 no se tocó porque cambió después del aumento."
           : skipped > 1
             ? ` ${skipped} no se tocaron porque cambiaron después del aumento.`
-            : "")
+            : "") +
+        (result.linked && !result.linked.error
+          ? ` Precios: ${result.linked.reverted} volvieron a su valor anterior${result.linked.skipped > 0 ? ` y ${result.linked.skipped} no se tocaron porque cambiaron después` : ""}.`
+          : "")
     );
+    if (result.linked?.error) {
+      setError(`El costo se deshizo, pero el aumento de precio no: ${result.linked.error}`);
+    }
     router.refresh();
   }
 
@@ -98,6 +122,31 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
                 <p className="truncate text-xs text-muted-foreground" title={row.createdByLabel}>
                   {row.createdByLabel}
                 </p>
+              )}
+              {row.linked && (
+                <p className="mt-1 text-xs font-medium text-primary">
+                  {row.linked.kind === "price"
+                    ? `Con aumento de precio (${row.linked.productCount} producto${row.linked.productCount === 1 ? "" : "s"})${row.linked.reverted ? " · ya deshecho" : ""}`
+                    : "Vino con un aumento de costo"}
+                </p>
+              )}
+              {!row.reverted && row.linked?.kind === "price" && !row.linked.reverted && (
+                <label className="mt-1.5 flex cursor-pointer items-center gap-2 text-xs text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={alsoLinked.has(row.id)}
+                    onChange={(e) =>
+                      setAlsoLinked((current) => {
+                        const next = new Set(current);
+                        if (e.target.checked) next.add(row.id);
+                        else next.delete(row.id);
+                        return next;
+                      })
+                    }
+                    className="h-3.5 w-3.5 accent-primary"
+                  />
+                  Deshacer también el aumento de precio
+                </label>
               )}
             </div>
             {row.reverted ? (

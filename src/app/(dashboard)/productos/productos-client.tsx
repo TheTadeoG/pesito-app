@@ -1162,7 +1162,16 @@ export function ProductosClient({
         onClose={() => setLabelsOpen(false)}
         products={products
           .filter((p) => p.active)
-          .map((p) => ({ id: p.id, name: p.name, barcode: p.barcode, price: p.price }))}
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            barcode: p.barcode,
+            price: p.price,
+            brand: p.brand,
+            supplierId: p.default_supplier_id,
+          }))}
+        brands={brandOptions}
+        suppliers={localSuppliers}
       />
       <BulkFieldIncreaseDialog
         open={bulkPriceOpen}
