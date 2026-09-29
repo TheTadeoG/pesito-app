@@ -21,6 +21,8 @@ export interface InsightProduct {
   stock: number;
   min_stock: number;
   default_supplier_id: string | null;
+  /** Unidades por bulto del proveedor (0052); null si se compra suelto o falta la migración. */
+  pack_size: number | null;
   created_at: string;
 }
 
@@ -35,6 +37,8 @@ export interface InsightsBase {
   products: InsightProduct[];
   stats: Map<string, SalesStat>;
   supplierNames: Map<string, string>;
+  /** Días que tarda en llegar un pedido de cada proveedor (0052); sólo los que lo cargaron. */
+  supplierLeadDays: Map<string, number>;
 }
 
 /** Productos activos (con el stock de la sucursal) + ventas de los últimos `days` días. */
@@ -60,13 +64,36 @@ export async function loadInsightsBase(
       p_days: days,
       p_branch_id: branch?.id ?? null,
     }),
-    supabase.from("suppliers").select("id, name").eq("org_id", orgId),
+    // "*": el plazo de entrega (0052) puede no existir todavía en la base.
+    supabase.from("suppliers").select("*").eq("org_id", orgId),
   ]);
   if (statsResult.error) throw new Error("No pudimos analizar las ventas por producto.");
+
+  // Unidades por bulto (0052): consulta aparte para que, sin la migración, el
+  // resto de las recomendaciones siga andando.
+  const packSizes = new Map<string, number>();
+  try {
+    const packRows = await fetchAll((from, to) =>
+      supabase
+        .from("products")
+        .select("id, pack_size")
+        .eq("org_id", orgId)
+        .eq("active", true)
+        .not("pack_size", "is", null)
+        .order("id")
+        .range(from, to)
+    );
+    for (const row of packRows) {
+      if (row.pack_size !== null && row.pack_size !== undefined) packSizes.set(row.id, Number(row.pack_size));
+    }
+  } catch {
+    // Sin la columna: se compra suelto.
+  }
 
   const withStock = await withBranchStock(supabase, branch, rawProducts);
   const products = withStock.map((p) => ({
     ...p,
+    pack_size: packSizes.get(p.id) ?? null,
     price: Number(p.price),
     cost: p.cost === null ? null : Number(p.cost),
     stock: Number(p.stock),
@@ -87,6 +114,11 @@ export async function loadInsightsBase(
     products,
     stats,
     supplierNames: new Map((suppliers ?? []).map((s) => [s.id, s.name])),
+    supplierLeadDays: new Map(
+      (suppliers ?? [])
+        .filter((s) => s.lead_time_days !== null && s.lead_time_days !== undefined)
+        .map((s) => [s.id, Number(s.lead_time_days)])
+    ),
   };
 }
 
@@ -161,10 +193,16 @@ export interface RestockRow {
   perDay: number;
   /** Días que alcanza el stock (null: no se vendió en el período). */
   daysLeft: number | null;
+  /** Cantidad a comprar en la unidad del producto (con bultos, ya redondeada al bulto). */
   suggestedQty: number;
+  /** Bultos a pedir (null si el producto se compra suelto). */
+  packs: number | null;
+  packSize: number | null;
   /** suggestedQty × costo (null si no tiene costo). */
   estimatedCost: number | null;
   urgency: "sin-stock" | "urgente" | "pronto";
+  /** El stock se acaba antes de que llegue un pedido hecho hoy (según el plazo del proveedor). */
+  late: boolean;
 }
 
 export interface RestockGroup {
@@ -172,7 +210,20 @@ export interface RestockGroup {
   supplierName: string;
   rows: RestockRow[];
   estimatedCost: number;
+  /** Plazo de entrega del proveedor en días (null si no lo cargó). */
+  leadDays: number | null;
 }
+
+export interface RestockSettings {
+  /** Días de venta que se quiere tener cubiertos cuando llega el pedido. */
+  targetDays: number;
+  /** Cuántos días de ventas hacia atrás se miran. */
+  windowDays: number;
+  /** Colchón de seguridad, en días de venta. */
+  safetyDays: number;
+}
+
+export const DEFAULT_RESTOCK_SETTINGS: RestockSettings = { targetDays: 14, windowDays: 30, safetyDays: 0 };
 
 const WHOLE_UNITS = new Set(["u", "pack", "caja"]);
 
@@ -183,28 +234,42 @@ function roundQty(qty: number, unit: string): number {
 }
 
 /**
- * Qué comprar para tener stock para `targetDays` días al ritmo de venta de
- * los últimos `windowDays`. Nunca menos que el stock mínimo del producto.
+ * Qué comprar. Se mira el ritmo de venta de los últimos `windowDays` días y se
+ * pide lo necesario para que, cuando llegue el pedido (plazo del proveedor),
+ * queden `targetDays` días de venta más el colchón de seguridad. Nunca menos
+ * que el stock mínimo del producto. Si el producto viene en bultos, se pide
+ * en bultos enteros.
  */
 export function computeRestock(
   base: InsightsBase,
-  windowDays: number,
-  targetDays: number,
+  settings: RestockSettings,
   now: Date = new Date()
 ): RestockGroup[] {
+  const { windowDays, targetDays, safetyDays } = settings;
   const groups = new Map<string, RestockGroup>();
   for (const product of base.products) {
     const stat = base.stats.get(product.id);
     const perDay = dailyRate(product, stat, windowDays, now);
     if (perDay <= 0 && (product.min_stock <= 0 || product.stock > product.min_stock)) continue;
-    const wanted = Math.max(perDay * targetDays, product.min_stock);
+    const leadDays = product.default_supplier_id
+      ? base.supplierLeadDays.get(product.default_supplier_id) ?? 0
+      : 0;
+    const wanted = Math.max(perDay * (targetDays + leadDays + safetyDays), product.min_stock);
     const missing = wanted - Math.max(0, product.stock);
     if (missing <= 0) continue;
-    const suggestedQty = roundQty(missing, product.unit);
+
+    const packSize = product.pack_size !== null && product.pack_size > 0 ? product.pack_size : null;
+    const packs = packSize ? Math.max(1, Math.ceil(missing / packSize - 1e-9)) : null;
+    const suggestedQty = packSize && packs ? packs * packSize : roundQty(missing, product.unit);
     if (suggestedQty <= 0) continue;
+
     const daysLeft = perDay > 0 ? Math.max(0, product.stock) / perDay : null;
+    // "Urgente": el stock no alcanza para lo que tarda el pedido más el colchón
+    // (mínimo 3 días, como siempre).
+    const urgentDays = Math.max(3, leadDays + safetyDays);
     const urgency: RestockRow["urgency"] =
-      product.stock <= 0 ? "sin-stock" : daysLeft !== null && daysLeft <= 3 ? "urgente" : "pronto";
+      product.stock <= 0 ? "sin-stock" : daysLeft !== null && daysLeft <= urgentDays ? "urgente" : "pronto";
+    const late = leadDays > 0 && daysLeft !== null && daysLeft < leadDays;
 
     const key = product.default_supplier_id ?? "";
     const group = groups.get(key) ?? {
@@ -214,9 +279,12 @@ export function computeRestock(
         : "Sin proveedor asignado",
       rows: [],
       estimatedCost: 0,
+      leadDays: product.default_supplier_id
+        ? base.supplierLeadDays.get(product.default_supplier_id) ?? null
+        : null,
     };
     const estimatedCost = product.cost !== null && product.cost > 0 ? suggestedQty * product.cost : null;
-    group.rows.push({ product, perDay, daysLeft, suggestedQty, estimatedCost, urgency });
+    group.rows.push({ product, perDay, daysLeft, suggestedQty, packs, packSize, estimatedCost, urgency, late });
     group.estimatedCost += estimatedCost ?? 0;
     groups.set(key, group);
   }
@@ -236,9 +304,18 @@ export function computeRestock(
   });
 }
 
+/** "2 bultos de 12 (24 u)" o "24 u" según se compre en bultos o suelto. */
+export function restockQtyLabel(row: RestockRow): string {
+  if (row.packs && row.packSize) {
+    const bultos = `${row.packs} bulto${row.packs === 1 ? "" : "s"} de ${formatQty(row.packSize, row.product.unit)}`;
+    return `${bultos} (${formatQty(row.suggestedQty, row.product.unit)})`;
+  }
+  return formatQty(row.suggestedQty, row.product.unit);
+}
+
 /** Pedido listo para mandar por WhatsApp al proveedor. */
 export function restockOrderText(orgName: string, group: RestockGroup): string {
-  const lines = group.rows.map((r) => `- ${formatQty(r.suggestedQty, r.product.unit)} ${r.product.name}`);
+  const lines = group.rows.map((r) => `- ${restockQtyLabel(r)} ${r.product.name}`);
   return `Hola! Te paso el pedido de ${orgName}:\n${lines.join("\n")}\nGracias!`;
 }
 

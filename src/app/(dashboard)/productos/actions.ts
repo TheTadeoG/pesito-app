@@ -21,6 +21,10 @@ export interface ProductFormInput {
   minStock: number;
   unit: string;
   packageLabel: string;
+  /** Unidades por bulto del proveedor ("" = se compra suelto). */
+  packSize: string;
+  /** Ya tenía un bulto cargado (para poder borrarlo). */
+  hadPackSize: boolean;
   active: boolean;
   imageUrl: string | null;
   defaultSupplierId: string | null;
@@ -61,6 +65,14 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     return { error: "El stock mínimo no puede ser negativo." };
   }
 
+  // Unidades por bulto (0052): sólo se manda con un valor o al borrar uno
+  // cargado, así guardar un producto sigue andando sin la migración.
+  const packRaw = input.packSize.trim().replace(",", ".");
+  const packSize = packRaw === "" ? null : Number(packRaw);
+  if (packSize !== null && (!Number.isFinite(packSize) || packSize <= 0 || packSize > 100000)) {
+    return { error: "Las unidades por bulto tienen que ser un número mayor a cero." };
+  }
+
   const payload = {
     org_id: organization.id,
     name: input.name.trim(),
@@ -72,6 +84,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     min_stock: input.minStock,
     unit: input.unit,
     package_label: input.packageLabel.trim() || null,
+    ...(packSize !== null || input.hadPackSize ? { pack_size: packSize } : {}),
     active: input.active,
     image_url: input.imageUrl,
     default_supplier_id: input.defaultSupplierId,

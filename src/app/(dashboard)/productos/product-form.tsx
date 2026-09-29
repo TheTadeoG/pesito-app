@@ -240,6 +240,9 @@ export function ProductForm({
   const [minStock, setMinStock] = useState(String(product?.min_stock ?? "0"));
   const [unit, setUnit] = useState(product?.unit ?? "u");
   const [packageLabel, setPackageLabel] = useState(product?.package_label ?? "");
+  const [packSize, setPackSize] = useState(
+    product?.pack_size !== null && product?.pack_size !== undefined ? String(product.pack_size) : ""
+  );
   const [defaultSupplierId, setDefaultSupplierId] = useState<string | null>(
     product?.default_supplier_id ?? null
   );
@@ -378,6 +381,8 @@ export function ProductForm({
       minStock: Number(minStock) || 0,
       unit,
       packageLabel,
+      packSize,
+      hadPackSize: product?.pack_size !== null && product?.pack_size !== undefined,
       active: product?.active ?? true,
       imageUrl,
       defaultSupplierId,
@@ -655,6 +660,23 @@ export function ProductForm({
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
             Si viene agrupado (pack, fardo, docena), aclaralo acá para que se entienda al vender.
+          </p>
+        </div>
+
+        <div>
+          <Label htmlFor="p-pack">Unidades por bulto del proveedor (opcional)</Label>
+          <Input
+            id="p-pack"
+            type="number"
+            min={0}
+            step="any"
+            value={packSize}
+            onChange={(e) => setPackSize(e.target.value)}
+            placeholder="Ej: 12"
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Si tu proveedor lo vende en cajas, fardos o packs, poné cuántas unidades trae cada uno. Las
+            recomendaciones de compra piden bultos enteros.
           </p>
         </div>
 

@@ -15,6 +15,10 @@ export interface SupplierFormInput {
   phone: string;
   email: string;
   notes: string;
+  /** Días que tarda en llegar un pedido ("" = no se sabe). */
+  leadTimeDays: string;
+  /** Ya tenía un plazo cargado (para poder borrarlo). */
+  hadLeadTime: boolean;
 }
 
 export async function saveSupplier(input: SupplierFormInput): Promise<ActionState> {
@@ -25,12 +29,21 @@ export async function saveSupplier(input: SupplierFormInput): Promise<ActionStat
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
 
+  // Plazo de entrega (0052): sólo se manda si hay un valor o si se está
+  // borrando uno cargado, así guardar un proveedor sigue andando sin la migración.
+  const leadRaw = input.leadTimeDays.trim();
+  const leadTimeDays = leadRaw === "" ? null : Number(leadRaw);
+  if (leadTimeDays !== null && (!Number.isInteger(leadTimeDays) || leadTimeDays < 0 || leadTimeDays > 90)) {
+    return { error: "El plazo de entrega tiene que ser un número de días entre 0 y 90." };
+  }
+
   const payload = {
     org_id: organization.id,
     name: input.name.trim(),
     phone: input.phone.trim() || null,
     email: input.email.trim() || null,
     notes: input.notes.trim() || null,
+    ...(leadTimeDays !== null || input.hadLeadTime ? { lead_time_days: leadTimeDays } : {}),
   };
 
   if (input.id) {

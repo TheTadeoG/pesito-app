@@ -20,6 +20,10 @@ export interface Database {
           auto_invoice_by_payment: boolean;
           /** "HH:MM:SS" en hora de Argentina (0041). undefined si falta la migración. */
           cash_close_time?: string | null;
+          /** Ajustes de la recomendación de compra (0052). undefined si falta la migración. */
+          restock_target_days?: number;
+          restock_window_days?: number;
+          restock_safety_days?: number;
           org_code: string;
           created_at: string;
         };
@@ -32,6 +36,9 @@ export interface Database {
           phone?: string | null;
           auto_invoice_by_payment?: boolean;
           cash_close_time?: string | null;
+          restock_target_days?: number;
+          restock_window_days?: number;
+          restock_safety_days?: number;
           org_code?: string;
           created_at?: string;
         };
@@ -95,6 +102,8 @@ export interface Database {
           image_url: string | null;
           default_supplier_id: string | null;
           package_label: string | null;
+          /** Unidades por bulto del proveedor (0052). undefined si falta la migración. */
+          pack_size?: number | null;
           active: boolean;
           created_at: string;
           updated_at: string;
@@ -115,6 +124,7 @@ export interface Database {
           image_url?: string | null;
           default_supplier_id?: string | null;
           package_label?: string | null;
+          pack_size?: number | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -473,6 +483,8 @@ export interface Database {
           email: string | null;
           notes: string | null;
           balance: number;
+          /** Días que tarda en llegar un pedido (0052). undefined si falta la migración. */
+          lead_time_days?: number | null;
           created_at: string;
         };
         Insert: {
@@ -483,6 +495,7 @@ export interface Database {
           email?: string | null;
           notes?: string | null;
           balance?: number;
+          lead_time_days?: number | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;

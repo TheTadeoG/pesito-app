@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { getSubscription } from "@/lib/subscription";
@@ -46,4 +47,49 @@ export async function applyPriceSuggestions(
     else applied.push(item.productId);
   }
   return { applied, failed };
+}
+
+export interface RestockSettingsInput {
+  targetDays: number;
+  windowDays: number;
+  safetyDays: number;
+}
+
+/** Guarda los ajustes de la recomendación de compra del negocio (0052). */
+export async function updateRestockSettings(
+  input: RestockSettingsInput
+): Promise<{ error?: string }> {
+  const { organization, membership } = await requireOrgContext();
+  if (!isOrgAdmin(membership.role)) {
+    return { error: "Sólo el dueño o un administrador puede cambiar esto." };
+  }
+  const supabase = await createClient();
+  if (!canUse(await getSubscription(supabase, organization.id), "restockRecommendations")) {
+    return { error: featureLockedMessage("restockRecommendations") };
+  }
+
+  const { targetDays, windowDays, safetyDays } = input;
+  const whole = (n: number) => Number.isInteger(n);
+  if (!whole(targetDays) || targetDays < 1 || targetDays > 90) {
+    return { error: "Los días de cobertura tienen que ser entre 1 y 90." };
+  }
+  if (!whole(windowDays) || windowDays < 7 || windowDays > 180) {
+    return { error: "Los días de ventas a mirar tienen que ser entre 7 y 180." };
+  }
+  if (!whole(safetyDays) || safetyDays < 0 || safetyDays > 30) {
+    return { error: "El colchón de seguridad tiene que ser entre 0 y 30 días." };
+  }
+
+  const { error } = await supabase
+    .from("organizations")
+    .update({
+      restock_target_days: targetDays,
+      restock_window_days: windowDays,
+      restock_safety_days: safetyDays,
+    })
+    .eq("id", organization.id);
+  if (error) return { error: "No pudimos guardar los ajustes." };
+
+  revalidatePath("/recomendaciones");
+  return {};
 }

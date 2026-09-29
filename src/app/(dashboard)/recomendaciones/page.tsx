@@ -16,12 +16,13 @@ import {
   loadInsightsBase,
   loadPriceHistory,
   restockOrderText,
+  restockQtyLabel,
+  DEFAULT_RESTOCK_SETTINGS,
   type RestockRow,
+  type RestockSettings,
 } from "@/lib/product-insights";
 import { PriceSuggestions } from "@/app/(dashboard)/recomendaciones/price-suggestions";
-
-const WINDOW_DAYS = 30;
-const TARGET_DAYS = 14;
+import { RestockSettingsPanel } from "@/app/(dashboard)/recomendaciones/restock-settings";
 
 const urgencyStyle: Record<RestockRow["urgency"], { label: string; className: string }> = {
   "sin-stock": { label: "Sin stock", className: "bg-danger-bg text-danger" },
@@ -60,9 +61,15 @@ export default async function RecomendacionesPage() {
   }
 
   const { current: branch } = await getBranchContext();
-  const base = await loadInsightsBase(supabase, organization.id, branch, WINDOW_DAYS);
+  // Ajustes del negocio (0052); sin la migración valen los de siempre.
+  const settings: RestockSettings = {
+    targetDays: organization.restock_target_days ?? DEFAULT_RESTOCK_SETTINGS.targetDays,
+    windowDays: organization.restock_window_days ?? DEFAULT_RESTOCK_SETTINGS.windowDays,
+    safetyDays: organization.restock_safety_days ?? DEFAULT_RESTOCK_SETTINGS.safetyDays,
+  };
+  const base = await loadInsightsBase(supabase, organization.id, branch, settings.windowDays);
 
-  const groups = restockOn ? computeRestock(base, WINDOW_DAYS, TARGET_DAYS) : [];
+  const groups = restockOn ? computeRestock(base, settings) : [];
   const suggestions = pricesOn
     ? computePriceSuggestions(base, await loadPriceHistory(supabase, organization.id))
     : [];
@@ -75,9 +82,12 @@ export default async function RecomendacionesPage() {
         <div>
           <h2 className="text-lg font-semibold text-foreground">Qué comprar</h2>
           <p className="text-sm text-muted-foreground">
-            {`Calculado con lo que vendiste en los últimos ${WINDOW_DAYS} días, para tener stock para ${TARGET_DAYS} días. Nunca menos que el stock mínimo de cada producto.`}
+            {`Calculado con lo que vendiste en los últimos ${settings.windowDays} días, para tener stock para ${settings.targetDays} días${settings.safetyDays > 0 ? ` más ${settings.safetyDays} de colchón` : ""}. Nunca menos que el stock mínimo de cada producto.`}
           </p>
         </div>
+        {restockOn && (
+          <RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} />
+        )}
         {!restockOn ? (
           <ProLockedCard
             title="Recomendaciones de reposición"
@@ -102,6 +112,7 @@ export default async function RecomendacionesPage() {
                       {group.estimatedCost > 0
                         ? `${group.rows.length} productos · pedido estimado ${formatCurrency(group.estimatedCost)}`
                         : `${group.rows.length} productos`}
+                      {group.leadDays !== null && ` · entrega en ${group.leadDays} día${group.leadDays === 1 ? "" : "s"}`}
                     </p>
                   </div>
                   {group.supplierId && (
@@ -125,14 +136,19 @@ export default async function RecomendacionesPage() {
                           {`Stock ${formatQty(Math.max(0, r.product.stock), r.product.unit)}`}
                           {r.daysLeft !== null ? ` · alcanza ${Math.floor(r.daysLeft)} días` : " · sin ventas en el período"}
                         </p>
+                        {r.late && (
+                          <p className="text-xs font-medium text-danger">
+                            Se acaba antes de que llegue un pedido: pedilo hoy.
+                          </p>
+                        )}
                       </div>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-semibold ${urgencyStyle[r.urgency].className}`}
                       >
                         {urgencyStyle[r.urgency].label}
                       </span>
-                      <p className="w-24 text-right text-sm font-semibold text-foreground">
-                        {`Comprar ${formatQty(r.suggestedQty, r.product.unit)}`}
+                      <p className="min-w-24 max-w-[16rem] text-right text-sm font-semibold text-foreground">
+                        {`Comprar ${restockQtyLabel(r)}`}
                       </p>
                     </div>
                   ))}
