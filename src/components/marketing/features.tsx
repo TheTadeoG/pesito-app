@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { StaggerIn } from "@/components/marketing/stagger-in";
 import {
   BarChart3,
   Boxes,
@@ -74,12 +74,11 @@ export function Features() {
         </p>
       </div>
 
-      <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {features.map((feature, i) => (
+      <StaggerIn className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {features.map((feature) => (
           <div
             key={feature.title}
-            style={{ "--c": i % 4 } as CSSProperties}
-            className="rise-in rounded-card border border-border bg-card p-6 transition-shadow hover:shadow-lg hover:shadow-primary/5"
+            className="rounded-card border border-border bg-card p-6 transition-shadow hover:shadow-lg hover:shadow-primary/5"
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
               <feature.icon className="h-5 w-5" />
@@ -90,7 +89,7 @@ export function Features() {
             </p>
           </div>
         ))}
-      </div>
+      </StaggerIn>
     </section>
   );
 }
