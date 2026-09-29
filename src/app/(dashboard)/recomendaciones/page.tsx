@@ -18,7 +18,7 @@ import {
   type RestockSettings,
 } from "@/lib/product-insights";
 import { PriceSuggestions } from "@/app/(dashboard)/recomendaciones/price-suggestions";
-import { RestockSettingsPanel } from "@/app/(dashboard)/recomendaciones/restock-settings";
+import { RestockSettingsBar } from "@/app/(dashboard)/recomendaciones/restock-settings";
 import { PendingOrderCard } from "@/app/(dashboard)/recomendaciones/restock-orders";
 import { RestockFlow } from "@/app/(dashboard)/recomendaciones/restock-flow";
 import { buildFlowGroups, buildSupplierOptions } from "@/lib/restock-view";
@@ -160,7 +160,7 @@ export default async function RecomendacionesPage() {
       targetDays={settings.targetDays}
       pendingBlock={pendingBlock}
       pricesBlock={pricesSection}
-      settingsBlock={<RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} defaultOpen />}
+      settingsBlock={<RestockSettingsBar settings={settings} canEdit={isOrgAdmin(membership.role)} />}
     />
   );
 }

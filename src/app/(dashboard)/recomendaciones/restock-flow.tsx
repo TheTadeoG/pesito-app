@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, Search, Settings, SkipForward, Truck, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, Search, SkipForward, Truck, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -910,7 +910,6 @@ export function RestockFlow({
   const [skipped, setSkipped] = useState<string[]>([]);
   const [skipNotice, setSkipNotice] = useState<string[] | null>(null);
   const [search, setSearch] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
   const active = groups.find((g) => g.key === activeKey) ?? null;
 
   const urgentGroups = groups.filter((g) => g.rows.some(isToday));
@@ -1134,20 +1133,9 @@ export function RestockFlow({
                   className="pl-10"
                 />
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setShowSettings((v) => !v)}
-                aria-label="Cómo se calcula"
-                title="Cómo se calcula"
-                aria-expanded={showSettings}
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
             </div>
+            {settingsBlock}
           </Card>
-
-          {showSettings && settingsBlock}
 
           {visible.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
