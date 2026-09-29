@@ -246,8 +246,8 @@ function SupplierCard({
           )}
         </div>
         <Button variant={hasUrgent ? "primary" : "outline"} onClick={onOpen}>
-          {hasUrgent ? "Revisar y pedir" : "Revisar"}
-          {hasUrgent && <ArrowRight className="h-4 w-4" />}
+          Revisar y pedir
+          <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
     </Card>
