@@ -7,8 +7,8 @@ import { BulkPricesCard } from "@/components/marketing/bulk-prices-card";
 const points = [
   "Por proveedor o por marca, en un solo paso",
   "En porcentaje o con un monto fijo",
-  "Sobre el precio de venta o sobre el costo",
-  "Los cambios de precio quedan en el historial de cada producto",
+  "Subís el costo y el precio de venta juntos, en la misma proporción",
+  "Si te equivocás, lo deshacés. Los cambios quedan en el historial",
 ];
 
 const exampleRows = [
@@ -27,7 +27,7 @@ export function BulkPrices() {
             Lo que otros sistemas no te resuelven
           </span>
           <h2 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] sm:text-5xl">
-            ¿Te aumentó el proveedor? <span className="text-lime">Actualizás todo en segundos</span>
+            ¿Te aumentó el proveedor? <span className="text-emerald-200">Actualizás todo en segundos</span>
           </h2>
           <p className="mt-4 text-lg text-white/80">
             Elegís el proveedor o la marca, ponés el porcentaje y Pesito actualiza
@@ -37,7 +37,7 @@ export function BulkPrices() {
           <ul className="mt-6 space-y-3">
             {points.map((point) => (
               <li key={point} className="flex items-start gap-2.5 text-sm text-white">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-lime" />
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-200" />
                 {point}
               </li>
             ))}
