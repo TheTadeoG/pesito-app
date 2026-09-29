@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 // hosting provider's dashboard) must also fall back, not just `undefined`.
 // Trailing slash stripped so callers can safely do `${siteUrl}/path` without
 // risking a double slash if someone pastes the URL with one.
-export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://pesito.app").replace(
+export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.pesito.com.ar").replace(
   /\/+$/,
   ""
 );
