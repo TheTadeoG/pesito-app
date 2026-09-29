@@ -35,13 +35,13 @@ function DaysStepper({
   const shown = Number.isFinite(current) ? current : min;
   const set = (n: number) => onChange(String(Math.min(max, Math.max(min, n))));
   return (
-    <div className="inline-flex items-center overflow-hidden rounded-xl border-2 border-primary bg-card">
+    <div className="inline-flex items-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
       <button
         type="button"
         onClick={() => set(shown - 1)}
         disabled={disabled}
         aria-label={`Menos: ${label}`}
-        className="flex h-9 w-9 items-center justify-center bg-accent text-primary hover:bg-primary/15 disabled:opacity-40"
+        className="flex h-8 w-8 items-center justify-center border-r border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
       >
         <Minus className="h-4 w-4" />
       </button>
@@ -54,15 +54,15 @@ function DaysStepper({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         aria-label={label}
-        className="h-9 w-12 bg-card text-center text-base font-extrabold text-foreground outline-none"
+        className="h-8 w-11 bg-card text-center text-sm font-semibold tabular-nums text-foreground outline-none"
       />
-      <span className="pr-3 text-sm text-muted-foreground">días</span>
+      <span className="pr-2.5 text-sm text-muted-foreground">días</span>
       <button
         type="button"
         onClick={() => set(shown + 1)}
         disabled={disabled}
         aria-label={`Más: ${label}`}
-        className="flex h-9 w-9 items-center justify-center bg-accent text-primary hover:bg-primary/15 disabled:opacity-40"
+        className="flex h-8 w-8 items-center justify-center border-l border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
       >
         <Plus className="h-4 w-4" />
       </button>
@@ -154,7 +154,7 @@ export function RestockSettingsBar({
             type="button"
             onClick={() => setShowExample((v) => !v)}
             aria-expanded={showExample}
-            className="whitespace-nowrap font-semibold text-primary hover:underline"
+            className="whitespace-nowrap rounded-lg bg-primary/10 px-3 py-1.5 font-semibold text-primary transition-colors hover:bg-primary/15"
           >
             {showExample ? "Ocultar ejemplo" : "Ver ejemplo"}
           </button>
