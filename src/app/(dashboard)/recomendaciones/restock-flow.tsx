@@ -872,17 +872,6 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
     .sort((a, b) => b.row.perDay * b.row.price - a.row.perDay * a.row.price)
     .slice(0, 5);
 
-  // Cuántos productos se acaban cada día (los que ya están sin stock cuentan como "hoy").
-  const buckets = Array.from({ length: HORIZON }, () => ({ today: 0, week: 0 }));
-  for (const { row } of all) {
-    if (row.perDay <= 0) continue;
-    const left = row.urgency === "sin-stock" ? 0 : row.daysLeft;
-    if (left === null || left >= HORIZON) continue;
-    buckets[Math.floor(left)][isToday(row) ? "today" : "week"] += 1;
-  }
-  const bucketMax = Math.max(...buckets.map((b) => b.today + b.week), 1);
-  const dayLabel = (i: number) => (i === 0 ? "Hoy" : i === 1 ? "Mañana" : `En ${i}`);
-
   if (totalCost <= 0 && lostTotal <= 0) return null;
   return (
     <div className="space-y-3">
@@ -957,29 +946,6 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
         </div>
       )}
 
-      {buckets.some((b) => b.today + b.week > 0) && (
-        <ChartCard title="Lo que se te va acabando, día por día" hint="Cantidad de productos que se quedan sin stock cada día">
-          <div className="grid grid-cols-7 items-end gap-2 text-center" style={{ height: 96 }}>
-            {buckets.map((b, i) => {
-              const n = b.today + b.week;
-              return (
-                <div key={i} className="flex h-full flex-col justify-end">
-                  {n > 0 && <span className="text-sm font-bold text-foreground">{n}</span>}
-                  <div className="flex flex-col-reverse overflow-hidden rounded-t-md" style={{ height: `${(n / bucketMax) * 70}%` }}>
-                    <span className="bg-danger" style={{ height: `${n ? (b.today / n) * 100 : 0}%` }} />
-                    <span className="bg-amber-500" style={{ height: `${n ? (b.week / n) * 100 : 0}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-1 grid grid-cols-7 gap-2 border-t border-border pt-1 text-center text-xs text-muted-foreground">
-            {buckets.map((_, i) => (
-              <span key={i}>{dayLabel(i)}</span>
-            ))}
-          </div>
-        </ChartCard>
-      )}
     </div>
   );
 }
