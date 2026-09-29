@@ -1,46 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, PackageCheck, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/toast/toast-provider";
-import { closeRestockOrder, createRestockOrder } from "@/app/(dashboard)/recomendaciones/actions";
-
-/** "Ya lo pedí": guarda el pedido para que no se vuelva a sugerir lo que viene en camino. */
-export function OrderPlacedButton({
-  supplierId,
-  items,
-}: {
-  supplierId: string;
-  items: { productId: string; name: string; quantity: number }[];
-}) {
-  const { showSuccess, showWarning } = useToast();
-  const [pending, startTransition] = useTransition();
-
-  function place() {
-    if (
-      !confirm(
-        `¿Ya hiciste este pedido (${items.length} producto${items.length === 1 ? "" : "s"})? Lo vamos a marcar en camino y no te lo vamos a volver a sugerir hasta que llegue.`
-      )
-    )
-      return;
-    startTransition(async () => {
-      const result = await createRestockOrder({ supplierId, items });
-      if (result.error) {
-        showWarning(result.error);
-        return;
-      }
-      showSuccess("Pedido en camino", "Se cierra solo cuando cargues la compra de este proveedor.");
-    });
-  }
-
-  return (
-    <Button variant="outline" size="sm" onClick={place} disabled={pending}>
-      <PackageCheck className="h-4 w-4" />
-      {pending ? "Guardando…" : "Ya lo pedí"}
-    </Button>
-  );
-}
+import { closeRestockOrder } from "@/app/(dashboard)/recomendaciones/actions";
 
 export interface PendingOrderView {
   id: string;
