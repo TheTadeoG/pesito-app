@@ -53,8 +53,12 @@ export default function PrivacidadPage() {
                 Usamos una cookie técnica de sesión (de Supabase) para mantenerte logueado, y
                 guardamos tu preferencia de tema (claro/oscuro) en el almacenamiento local de tu
                 navegador, no en una cookie. Vercel Speed Insights mide el rendimiento del sitio de
-                forma anónima, sin identificarte a vos ni a tus clientes. No usamos cookies de
-                publicidad ni de seguimiento entre sitios.
+                forma anónima, sin identificarte a vos ni a tus clientes. En las páginas públicas
+                (no dentro del panel) usamos Google Analytics para contar visitas y Microsoft
+                Clarity para ver cómo se navega el sitio (mapas de calor y grabaciones de pantalla
+                con los datos de formularios ocultos); ambos guardan cookies propias en tu
+                navegador. Nada de esto se carga dentro de tu panel, así que tus ventas, clientes
+                y cuentas nunca se miden ni se graban. No usamos cookies de publicidad.
               </p>
             </section>
 

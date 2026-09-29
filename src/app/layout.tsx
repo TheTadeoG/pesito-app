@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fredoka, Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { siteUrl } from "@/lib/utils";
+import { Analytics } from "@/components/analytics";
 import { ScrollToTopOnNavigate } from "@/components/scroll-to-top-on-navigate";
 import "./globals.css";
 
@@ -94,6 +95,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ScrollToTopOnNavigate />
         {children}
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
