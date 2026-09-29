@@ -7,8 +7,8 @@ export function Faq() {
   return (
     <section id="preguntas-frecuentes" className="scroll-mt-20 mx-auto max-w-3xl px-4 py-20 sm:px-6">
       <div className="text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Preguntas frecuentes
+        <h2 className="text-4xl font-extrabold tracking-[-0.035em] text-foreground sm:text-5xl">
+          Preguntas <span className="text-primary">frecuentes</span>
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
           Lo que más nos preguntan antes de empezar.

@@ -70,8 +70,8 @@ export function Support() {
     <section className="mx-auto max-w-5xl px-4 py-20 sm:px-6">
       <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Cuando algo no funciona, alguien te contesta
+          <h2 className="text-4xl font-extrabold tracking-[-0.035em] text-foreground sm:text-5xl">
+            Cuando algo no funciona, <span className="text-primary">alguien te contesta</span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
             No tenemos un ejército de soporte — todavía. Lo que sí tenemos es un equipo chico que

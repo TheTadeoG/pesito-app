@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/marketing/navbar";
 import { Hero } from "@/components/marketing/hero";
+import { Versus } from "@/components/marketing/versus";
 import { Stats } from "@/components/marketing/stats";
 import { Features } from "@/components/marketing/features";
 import { BulkPrices } from "@/components/marketing/bulk-prices";
@@ -22,6 +23,7 @@ export default function LandingPage() {
       <Navbar />
       <main className="flex-1">
         <Hero />
+        <Versus />
         <DashboardShowcase />
         <Stats />
         <Features />

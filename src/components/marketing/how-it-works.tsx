@@ -24,8 +24,8 @@ export function HowItWorks() {
     <section id="como-funciona" className="scroll-mt-20 border-y border-border bg-card/50 py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Empezar te lleva menos de 10 minutos
+          <h2 className="text-4xl font-extrabold tracking-[-0.035em] text-foreground sm:text-5xl">
+            Empezar te lleva <span className="text-primary">menos de 10 minutos</span>
           </h2>
         </div>
 

@@ -61,12 +61,32 @@ const features = [
   },
 ];
 
+// Bento: 8 funciones, 8 celdas (3+3 / 2+2+2 / 2+2+2), con algunas celdas de color
+// para que la grilla tenga ritmo. Las dos primeras son las que más se usan.
+const cells = [
+  { span: "lg:col-span-3", tone: "deep" },
+  { span: "lg:col-span-3", tone: "tint" },
+  { span: "lg:col-span-2", tone: "card" },
+  { span: "lg:col-span-2", tone: "card" },
+  { span: "lg:col-span-2", tone: "card" },
+  { span: "lg:col-span-2", tone: "block" },
+  { span: "lg:col-span-2", tone: "card" },
+  { span: "lg:col-span-2", tone: "card" },
+] as const;
+
+const tones = {
+  deep: { box: "border-transparent bg-deep text-deep-foreground", icon: "bg-lime/15 text-lime", text: "text-deep-muted" },
+  block: { box: "border-transparent bg-block text-white", icon: "bg-white/15 text-white", text: "text-white/80" },
+  tint: { box: "border-border bg-muted/60 text-foreground", icon: "bg-accent text-accent-foreground", text: "text-muted-foreground" },
+  card: { box: "border-border bg-card text-foreground", icon: "bg-accent text-accent-foreground", text: "text-muted-foreground" },
+} as const;
+
 export function Features() {
   return (
     <section id="funciones" className="scroll-mt-20 mx-auto max-w-6xl px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Todo lo que necesita tu negocio, en un solo lugar
+        <h2 className="text-4xl font-extrabold tracking-[-0.035em] text-foreground sm:text-5xl">
+          Todo lo que necesita tu negocio, <span className="text-primary">en un solo lugar</span>
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
           Pesito junta en una sola app lo que hoy manejás con cuaderno,
@@ -74,21 +94,25 @@ export function Features() {
         </p>
       </div>
 
-      <StaggerIn className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {features.map((feature) => (
-          <div
-            key={feature.title}
-            className="rounded-card border border-border bg-card p-6 transition-shadow hover:shadow-lg hover:shadow-primary/5"
-          >
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-              <feature.icon className="h-5 w-5" />
-            </span>
-            <h3 className="mt-4 font-semibold text-foreground">{feature.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {feature.description}
-            </p>
-          </div>
-        ))}
+      <StaggerIn className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        {features.map((feature, i) => {
+          const cell = cells[i] ?? { span: "lg:col-span-2", tone: "card" as const };
+          const tone = tones[cell.tone];
+          return (
+            <div
+              key={feature.title}
+              className={`rounded-card border p-6 transition-shadow hover:shadow-lg hover:shadow-primary/5 sm:p-7 ${cell.span} ${tone.box}`}
+            >
+              <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone.icon}`}>
+                <feature.icon className="h-5 w-5" />
+              </span>
+              <h3 className="mt-5 text-lg font-bold tracking-tight">{feature.title}</h3>
+              <p className={`mt-2 max-w-md text-sm leading-relaxed ${tone.text}`}>
+                {feature.description}
+              </p>
+            </div>
+          );
+        })}
       </StaggerIn>
     </section>
   );

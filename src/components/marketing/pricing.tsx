@@ -55,8 +55,8 @@ export function Pricing() {
   return (
     <section id="precios" className="scroll-mt-20 mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Empezá gratis. Pagá recién cuando crezcas
+        <h2 className="text-4xl font-extrabold tracking-[-0.035em] text-foreground sm:text-5xl">
+          Empezá gratis. <span className="text-primary">Pagá recién cuando crezcas</span>
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
           El Plan Gratis no vence y no pide tarjeta. Cuando tu negocio necesite más ventas,

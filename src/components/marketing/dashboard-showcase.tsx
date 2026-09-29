@@ -506,8 +506,8 @@ export function DashboardShowcase() {
   return (
     <section className="mx-auto max-w-5xl px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Mirá cómo se ve tu negocio en Pesito
+        <h2 className="text-4xl font-extrabold tracking-[-0.035em] text-foreground sm:text-5xl">
+          Mirá cómo se ve <span className="text-primary">tu negocio</span> en Pesito
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
           Ventas, stock y caja, siempre a la vista — sin tener que sumarlo vos a mano.
