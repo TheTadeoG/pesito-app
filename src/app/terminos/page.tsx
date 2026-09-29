@@ -88,8 +88,8 @@ export default function TerminosPage() {
               <h2 className="text-lg font-semibold text-foreground">8. Contacto</h2>
               <p className="mt-2 text-muted-foreground">
                 Ante cualquier consulta, escribinos a{" "}
-                <a href="mailto:soporte@pesito.app" className="text-primary hover:underline">
-                  soporte@pesito.app
+                <a href="mailto:soporte@pesito.com.ar" className="text-primary hover:underline">
+                  soporte@pesito.com.ar
                 </a>
                 .
               </p>

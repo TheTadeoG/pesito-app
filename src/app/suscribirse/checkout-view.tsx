@@ -286,7 +286,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                 </button>
               ) : (
                 <p className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-                  El pago con Mercado Pago todavía no está disponible. Escribinos a soporte@pesito.app y
+                  El pago con Mercado Pago todavía no está disponible. Escribinos a soporte@pesito.com.ar y
                   te lo activamos.
                 </p>
               )}

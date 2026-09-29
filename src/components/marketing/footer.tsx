@@ -36,7 +36,7 @@ const columns: {
   {
     title: "Soporte",
     links: [
-      { label: "Contacto", href: "mailto:soporte@pesito.app", external: true },
+      { label: "Contacto", href: "mailto:soporte@pesito.com.ar", external: true },
     ],
   },
   {

@@ -26,11 +26,11 @@ export default function SoportePage() {
             WhatsApp
           </a>
           <a
-            href="mailto:soporte@pesito.app"
+            href="mailto:soporte@pesito.com.ar"
             className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-muted"
           >
             <Mail className="h-4 w-4 text-primary" />
-            soporte@pesito.app
+            soporte@pesito.com.ar
           </a>
         </CardContent>
       </Card>

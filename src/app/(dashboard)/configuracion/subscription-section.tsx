@@ -365,7 +365,7 @@ export function SubscriptionSection({
                   )}
                   {canSwitch && canManage && !paymentsEnabled && (
                     <a
-                      href={`mailto:soporte@pesito.app?subject=${encodeURIComponent(
+                      href={`mailto:soporte@pesito.com.ar?subject=${encodeURIComponent(
                         `Quiero pasarme al ${def.name}`
                       )}`}
                     >

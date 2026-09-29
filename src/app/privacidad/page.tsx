@@ -67,8 +67,8 @@ export default function PrivacidadPage() {
               <p className="mt-2 text-muted-foreground">
                 Podés pedir la exportación o eliminación de tu cuenta y tus datos en cualquier momento
                 escribiendo a{" "}
-                <a href="mailto:soporte@pesito.app" className="text-primary hover:underline">
-                  soporte@pesito.app
+                <a href="mailto:soporte@pesito.com.ar" className="text-primary hover:underline">
+                  soporte@pesito.com.ar
                 </a>
                 . Vas a recibir una respuesta en un plazo razonable.
               </p>
@@ -86,8 +86,8 @@ export default function PrivacidadPage() {
               <h2 className="text-lg font-semibold text-foreground">7. Contacto</h2>
               <p className="mt-2 text-muted-foreground">
                 Ante cualquier consulta sobre privacidad, escribinos a{" "}
-                <a href="mailto:soporte@pesito.app" className="text-primary hover:underline">
-                  soporte@pesito.app
+                <a href="mailto:soporte@pesito.com.ar" className="text-primary hover:underline">
+                  soporte@pesito.com.ar
                 </a>
                 .
               </p>
