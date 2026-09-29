@@ -206,7 +206,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
           <p className="text-xs text-muted-foreground">
             {`Obligatorias: ${TEMPLATE_COLUMNS.filter((c) => c.required)
               .map((c) => c.title)
-              .join(" y ")}. Las demás son opcionales. Si un producto ya existe (mismo código de barras o SKU), no se duplica.`}
+              .join(" y ")}. Las demás son opcionales. Si un producto ya existe (mismo código de barras o SKU), no se crea de nuevo: por defecto se deja como está y no se modifica. Si querés, antes de cargar podés elegir que se actualicen su precio, costo y marca con los datos de la planilla. Su stock nunca se toca.`}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => void downloadTemplate()}>
