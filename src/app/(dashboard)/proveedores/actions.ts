@@ -19,6 +19,10 @@ export interface SupplierFormInput {
   leadTimeDays: string;
   /** Ya tenía un plazo cargado (para poder borrarlo). */
   hadLeadTime: boolean;
+  /** Pedido mínimo en pesos ("" = sin mínimo). */
+  minOrderAmount: string;
+  /** Ya tenía un mínimo cargado (para poder borrarlo). */
+  hadMinOrder: boolean;
 }
 
 export async function saveSupplier(input: SupplierFormInput): Promise<ActionState> {
@@ -37,6 +41,14 @@ export async function saveSupplier(input: SupplierFormInput): Promise<ActionStat
     return { error: "El plazo de entrega tiene que ser un número de días entre 0 y 90." };
   }
 
+  // Pedido mínimo (0054): mismo criterio que el plazo, sólo se manda con un
+  // valor o al borrar uno cargado.
+  const minRaw = input.minOrderAmount.trim().replace(",", ".");
+  const minOrderAmount = minRaw === "" ? null : Number(minRaw);
+  if (minOrderAmount !== null && (!Number.isFinite(minOrderAmount) || minOrderAmount < 0 || minOrderAmount > 1_000_000_000)) {
+    return { error: "El pedido mínimo tiene que ser un monto válido." };
+  }
+
   const payload = {
     org_id: organization.id,
     name: input.name.trim(),
@@ -44,6 +56,7 @@ export async function saveSupplier(input: SupplierFormInput): Promise<ActionStat
     email: input.email.trim() || null,
     notes: input.notes.trim() || null,
     ...(leadTimeDays !== null || input.hadLeadTime ? { lead_time_days: leadTimeDays } : {}),
+    ...(minOrderAmount !== null || input.hadMinOrder ? { min_order_amount: minOrderAmount } : {}),
   };
 
   if (input.id) {

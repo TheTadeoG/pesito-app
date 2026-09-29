@@ -529,6 +529,8 @@ export interface Database {
           balance: number;
           /** Días que tarda en llegar un pedido (0052). undefined si falta la migración. */
           lead_time_days?: number | null;
+          /** Monto mínimo de pedido en pesos (0054). undefined si falta la migración. */
+          min_order_amount?: number | null;
           created_at: string;
         };
         Insert: {
@@ -540,6 +542,7 @@ export interface Database {
           notes?: string | null;
           balance?: number;
           lead_time_days?: number | null;
+          min_order_amount?: number | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;

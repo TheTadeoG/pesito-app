@@ -25,6 +25,11 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
       ? String(supplier.lead_time_days)
       : ""
   );
+  const [minOrderAmount, setMinOrderAmount] = useState(
+    supplier?.min_order_amount !== null && supplier?.min_order_amount !== undefined
+      ? String(supplier.min_order_amount)
+      : ""
+  );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +46,8 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
       notes,
       leadTimeDays,
       hadLeadTime: supplier?.lead_time_days !== null && supplier?.lead_time_days !== undefined,
+      minOrderAmount,
+      hadMinOrder: supplier?.min_order_amount !== null && supplier?.min_order_amount !== undefined,
     };
 
     const result = await saveSupplier(input);
@@ -100,6 +107,23 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
           <p className="mt-1.5 text-xs text-muted-foreground">
             Cuánto tarda en llegar un pedido. Con esto, las recomendaciones de compra te avisan cuándo
             pedir para no quedarte sin stock mientras llega.
+          </p>
+        </div>
+
+        <div>
+          <Label htmlFor="s-min">Pedido mínimo en pesos (opcional)</Label>
+          <Input
+            id="s-min"
+            type="number"
+            min={0}
+            step="any"
+            value={minOrderAmount}
+            onChange={(e) => setMinOrderAmount(e.target.value)}
+            placeholder="Ej: 50000"
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Si el proveedor pide un monto mínimo para despachar, las recomendaciones te avisan cuánto
+            falta para llegar.
           </p>
         </div>
 

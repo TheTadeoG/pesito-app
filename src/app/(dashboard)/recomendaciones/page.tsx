@@ -25,6 +25,7 @@ import {
 import { PriceSuggestions } from "@/app/(dashboard)/recomendaciones/price-suggestions";
 import { RestockSettingsPanel } from "@/app/(dashboard)/recomendaciones/restock-settings";
 import { OrderPlacedButton, PendingOrderCard } from "@/app/(dashboard)/recomendaciones/restock-orders";
+import { DaysBar, RestockSummary, SupplierSpendChart } from "@/app/(dashboard)/recomendaciones/restock-visuals";
 
 const urgencyStyle: Record<RestockRow["urgency"], { label: string; className: string }> = {
   "sin-stock": { label: "Sin stock", className: "bg-danger-bg text-danger" },
@@ -81,6 +82,11 @@ export default async function RecomendacionesPage() {
     : [];
 
   const restockCount = groups.reduce((n, g) => n + g.rows.length, 0);
+  const allRows = groups.flatMap((g) => g.rows);
+  const spendRows = groups
+    .filter((g) => g.supplierId && g.estimatedCost > 0)
+    .map((g) => ({ name: g.supplierName, cost: g.estimatedCost }))
+    .sort((a, b) => b.cost - a.cost);
 
   return (
     <div className="space-y-8">
@@ -94,6 +100,15 @@ export default async function RecomendacionesPage() {
         {restockOn && (
           <RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} />
         )}
+        {restockOn && restockCount > 0 && (
+          <RestockSummary
+            outOfStock={allRows.filter((r) => r.urgency === "sin-stock").length}
+            urgent={allRows.filter((r) => r.urgency === "urgente").length}
+            estimatedTotal={groups.reduce((n, g) => n + g.estimatedCost, 0)}
+            inTransit={pendingOrders.length}
+          />
+        )}
+        {restockOn && spendRows.length > 1 && <SupplierSpendChart rows={spendRows.slice(0, 8)} />}
         {pendingOrders.length > 0 && (
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">
@@ -149,6 +164,15 @@ export default async function RecomendacionesPage() {
                         : `${group.rows.length} productos`}
                       {group.leadDays !== null && ` · entrega en ${group.leadDays} día${group.leadDays === 1 ? "" : "s"}`}
                     </p>
+                    {group.minOrder !== null && (
+                      <p
+                        className={`text-xs ${group.estimatedCost > 0 && group.estimatedCost < group.minOrder ? "font-medium text-warning" : "text-muted-foreground"}`}
+                      >
+                        {group.estimatedCost > 0 && group.estimatedCost < group.minOrder
+                          ? `Pedido mínimo ${formatCurrency(group.minOrder)}: te faltan ${formatCurrency(group.minOrder - group.estimatedCost)} para llegar.`
+                          : `Pedido mínimo del proveedor: ${formatCurrency(group.minOrder)}.`}
+                      </p>
+                    )}
                   </div>
                   {group.supplierId && (
                     <div className="flex flex-wrap items-center gap-2">
@@ -181,6 +205,12 @@ export default async function RecomendacionesPage() {
                           {`Stock ${formatQty(Math.max(0, r.product.stock), r.product.unit)}`}
                           {r.daysLeft !== null ? ` · alcanza ${Math.floor(r.daysLeft)} días` : " · sin ventas en el período"}
                         </p>
+                        <DaysBar daysLeft={r.daysLeft} targetDays={settings.targetDays} urgency={r.urgency} />
+                        {r.lowHistory && (
+                          <p className="text-xs text-muted-foreground">
+                            Pocos datos de venta: el ritmo puede no ser exacto.
+                          </p>
+                        )}
                         {r.onOrder > 0 && (
                           <p className="text-xs font-medium text-primary">
                             {`Ya pedido: ${formatQty(r.onOrder, r.product.unit)} en camino. Esto es lo que falta además.`}

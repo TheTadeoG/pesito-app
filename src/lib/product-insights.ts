@@ -39,6 +39,8 @@ export interface InsightsBase {
   supplierNames: Map<string, string>;
   /** Días que tarda en llegar un pedido de cada proveedor (0052); sólo los que lo cargaron. */
   supplierLeadDays: Map<string, number>;
+  /** Pedido mínimo de cada proveedor en pesos (0054); sólo los que lo cargaron. */
+  supplierMinOrder: Map<string, number>;
   /** Lo que ya se pidió y todavía no llegó, por producto (0053). Lo carga quien lo use. */
   onOrder: Map<string, number>;
 }
@@ -120,6 +122,11 @@ export async function loadInsightsBase(
       (suppliers ?? [])
         .filter((s) => s.lead_time_days !== null && s.lead_time_days !== undefined)
         .map((s) => [s.id, Number(s.lead_time_days)])
+    ),
+    supplierMinOrder: new Map(
+      (suppliers ?? [])
+        .filter((s) => s.min_order_amount !== null && s.min_order_amount !== undefined && Number(s.min_order_amount) > 0)
+        .map((s) => [s.id, Number(s.min_order_amount)])
     ),
     onOrder: new Map(),
   };
@@ -208,6 +215,8 @@ export interface RestockRow {
   late: boolean;
   /** Lo que ya se pidió y no llegó (ya descontado de la cantidad sugerida). */
   onOrder: number;
+  /** Hay pocos datos de venta (producto nuevo o pocos días con ventas): el ritmo es poco confiable. */
+  lowHistory: boolean;
 }
 
 export interface RestockGroup {
@@ -217,6 +226,8 @@ export interface RestockGroup {
   estimatedCost: number;
   /** Plazo de entrega del proveedor en días (null si no lo cargó). */
   leadDays: number | null;
+  /** Pedido mínimo del proveedor en pesos (null si no lo cargó). */
+  minOrder: number | null;
 }
 
 export interface RestockSettings {
@@ -276,6 +287,7 @@ export function computeRestock(
     const urgency: RestockRow["urgency"] =
       product.stock <= 0 ? "sin-stock" : daysLeft !== null && daysLeft <= urgentDays ? "urgente" : "pronto";
     const late = leadDays > 0 && daysLeft !== null && daysLeft < leadDays;
+    const lowHistory = perDay > 0 && (ageInDays(product, now) < 14 || (stat?.saleDays ?? 0) < 3);
 
     const key = product.default_supplier_id ?? "";
     const group = groups.get(key) ?? {
@@ -287,6 +299,9 @@ export function computeRestock(
       estimatedCost: 0,
       leadDays: product.default_supplier_id
         ? base.supplierLeadDays.get(product.default_supplier_id) ?? null
+        : null,
+      minOrder: product.default_supplier_id
+        ? base.supplierMinOrder.get(product.default_supplier_id) ?? null
         : null,
     };
     const estimatedCost = product.cost !== null && product.cost > 0 ? suggestedQty * product.cost : null;
@@ -301,6 +316,7 @@ export function computeRestock(
       urgency,
       late,
       onOrder,
+      lowHistory,
     });
     group.estimatedCost += estimatedCost ?? 0;
     groups.set(key, group);
