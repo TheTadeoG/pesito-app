@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, SkipForward, Truck, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, SkipForward, TrendingDown, Truck, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -844,10 +844,16 @@ function lostSales(row: FlowRow): number {
 
 function ChartCard({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-border px-4 py-3">
-      <p className="text-sm font-semibold text-foreground">{title}</p>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-      <div className="mt-2.5">{children}</div>
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        {hint && (
+          <span className="shrink-0 rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+            {hint}
+          </span>
+        )}
+      </div>
+      <div className="mt-3">{children}</div>
     </div>
   );
 }
@@ -876,7 +882,7 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
   return (
     <div className="space-y-3">
       {totalCost > 0 && (
-        <div className="rounded-xl border border-border px-4 py-3">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <p className="text-sm font-semibold text-foreground">{`Tu pedido total: ${formatCurrency(totalCost)}`}</p>
           <div className="mt-2.5 flex h-4 overflow-hidden rounded-full bg-muted">
             <span className="h-full bg-foreground/75" style={{ width: `${(todayCost / totalCost) * 100}%` }} />
@@ -897,9 +903,10 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
 
       {lostTotal > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
-          <ChartCard title="Qué pasa si no pedís" hint={`Próximos ${HORIZON} días`}>
+          <ChartCard title="Qué pasa si no pedís" hint={`Estimación · ${HORIZON} días`}>
             <p className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-3xl font-extrabold text-foreground">{formatCurrency(lostTotal)}</span>
+              <TrendingDown className="h-6 w-6 self-center text-danger" aria-hidden />
+              <span className="text-3xl font-semibold tracking-tight text-foreground">{formatCurrency(lostTotal)}</span>
               <span className="text-sm text-muted-foreground">en ventas que podrías perder</span>
             </p>
             <ul className="mt-3 space-y-2">
@@ -933,7 +940,8 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
                       />
                     </span>
                     <span className="whitespace-nowrap text-xs text-muted-foreground">
-                      <span className={cn("font-bold", out ? "text-danger" : "text-foreground")}>
+                      <span className={cn("inline-flex items-center gap-1 font-semibold", out ? "text-danger" : "text-foreground")}>
+                        {out && <TrendingDown className="h-3.5 w-3.5" aria-hidden />}
                         {out ? "Sin stock" : `${num(left)} ${plural(left, "día", "días")}`}
                       </span>
                       {` · ${withUnit(row.perDay, row.unit)} por día`}
@@ -1093,26 +1101,26 @@ export function RestockFlow({
         </Card>
       ) : (
         <>
-          <Card className="p-5">
+          <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               {/* Hoy */}
               <div
                 className={cn(
-                  "rounded-2xl border p-5",
-                  urgentGroups.length > 0 ? "border-danger/25 bg-danger-bg/40" : "border-border bg-muted/30"
+                  "rounded-2xl border border-t-[3px] bg-card p-5 shadow-sm",
+                  urgentGroups.length > 0 ? "border-border border-t-danger" : "border-border"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <span
                     className={cn(
-                      "text-5xl font-extrabold leading-none",
+                      "text-5xl font-semibold leading-none tracking-tight",
                       urgentGroups.length > 0 ? "text-danger" : "text-muted-foreground"
                     )}
                   >
                     {urgentGroups.length}
                   </span>
                   <div>
-                    <p className="text-lg font-extrabold leading-snug text-foreground">
+                    <p className="text-lg font-semibold leading-snug tracking-tight text-foreground">
                       {urgentGroups.length > 0
                         ? `Hoy tenés que pedirle a ${urgentGroups.length} ${plural(urgentGroups.length, "proveedor", "proveedores")}`
                         : "Hoy no tenés que pedir nada"}
@@ -1139,21 +1147,21 @@ export function RestockFlow({
               {/* Esta semana */}
               <div
                 className={cn(
-                  "rounded-2xl border p-5",
-                  weekGroups.length > 0 ? "border-amber-500/30 bg-amber-500/10" : "border-border bg-muted/30"
+                  "rounded-2xl border border-t-[3px] bg-card p-5 shadow-sm",
+                  weekGroups.length > 0 ? "border-border border-t-slate-300" : "border-border"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <span
                     className={cn(
-                      "text-5xl font-extrabold leading-none",
-                      weekGroups.length > 0 ? "text-amber-600" : "text-muted-foreground"
+                      "text-5xl font-semibold leading-none tracking-tight",
+                      weekGroups.length > 0 ? "text-foreground/70" : "text-muted-foreground"
                     )}
                   >
                     {weekGroups.length}
                   </span>
                   <div>
-                    <p className="text-lg font-extrabold leading-snug text-foreground">
+                    <p className="text-lg font-semibold leading-snug tracking-tight text-foreground">
                       {weekGroups.length > 0
                         ? `Esta semana tenés que pedirle a ${weekGroups.length} ${plural(weekGroups.length, "proveedor", "proveedores")}`
                         : "Esta semana no hace falta pedir más"}
@@ -1168,7 +1176,7 @@ export function RestockFlow({
                 {weekGroups.length > 0 && (
                   <button
                     type="button"
-                    className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/60 bg-card px-6 text-base font-semibold text-amber-600 transition-colors hover:bg-amber-500/10"
+                    className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-6 text-base font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
                     onClick={() => start(weekGroups.map((g) => g.key))}
                   >
                     {weekGroups.length > 1 ? `Ver y pedir · 1 de ${weekGroups.length}` : "Ver y pedir"}
@@ -1178,13 +1186,10 @@ export function RestockFlow({
               </div>
             </div>
 
-            <div className="mt-5">
-              <RestockCharts groups={groups} />
-            </div>
+            <RestockCharts groups={groups} />
 
-            {settingsBlock}
-
-          </Card>
+            <Card className="px-4 py-3">{settingsBlock}</Card>
+          </div>
 
           {visible.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
