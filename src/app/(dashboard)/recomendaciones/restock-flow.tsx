@@ -888,6 +888,7 @@ export function RestockFlow({
 
   return (
     <div className="space-y-6">
+      {settingsBlock}
       {skipNotice && (
         <div className="flex items-start justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
           <p className="text-foreground">
@@ -1041,7 +1042,6 @@ export function RestockFlow({
       )}
 
       {pendingBlock}
-      {settingsBlock}
       {pricesBlock}
     </div>
   );
