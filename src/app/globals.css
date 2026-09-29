@@ -307,3 +307,66 @@ body {
     font-size: 9px;
   }
 }
+
+/* Landing: preguntas frecuentes con altura animada. Mejora progresiva: donde
+   el navegador no soporta ::details-content se abre sin animación, igual que antes. */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+@supports selector(::details-content) {
+  .faq-details::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 220ms cubic-bezier(0.23, 1, 0.32, 1),
+      opacity 160ms ease-out,
+      content-visibility 220ms allow-discrete;
+  }
+
+  .faq-details[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
+/* Landing: las tarjetas entran subiendo 8 px a medida que aparecen en pantalla.
+   Sólo donde hay animation-timeline: sin soporte se ven directo. --c es la
+   columna, para escalonar las tarjetas de una misma fila. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .rise-in {
+    animation: rise-in linear both;
+    animation-timeline: view();
+    animation-range: entry calc(var(--c, 0) * 6%) entry calc(35% + var(--c, 0) * 6%);
+  }
+}
+
+/* Movimiento reducido: sin pulsos, sin scroll suave y sin desplazamientos.
+   Se mantienen los cambios de color y opacidad, que ayudan a entender. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-ping {
+    animation: none;
+  }
+
+  .rise-in {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -85,13 +85,20 @@ export function Pricing() {
         ))}
       </ol>
 
-      <div className="mx-auto mt-8 flex w-fit items-center gap-1 rounded-full border border-border bg-card p-1">
+      <div className="relative mx-auto mt-8 grid w-fit grid-cols-2 items-center rounded-full border border-border bg-card p-1">
+        <span
+          aria-hidden
+          className={cn(
+            "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-primary transition-transform duration-[240ms] ease-[cubic-bezier(0.77,0,0.175,1)]",
+            annual && "translate-x-full"
+          )}
+        />
         <button
           type="button"
           onClick={() => setAnnual(false)}
           className={cn(
-            "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-            !annual ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            "relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 ease-out",
+            !annual ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
           )}
         >
           Mensual
@@ -100,8 +107,8 @@ export function Pricing() {
           type="button"
           onClick={() => setAnnual(true)}
           className={cn(
-            "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-            annual ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            "relative flex items-center justify-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 ease-out",
+            annual ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
           )}
         >
           Anual

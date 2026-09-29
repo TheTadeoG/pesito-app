@@ -40,8 +40,12 @@ export function InfoMenu() {
         Recursos
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
       </button>
-      {open && (
-        <div className="absolute left-0 z-30 mt-3 min-w-[250px] overflow-hidden rounded-xl border border-border bg-card py-1.5 shadow-lg">
+      <div
+        className={cn(
+          "absolute left-0 z-30 mt-3 min-w-[250px] origin-top-left overflow-hidden rounded-xl border border-border bg-card py-1.5 shadow-lg transition-[opacity,transform,visibility] duration-150 ease-out",
+          open ? "visible translate-y-0 scale-100 opacity-100" : "invisible -translate-y-1 scale-95 opacity-0"
+        )}
+      >
           {infoLinks.map((link) => (
             <Link
               key={link.href}
@@ -52,8 +56,7 @@ export function InfoMenu() {
               {link.label}
             </Link>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

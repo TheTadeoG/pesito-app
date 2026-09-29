@@ -19,11 +19,11 @@ export function Faq() {
         {featuredFaqs.map((faq) => (
           <details
             key={faq.question}
-            className="group rounded-card border border-border bg-card p-5 open:pb-5"
+            className="faq-details group rounded-card border border-border bg-card p-5 open:pb-5"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-foreground">
               {faq.question}
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out group-open:rotate-180" />
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{faq.answer}</p>
           </details>
