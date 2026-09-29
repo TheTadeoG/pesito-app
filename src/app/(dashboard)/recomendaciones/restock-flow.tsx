@@ -415,7 +415,7 @@ function OrderSheet({
   const [amounts, setAmounts] = useState<Record<string, number>>({});
   const [showAllSuggested, setShowAllSuggested] = useState(false);
   // Lo último que se sumó, para poder deshacerlo.
-  const [lastAdded, setLastAdded] = useState<{ id: string; name: string } | null>(null);
+  const [lastAdded, setLastAdded] = useState<{ id: string; name: string }[]>([]);
   const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -430,8 +430,8 @@ function OrderSheet({
 
   // El aviso de "Sumado" se va solo.
   useEffect(() => {
-    if (!lastAdded) return;
-    const id = window.setTimeout(() => setLastAdded(null), 7000);
+    if (lastAdded.length === 0) return;
+    const id = window.setTimeout(() => setLastAdded([]), 7000);
     return () => window.clearTimeout(id);
   }, [lastAdded]);
 
@@ -455,12 +455,27 @@ function OrderSheet({
       next.delete(r.id);
       return next;
     });
-  const add = (rows: FlowRow[]) =>
+  const add = (rows: FlowRow[]) => {
     setIncluded((current) => {
       const next = new Set(current);
       for (const r of rows) next.add(r.id);
       return next;
     });
+    // Se acumulan los sumados seguidos: "Deshacer" saca todos, cambien o no las cantidades.
+    setLastAdded((current) => [
+      ...current.filter((c) => !rows.some((r) => r.id === c.id)),
+      ...rows.map((r) => ({ id: r.id, name: r.name })),
+    ]);
+  };
+  const undoAdded = () => {
+    const ids = new Set(lastAdded.map((c) => c.id));
+    setIncluded((current) => {
+      const next = new Set(current);
+      for (const id of ids) next.delete(id);
+      return next;
+    });
+    setLastAdded([]);
+  };
 
   async function copy() {
     if (!message) return;
@@ -581,21 +596,23 @@ function OrderSheet({
             </p>
           )}
 
-          {lastAdded && (
+          {lastAdded.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-accent/60 px-4 py-2.5 text-sm">
               <span className="text-foreground">
-                ✓ Sumado: <span className="font-semibold">{lastAdded.name}</span> ahora está en tu pedido
+                {lastAdded.length === 1 ? (
+                  <>
+                    ✓ Sumado: <span className="font-semibold">{lastAdded[0].name}</span> ahora está en tu pedido
+                  </>
+                ) : (
+                  `✓ Sumaste ${lastAdded.length} productos a tu pedido`
+                )}
               </span>
               <button
                 type="button"
-                onClick={() => {
-                  const row = group.rows.find((r) => r.id === lastAdded.id);
-                  if (row) remove(row);
-                  setLastAdded(null);
-                }}
+                onClick={undoAdded}
                 className="font-bold text-primary hover:underline"
               >
-                Deshacer
+                {lastAdded.length === 1 ? "Deshacer" : "Deshacer todos"}
               </button>
             </div>
           )}
@@ -643,10 +660,7 @@ function OrderSheet({
                     )}
                     <button
                       type="button"
-                      onClick={() => {
-                        add([r]);
-                        setLastAdded({ id: r.id, name: r.name });
-                      }}
+                      onClick={() => add([r])}
                       className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-primary bg-card px-4 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
                     >
                       <Plus className="h-4 w-4" />
