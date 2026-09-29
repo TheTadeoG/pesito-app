@@ -13,9 +13,19 @@ export interface CuentaCorrienteMovement {
 export function CuentaCorriente({
   movements,
   emptyLabel = "Todavía no hay movimientos de cuenta corriente.",
+  oldestFirst = false,
+  finalBalanceLabel,
 }: {
   movements: CuentaCorrienteMovement[];
   emptyLabel?: string;
+  /**
+   * Lo más viejo arriba y el saldo corriendo hacia abajo, cerrando con una
+   * fila que marca el saldo actual (se lee como un extracto). Sin esto, lo
+   * más nuevo va arriba.
+   */
+  oldestFirst?: boolean;
+  /** Aclaración junto al saldo final (ej. "Le debés"). */
+  finalBalanceLabel?: string;
 }) {
   if (movements.length === 0) {
     return (
@@ -34,7 +44,8 @@ export function CuentaCorriente({
     },
     []
   );
-  const displayRows = [...rows].reverse();
+  const displayRows = oldestFirst ? rows : [...rows].reverse();
+  const finalSaldo = rows[rows.length - 1].saldo;
 
   return (
     <div className="overflow-x-auto">
@@ -67,6 +78,18 @@ export function CuentaCorriente({
             </tr>
           ))}
         </tbody>
+        {oldestFirst && (
+          <tfoot>
+            <tr className="border-t-2 border-border bg-accent/40">
+              <td colSpan={4} className="px-5 py-3 text-sm font-semibold text-foreground">
+                {finalBalanceLabel ? `Saldo actual · ${finalBalanceLabel}` : "Saldo actual"}
+              </td>
+              <td className="whitespace-nowrap px-5 py-3 text-right text-base font-bold text-foreground">
+                {formatCurrency(finalSaldo)}
+              </td>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );

@@ -161,6 +161,8 @@ export default async function ProveedorDetailPage({
         <CardContent className="p-0">
           <CuentaCorriente
             movements={movements}
+            oldestFirst
+            finalBalanceLabel={supplier.balance > 0 ? "Le debés" : supplier.balance < 0 ? "A tu favor" : undefined}
             emptyLabel="Todavía no hay compras a cuenta corriente ni pagos con este proveedor."
           />
         </CardContent>
