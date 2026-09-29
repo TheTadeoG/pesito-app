@@ -10,11 +10,21 @@ import { canUse, featureLockedMessage } from "@/lib/plan-access";
 import { getProductUsage } from "@/lib/plan-limits";
 import { getBranchContext } from "@/lib/branches";
 import { fetchAll } from "@/lib/supabase/fetch-all";
-import { IMPORT_CHUNK_SIZE, IMPORT_UNITS, normalizeText, type ImportRow } from "@/lib/product-import";
+import {
+  IMPORT_CHUNK_SIZE,
+  IMPORT_UNITS,
+  UPDATE_FIELDS,
+  normalizeText,
+  type ImportRow,
+  type UpdateField,
+} from "@/lib/product-import";
 
 export interface ImportOptions {
-  /** Si el producto ya existe (mismo código de barras o SKU), actualizar precio, costo y marca. */
-  updateExisting: boolean;
+  /**
+   * Si el producto ya existe (mismo código de barras o SKU): qué datos se
+   * actualizan con los de la planilla. Vacío = se deja como está.
+   */
+  updateFields: UpdateField[];
   /** Última tanda del archivo: recién ahí se refresca la pantalla. */
   last: boolean;
 }
@@ -133,13 +143,31 @@ export async function importProductsChunk(
     const existingId =
       (barcode && byBarcode.get(key(barcode))) || (sku && bySku.get(key(sku))) || null;
     if (existingId) {
-      if (!options.updateExisting) {
+      const fields = new Set(
+        (Array.isArray(options.updateFields) ? options.updateFields : []).filter((f) =>
+          UPDATE_FIELDS.some((u) => u.field === f)
+        )
+      );
+      if (fields.size === 0) {
         result.skipped++;
         continue;
       }
-      const patch: ProductPatch = { price };
-      if (cost !== null) patch.cost = cost;
-      if (brand) patch.brand = brand;
+      const patch: ProductPatch = {};
+      if (fields.has("price")) patch.price = price;
+      if (fields.has("cost") && cost !== null) patch.cost = cost;
+      if (fields.has("brand") && brand) patch.brand = brand;
+      if (fields.has("name")) patch.name = name;
+      if (fields.has("minStock")) patch.min_stock = minStock;
+      if (fields.has("unit")) patch.unit = unit;
+      // Un SKU o código que ya usa otro producto no se pisa (rompería la búsqueda).
+      if (fields.has("sku") && sku && (bySku.get(key(sku)) ?? existingId) === existingId) patch.sku = sku;
+      if (fields.has("barcode") && barcode && (byBarcode.get(key(barcode)) ?? existingId) === existingId) {
+        patch.barcode = barcode;
+      }
+      if (Object.keys(patch).length === 0) {
+        result.skipped++;
+        continue;
+      }
       toUpdate.push({ line, id: existingId, patch });
       continue;
     }

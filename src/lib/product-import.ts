@@ -10,6 +10,20 @@ export const IMPORT_CHUNK_SIZE = 250;
 /** Tope de filas por archivo: más que el límite de cualquier plan. */
 export const IMPORT_MAX_ROWS = 20000;
 
+/** Datos de un producto que ya existe que la carga puede actualizar (el stock nunca: sólo se mueve con ventas, compras y ajustes). */
+export type UpdateField = "price" | "cost" | "brand" | "name" | "minStock" | "unit" | "sku" | "barcode";
+
+export const UPDATE_FIELDS: { field: UpdateField; label: string; hint: string; defaultOn: boolean }[] = [
+  { field: "price", label: "Precio de venta", hint: "Se reemplaza por el de la planilla.", defaultOn: true },
+  { field: "cost", label: "Costo", hint: "Si la celda está vacía, se deja el costo actual.", defaultOn: true },
+  { field: "brand", label: "Marca", hint: "Si la celda está vacía, se deja la marca actual.", defaultOn: true },
+  { field: "name", label: "Nombre", hint: "Cambia el nombre del producto.", defaultOn: false },
+  { field: "minStock", label: "Stock mínimo", hint: "Cambia el aviso de reposición.", defaultOn: false },
+  { field: "unit", label: "Unidad", hint: "Unidad, kg, litro, etc.", defaultOn: false },
+  { field: "sku", label: "SKU", hint: "Si la celda está vacía, se deja el actual.", defaultOn: false },
+  { field: "barcode", label: "Código de barras", hint: "Si la celda está vacía, se deja el actual.", defaultOn: false },
+];
+
 export interface ImportRow {
   /** Número de fila en la planilla (la 1 es el título), para avisar dónde está un error. */
   line: number;

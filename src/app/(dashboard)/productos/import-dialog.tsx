@@ -5,15 +5,18 @@ import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/toast/toast-provider";
+import { cn } from "@/lib/utils";
 import { importProductsChunk } from "@/app/(dashboard)/productos/import-actions";
 import {
   IMPORT_CHUNK_SIZE,
   IMPORT_MAX_ROWS,
   TEMPLATE_COLUMNS,
+  UPDATE_FIELDS,
   parseCsv,
   parseProductSheet,
   type ImportProblem,
   type ParsedImport,
+  type UpdateField,
 } from "@/lib/product-import";
 
 interface Props {
@@ -68,6 +71,9 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
   const [parsed, setParsed] = useState<ParsedImport | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [updateExisting, setUpdateExisting] = useState(false);
+  const [fields, setFields] = useState<Set<UpdateField>>(
+    () => new Set(UPDATE_FIELDS.filter((f) => f.defaultOn).map((f) => f.field))
+  );
   const [progress, setProgress] = useState(0);
   const [summary, setSummary] = useState<Summary | null>(null);
 
@@ -99,6 +105,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
     setParsed(null);
     setReadError(null);
     setUpdateExisting(false);
+    setFields(new Set(UPDATE_FIELDS.filter((f) => f.defaultOn).map((f) => f.field)));
     setProgress(0);
     setSummary(null);
     if (inputRef.current) inputRef.current.value = "";
@@ -156,7 +163,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
       const last = i + IMPORT_CHUNK_SIZE >= rows.length;
       let res;
       try {
-        res = await importProductsChunk(chunk, { updateExisting, last });
+        res = await importProductsChunk(chunk, { updateFields: updateExisting ? [...fields] : [], last });
       } catch {
         total.error = "Se cortó la conexión. Lo que ya se cargó quedó guardado; volvé a subir la planilla para seguir (los productos repetidos se omiten).";
         break;
@@ -206,7 +213,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
           <p className="text-xs text-muted-foreground">
             {`Obligatorias: ${TEMPLATE_COLUMNS.filter((c) => c.required)
               .map((c) => c.title)
-              .join(" y ")}. Las demás son opcionales. Si un producto ya existe (mismo código de barras o SKU), no se crea de nuevo: por defecto se deja como está y no se modifica. Si querés, antes de cargar podés elegir que se actualicen su precio, costo y marca con los datos de la planilla. Su stock nunca se toca.`}
+              .join(" y ")}. Las demás son opcionales. Si un producto ya existe (mismo código de barras o SKU), no se crea de nuevo: por defecto se deja como está y no se modifica. Si querés, antes de cargar podés elegir qué datos actualizar con los de la planilla (precio, costo, marca, nombre, etc.). Su stock nunca se toca.`}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => void downloadTemplate()}>
@@ -256,20 +263,41 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
           )}
 
           {counts.known > 0 && (
-            <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-border p-3.5 text-sm">
-              <input
-                type="checkbox"
+            <div className="rounded-xl border border-border p-3.5">
+              <Toggle
                 checked={updateExisting}
-                onChange={(e) => setUpdateExisting(e.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-primary"
+                onChange={setUpdateExisting}
+                label={`Actualizar los ${counts.known.toLocaleString("es-AR")} que ya existen`}
+                hint="Sin activar, esos productos se dejan como están. El stock nunca se modifica."
               />
-              <span>
-                <span className="font-medium text-foreground">Actualizar los que ya existen</span>
-                <span className="block text-xs text-muted-foreground">
-                  Cambia el precio, el costo y la marca. Sin tildar, esos productos se dejan como están.
-                </span>
-              </span>
-            </label>
+              {updateExisting && (
+                <div className="mt-3 space-y-2.5 border-t border-border pt-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Qué datos actualizar
+                  </p>
+                  {UPDATE_FIELDS.map((f) => (
+                    <Toggle
+                      key={f.field}
+                      small
+                      checked={fields.has(f.field)}
+                      onChange={(on) =>
+                        setFields((current) => {
+                          const next = new Set(current);
+                          if (on) next.add(f.field);
+                          else next.delete(f.field);
+                          return next;
+                        })
+                      }
+                      label={f.label}
+                      hint={f.hint}
+                    />
+                  ))}
+                  {fields.size === 0 && (
+                    <p className="text-xs text-warning">Elegí al menos un dato o desactivá la actualización.</p>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           <div>
@@ -313,8 +341,8 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
             <Button variant="outline" onClick={reset}>
               Elegir otro archivo
             </Button>
-            <Button onClick={() => void startImport()} disabled={counts.fresh + (updateExisting ? counts.known : 0) === 0}>
-              {`Cargar ${(counts.fresh + (updateExisting ? counts.known : 0)).toLocaleString("es-AR")} productos`}
+            <Button onClick={() => void startImport()} disabled={counts.fresh + (updateExisting && fields.size > 0 ? counts.known : 0) === 0}>
+              {`Cargar ${(counts.fresh + (updateExisting && fields.size > 0 ? counts.known : 0)).toLocaleString("es-AR")} productos`}
             </Button>
           </div>
         </div>
@@ -392,6 +420,47 @@ function ProblemList({ problems }: { problems: ImportProblem[] }) {
         ))}
         {problems.length > shown.length && <li>{`… y ${problems.length - shown.length} más.`}</li>}
       </ul>
+    </div>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  hint,
+  small,
+}: {
+  checked: boolean;
+  onChange: (on: boolean) => void;
+  label: string;
+  hint?: string;
+  small?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className={small ? "text-sm text-foreground" : "text-sm font-medium text-foreground"}>{label}</p>
+        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+          checked ? "bg-primary" : "bg-muted"
+        )}
+      >
+        <span
+          className={cn(
+            "absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+            checked ? "translate-x-5" : "translate-x-0.5"
+          )}
+        />
+      </button>
     </div>
   );
 }
