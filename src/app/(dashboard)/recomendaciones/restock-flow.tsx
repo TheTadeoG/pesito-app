@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, Search, SkipForward, Truck, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, Search, Settings, SkipForward, Truck, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -724,36 +724,6 @@ function normalize(value: string): string {
     .toLowerCase();
 }
 
-/** Totales de lo sugerido: cuánta plata y cuántos productos hay en cada urgencia. */
-function Totals({ groups, pendingCount }: { groups: FlowGroup[]; pendingCount: number }) {
-  const all = groups.flatMap((g) => g.rows);
-  const today = all.filter(isToday);
-  const week = all.filter((r) => !isToday(r));
-  const tiles = [
-    { label: "Total sugerido", cost: groupCost(all), count: all.length, tone: "text-foreground", hint: `${groups.length} ${plural(groups.length, "proveedor", "proveedores")}` },
-    { label: "Para pedir hoy", cost: groupCost(today), count: today.length, tone: "text-danger", hint: "se acaban antes de que llegue el pedido" },
-    { label: "Esta semana", cost: groupCost(week), count: week.length, tone: "text-amber-600", hint: "todavía te alcanzan unos días" },
-  ];
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {tiles.map((t) => (
-        <div key={t.label} className="rounded-xl border border-border px-4 py-3">
-          <p className="text-xs font-semibold text-muted-foreground">{t.label}</p>
-          <p className={cn("mt-0.5 text-2xl font-extrabold", t.tone)}>{t.cost > 0 ? formatCurrency(t.cost) : "—"}</p>
-          <p className="text-xs text-muted-foreground">
-            {`${t.count} ${plural(t.count, "producto", "productos")} · ${t.hint}`}
-          </p>
-        </div>
-      ))}
-      <div className="rounded-xl border border-border px-4 py-3">
-        <p className="text-xs font-semibold text-muted-foreground">En camino</p>
-        <p className="mt-0.5 text-2xl font-extrabold text-foreground">{pendingCount}</p>
-        <p className="text-xs text-muted-foreground">{plural(pendingCount, "pedido sin recibir", "pedidos sin recibir")}</p>
-      </div>
-    </div>
-  );
-}
-
 /** Cuánto se pediría a cada proveedor, separando lo de hoy de lo de esta semana. */
 function SpendChart({ groups }: { groups: FlowGroup[] }) {
   const rows = groups
@@ -802,7 +772,6 @@ export function RestockFlow({
   suppliers,
   orgName,
   targetDays,
-  pendingCount,
   pendingBlock,
   pricesBlock,
   settingsBlock,
@@ -811,69 +780,45 @@ export function RestockFlow({
   suppliers: SupplierOption[];
   orgName: string;
   targetDays: number;
-  pendingCount: number;
   /** Pedidos en camino, ya armados por el servidor. */
   pendingBlock: ReactNode;
   /** Precios para revisar. */
   pricesBlock: ReactNode;
-  /** Ajustes de cálculo. */
+  /** Ajustes de cálculo (se abren con el engranaje). */
   settingsBlock: ReactNode;
 }) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
-  // "Empezar a pedir" recorre a los proveedores urgentes de a uno.
+  // "Empezar a pedir" recorre a los proveedores de a uno.
   const [queue, setQueue] = useState<string[]>([]);
   // Proveedores salteados en esta vuelta, y el aviso al terminar.
   const [skipped, setSkipped] = useState<string[]>([]);
   const [skipNotice, setSkipNotice] = useState<string[] | null>(null);
-  // Sumar a "Empezar a pedir" también a los proveedores de esta semana.
-  const [includeWeek, setIncludeWeek] = useState(false);
-  // Buscador y filtros de los proveedores.
+  // Al terminar lo de hoy: seguir con los proveedores de esta semana.
+  const [weekPrompt, setWeekPrompt] = useState<string[] | null>(null);
   const [search, setSearch] = useState("");
-  const [urgencyFilter, setUrgencyFilter] = useState<"todos" | "hoy" | "semana">("todos");
-  const [supplierFilter, setSupplierFilter] = useState("");
-  const [sort, setSort] = useState<"urgencia" | "monto" | "nombre">("urgencia");
+  const [showSettings, setShowSettings] = useState(false);
   const active = groups.find((g) => g.key === activeKey) ?? null;
 
   const urgentGroups = groups.filter((g) => g.rows.some(isToday));
-  const urgentProducts = groups.reduce((n, g) => n + g.rows.filter(isToday).length, 0);
-  // Proveedores sin nada urgente: se piden esta semana. Sin urgentes en ningún proveedor,
-  // todos son de esta semana y ya entran, así que el interruptor sólo hace falta si hay de los dos.
   const weekGroups = groups.filter((g) => !g.rows.some(isToday));
-  const canIncludeWeek = urgentGroups.length > 0 && weekGroups.length > 0;
-  const withWeek = includeWeek && canIncludeWeek;
-  const toOrder = urgentGroups.length > 0 && !withWeek ? urgentGroups.length : groups.length;
+  const urgentProducts = groups.reduce((n, g) => n + g.rows.filter(isToday).length, 0);
+  const toOrder = urgentGroups.length > 0 ? urgentGroups.length : groups.length;
 
   const query = normalize(search.trim());
-  const filtersActive = query !== "" || urgencyFilter !== "todos" || supplierFilter !== "";
   const visible = groups
-    .filter((g) => !supplierFilter || g.key === supplierFilter)
     .map((g) => {
       const supplierMatch = query !== "" && normalize(g.supplierName).includes(query);
-      const bucket =
-        urgencyFilter === "hoy"
-          ? g.rows.filter(isToday)
-          : urgencyFilter === "semana"
-            ? g.rows.filter((r) => !isToday(r))
-            : g.rows;
       const matches =
         query === "" || supplierMatch
-          ? bucket
-          : bucket.filter((r) => normalize(`${r.name} ${r.brand ?? ""}`).includes(query));
+          ? g.rows
+          : g.rows.filter((r) => normalize(`${r.name} ${r.brand ?? ""}`).includes(query));
       return { group: g, matches, focus: query !== "" && !supplierMatch };
     })
     .filter((v) => v.matches.length > 0)
-    .sort((a, b) => {
-      if (sort === "nombre") return a.group.supplierName.localeCompare(b.group.supplierName, "es");
-      if (sort === "monto") return groupCost(b.group.rows) - groupCost(a.group.rows);
-      const ua = a.group.rows.some(isToday) ? 0 : 1;
-      const ub = b.group.rows.some(isToday) ? 0 : 1;
-      return ua - ub;
-    });
+    .sort((a, b) => (a.group.rows.some(isToday) ? 0 : 1) - (b.group.rows.some(isToday) ? 0 : 1));
 
-  function start() {
-    // Primero los urgentes y después, si se pidió, los de esta semana.
-    const ordered = urgentGroups.length > 0 ? [...urgentGroups, ...(withWeek ? weekGroups : [])] : groups;
-    const keys = ordered.map((g) => g.key);
+  function start(keys: string[]) {
+    setWeekPrompt(null);
     setQueue(keys);
     setSkipped([]);
     setSkipNotice(null);
@@ -904,6 +849,10 @@ export function RestockFlow({
     const names = skippedNow
       .map((k) => groups.find((g) => g.key === k)?.supplierName)
       .filter((n): n is string => Boolean(n));
+    // Terminó lo de hoy: se ofrece seguir con los proveedores de esta semana.
+    const finishedToday = queue.some((k) => urgentGroups.some((g) => g.key === k));
+    const remainingWeek = weekGroups.filter((g) => !queue.includes(g.key)).map((g) => g.key);
+    if (finishedToday && remainingWeek.length > 0) setWeekPrompt(remainingWeek);
     setActiveKey(null);
     setQueue([]);
     setSkipped([]);
@@ -930,9 +879,10 @@ export function RestockFlow({
     );
   }
 
+  const guidedKeys = (urgentGroups.length > 0 ? urgentGroups : groups).map((g) => g.key);
+
   return (
     <div className="space-y-6">
-      {settingsBlock}
       {skipNotice && (
         <div className="flex items-start justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
           <p className="text-foreground">
@@ -950,6 +900,23 @@ export function RestockFlow({
           </button>
         </div>
       )}
+      {weekPrompt && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-accent/40 px-4 py-3">
+          <p className="text-sm text-foreground">
+            <span className="font-semibold">Listo con lo de hoy.</span>{" "}
+            {`Te ${weekPrompt.length === 1 ? "queda" : "quedan"} ${weekPrompt.length} ${plural(weekPrompt.length, "proveedor", "proveedores")} para pedir esta semana.`}
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => start(weekPrompt)}>
+              Seguir con esos
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setWeekPrompt(null)}>
+              Ahora no
+            </Button>
+          </div>
+        </div>
+      )}
+
       {groups.length === 0 ? (
         <Card className="p-6">
           <p className="text-lg font-bold text-foreground">No hace falta pedir nada por ahora</p>
@@ -973,50 +940,18 @@ export function RestockFlow({
                     : "Todo lo que sugerimos todavía te alcanza unos días."}
                 </p>
               </div>
-              <Button size="lg" onClick={start}>
+              <Button size="lg" onClick={() => start(guidedKeys)}>
                 {toOrder > 1 ? `Empezar a pedir · 1 de ${toOrder}` : "Empezar a pedir"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
 
-            {canIncludeWeek && (
-              <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/40 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Pedir también a los proveedores de esta semana
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {`${weekGroups.length} ${plural(weekGroups.length, "proveedor más", "proveedores más")} (${weekGroups.map((g) => g.supplierName).join(", ")}). Sus pedidos se suman al recorrido de "Empezar a pedir"; los de hoy quedan como están.`}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={withWeek}
-                  aria-label="Pedir también a los proveedores de esta semana"
-                  onClick={() => setIncludeWeek((v) => !v)}
-                  className={cn(
-                    "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-                    withWeek ? "bg-primary" : "bg-muted-foreground/30"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-                      withWeek ? "translate-x-5" : "translate-x-0.5"
-                    )}
-                  />
-                </button>
-              </div>
-            )}
-
-            <div className="mt-5 space-y-3">
-              <Totals groups={groups} pendingCount={pendingCount} />
+            <div className="mt-5">
               <SpendChart groups={groups} />
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <div className="relative min-w-[13rem] flex-1">
+            <div className="mt-5 flex items-center gap-2">
+              <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={search}
@@ -1026,72 +961,24 @@ export function RestockFlow({
                   className="pl-10"
                 />
               </div>
-              <div className="flex gap-0.5 rounded-xl border border-border bg-muted/40 p-0.5" role="group" aria-label="Urgencia">
-                {(
-                  [
-                    ["todos", "Todos"],
-                    ["hoy", "Para hoy"],
-                    ["semana", "Esta semana"],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setUrgencyFilter(value)}
-                    aria-pressed={urgencyFilter === value}
-                    className={cn(
-                      "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                      urgencyFilter === value
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <Select
-                value={supplierFilter}
-                onChange={(e) => setSupplierFilter(e.target.value)}
-                aria-label="Filtrar por proveedor"
-                className="sm:w-48"
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowSettings((v) => !v)}
+                aria-label="Cómo se calcula"
+                title="Cómo se calcula"
+                aria-expanded={showSettings}
               >
-                <option value="">Todos los proveedores</option>
-                {groups.map((g) => (
-                  <option key={g.key} value={g.key}>
-                    {g.supplierName}
-                  </option>
-                ))}
-              </Select>
-              <Select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as "urgencia" | "monto" | "nombre")}
-                aria-label="Ordenar"
-                className="sm:w-44"
-              >
-                <option value="urgencia">Más urgente primero</option>
-                <option value="monto">Mayor monto primero</option>
-                <option value="nombre">Por nombre</option>
-              </Select>
-              {filtersActive && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSearch("");
-                    setUrgencyFilter("todos");
-                    setSupplierFilter("");
-                  }}
-                >
-                  Limpiar
-                </Button>
-              )}
+                <Settings className="h-4 w-4" />
+              </Button>
             </div>
           </Card>
 
+          {showSettings && settingsBlock}
+
           {visible.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No hay nada que coincida con esa búsqueda o esos filtros.
+              No hay nada que coincida con esa búsqueda.
             </p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -1099,7 +986,7 @@ export function RestockFlow({
                 <SupplierCard
                   key={v.group.key}
                   group={v.group}
-                  matches={v.focus || urgencyFilter !== "todos" ? v.matches : undefined}
+                  matches={v.focus ? v.matches : undefined}
                   skipped={skipNotice?.includes(v.group.supplierName)}
                   onOpen={() => openGroup(v.group.key)}
                 />
