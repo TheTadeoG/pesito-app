@@ -21,7 +21,7 @@ import { PriceSuggestions } from "@/app/(dashboard)/recomendaciones/price-sugges
 import { RestockSettingsPanel } from "@/app/(dashboard)/recomendaciones/restock-settings";
 import { PendingOrderCard } from "@/app/(dashboard)/recomendaciones/restock-orders";
 import { RestockFlow } from "@/app/(dashboard)/recomendaciones/restock-flow";
-import { buildFlowGroups } from "@/lib/restock-view";
+import { buildFlowGroups, buildSupplierOptions } from "@/lib/restock-view";
 
 export default async function RecomendacionesPage() {
   const { organization, membership } = await requireOrgContext();
@@ -155,6 +155,7 @@ export default async function RecomendacionesPage() {
   return (
     <RestockFlow
       groups={flowGroups}
+      suppliers={buildSupplierOptions(base)}
       orgName={organization.name}
       targetDays={settings.targetDays}
       pendingCount={pendingOrders.length}

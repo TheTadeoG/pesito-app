@@ -45,6 +45,16 @@ export interface FlowGroup {
   rows: FlowRow[];
 }
 
+/** Un proveedor al que se le puede mandar un pedido de productos que no tienen proveedor habitual. */
+export interface SupplierOption {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  leadDays: number | null;
+  arrivalLabel: string | null;
+}
+
 const MAX_ROWS = 60;
 
 export function arrivalLabel(leadDays: number | null, now: Date = new Date()): string | null {
@@ -125,4 +135,21 @@ export function buildFlowGroups(
       })),
     };
   });
+}
+
+export function buildSupplierOptions(base: InsightsBase, now: Date = new Date()): SupplierOption[] {
+  return Array.from(base.supplierNames.entries())
+    .map(([id, name]) => {
+      const leadDays = base.supplierLeadDays.get(id) ?? null;
+      const contact = base.supplierContacts.get(id);
+      return {
+        id,
+        name,
+        phone: contact?.phone ?? null,
+        email: contact?.email ?? null,
+        leadDays,
+        arrivalLabel: arrivalLabel(leadDays, now),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
 }

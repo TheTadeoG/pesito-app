@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/toast/toast-provider";
 import { createRestockOrder } from "@/app/(dashboard)/recomendaciones/actions";
 import { cn, formatCurrency } from "@/lib/utils";
-import type { FlowGroup, FlowRow } from "@/lib/restock-view";
+import type { FlowGroup, FlowRow, SupplierOption } from "@/lib/restock-view";
 
 const WHOLE_UNITS = new Set(["u", "pack", "caja"]);
 const TICK = 0.6; // dónde cae la marca "llega el pedido" en la barra
@@ -375,6 +375,7 @@ function OrderRow({
 
 function OrderSheet({
   group,
+  suppliers,
   orgName,
   targetDays,
   onBack,
@@ -383,6 +384,8 @@ function OrderSheet({
   progress,
 }: {
   group: FlowGroup;
+  /** Para elegir a quién se le pide cuando los productos no tienen proveedor habitual. */
+  suppliers: SupplierOption[];
   orgName: string;
   targetDays: number;
   onBack: () => void;
@@ -394,7 +397,16 @@ function OrderSheet({
   progress: { index: number; total: number } | null;
 }) {
   const { showSuccess, showWarning } = useToast();
-  const leadDays = group.leadDays ?? 0;
+  // Sin proveedor habitual: se puede elegir a quién se le pide.
+  const [pickedId, setPickedId] = useState("");
+  const picked = group.supplierId ? undefined : suppliers.find((sup) => sup.id === pickedId);
+  const supplierId = group.supplierId ?? picked?.id ?? null;
+  const supplierName = group.supplierId ? group.supplierName : (picked?.name ?? null);
+  const phone = group.supplierId ? group.phone : (picked?.phone ?? null);
+  const email = group.supplierId ? group.email : (picked?.email ?? null);
+  const leadDaysValue = group.supplierId ? group.leadDays : (picked?.leadDays ?? null);
+  const arrival = group.supplierId ? group.arrivalLabel : (picked?.arrivalLabel ?? null);
+  const leadDays = leadDaysValue ?? 0;
   // Por defecto entra lo que hay que pedir hoy (o todo, si nada es urgente).
   const [included, setIncluded] = useState<Set<string>>(
     () => new Set(todayRows(group).map((r) => r.id))
@@ -418,9 +430,9 @@ function OrderSheet({
   const message =
     chosen.length === 0
       ? ""
-      : `Hola! Te paso el pedido de ${orgName}:\n${chosen.map((r) => `- ${qtyLabel(r, amountOf(r))} ${r.name}`).join("\n")}\nGracias!`;
-  const mailto = group.email
-    ? `mailto:${group.email}?subject=${encodeURIComponent(`Pedido de ${orgName}`)}&body=${encodeURIComponent(message)}`
+      : `${supplierName ? `Hola! Te paso el pedido de ${orgName}:` : `Lista de compras de ${orgName}:`}\n${chosen.map((r) => `- ${qtyLabel(r, amountOf(r))} ${r.name}`).join("\n")}${supplierName ? "\nGracias!" : ""}`;
+  const mailto = email
+    ? `mailto:${email}?subject=${encodeURIComponent(`Pedido de ${orgName}`)}&body=${encodeURIComponent(message)}`
     : null;
 
   const setAmount = (r: FlowRow, value: number) => {
@@ -451,12 +463,12 @@ function OrderSheet({
   }
 
   function markOrdered() {
-    if (!group.supplierId || chosen.length === 0) return;
-    const supplierId = group.supplierId;
+    if (!supplierId || chosen.length === 0) return;
+    const orderSupplierId = supplierId;
     startTransition(async () => {
       const result = await createRestockOrder({
-        supplierId,
-        items: chosen.map((r) => ({ productId: r.id, name: r.name, quantity: totalQty(r, amountOf(r)) })),
+        supplierId: orderSupplierId,
+        items: chosen.map((r) => ({ productId: r.id, name: r.name, quantity: totalQty(r, amountOf(r))})),
       });
       if (result.error) {
         showWarning(result.error);
@@ -503,12 +515,31 @@ function OrderSheet({
                   {`Pedido ${progress.index} de ${progress.total}`}
                 </p>
               )}
-              <h2 className="text-lg font-bold text-foreground">{`Pedido a ${group.supplierName}`}</h2>
+              <h2 className="text-lg font-bold text-foreground">
+                {supplierName ? `Pedido a ${supplierName}` : "Productos sin proveedor habitual"}
+              </h2>
               <p className="text-sm text-muted-foreground">
-                {group.arrivalLabel
-                  ? `Llegaría el ${group.arrivalLabel} · entregan en ${group.leadDays} ${plural(group.leadDays ?? 0, "día", "días")}`
-                  : "Cargale el plazo de entrega al proveedor para saber cuándo llega."}
+                {!supplierName
+                  ? "Elegí a quién se lo vas a pedir, o copiá la lista y mandala vos."
+                  : arrival
+                    ? `Llegaría el ${arrival} · entregan en ${leadDaysValue} ${plural(leadDaysValue ?? 0, "día", "días")}`
+                    : "Cargale el plazo de entrega al proveedor para saber cuándo llega."}
               </p>
+              {!group.supplierId && (
+                <div className="mt-3 max-w-xs">
+                  <label htmlFor="pick-supplier" className="mb-1 block text-xs font-semibold text-muted-foreground">
+                    ¿A quién se lo pedís?
+                  </label>
+                  <Select id="pick-supplier" value={pickedId} onChange={(e) => setPickedId(e.target.value)}>
+                    <option value="">Elegí un proveedor</option>
+                    {suppliers.map((sup) => (
+                      <option key={sup.id} value={sup.id}>
+                        {sup.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
             </div>
             {onSkip && (
               <div className="shrink-0 text-right">
@@ -610,7 +641,7 @@ function OrderSheet({
             {message || "Elegí al menos un producto para armar el mensaje."}
           </pre>
           <a
-            href={disabled ? undefined : whatsappUrl(group.phone, message)}
+            href={disabled ? undefined : whatsappUrl(phone, message)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setSent(true)}
@@ -641,7 +672,7 @@ function OrderSheet({
             )}
           </div>
 
-          {group.supplierId ? (
+          {supplierId ? (
             sent && !disabled ? (
               <div className="rounded-xl bg-accent/50 p-3.5">
                 <p className="text-sm font-semibold text-foreground">¿Ya se lo mandaste?</p>
@@ -669,8 +700,8 @@ function OrderSheet({
             )
           ) : (
             <p className="text-xs text-muted-foreground">
-              Estos productos no tienen proveedor habitual: asignáselo en Productos para poder dejar el
-              pedido en camino.
+              Elegí un proveedor arriba para poder dejar el pedido en camino. Si querés que la próxima vez
+              salga solo, asignáselo a los productos en Productos.
             </p>
           )}
         </Card>
@@ -767,6 +798,7 @@ function SpendChart({ groups }: { groups: FlowGroup[] }) {
 
 export function RestockFlow({
   groups,
+  suppliers,
   orgName,
   targetDays,
   pendingCount,
@@ -775,6 +807,7 @@ export function RestockFlow({
   settingsBlock,
 }: {
   groups: FlowGroup[];
+  suppliers: SupplierOption[];
   orgName: string;
   targetDays: number;
   pendingCount: number;
@@ -876,6 +909,7 @@ export function RestockFlow({
       <OrderSheet
         key={active.key}
         group={active}
+        suppliers={suppliers}
         orgName={orgName}
         targetDays={targetDays}
         onBack={back}
