@@ -879,16 +879,16 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
         <div className="rounded-xl border border-border px-4 py-3">
           <p className="text-sm font-semibold text-foreground">{`Tu pedido total: ${formatCurrency(totalCost)}`}</p>
           <div className="mt-2.5 flex h-4 overflow-hidden rounded-full bg-muted">
-            <span className="h-full bg-danger" style={{ width: `${(todayCost / totalCost) * 100}%` }} />
-            <span className="h-full bg-amber-500" style={{ width: `${(weekCost / totalCost) * 100}%` }} />
+            <span className="h-full bg-foreground/75" style={{ width: `${(todayCost / totalCost) * 100}%` }} />
+            <span className="h-full bg-foreground/25" style={{ width: `${(weekCost / totalCost) * 100}%` }} />
           </div>
           <div className="mt-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-sm">
             <span>
-              <span className="text-danger">●</span>{" "}
+              <span className="text-foreground/75">●</span>{" "}
               {`Hoy ${formatCurrency(todayCost)} · ${Math.round((todayCost / totalCost) * 100)}%`}
             </span>
             <span>
-              <span className="text-amber-500">●</span>{" "}
+              <span className="text-foreground/25">●</span>{" "}
               {`Esta semana ${formatCurrency(weekCost)} · ${Math.round((weekCost / totalCost) * 100)}%`}
             </span>
           </div>
@@ -899,7 +899,7 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
         <div className="grid gap-3 md:grid-cols-2">
           <ChartCard title="Qué pasa si no pedís" hint={`Próximos ${HORIZON} días`}>
             <p className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-3xl font-extrabold text-danger">{formatCurrency(lostTotal)}</span>
+              <span className="text-3xl font-extrabold text-foreground">{formatCurrency(lostTotal)}</span>
               <span className="text-sm text-muted-foreground">en ventas que podrías perder</span>
             </p>
             <ul className="mt-3 space-y-2">
@@ -907,7 +907,7 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
                 <li key={r.key} className="grid grid-cols-[minmax(0,8rem)_1fr_auto] items-center gap-3 text-sm">
                   <span className="truncate text-foreground">{r.name}</span>
                   <span className="h-2.5 overflow-hidden rounded-full bg-muted">
-                    <span className="block h-full bg-danger" style={{ width: `${(r.value / lostMax) * 100}%` }} />
+                    <span className="block h-full bg-foreground/75" style={{ width: `${(r.value / lostMax) * 100}%` }} />
                   </span>
                   <span className="font-semibold text-foreground">{formatCurrency(r.value)}</span>
                 </li>
@@ -928,12 +928,12 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
                     <span className="truncate text-foreground">{row.name}</span>
                     <span className="h-2.5 overflow-hidden rounded-full bg-muted">
                       <span
-                        className={cn("block h-full", left < 2 ? "bg-danger" : "bg-amber-500")}
+                        className={cn("block h-full", out ? "bg-danger" : "bg-foreground/75")}
                         style={{ width: `${Math.max(left, 0) / HORIZON * 100}%` }}
                       />
                     </span>
                     <span className="whitespace-nowrap text-xs text-muted-foreground">
-                      <span className={cn("font-bold", left < 2 ? "text-danger" : "text-amber-600")}>
+                      <span className={cn("font-bold", out ? "text-danger" : "text-foreground")}>
                         {out ? "Sin stock" : `${num(left)} ${plural(left, "día", "días")}`}
                       </span>
                       {` · ${withUnit(row.perDay, row.unit)} por día`}
