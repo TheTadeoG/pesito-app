@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Minus, Plus, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Minus, Plus } from "lucide-react";
 import { useToast } from "@/components/toast/toast-provider";
 import { updateRestockSettings } from "@/app/(dashboard)/recomendaciones/actions";
 import type { RestockSettings } from "@/lib/product-insights";
@@ -78,14 +77,12 @@ export function RestockSettingsBar({
   canEdit: boolean;
 }) {
   const { showWarning } = useToast();
-  const [open, setOpen] = useState(false);
   const [showExample, setShowExample] = useState(false);
   const [target, setTarget] = useState(String(settings.targetDays));
   const [window, setWindow] = useState(String(settings.windowDays));
   const [safety, setSafety] = useState(String(settings.safetyDays));
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [, startTransition] = useTransition();
-  const box = useRef<HTMLDivElement>(null);
   const saved = useRef(`${settings.targetDays}|${settings.windowDays}|${settings.safetyDays}`);
 
   // Guarda solo, medio segundo después del último cambio.
@@ -113,23 +110,6 @@ export function RestockSettingsBar({
     return () => clearTimeout(timer);
   }, [target, window, safety, canEdit, showWarning]);
 
-  // Se cierra al tocar afuera o con Escape.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
   const num = (value: string, fallback: number) => {
     const n = Number(value.replace(",", "."));
     return Number.isFinite(n) && value.trim() !== "" ? n : fallback;
@@ -155,66 +135,55 @@ export function RestockSettingsBar({
       ) : (
         <b>{`${settings.safetyDays} días`}</b>
       )}{" "}
-      de reserva
+      de reserva, mirando las ventas de los últimos{" "}
+      {canEdit ? (
+        <DaysStepper label="Días de ventas a mirar" value={window} onChange={setWindow} min={7} max={180} disabled={false} />
+      ) : (
+        <b>{`${settings.windowDays} días`}</b>
+      )}
     </>
   );
 
   return (
-    <div ref={box} className="relative mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border pb-4">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm leading-none text-foreground">{words}</div>
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-        {status !== "idle" && (
-          <span aria-live="polite">{status === "saving" ? "Guardando…" : "✓ Guardado, ya se recalculó"}</span>
-        )}
-        <span>{`Ventas de ${settings.windowDays} días`}</span>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Más ajustes y ejemplo"
-          title="Más ajustes y ejemplo"
-          aria-expanded={open}
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
-      </div>
-      {open && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-[min(26rem,calc(100vw-2rem))] space-y-4 rounded-2xl border border-border bg-card p-5 shadow-xl">
-          <p className="text-base font-bold text-foreground">Cómo calculamos lo que pedir</p>
-          <div className="flex items-center justify-between gap-3 text-sm text-foreground">
-            <span>Ventas que miramos para el ritmo</span>
-            <DaysStepper label="Días de ventas a mirar" value={window} onChange={setWindow} min={7} max={180} disabled={!canEdit} />
-          </div>
+    <div className="mb-4 border-b border-border pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm leading-none text-foreground">{words}</div>
+        <div className="flex items-center gap-3 text-sm">
+          {status !== "idle" && (
+            <span className="text-muted-foreground" aria-live="polite">
+              {status === "saving" ? "Guardando…" : "✓ Guardado, ya se recalculó"}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => setShowExample((v) => !v)}
             aria-expanded={showExample}
-            className="text-sm font-semibold text-primary hover:underline"
+            className="font-semibold text-primary hover:underline"
           >
             {showExample ? "Ocultar ejemplo" : "Ver ejemplo"}
           </button>
-          {showExample && (
-            <div className="rounded-xl border border-primary/20 bg-accent/50 px-4 py-3 text-sm text-foreground">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ejemplo con estos números</p>
-              <p className="mt-1.5">
-                {`Vendés ${EXAMPLE_PER_DAY} por día (mirando ${windowDays} días), el proveedor entrega en ${EXAMPLE_LEAD} días y tenés ${EXAMPLE_STOCK}:`}
-              </p>
-              <p className="mt-1.5 leading-relaxed">
-                {`Cubrir ${targetDays} + ${EXAMPLE_LEAD} de espera + ${safetyDays} de reserva = ${totalDays} días`}
-                <br />
-                {`Necesitás ${EXAMPLE_PER_DAY} × ${totalDays} = ${need}, y tenés ${EXAMPLE_STOCK}`}
-                <br />
-                <span className="font-bold text-primary">{`→ Pedirías ${toBuy}`}</span>
-              </p>
-            </div>
-          )}
-          <p className="text-xs text-muted-foreground">
+        </div>
+      </div>
+      {showExample && (
+        <div className="mt-3 rounded-xl border border-primary/20 bg-accent/50 px-4 py-3 text-sm text-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ejemplo con estos números</p>
+          <p className="mt-1.5">
+            {`Vendés ${EXAMPLE_PER_DAY} por día (mirando ${windowDays} días), el proveedor entrega en ${EXAMPLE_LEAD} días y tenés ${EXAMPLE_STOCK}:`}
+          </p>
+          <p className="mt-1.5 leading-relaxed">
+            {`Cubrir ${targetDays} + ${EXAMPLE_LEAD} de espera + ${safetyDays} de reserva = ${totalDays} días`}
+            <br />
+            {`Necesitás ${EXAMPLE_PER_DAY} × ${totalDays} = ${need}, y tenés ${EXAMPLE_STOCK}`}
+            <br />
+            <span className="font-bold text-primary">{`→ Pedirías ${toBuy}`}</span>
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
             El plazo de entrega se carga en cada proveedor y las unidades por bulto en cada producto.
           </p>
-          {!canEdit && (
-            <p className="text-xs text-muted-foreground">Sólo el dueño o un administrador puede cambiar estos valores.</p>
-          )}
         </div>
+      )}
+      {!canEdit && (
+        <p className="mt-2 text-xs text-muted-foreground">Sólo el dueño o un administrador puede cambiar estos valores.</p>
       )}
     </div>
   );
