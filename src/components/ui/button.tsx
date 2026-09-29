@@ -10,8 +10,7 @@ type Variant =
   | "onColor"
   | "gold"
   | "violet"
-  | "lime"
-  | "onDark";
+  | "heroGhost";
 type Size = "sm" | "md" | "lg" | "icon";
 
 const variantClasses: Record<Variant, string> = {
@@ -30,9 +29,8 @@ const variantClasses: Record<Variant, string> = {
   // el mismo verde — variantes propias en vez de intentar pisar `primary`
   // por className, que no es confiable con clsx (sin tailwind-merge).
   gold: "bg-amber-500 text-amber-950 hover:bg-amber-400 shadow-sm shadow-amber-500/25",
-  // Portada y cierre oscuros de la landing (siempre sobre el bloque `deep`).
-  lime: "bg-lime text-lime-foreground hover:bg-lime/85",
-  onDark: "border border-white/20 text-deep-foreground hover:border-lime",
+  // Botón secundario sobre la portada y el cierre de la landing (claros u oscuros según el tema).
+  heroGhost: "border border-hero-line text-hero-foreground hover:border-hero-accent",
   violet: "bg-violet-500 text-white hover:bg-violet-400 shadow-sm shadow-violet-500/25",
 };
 

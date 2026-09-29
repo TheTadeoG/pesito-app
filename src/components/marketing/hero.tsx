@@ -9,20 +9,20 @@ const trust = ["Plan Gratis para siempre", "Sin tarjeta", "14 días de Plan Pro 
 export function Hero() {
   return (
     <>
-      <section className="relative overflow-hidden bg-deep text-deep-foreground">
+      <section className="relative overflow-hidden bg-hero text-hero-foreground">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_80%_0%,rgb(52_211_153/0.16),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_80%_0%,var(--hero-glow),transparent_70%)]"
         />
         <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:pb-24 lg:pt-20">
           <div>
             <h1 className="text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-[3.6rem] xl:text-6xl">
               El sistema para manejar tu negocio{" "}
-              <span className="text-lime">sin dolores de cabeza</span>
+              <span className="text-hero-accent">sin dolores de cabeza</span>
             </h1>
 
             <p
-              className="fx-up mt-6 max-w-md text-lg leading-relaxed text-deep-muted"
+              className="fx-up mt-6 max-w-md text-lg leading-relaxed text-hero-muted"
               style={{ animationDelay: "80ms" }}
             >
               Cobrá más rápido y controlá stock, caja y fiado desde una sola pantalla. Empezás
@@ -34,13 +34,13 @@ export function Hero() {
               style={{ animationDelay: "150ms" }}
             >
               <Link href="/registro">
-                <Button size="lg" variant="lime" className="w-full font-bold sm:w-auto">
+                <Button size="lg" variant="primary" className="w-full font-bold sm:w-auto">
                   Empezar gratis
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <AnchorLink href="#como-funciona">
-                <Button size="lg" variant="onDark" className="w-full sm:w-auto">
+                <Button size="lg" variant="heroGhost" className="w-full sm:w-auto">
                   Ver cómo funciona
                 </Button>
               </AnchorLink>

@@ -52,7 +52,7 @@ export function PosMockup() {
 
   return (
     <div>
-      <div className="relative w-full rounded-2xl border border-border bg-card p-3 text-card-foreground shadow-2xl shadow-black/40 sm:p-4">
+      <div className="relative w-full rounded-2xl border border-border bg-card p-3 text-card-foreground shadow-2xl shadow-black/20 sm:p-4">
         <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
           <Search className="h-4 w-4 shrink-0" />
           <span className="truncate">Escaneá o buscá un producto…</span>
@@ -154,7 +154,7 @@ export function PosMockup() {
           <p className="text-sm text-muted-foreground">El stock ya se descontó.</p>
         </div>
       </div>
-      <p className="mt-3 text-center text-xs text-deep-muted">
+      <p className="mt-3 text-center text-xs text-hero-muted">
         Probalo: sumá productos y cobrá. Es una demo de ejemplo.
       </p>
     </div>

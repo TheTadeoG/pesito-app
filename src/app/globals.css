@@ -32,6 +32,14 @@
   --color-sidebar-foreground: #52585a;
   --color-sidebar-active-bg: #d6f3e3;
   --color-sidebar-active-foreground: #047857;
+
+  /* Portada y cierre de la landing: claro en tema claro, oscuro en tema oscuro. */
+  --color-hero: #e8f3ec;
+  --color-hero-foreground: #0b1f16;
+  --color-hero-muted: #4a6357;
+  --color-hero-accent: #047857;
+  --color-hero-line: rgb(4 120 87 / 0.45);
+  --hero-glow: rgb(5 150 105 / 0.18);
 }
 
 /* Landing: bloques oscuros y verde vivo, iguales en tema claro y oscuro. */
@@ -65,6 +73,11 @@
   --color-warning-bg: var(--color-warning-bg);
   --color-danger: var(--color-danger);
   --color-danger-bg: var(--color-danger-bg);
+  --color-hero: var(--color-hero);
+  --color-hero-foreground: var(--color-hero-foreground);
+  --color-hero-muted: var(--color-hero-muted);
+  --color-hero-accent: var(--color-hero-accent);
+  --color-hero-line: var(--color-hero-line);
   --color-sidebar: var(--color-sidebar);
   --color-sidebar-foreground: var(--color-sidebar-foreground);
   --color-sidebar-active-bg: var(--color-sidebar-active-bg);
@@ -108,6 +121,13 @@
     --color-sidebar-foreground: #93a69b;
     --color-sidebar-active-bg: #163427;
     --color-sidebar-active-foreground: #6ee7b7;
+
+    --color-hero: #06120d;
+    --color-hero-foreground: #eaf5ef;
+    --color-hero-muted: #92aa9e;
+    --color-hero-accent: #34d399;
+    --color-hero-line: rgb(255 255 255 / 0.2);
+    --hero-glow: rgb(52 211 153 / 0.16);
   }
 }
 
@@ -143,6 +163,12 @@
   --color-sidebar-foreground: #93a69b;
   --color-sidebar-active-bg: #163427;
   --color-sidebar-active-foreground: #6ee7b7;
+  --color-hero: #06120d;
+  --color-hero-foreground: #eaf5ef;
+  --color-hero-muted: #92aa9e;
+  --color-hero-accent: #34d399;
+  --color-hero-line: rgb(255 255 255 / 0.2);
+  --hero-glow: rgb(52 211 153 / 0.16);
 }
 
 html {
