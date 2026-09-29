@@ -102,56 +102,66 @@ export default async function RecomendacionesPage() {
       </div>
     ) : null;
 
-  return (
-    <div className="space-y-8">
-      <section className="space-y-3">
-        {!restockOn ? (
-          <ProLockedCard
-            title="Recomendaciones de reposición"
-            plan={featureMinPlan.restockRecommendations}
-            preview="list"
-            description="Qué comprar, cuánto y a qué proveedor, con el pedido listo para WhatsApp."
-          />
-        ) : (
-          <RestockFlow groups={flowGroups} orgName={organization.name} targetDays={settings.targetDays}>
-            {pendingBlock}
-            <RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} />
-          </RestockFlow>
-        )}
-      </section>
+  const pricesSection = (
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Precios para revisar</h2>
+        <p className="text-sm text-muted-foreground">
+          Productos cuyo costo subió después de su último cambio de precio, que vendés a pérdida o con menos de 10% de ganancia.
+        </p>
+      </div>
+      {pricesOn ? (
+        <PriceSuggestions
+          canApply={isOrgAdmin(membership.role)}
+          items={suggestions.slice(0, 300).map((s) => ({
+            productId: s.product.id,
+            name: s.product.name,
+            brand: s.product.brand,
+            price: s.product.price,
+            cost: s.product.cost ?? 0,
+            suggestedPrice: s.suggestedPrice,
+            currentMarkup: s.currentMarkup,
+            suggestedMarkup: s.suggestedMarkup,
+            reason: s.reason,
+            detail: s.detail,
+          }))}
+        />
+      ) : (
+        <ProLockedCard
+          title="Sugerencia de precios"
+          plan={featureMinPlan.priceSuggestions}
+          preview="list"
+          description="Te avisamos qué precios actualizar cuando sube el costo o el margen queda bajo."
+        />
+      )}
+    </section>
+  );
 
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Precios para revisar</h2>
-          <p className="text-sm text-muted-foreground">
-            Productos cuyo costo subió después de su último cambio de precio, que vendés a pérdida o con menos de 10% de ganancia.
-          </p>
-        </div>
-        {pricesOn ? (
-          <PriceSuggestions
-            canApply={isOrgAdmin(membership.role)}
-            items={suggestions.slice(0, 300).map((s) => ({
-              productId: s.product.id,
-              name: s.product.name,
-              brand: s.product.brand,
-              price: s.product.price,
-              cost: s.product.cost ?? 0,
-              suggestedPrice: s.suggestedPrice,
-              currentMarkup: s.currentMarkup,
-              suggestedMarkup: s.suggestedMarkup,
-              reason: s.reason,
-              detail: s.detail,
-            }))}
-          />
-        ) : (
-          <ProLockedCard
-            title="Sugerencia de precios"
-            plan={featureMinPlan.priceSuggestions}
-            preview="list"
-            description="Te avisamos qué precios actualizar cuando sube el costo o el margen queda bajo."
-          />
-        )}
-      </section>
-    </div>
+  // Sin recomendaciones de reposición (plan): se ofrece el plan y quedan los precios.
+  if (!restockOn) {
+    return (
+      <div className="space-y-8">
+        <ProLockedCard
+          title="Recomendaciones de reposición"
+          plan={featureMinPlan.restockRecommendations}
+          preview="list"
+          description="Qué comprar, cuánto y a qué proveedor, con el pedido listo para WhatsApp."
+        />
+        {pricesSection}
+      </div>
+    );
+  }
+
+  return (
+    <RestockFlow
+      groups={flowGroups}
+      orgName={organization.name}
+      targetDays={settings.targetDays}
+      pendingCount={pendingOrders.length}
+      priceCount={pricesOn ? suggestions.length : 0}
+      pendingBlock={pendingBlock}
+      pricesBlock={pricesSection}
+      settingsBlock={<RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} />}
+    />
   );
 }
