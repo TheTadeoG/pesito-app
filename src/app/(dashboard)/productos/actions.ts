@@ -350,12 +350,20 @@ export async function bulkIncreaseField(
   field: "price" | "cost",
   groupBy: { supplierId: string } | { brand: string },
   mode: "percent" | "fixed",
+  // Con signo: positivo aumenta, negativo baja.
   value: number,
-  // Sólo para costos: sube también el precio de venta en la misma
+  // Sólo para costos: cambia también el precio de venta en la misma
   // proporción que el costo de cada producto (migración 0040).
   alsoPrice = false
 ): Promise<BulkPriceIncreaseResult> {
-  if (!value || value <= 0) return { error: "Ingresá un valor mayor a cero." };
+  // Positivo aumenta, negativo baja.
+  if (!value || !Number.isFinite(value)) return { error: "Ingresá un valor mayor a cero." };
+  if (mode === "percent" && value <= -100) {
+    return { error: "Para bajar, el porcentaje tiene que ser menor a 100." };
+  }
+  if (mode === "fixed" && value < 0 && field === "cost" && alsoPrice) {
+    return { error: "Con monto fijo no se puede bajar el precio junto con el costo. Usá porcentaje." };
+  }
 
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
@@ -437,10 +445,10 @@ async function describeBulkChanges(
           : (c.supplier_id && supplierName.get(c.supplier_id)) || "Proveedor borrado",
         amountLabel:
           c.percent !== null
-            ? `+${Number(c.percent).toLocaleString("es-AR")}%`
+            ? `${Number(c.percent) < 0 ? "-" : "+"}${Math.abs(Number(c.percent)).toLocaleString("es-AR")}%`
             : c.fixed_amount !== null
-              ? `+${formatCurrency(Number(c.fixed_amount))}`
-              : // Precio subido junto a un aumento de costo en monto fijo (0040).
+              ? `${Number(c.fixed_amount) < 0 ? "-" : "+"}${formatCurrency(Math.abs(Number(c.fixed_amount)))}`
+              : // Precio cambiado junto a un ajuste de costo en monto fijo (0040).
                 "Proporcional al costo",
       },
     ])

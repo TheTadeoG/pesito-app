@@ -22,7 +22,7 @@ type SupplierOption = Pick<Supplier, "id" | "name">;
 type BrandOption = Pick<Brand, "id" | "name">;
 type GroupBy = "supplier" | "brand";
 
-// Aumentos masivos de los últimos 30 días, con la opción de deshacerlos.
+// Ajustes masivos (aumentos y bajadas) de los últimos 30 días, con la opción de deshacerlos.
 // Se monta al abrir el diálogo (Dialog no renderiza nada cerrado), así que
 // la lista se pide recién ahí.
 function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
@@ -31,7 +31,7 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
   const [rows, setRows] = useState<BulkChangeRow[] | null>(null);
   const [revertingId, setRevertingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Aumentos de costo a los que se les tildó "deshacer también el aumento de precio".
+  // Ajustes de costo a los que se les tildó "deshacer también el ajuste de precio".
   const [alsoLinked, setAlsoLinked] = useState<Set<string>>(new Set());
   const fieldPlural = field === "price" ? "precios" : "costos";
 
@@ -43,9 +43,9 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
     const withLinked = Boolean(row.linked && !row.linked.reverted && alsoLinked.has(row.id));
     if (
       !confirm(
-        `¿Deshacer el aumento de ${row.amountLabel} (${row.groupLabel})? Los ${row.productCount} productos vuelven al ${field === "price" ? "precio" : "costo"} que tenían antes.` +
+        `¿Deshacer el ajuste de ${row.amountLabel} (${row.groupLabel})? Los ${row.productCount} productos vuelven al ${field === "price" ? "precio" : "costo"} que tenían antes.` +
           (withLinked && row.linked
-            ? ` También se deshace el aumento de precio que lo acompañó (${row.linked.productCount} producto${row.linked.productCount === 1 ? "" : "s"}).`
+            ? ` También se deshace el ajuste de precio que lo acompañó (${row.linked.productCount} producto${row.linked.productCount === 1 ? "" : "s"}).`
             : "")
       )
     )
@@ -76,21 +76,21 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
     const reverted = result.reverted ?? 0;
     const skipped = result.skipped ?? 0;
     showSuccess(
-      "Aumento deshecho",
+      "Ajuste deshecho",
       (reverted === 1
         ? "1 producto volvió a su valor anterior."
         : `${reverted} productos volvieron a su valor anterior.`) +
         (skipped === 1
-          ? " 1 no se tocó porque cambió después del aumento."
+          ? " 1 no se tocó porque cambió después del ajuste."
           : skipped > 1
-            ? ` ${skipped} no se tocaron porque cambiaron después del aumento.`
+            ? ` ${skipped} no se tocaron porque cambiaron después del ajuste.`
             : "") +
         (result.linked && !result.linked.error
           ? ` Precios: ${result.linked.reverted} volvieron a su valor anterior${result.linked.skipped > 0 ? ` y ${result.linked.skipped} no se tocaron porque cambiaron después` : ""}.`
           : "")
     );
     if (result.linked?.error) {
-      setError(`El costo se deshizo, pero el aumento de precio no: ${result.linked.error}`);
+      setError(`El costo se deshizo, pero el ajuste de precio no: ${result.linked.error}`);
     }
     router.refresh();
   }
@@ -99,9 +99,9 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
 
   return (
     <div className="mt-6 border-t border-border pt-5">
-      <p className="text-sm font-semibold text-foreground">Aumentos anteriores</p>
+      <p className="text-sm font-semibold text-foreground">Ajustes anteriores</p>
       <p className="mt-0.5 text-xs text-muted-foreground">
-        Podés deshacer los aumentos de {fieldPlural} de los últimos 30 días.
+        Podés deshacer los ajustes de {fieldPlural} de los últimos 30 días.
       </p>
       {error && <p className="mt-2 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
       <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
@@ -126,8 +126,8 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
               {row.linked && (
                 <p className="mt-1 text-xs font-medium text-primary">
                   {row.linked.kind === "price"
-                    ? `Con aumento de precio (${row.linked.productCount} producto${row.linked.productCount === 1 ? "" : "s"})${row.linked.reverted ? " · ya deshecho" : ""}`
-                    : "Vino con un aumento de costo"}
+                    ? `Con ajuste de precio (${row.linked.productCount} producto${row.linked.productCount === 1 ? "" : "s"})${row.linked.reverted ? " · ya deshecho" : ""}`
+                    : "Vino con un ajuste de costo"}
                 </p>
               )}
               {!row.reverted && row.linked?.kind === "price" && !row.linked.reverted && (
@@ -145,7 +145,7 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
                     }
                     className="h-3.5 w-3.5 accent-primary"
                   />
-                  Deshacer también el aumento de precio
+                  Deshacer también el ajuste de precio
                 </label>
               )}
             </div>
@@ -193,6 +193,7 @@ export function BulkFieldIncreaseDialog({
   const [groupBy, setGroupBy] = useState<GroupBy>("supplier");
   const [supplierId, setSupplierId] = useState("");
   const [brandName, setBrandName] = useState("");
+  const [direction, setDirection] = useState<"up" | "down">("up");
   const [mode, setMode] = useState<"percent" | "fixed">("percent");
   const [value, setValue] = useState("");
   // Sólo en "Aumentar costos": subir también el precio de venta.
@@ -218,6 +219,7 @@ export function BulkFieldIncreaseDialog({
     setGroupBy("supplier");
     setSupplierId("");
     setBrandName("");
+    setDirection("up");
     setMode("percent");
     setValue("");
     setAlsoPrice(false);
@@ -241,13 +243,22 @@ export function BulkFieldIncreaseDialog({
       );
       return;
     }
+    const magnitude = Number(value);
+    if (direction === "down" && mode === "percent" && magnitude >= 100) {
+      setError("Para bajar, el porcentaje tiene que ser menor a 100.");
+      return;
+    }
+    if (direction === "down" && mode === "fixed" && field === "cost" && alsoPrice) {
+      setError("Con monto fijo no se puede bajar el precio junto con el costo. Usá porcentaje.");
+      return;
+    }
     setPending(true);
     setError(null);
     const result = await bulkIncreaseField(
       field,
       groupBy === "supplier" ? { supplierId } : { brand: brandName },
       mode,
-      Number(value),
+      direction === "down" ? -magnitude : magnitude,
       field === "cost" && alsoPrice
     );
     setPending(false);
@@ -271,8 +282,8 @@ export function BulkFieldIncreaseDialog({
     <Dialog
       open={open}
       onClose={resetAndClose}
-      title={`Aumentar ${fieldLabel}s`}
-      description={`Actualiza de una el ${fieldLabel} de todos los productos activos que coincidan con el proveedor o la marca elegidos.`}
+      title={`Ajustar ${fieldLabel}s`}
+      description={`Subí o bajá de una el ${fieldLabel} de todos los productos activos que coincidan con el proveedor o la marca elegidos.`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -350,7 +361,28 @@ export function BulkFieldIncreaseDialog({
         )}
 
         <div>
-          <Label>Tipo de aumento</Label>
+          <Label>Qué querés hacer</Label>
+          <div className="mt-1.5 flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
+            {(["up", "down"] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDirection(d)}
+                className={cn(
+                  "flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors",
+                  direction === d
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {d === "up" ? "Aumentar" : "Bajar"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Tipo de ajuste</Label>
           <div className="mt-1.5 flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
             <button
               type="button"
@@ -381,7 +413,13 @@ export function BulkFieldIncreaseDialog({
 
         <div>
           <Label htmlFor="bfi-value">
-            {mode === "percent" ? "Porcentaje a aumentar" : `Monto a sumar a cada ${fieldLabel}`}
+            {direction === "up"
+              ? mode === "percent"
+                ? "Porcentaje a aumentar"
+                : `Monto a sumar a cada ${fieldLabel}`
+              : mode === "percent"
+                ? "Porcentaje a bajar"
+                : `Monto a restar a cada ${fieldLabel}`}
           </Label>
           <Input
             id="bfi-value"
@@ -400,17 +438,20 @@ export function BulkFieldIncreaseDialog({
             <input
               type="checkbox"
               checked={alsoPrice}
+              disabled={direction === "down" && mode === "fixed"}
               onChange={(e) => setAlsoPrice(e.target.checked)}
               className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
             />
             <span>
               <span className="font-medium text-foreground">
-                Aumentar también el precio de venta en la misma proporción
+                {direction === "up" ? "Aumentar" : "Bajar"} también el precio de venta en la misma proporción
               </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
                 {mode === "percent"
-                  ? "El precio de venta de esos productos sube el mismo porcentaje."
-                  : "Cada precio sube en la misma proporción que subió su costo (ej. si el costo sube 10%, el precio también)."}{" "}
+                  ? `El precio de venta de esos productos ${direction === "up" ? "sube" : "baja"} el mismo porcentaje.`
+                  : direction === "up"
+                    ? "Cada precio sube en la misma proporción que subió su costo (ej. si el costo sube 10%, el precio también)."
+                    : "No disponible al bajar con monto fijo: podría dejar precios en $0. Usá porcentaje."}{" "}
                 Sólo en productos con costo cargado.
               </span>
             </span>
@@ -430,8 +471,8 @@ export function BulkFieldIncreaseDialog({
             {pending
               ? "Actualizando…"
               : field === "cost" && alsoPrice
-                ? "Aumentar costos y precios"
-                : `Aumentar ${fieldLabel}s`}
+                ? `${direction === "up" ? "Aumentar" : "Bajar"} costos y precios`
+                : `${direction === "up" ? "Aumentar" : "Bajar"} ${fieldLabel}s`}
           </Button>
         </div>
       </form>

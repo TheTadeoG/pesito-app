@@ -158,7 +158,7 @@ export function ProductosClient({
   suppliers: SupplierOption[];
   // Viene de tocar el conteo de productos en la pestaña Marcas.
   initialBrand: string | null;
-  // El plan no incluye aumentos masivos: los botones abren el aviso del plan.
+  // El plan no incluye ajustes masivos: los botones abren el aviso del plan.
   bulkLocked: boolean;
   /** Volver a un precio o costo anterior (Plan Pro). */
   revertLocked: boolean;
@@ -507,14 +507,14 @@ export function ProductosClient({
               onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkPriceOpen(true))}
             >
               <TrendingUp className="h-4 w-4" />
-              Aumentar precios
+              Ajustar precios
               {bulkLocked && <Badge tone="accent">Pro</Badge>}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkCostOpen(true))}
             >
               <TrendingUp className="h-4 w-4" />
-              Aumentar costos
+              Ajustar costos
               {bulkLocked && <Badge tone="accent">Pro</Badge>}
             </DropdownMenuItem>
           </DropdownMenu>
@@ -1122,11 +1122,11 @@ export function ProductosClient({
       <Dialog
         open={bulkLockedOpen}
         onClose={() => setBulkLockedOpen(false)}
-        title="Aumentos masivos"
+        title="Ajustes masivos"
       >
         <ProLockedCard
-          title="Aumentos masivos de precios y costos"
-          description="Actualizá de una vez todos los productos de un proveedor o una marca, en porcentaje o monto fijo, y deshacelo si te equivocás."
+          title="Ajustes masivos de precios y costos"
+          description="Subí o bajá de una vez todos los productos de un proveedor o una marca, en porcentaje o monto fijo, y deshacelo si te equivocás."
         />
       </Dialog>
       <Dialog

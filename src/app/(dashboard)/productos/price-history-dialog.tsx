@@ -88,7 +88,7 @@ function HistoryList({
             </p>
             {row.bulk && (
               <p className="mt-1 w-fit max-w-full truncate rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">
-                Aumento masivo · {row.bulk.amountLabel} · {row.bulk.groupLabel}
+                Ajuste masivo · {row.bulk.amountLabel} · {row.bulk.groupLabel}
               </p>
             )}
             <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(row.changedAt)}</p>
