@@ -1,35 +1,37 @@
 import type { ReactNode } from "react";
 import { StaggerIn } from "@/components/marketing/stagger-in";
+import { CashCount, TicketScanner } from "@/components/marketing/features-live";
 import {
   Boxes,
   FileSpreadsheet,
+  History,
   MessageCircle,
   ShoppingCart,
   Smartphone,
+  UserCheck,
   Users,
   Wallet,
 } from "lucide-react";
 
-// Datos de las vistas previas: son de ejemplo, no de un negocio real.
-const scanned = [
-  { name: "Aceite girasol 900 ml", price: "$ 3.850" },
-  { name: "Arroz largo fino 1 kg", price: "$ 2.190" },
-  { name: "Leche entera 1 L", price: "$ 1.450" },
-  { name: "Galletitas dulces", price: "$ 1.450" },
+// Los datos de las vistas previas son de ejemplo, no de un negocio real.
+const debtors = [
+  { name: "Carlos R.", ago: "hace 12 días", amount: "$ 9.800", late: true, initials: "CR" },
+  { name: "Marta G.", ago: "hace 1 día", amount: "$ 1.250", late: false, initials: "MG" },
+  { name: "Diego M.", ago: "hace 7 días", amount: "$ 6.300", late: false, initials: "DM" },
+  { name: "Ana P.", ago: "hace 6 días", amount: "$ 2.100", late: false, initials: "AP" },
 ];
 
-const lowStock = [
-  { name: "Leche entera 1 L", state: "Ya se acabó", left: "0 u.", tone: "danger" },
-  { name: "Fideos 500 g", state: "Se acaba pronto", left: "2 u.", tone: "warning" },
-  { name: "Azúcar 1 kg", state: "Queda poco", left: "6 u.", tone: "warning" },
-  { name: "Harina 000 1 kg", state: "Bien", left: "28 u.", tone: "success" },
+const cashiers = [
+  { name: "Marta G.", box: "Caja 1", expected: "$ 96.500", counted: "$ 96.500", note: "Sin diferencias", tone: "success", initials: "MG" },
+  { name: "Lucas P.", box: "Caja 2", expected: "$ 41.200", counted: "$ 40.700", note: "Faltan $ 500", tone: "danger", initials: "LP" },
+  { name: "Rocío A.", box: "Caja 3", expected: "$ 28.900", counted: "$ 29.000", note: "Sobran $ 100", tone: "warning", initials: "RA" },
 ] as const;
 
-const movements = [
-  { what: "Compra", when: "hace 6 días", amount: "+ $ 4.200", paid: false },
-  { what: "Pagó", when: "hace 3 días", amount: "- $ 3.000", paid: true },
-  { what: "Compra", when: "ayer", amount: "+ $ 1.850", paid: false },
-];
+const providers = [
+  { name: "Distribuidora Norte", items: "8 productos", tag: "Urgente", tone: "danger" },
+  { name: "Lácteos del Sur", items: "3 productos", tag: "Esta semana", tone: "warning" },
+  { name: "Almacén Mayorista", items: "5 productos", tag: "Esta semana", tone: "warning" },
+] as const;
 
 const toneClasses = {
   danger: "bg-danger-bg text-danger",
@@ -85,6 +87,16 @@ function Caption({
 
 const cell = "rounded-card border border-border bg-card p-4 sm:p-5";
 
+function LabelSheet({ name, price, className = "" }: { name: string; price: string; className?: string }) {
+  return (
+    <div className={`w-[4.6rem] rounded-lg border border-border bg-card p-2 shadow-sm ${className}`}>
+      <p className="truncate text-[10px] font-semibold text-foreground">{name}</p>
+      <div className="barcode-bars mt-1.5 h-7 rounded-sm" />
+      <p className="mt-1 text-center font-mono text-[10px] font-semibold text-foreground">{price}</p>
+    </div>
+  );
+}
+
 export function Features() {
   return (
     <section id="funciones" className="scroll-mt-20 mx-auto max-w-6xl px-4 py-20 sm:px-6">
@@ -101,126 +113,72 @@ export function Features() {
       <StaggerIn className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {/* Cobro: la celda alta de la izquierda */}
         <div className={`${cell} flex flex-col sm:col-span-2 lg:col-span-2 lg:row-span-2`}>
-          <Preview className="min-h-64 flex-1">
-            <div className="flex h-full flex-col p-4">
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 font-mono text-[10px] font-semibold text-accent-foreground">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-                ESCANEANDO
-              </span>
-              <ul className="mt-3 space-y-2">
-                {scanned.map((item, i) => (
-                  <li
-                    key={item.name}
-                    className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${
-                      i === scanned.length - 1 ? "border-primary/50 bg-accent/60" : "border-border bg-card"
-                    }`}
-                  >
-                    <span aria-hidden className="font-bold text-primary">✓</span>
-                    <span className="min-w-0 flex-1 truncate text-foreground">{item.name}</span>
-                    <span className="font-mono tabular-nums text-muted-foreground">{item.price}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="my-auto flex flex-wrap gap-1.5 py-3">
-                {["Efectivo", "Tarjeta", "Transferencia", "Fiado"].map((m, i) => (
-                  <span
-                    key={m}
-                    className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold ${
-                      i === 0 ? "border-foreground bg-foreground text-background" : "border-border bg-card text-muted-foreground"
-                    }`}
-                  >
-                    {m}
-                  </span>
-                ))}
-              </div>
-              <div className="rounded-xl bg-deep p-3.5 text-deep-foreground">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-deep-muted">Total</span>
-                  <span className="text-2xl font-extrabold tracking-tight tabular-nums">$ 8.940</span>
-                </div>
-                <div className="mt-2 flex justify-between border-t border-white/10 pt-2 text-xs">
-                  <span className="text-deep-muted">Pagó $ 10.000</span>
-                  <span className="font-semibold text-lime">Vuelto $ 1.060</span>
-                </div>
-              </div>
-            </div>
+          <Preview className="min-h-[26rem] flex-1">
+            <TicketScanner />
           </Preview>
           <Caption icon={ShoppingCart} title="Cobrá en segundos">
             Escaneá el código de barras o buscá por nombre. El total y el vuelto se arman solos.
           </Caption>
         </div>
 
-        {/* Caja: ancha */}
+        {/* Caja */}
         <div className={`${cell} sm:col-span-2 lg:col-span-4`}>
           <Preview className="h-44">
-            <div className="grid h-full grid-cols-3 items-center gap-2 px-3 sm:gap-4 sm:px-6">
-              {[
-                ["Esperado", "$ 118.400", "text-foreground"],
-                ["Contado", "$ 118.400", "text-foreground"],
-                ["Diferencia", "$ 0", "text-success"],
-              ].map(([label, value, color]) => (
-                <div key={label} className="text-center">
-                  <Label>{label}</Label>
-                  <p className={`mt-1.5 text-xl font-extrabold tracking-tight tabular-nums sm:text-3xl ${color}`}>
-                    {value}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <CashCount expected={118400} />
           </Preview>
           <Caption icon={Wallet} title="Caja sin diferencias">
-            Abrí y cerrá la caja y mirá el efectivo esperado, así las diferencias se notan enseguida.
+            Abrí y cerrá la caja y mirá el efectivo esperado contra lo que contaste.
           </Caption>
         </div>
 
-        {/* Stock */}
+        {/* Stock: aviso con acción */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-60">
-            <ul className="space-y-2 p-3.5">
-              {lowStock.map((item) => (
-                <li key={item.name} className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5">
-                  <div className="min-w-0 flex-1 leading-tight">
-                    <p className="truncate text-xs font-semibold text-foreground">{item.name}</p>
-                    <p className="font-mono text-[10px] text-muted-foreground">{item.left}</p>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${toneClasses[item.tone]}`}>
-                    {item.state}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <Preview className="h-56">
+            <div className="flex h-full flex-col justify-center gap-2.5 p-3.5">
+              <div className="rounded-xl border border-warning/40 bg-card p-3 shadow-sm">
+                <span className="rounded-full bg-warning-bg px-2 py-0.5 text-[10px] font-bold text-warning">
+                  Se acaba antes de que llegue un pedido
+                </span>
+                <p className="mt-2 text-sm font-bold text-foreground">Leche entera 1 L</p>
+                <p className="text-[11px] text-muted-foreground">Vendés unas 9 por día. Quedan 2.</p>
+                <span className="mt-2.5 inline-block rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">
+                  Armar pedido
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-[11px]">
+                <span className="text-foreground">Fideos 500 g</span>
+                <span className="rounded-full bg-danger-bg px-2 py-0.5 text-[10px] font-bold text-danger">Ya se acabó</span>
+              </div>
+            </div>
           </Preview>
           <Caption icon={Boxes} title="Stock siempre al día">
             Baja con cada venta y te avisa qué se está acabando, antes de quedarte sin nada.
           </Caption>
         </div>
 
-        {/* Fiado: la cuenta de un cliente */}
+        {/* Fiado: la lista de clientes */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-60">
-            <div className="p-3.5">
-              <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">ES</span>
-                  <p className="text-xs font-semibold text-foreground">Cuenta de Elena S.</p>
-                </div>
-                <ul className="mt-2.5 space-y-1.5 text-[11px]">
-                  {movements.map((m) => (
-                    <li key={m.when} className="flex items-center justify-between gap-2">
-                      <span className="text-muted-foreground">
-                        {m.what} · {m.when}
-                      </span>
-                      <span className={`font-mono tabular-nums ${m.paid ? "text-success" : "text-foreground"}`}>{m.amount}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-2.5 flex items-center justify-between border-t border-border pt-2">
-                  <span className="text-xs font-bold text-foreground">Debe $ 3.050</span>
-                  <span className="rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
-                    Registrar pago
+          <Preview className="h-56">
+            <div className="space-y-2 p-4 [mask-image:linear-gradient(to_bottom,#000_72%,transparent)]">
+              {debtors.map((d, i) => (
+                <div
+                  key={d.name}
+                  className={`flex items-center gap-2.5 rounded-xl border border-border bg-card px-2.5 py-2 shadow-sm ${
+                    i % 2 ? "ml-5" : "mr-5"
+                  }`}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
+                    {d.initials}
+                  </span>
+                  <div className="min-w-0 flex-1 leading-tight">
+                    <p className="truncate text-xs font-semibold text-foreground">{d.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{d.ago}</p>
+                  </div>
+                  <span className={`font-mono text-xs font-semibold tabular-nums ${d.late ? "text-danger" : "text-foreground"}`}>
+                    {d.amount}
                   </span>
                 </div>
-              </div>
+              ))}
             </div>
           </Preview>
           <Caption icon={Users} title="Fiado bajo control">
@@ -228,11 +186,129 @@ export function Features() {
           </Caption>
         </div>
 
+        {/* Caja de cada empleado */}
+        <div className={`${cell} lg:col-span-2`}>
+          <Preview className="h-72">
+            <div className="space-y-2 p-3.5">
+              {cashiers.map((c) => (
+                <div key={c.name} className="rounded-xl border border-border bg-card px-2.5 py-2 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
+                      {c.initials}
+                    </span>
+                    <p className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
+                      {c.name} <span className="font-normal text-muted-foreground">· {c.box}</span>
+                    </p>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${toneClasses[c.tone]}`}>
+                      {c.note}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex justify-between font-mono text-[10px] tabular-nums text-muted-foreground">
+                    <span>Esperado {c.expected}</span>
+                    <span>Contado {c.counted}</span>
+                  </div>
+                </div>
+              ))}
+              <div className="flex items-center justify-between rounded-xl bg-deep px-3 py-2 text-deep-foreground">
+                <span className="text-[11px] text-deep-muted">Diferencia del día</span>
+                <span className="font-mono text-xs font-bold tabular-nums text-warning">Faltan $ 400</span>
+              </div>
+            </div>
+          </Preview>
+          <Caption icon={UserCheck} title="La caja de cada empleado" plan="Plan Esencial">
+            Cada uno con su caja. Mirá cuánto cerró cada empleado y si hubo diferencia.
+          </Caption>
+        </div>
+
+        {/* Pedido a proveedores: hoy + lo que pasa si no pedís */}
+        <div className={`${cell} sm:col-span-2 lg:col-span-4`}>
+          <Preview className="h-72">
+            <div className="grid h-full gap-3 p-4 sm:grid-cols-[1.15fr_1fr]">
+              <div className="min-w-0">
+                <p className="text-sm font-bold tracking-tight text-foreground">Hoy tenés que pedirle a 3 proveedores</p>
+                <div className="mt-2.5 space-y-2">
+                  {providers.map((p) => (
+                    <div key={p.name} className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-2.5 py-2 shadow-sm">
+                      <div className="min-w-0 leading-tight">
+                        <p className="truncate text-xs font-semibold text-foreground">{p.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{p.items}</p>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${toneClasses[p.tone]}`}>{p.tag}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="hidden min-w-0 flex-col justify-between rounded-xl border border-border bg-card p-3 shadow-sm sm:flex">
+                <div>
+                  <Label>Si no pedís esta semana</Label>
+                  <p className="mt-1 text-[11px] text-muted-foreground">Podrías dejar de vender</p>
+                  <p className="font-mono text-2xl font-extrabold tracking-tight text-danger">$ 86.000</p>
+                  <p className="text-[10px] text-muted-foreground">Estimación a 7 días.</p>
+                </div>
+                <div>
+                  <div className="mb-2 space-y-0.5 text-[11px] text-foreground">
+                    <div className="flex justify-between"><span>Aceite girasol 900 ml</span><span className="font-mono">x 12</span></div>
+                    <div className="flex justify-between"><span>Leche entera 1 L</span><span className="font-mono">x 36</span></div>
+                  </div>
+                  <span className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground">
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Mandar por WhatsApp
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Preview>
+          <Caption icon={MessageCircle} title="Qué pedirle a cada proveedor" plan="Plan IA">
+            Te dice a quién pedirle hoy, qué falta y cuánto se pierde si no pedís. El pedido sale listo para mandar.
+          </Caption>
+        </div>
+
+        {/* Historial de precios */}
+        <div className={`${cell} lg:col-span-2`}>
+          <Preview className="h-72">
+            <div className="flex h-full flex-col p-4">
+              <div className="flex items-baseline justify-between">
+                <p className="text-sm font-bold tracking-tight text-foreground">Yerba 1 kg</p>
+                <Label>Precio de venta</Label>
+              </div>
+              <svg viewBox="0 0 300 90" className="mt-1 h-24 w-full" aria-hidden>
+                <path d="M6 70 H80 V52 H160 V34 H240 V14 H294" fill="none" stroke="var(--color-border)" strokeWidth="2" />
+                <path d="M6 70 H80 V52 H160 V34 H240 V14 H294" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinejoin="round" strokeDasharray="0" />
+                {[[6, 70], [80, 52], [160, 34], [240, 14]].map(([x, y]) => (
+                  <circle key={x} cx={x} cy={y} r="4" fill="var(--color-card)" stroke="var(--color-primary)" strokeWidth="2" />
+                ))}
+                <circle cx="240" cy="14" r="6" fill="var(--color-primary)" fillOpacity="0.2" />
+              </svg>
+              <div className="mt-auto space-y-2">
+                <div className="flex items-center justify-between rounded-xl border border-primary/40 bg-card px-3 py-2 shadow-sm">
+                  <div className="leading-tight">
+                    <p className="font-mono text-sm font-bold tabular-nums text-foreground">$ 3.842</p>
+                    <p className="text-[10px] text-muted-foreground">Aumento masivo +13% · Distribuidora Norte</p>
+                  </div>
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">Hoy</span>
+                </div>
+                <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2">
+                  <div className="leading-tight">
+                    <p className="font-mono text-sm font-semibold tabular-nums text-foreground">$ 3.400</p>
+                    <p className="text-[10px] text-muted-foreground">hace 30 días</p>
+                  </div>
+                  <span className="rounded-md border border-primary px-2 py-1 text-[10px] font-semibold text-primary">
+                    Volver a este precio
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Preview>
+          <Caption icon={History} title="Cada cambio de precio, guardado" plan="Plan Pro">
+            Mirá cuándo subió cada producto y volvé a un precio anterior con un toque.
+          </Caption>
+        </div>
+
         {/* Excel y etiquetas */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-52">
-            <div className="flex h-full items-center justify-center gap-3 p-4">
-              <div className="w-28 shrink-0 rounded-lg border border-border bg-card p-2 shadow-sm">
+          <Preview className="h-72">
+            <div className="flex h-full flex-col items-center justify-center gap-2 p-4">
+              <div className="w-36 shrink-0 rounded-lg border border-border bg-card p-2 shadow-sm">
                 <p className="font-mono text-[10px] font-semibold text-primary">productos.xlsx</p>
                 <div className="mt-2 space-y-1">
                   {[0, 1, 2, 3].map((n) => (
@@ -244,11 +320,11 @@ export function Features() {
                   ))}
                 </div>
               </div>
-              <span aria-hidden className="text-muted-foreground">→</span>
-              <div className="w-24 shrink-0 rotate-2 rounded-lg border border-border bg-card p-2 shadow-sm">
-                <p className="truncate text-[10px] font-semibold text-foreground">Yerba 1 kg</p>
-                <div className="barcode-bars mt-1.5 h-8 rounded-sm" />
-                <p className="mt-1 text-center font-mono text-[10px] font-semibold text-foreground">$ 3.800</p>
+              <span aria-hidden className="text-muted-foreground">↓</span>
+              <div className="flex gap-2">
+                <LabelSheet name="Azúcar 1 kg" price="$ 1.900" className="-rotate-3" />
+                <LabelSheet name="Fideos 500 g" price="$ 1.250" />
+                <LabelSheet name="Yerba 1 kg" price="$ 3.800" className="rotate-3" />
               </div>
             </div>
           </Preview>
@@ -257,46 +333,36 @@ export function Features() {
           </Caption>
         </div>
 
-        {/* Pedido a proveedores */}
+        {/* En vivo: como se ve desde un celular */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-52">
-            <div className="flex h-full items-center justify-center p-4">
-              <div className="w-full max-w-[14rem] rounded-xl border border-border bg-card p-3 shadow-sm">
-                <Label>Pedido a Distribuidora Norte</Label>
-                <div className="mt-2 space-y-1.5 text-xs text-foreground">
-                  <div className="flex justify-between"><span>Aceite girasol 900 ml</span><span className="font-mono">x 12</span></div>
-                  <div className="flex justify-between"><span>Arroz largo fino 1 kg</span><span className="font-mono">x 24</span></div>
-                  <div className="flex justify-between"><span>Leche entera 1 L</span><span className="font-mono">x 36</span></div>
+          <Preview className="h-72">
+            <div className="flex h-full items-end justify-center overflow-hidden">
+              <div className="w-44 translate-y-2 rounded-t-[1.6rem] border-2 border-b-0 border-foreground/80 bg-card px-3 pb-6 pt-2 shadow-xl">
+                <div className="mx-auto mb-1.5 h-1 w-10 rounded-full bg-foreground/70" />
+                <div className="flex justify-between font-mono text-[8px] text-muted-foreground">
+                  <span>18:42</span>
+                  <span>●●●</span>
                 </div>
-                <span className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  Mandar por WhatsApp
-                </span>
-              </div>
-            </div>
-          </Preview>
-          <Caption icon={MessageCircle} title="Qué pedirle a cada proveedor" plan="Plan IA">
-            Calcula qué te falta y cuánto pedir, agrupado por proveedor, con el pedido listo para mandar.
-          </Caption>
-        </div>
-
-        {/* En vivo */}
-        <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-52">
-            <div className="flex h-full items-center justify-center p-4">
-              <div className="w-36 rounded-[1.4rem] border-2 border-border bg-card p-3 shadow-md">
-                <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold text-primary">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="text-[11px] font-bold tracking-tight text-foreground">pesito.</span>
+                  <span className="flex items-center gap-1 font-mono text-[9px] font-semibold text-primary">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                    </span>
+                    EN VIVO
                   </span>
-                  EN VIVO
-                </span>
-                <p className="mt-2 text-xl font-extrabold tracking-tight tabular-nums text-foreground">$ 212.750</p>
+                </div>
+                <p className="mt-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Ventas de hoy</p>
+                <p className="text-2xl font-extrabold tracking-tight tabular-nums text-foreground">$ 212.750</p>
                 <p className="text-[10px] text-muted-foreground">47 ventas hoy</p>
-                <svg viewBox="0 0 100 30" className="mt-2 h-8 w-full" aria-hidden>
+                <svg viewBox="0 0 100 30" className="mt-1 h-7 w-full" aria-hidden>
                   <path d="M0 24 L15 20 L30 22 L45 12 L60 15 L75 6 L100 3" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
+                <div className="mt-2 flex justify-between border-t border-border pt-1.5 text-[10px]">
+                  <span className="text-muted-foreground">Efectivo</span>
+                  <span className="font-mono font-semibold text-foreground">+ $ 3.200</span>
+                </div>
               </div>
             </div>
           </Preview>
