@@ -39,7 +39,7 @@ function qtyLabel(row: FlowRow, amount: number): string {
 /** Cómo lo llamamos: en palabras de negocio, no "Sin stock / Urgente / Pronto". */
 const stateChip = {
   "sin-stock": { label: "Ya se acabó", className: "bg-danger-bg text-danger", dot: "text-danger" },
-  urgente: { label: "Se acaba pronto", className: "bg-amber-500/15 text-amber-600", dot: "text-amber-500" },
+  urgente: { label: "Se acaba pronto", className: "bg-primary/10 text-primary", dot: "text-primary" },
   pronto: { label: "Queda poco", className: "bg-muted text-muted-foreground", dot: "text-muted-foreground" },
 } as const;
 
@@ -98,7 +98,7 @@ function Timeline({
   wide?: boolean;
 }) {
   const fill =
-    row.urgency === "pronto" ? "bg-primary" : row.urgency === "urgente" ? "bg-amber-500" : "bg-danger";
+    row.urgency === "pronto" ? "bg-primary" : row.urgency === "urgente" ? "bg-primary/60" : "bg-danger";
   let share = 0;
   let tick = false;
   let caption: ReactNode = null;
@@ -113,7 +113,7 @@ function Timeline({
       <>
         {`Te alcanza ${left} ${plural(left, "día", "días")} · el pedido llega en ${leadDays}`}
         {short && (
-          <span className={row.urgency === "sin-stock" ? "text-danger" : "text-amber-600"}>
+          <span className={row.urgency === "sin-stock" ? "text-danger" : "font-medium text-foreground"}>
             {row.urgency === "sin-stock"
               ? " · te quedás sin nada"
               : ` · te ${plural(Math.ceil(leadDays - row.daysLeft), "falta", "faltan")} ${Math.ceil(leadDays - row.daysLeft)} ${plural(Math.ceil(leadDays - row.daysLeft), "día", "días")}`}
@@ -186,7 +186,7 @@ function SupplierCard({
   const belowMin = group.minOrder !== null && cost > 0 && cost < group.minOrder;
 
   return (
-    <Card className={cn("p-4", hasUrgent ? "border-danger/30" : "border-amber-500/30")}>
+    <Card className={cn("p-4", hasUrgent ? "border-primary/40" : "border-border")}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-base font-semibold text-foreground">{group.supplierName}</p>
@@ -201,7 +201,7 @@ function SupplierCard({
           <span
             className={cn(
               "rounded-full px-2.5 py-0.5 text-xs font-bold",
-              hasUrgent ? "bg-danger-bg text-danger" : "bg-amber-500/15 text-amber-600"
+              hasUrgent ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
             )}
           >
             {hasUrgent ? "Pedilo hoy" : "Pedilo esta semana"}
@@ -879,16 +879,16 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
         <div className="rounded-xl border border-border px-4 py-3">
           <p className="text-sm font-semibold text-foreground">{`Tu pedido total: ${formatCurrency(totalCost)}`}</p>
           <div className="mt-2.5 flex h-4 overflow-hidden rounded-full bg-muted">
-            <span className="h-full bg-danger" style={{ width: `${(todayCost / totalCost) * 100}%` }} />
-            <span className="h-full bg-amber-500" style={{ width: `${(weekCost / totalCost) * 100}%` }} />
+            <span className="h-full bg-primary" style={{ width: `${(todayCost / totalCost) * 100}%` }} />
+            <span className="h-full bg-primary/35" style={{ width: `${(weekCost / totalCost) * 100}%` }} />
           </div>
           <div className="mt-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-sm">
             <span>
-              <span className="text-danger">●</span>{" "}
+              <span className="text-primary">●</span>{" "}
               {`Hoy ${formatCurrency(todayCost)} · ${Math.round((todayCost / totalCost) * 100)}%`}
             </span>
             <span>
-              <span className="text-amber-500">●</span>{" "}
+              <span className="text-primary/40">●</span>{" "}
               {`Esta semana ${formatCurrency(weekCost)} · ${Math.round((weekCost / totalCost) * 100)}%`}
             </span>
           </div>
@@ -899,7 +899,7 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
         <div className="grid gap-3 md:grid-cols-2">
           <ChartCard title="Qué pasa si no pedís" hint={`Próximos ${HORIZON} días`}>
             <p className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-3xl font-extrabold text-danger">{formatCurrency(lostTotal)}</span>
+              <span className="text-3xl font-extrabold text-primary">{formatCurrency(lostTotal)}</span>
               <span className="text-sm text-muted-foreground">en ventas que podrías perder</span>
             </p>
             <ul className="mt-3 space-y-2">
@@ -907,7 +907,7 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
                 <li key={r.key} className="grid grid-cols-[minmax(0,8rem)_1fr_auto] items-center gap-3 text-sm">
                   <span className="truncate text-foreground">{r.name}</span>
                   <span className="h-2.5 overflow-hidden rounded-full bg-muted">
-                    <span className="block h-full bg-danger" style={{ width: `${(r.value / lostMax) * 100}%` }} />
+                    <span className="block h-full bg-primary" style={{ width: `${(r.value / lostMax) * 100}%` }} />
                   </span>
                   <span className="font-semibold text-foreground">{formatCurrency(r.value)}</span>
                 </li>
@@ -928,12 +928,12 @@ function RestockCharts({ groups }: { groups: FlowGroup[] }) {
                     <span className="truncate text-foreground">{row.name}</span>
                     <span className="h-2.5 overflow-hidden rounded-full bg-muted">
                       <span
-                        className={cn("block h-full", left < 2 ? "bg-danger" : "bg-amber-500")}
+                        className={cn("block h-full", out ? "bg-danger" : "bg-primary")}
                         style={{ width: `${Math.max(left, 0) / HORIZON * 100}%` }}
                       />
                     </span>
                     <span className="whitespace-nowrap text-xs text-muted-foreground">
-                      <span className={cn("font-bold", left < 2 ? "text-danger" : "text-amber-600")}>
+                      <span className={cn("font-bold", out ? "text-danger" : "text-primary")}>
                         {out ? "Sin stock" : `${num(left)} ${plural(left, "día", "días")}`}
                       </span>
                       {` · ${withUnit(row.perDay, row.unit)} por día`}
@@ -1099,7 +1099,7 @@ export function RestockFlow({
               <div
                 className={cn(
                   "rounded-2xl border p-5",
-                  urgentGroups.length > 0 ? "border-danger/25 bg-danger-bg/40" : "border-border bg-muted/30"
+                  urgentGroups.length > 0 ? "border-primary/30 bg-primary/10" : "border-border bg-muted/30"
                 )}
               >
                 <div className="flex items-center gap-4">
@@ -1140,14 +1140,14 @@ export function RestockFlow({
               <div
                 className={cn(
                   "rounded-2xl border p-5",
-                  weekGroups.length > 0 ? "border-amber-500/30 bg-amber-500/10" : "border-border bg-muted/30"
+                  weekGroups.length > 0 ? "border-primary/15 bg-primary/5" : "border-border bg-muted/30"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <span
                     className={cn(
                       "text-5xl font-extrabold leading-none",
-                      weekGroups.length > 0 ? "text-amber-600" : "text-muted-foreground"
+                      weekGroups.length > 0 ? "text-primary/50" : "text-muted-foreground"
                     )}
                   >
                     {weekGroups.length}
@@ -1168,7 +1168,7 @@ export function RestockFlow({
                 {weekGroups.length > 0 && (
                   <button
                     type="button"
-                    className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/60 bg-card px-6 text-base font-semibold text-amber-600 transition-colors hover:bg-amber-500/10"
+                    className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary bg-card px-6 text-base font-semibold text-primary transition-colors hover:bg-primary/10"
                     onClick={() => start(weekGroups.map((g) => g.key))}
                   >
                     {weekGroups.length > 1 ? `Ver y pedir · 1 de ${weekGroups.length}` : "Ver y pedir"}
@@ -1194,8 +1194,8 @@ export function RestockFlow({
             <>
               {visibleUrgent.length > 0 && (
                 <section className="space-y-3">
-                  <p className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-danger">
-                    <span className="h-2.5 w-2.5 rounded-full bg-danger" />
+                  <p className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-primary">
+                    <span className="h-2.5 w-2.5 rounded-full bg-primary" />
                     {`Para pedir hoy · ${visibleUrgent.length} ${plural(visibleUrgent.length, "proveedor", "proveedores")}`}
                   </p>
                   {renderGrid(visibleUrgent)}
@@ -1203,8 +1203,8 @@ export function RestockFlow({
               )}
               {visibleWeek.length > 0 && (
                 <section className="space-y-3">
-                  <p className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-amber-600">
-                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                  <p className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-muted-foreground">
+                    <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
                     {`Para pedir esta semana · ${visibleWeek.length} ${plural(visibleWeek.length, "proveedor", "proveedores")}`}
                   </p>
                   {renderGrid(visibleWeek)}
