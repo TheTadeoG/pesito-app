@@ -22,15 +22,15 @@ const debtors = [
 ];
 
 const cashiers = [
-  { name: "Marta G.", box: "Caja 1", expected: "$ 96.500", counted: "$ 96.500", note: "Sin diferencias", tone: "success", initials: "MG" },
-  { name: "Lucas P.", box: "Caja 2", expected: "$ 41.200", counted: "$ 40.700", note: "Faltan $ 500", tone: "danger", initials: "LP" },
-  { name: "Rocío A.", box: "Caja 3", expected: "$ 28.900", counted: "$ 29.000", note: "Sobran $ 100", tone: "warning", initials: "RA" },
+  { name: "Marta G.", note: "Sin diferencias", tone: "success", initials: "MG" },
+  { name: "Lucas P.", note: "Faltan $ 500", tone: "danger", initials: "LP" },
+  { name: "Rocío A.", note: "Sobran $ 100", tone: "warning", initials: "RA" },
 ] as const;
 
 const providers = [
-  { name: "Distribuidora Norte", items: "8 productos", tag: "Urgente", tone: "danger" },
-  { name: "Lácteos del Sur", items: "3 productos", tag: "Esta semana", tone: "warning" },
-  { name: "Almacén Mayorista", items: "5 productos", tag: "Esta semana", tone: "warning" },
+  { name: "Distribuidora Norte", tag: "Urgente", tone: "danger" },
+  { name: "Lácteos del Sur", tag: "Esta semana", tone: "warning" },
+  { name: "Almacén Mayorista", tag: "Esta semana", tone: "warning" },
 ] as const;
 
 const toneClasses = {
@@ -61,12 +61,10 @@ function Label({ children }: { children: ReactNode }) {
 function Caption({
   icon: Icon,
   title,
-  plan,
   children,
 }: {
   icon: typeof Users;
   title: string;
-  plan?: string;
   children: ReactNode;
 }) {
   return (
@@ -75,11 +73,6 @@ function Caption({
         <Icon className="h-[18px] w-[18px]" />
       </span>
       <h3 className="mt-3 text-lg font-bold tracking-tight text-foreground">{title}</h3>
-      {plan && (
-        <span className="mt-1.5 inline-block rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
-          {plan}
-        </span>
-      )}
       <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">{children}</p>
     </div>
   );
@@ -188,78 +181,52 @@ export function Features() {
 
         {/* Caja de cada empleado */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-72">
-            <div className="space-y-2 p-3.5">
+          <Preview className="h-60">
+            <div className="flex h-full flex-col justify-center gap-2.5 p-4">
               {cashiers.map((c) => (
-                <div key={c.name} className="rounded-xl border border-border bg-card px-2.5 py-2 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
-                      {c.initials}
-                    </span>
-                    <p className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
-                      {c.name} <span className="font-normal text-muted-foreground">· {c.box}</span>
-                    </p>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${toneClasses[c.tone]}`}>
-                      {c.note}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex justify-between font-mono text-[10px] tabular-nums text-muted-foreground">
-                    <span>Esperado {c.expected}</span>
-                    <span>Contado {c.counted}</span>
-                  </div>
+                <div key={c.name} className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 shadow-sm">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
+                    {c.initials}
+                  </span>
+                  <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{c.name}</p>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${toneClasses[c.tone]}`}>
+                    {c.note}
+                  </span>
                 </div>
               ))}
-              <div className="flex items-center justify-between rounded-xl bg-deep px-3 py-2 text-deep-foreground">
-                <span className="text-[11px] text-deep-muted">Diferencia del día</span>
-                <span className="font-mono text-xs font-bold tabular-nums text-warning">Faltan $ 400</span>
-              </div>
             </div>
           </Preview>
-          <Caption icon={UserCheck} title="La caja de cada empleado" plan="Plan Esencial">
-            Cada uno con su caja. Mirá cuánto cerró cada empleado y si hubo diferencia.
+          <Caption icon={UserCheck} title="La caja de cada empleado">
+            Mirá quién cerró justo y quién tuvo diferencia.
           </Caption>
         </div>
 
-        {/* Pedido a proveedores: hoy + lo que pasa si no pedís */}
+        {/* Pedido a proveedores */}
         <div className={`${cell} sm:col-span-2 lg:col-span-4`}>
-          <Preview className="h-72">
-            <div className="grid h-full gap-3 p-4 sm:grid-cols-[1.15fr_1fr]">
-              <div className="min-w-0">
-                <p className="text-sm font-bold tracking-tight text-foreground">Hoy tenés que pedirle a 3 proveedores</p>
-                <div className="mt-2.5 space-y-2">
-                  {providers.map((p) => (
-                    <div key={p.name} className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-2.5 py-2 shadow-sm">
-                      <div className="min-w-0 leading-tight">
-                        <p className="truncate text-xs font-semibold text-foreground">{p.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{p.items}</p>
-                      </div>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${toneClasses[p.tone]}`}>{p.tag}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="hidden min-w-0 flex-col justify-between rounded-xl border border-border bg-card p-3 shadow-sm sm:flex">
-                <div>
-                  <Label>Si no pedís esta semana</Label>
-                  <p className="mt-1 text-[11px] text-muted-foreground">Podrías dejar de vender</p>
-                  <p className="font-mono text-2xl font-extrabold tracking-tight text-danger">$ 86.000</p>
-                  <p className="text-[10px] text-muted-foreground">Estimación a 7 días.</p>
-                </div>
-                <div>
-                  <div className="mb-2 space-y-0.5 text-[11px] text-foreground">
-                    <div className="flex justify-between"><span>Aceite girasol 900 ml</span><span className="font-mono">x 12</span></div>
-                    <div className="flex justify-between"><span>Leche entera 1 L</span><span className="font-mono">x 36</span></div>
+          <Preview className="h-60">
+            <div className="grid h-full items-center gap-3 p-4 sm:grid-cols-[1.2fr_1fr]">
+              <div className="space-y-2">
+                {providers.map((p) => (
+                  <div key={p.name} className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2.5 shadow-sm">
+                    <p className="min-w-0 truncate text-sm font-semibold text-foreground">{p.name}</p>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${toneClasses[p.tone]}`}>{p.tag}</span>
                   </div>
-                  <span className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground">
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Mandar por WhatsApp
-                  </span>
+                ))}
+              </div>
+              <div className="hidden flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex">
+                <div>
+                  <p className="text-xs text-muted-foreground">Si no pedís, podrías perder</p>
+                  <p className="font-mono text-3xl font-extrabold tracking-tight text-danger">$ 86.000</p>
                 </div>
+                <span className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Mandar pedido
+                </span>
               </div>
             </div>
           </Preview>
-          <Caption icon={MessageCircle} title="Qué pedirle a cada proveedor" plan="Plan IA">
-            Te dice a quién pedirle hoy, qué falta y cuánto se pierde si no pedís. El pedido sale listo para mandar.
+          <Caption icon={MessageCircle} title="Qué pedirle a cada proveedor">
+            Sabés a quién pedirle hoy y cuánto perdés si no pedís.
           </Caption>
         </div>
 
@@ -299,7 +266,7 @@ export function Features() {
               </div>
             </div>
           </Preview>
-          <Caption icon={History} title="Cada cambio de precio, guardado" plan="Plan Pro">
+          <Caption icon={History} title="Cada cambio de precio, guardado">
             Mirá cuándo subió cada producto y volvé a un precio anterior con un toque.
           </Caption>
         </div>
@@ -328,7 +295,7 @@ export function Features() {
               </div>
             </div>
           </Preview>
-          <Caption icon={FileSpreadsheet} title="Cargá todo en minutos" plan="Plan Esencial">
+          <Caption icon={FileSpreadsheet} title="Cargá todo en minutos">
             Subí tu catálogo desde un Excel y generá códigos de barras propios con etiquetas para imprimir.
           </Caption>
         </div>
@@ -366,7 +333,7 @@ export function Features() {
               </div>
             </div>
           </Preview>
-          <Caption icon={Smartphone} title="Tu negocio desde casa" plan="Plan Pro">
+          <Caption icon={Smartphone} title="Tu negocio desde casa">
             Mirá las ventas del día en tu celular, sin estar en el mostrador.
           </Caption>
         </div>
