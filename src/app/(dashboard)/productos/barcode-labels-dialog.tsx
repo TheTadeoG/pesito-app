@@ -260,7 +260,7 @@ export function BarcodeLabelsDialog({ open, onClose, products }: Props) {
               <Select id="lbl-size" value={size} onChange={(e) => setSize(e.target.value as SizeKey)}>
                 {Object.entries(SIZES).map(([key, s]) => (
                   <option key={key} value={key}>
-                    {s.label}
+                    {sheet ? `${s.label} · ${labelsPerSheet(s.width, s.height).total} por hoja` : s.label}
                   </option>
                 ))}
               </Select>
