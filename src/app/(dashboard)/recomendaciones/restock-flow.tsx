@@ -793,16 +793,16 @@ export function RestockFlow({
   // Proveedores salteados en esta vuelta, y el aviso al terminar.
   const [skipped, setSkipped] = useState<string[]>([]);
   const [skipNotice, setSkipNotice] = useState<string[] | null>(null);
-  // Al terminar lo de hoy: seguir con los proveedores de esta semana.
-  const [weekPrompt, setWeekPrompt] = useState<string[] | null>(null);
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const active = groups.find((g) => g.key === activeKey) ?? null;
 
   const urgentGroups = groups.filter((g) => g.rows.some(isToday));
   const weekGroups = groups.filter((g) => !g.rows.some(isToday));
-  const urgentProducts = groups.reduce((n, g) => n + g.rows.filter(isToday).length, 0);
-  const toOrder = urgentGroups.length > 0 ? urgentGroups.length : groups.length;
+  const urgentProducts = urgentGroups.reduce((n, g) => n + g.rows.filter(isToday).length, 0);
+  const urgentCost = urgentGroups.reduce((n, g) => n + groupCost(todayRows(g)), 0);
+  const weekProducts = weekGroups.reduce((n, g) => n + g.rows.length, 0);
+  const weekCost = weekGroups.reduce((n, g) => n + groupCost(g.rows), 0);
 
   const query = normalize(search.trim());
   const visible = groups
@@ -814,11 +814,11 @@ export function RestockFlow({
           : g.rows.filter((r) => normalize(`${r.name} ${r.brand ?? ""}`).includes(query));
       return { group: g, matches, focus: query !== "" && !supplierMatch };
     })
-    .filter((v) => v.matches.length > 0)
-    .sort((a, b) => (a.group.rows.some(isToday) ? 0 : 1) - (b.group.rows.some(isToday) ? 0 : 1));
+    .filter((v) => v.matches.length > 0);
+  const visibleUrgent = visible.filter((v) => v.group.rows.some(isToday));
+  const visibleWeek = visible.filter((v) => !v.group.rows.some(isToday));
 
   function start(keys: string[]) {
-    setWeekPrompt(null);
     setQueue(keys);
     setSkipped([]);
     setSkipNotice(null);
@@ -849,10 +849,6 @@ export function RestockFlow({
     const names = skippedNow
       .map((k) => groups.find((g) => g.key === k)?.supplierName)
       .filter((n): n is string => Boolean(n));
-    // Terminó lo de hoy: se ofrece seguir con los proveedores de esta semana.
-    const finishedToday = queue.some((k) => urgentGroups.some((g) => g.key === k));
-    const remainingWeek = weekGroups.filter((g) => !queue.includes(g.key)).map((g) => g.key);
-    if (finishedToday && remainingWeek.length > 0) setWeekPrompt(remainingWeek);
     setActiveKey(null);
     setQueue([]);
     setSkipped([]);
@@ -879,7 +875,19 @@ export function RestockFlow({
     );
   }
 
-  const guidedKeys = (urgentGroups.length > 0 ? urgentGroups : groups).map((g) => g.key);
+  const renderGrid = (list: typeof visible) => (
+    <div className="grid gap-4 md:grid-cols-2">
+      {list.map((v) => (
+        <SupplierCard
+          key={v.group.key}
+          group={v.group}
+          matches={v.focus ? v.matches : undefined}
+          skipped={skipNotice?.includes(v.group.supplierName)}
+          onOpen={() => openGroup(v.group.key)}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -900,22 +908,6 @@ export function RestockFlow({
           </button>
         </div>
       )}
-      {weekPrompt && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-accent/40 px-4 py-3">
-          <p className="text-sm text-foreground">
-            <span className="font-semibold">Listo con lo de hoy.</span>{" "}
-            {`Te ${weekPrompt.length === 1 ? "queda" : "quedan"} ${weekPrompt.length} ${plural(weekPrompt.length, "proveedor", "proveedores")} para pedir esta semana.`}
-          </p>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => start(weekPrompt)}>
-              Seguir con esos
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setWeekPrompt(null)}>
-              Ahora no
-            </Button>
-          </div>
-        </div>
-      )}
 
       {groups.length === 0 ? (
         <Card className="p-6">
@@ -927,23 +919,88 @@ export function RestockFlow({
       ) : (
         <>
           <Card className="p-5">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-extrabold text-foreground">
-                  {urgentGroups.length > 0
-                    ? `Hoy tenés que pedirle a ${urgentGroups.length} ${plural(urgentGroups.length, "proveedor", "proveedores")}`
-                    : "Nada urgente, pero podés ir adelantando pedidos"}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {urgentProducts > 0
-                    ? `${urgentProducts} ${plural(urgentProducts, "producto se acaba", "productos se acaban")} antes de que llegue un pedido nuevo. Los demás pueden esperar.`
-                    : "Todo lo que sugerimos todavía te alcanza unos días."}
-                </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Hoy */}
+              <div
+                className={cn(
+                  "rounded-2xl border p-5",
+                  urgentGroups.length > 0 ? "border-danger/25 bg-danger-bg/40" : "border-border bg-muted/30"
+                )}
+              >
+                <div className="flex items-center gap-4">
+                  <span
+                    className={cn(
+                      "text-5xl font-extrabold leading-none",
+                      urgentGroups.length > 0 ? "text-danger" : "text-muted-foreground"
+                    )}
+                  >
+                    {urgentGroups.length}
+                  </span>
+                  <div>
+                    <p className="text-lg font-extrabold leading-snug text-foreground">
+                      {urgentGroups.length > 0
+                        ? `Hoy tenés que pedirle a ${urgentGroups.length} ${plural(urgentGroups.length, "proveedor", "proveedores")}`
+                        : "Hoy no tenés que pedir nada"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {urgentGroups.length > 0
+                        ? `${urgentProducts} ${plural(urgentProducts, "producto", "productos")}${urgentCost > 0 ? ` · ${formatCurrency(urgentCost)}` : ""}`
+                        : "Nada se acaba antes de que llegue un pedido"}
+                    </p>
+                  </div>
+                </div>
+                {urgentGroups.length > 0 && (
+                  <Button
+                    size="lg"
+                    className="mt-4 w-full"
+                    onClick={() => start(urgentGroups.map((g) => g.key))}
+                  >
+                    {urgentGroups.length > 1 ? `Empezar a pedir · 1 de ${urgentGroups.length}` : "Empezar a pedir"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              <Button size="lg" onClick={() => start(guidedKeys)}>
-                {toOrder > 1 ? `Empezar a pedir · 1 de ${toOrder}` : "Empezar a pedir"}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+
+              {/* Esta semana */}
+              <div
+                className={cn(
+                  "rounded-2xl border p-5",
+                  weekGroups.length > 0 ? "border-amber-500/30 bg-amber-500/10" : "border-border bg-muted/30"
+                )}
+              >
+                <div className="flex items-center gap-4">
+                  <span
+                    className={cn(
+                      "text-5xl font-extrabold leading-none",
+                      weekGroups.length > 0 ? "text-amber-600" : "text-muted-foreground"
+                    )}
+                  >
+                    {weekGroups.length}
+                  </span>
+                  <div>
+                    <p className="text-lg font-extrabold leading-snug text-foreground">
+                      {weekGroups.length > 0
+                        ? `Esta semana tenés que pedirle a ${weekGroups.length} ${plural(weekGroups.length, "proveedor", "proveedores")}`
+                        : "Esta semana no hace falta pedir más"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {weekGroups.length > 0
+                        ? `${weekProducts} ${plural(weekProducts, "producto", "productos")}${weekCost > 0 ? ` · ${formatCurrency(weekCost)}` : ""}`
+                        : "Todo lo demás todavía te alcanza"}
+                    </p>
+                  </div>
+                </div>
+                {weekGroups.length > 0 && (
+                  <button
+                    type="button"
+                    className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/60 bg-card px-6 text-base font-semibold text-amber-600 transition-colors hover:bg-amber-500/10"
+                    onClick={() => start(weekGroups.map((g) => g.key))}
+                  >
+                    {weekGroups.length > 1 ? `Ver y pedir · 1 de ${weekGroups.length}` : "Ver y pedir"}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="mt-5">
@@ -981,17 +1038,26 @@ export function RestockFlow({
               No hay nada que coincida con esa búsqueda.
             </p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {visible.map((v) => (
-                <SupplierCard
-                  key={v.group.key}
-                  group={v.group}
-                  matches={v.focus ? v.matches : undefined}
-                  skipped={skipNotice?.includes(v.group.supplierName)}
-                  onOpen={() => openGroup(v.group.key)}
-                />
-              ))}
-            </div>
+            <>
+              {visibleUrgent.length > 0 && (
+                <section className="space-y-3">
+                  <p className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-danger">
+                    <span className="h-2.5 w-2.5 rounded-full bg-danger" />
+                    {`Para pedir hoy · ${visibleUrgent.length} ${plural(visibleUrgent.length, "proveedor", "proveedores")}`}
+                  </p>
+                  {renderGrid(visibleUrgent)}
+                </section>
+              )}
+              {visibleWeek.length > 0 && (
+                <section className="space-y-3">
+                  <p className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-amber-600">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                    {`Para pedir esta semana · ${visibleWeek.length} ${plural(visibleWeek.length, "proveedor", "proveedores")}`}
+                  </p>
+                  {renderGrid(visibleWeek)}
+                </section>
+              )}
+            </>
           )}
         </>
       )}
