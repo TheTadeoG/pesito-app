@@ -86,16 +86,29 @@ function whyText(row: RestockRow, leadDays: number, settings: RestockSettings): 
   if (perDay <= 0) {
     return `No vendiste este producto en los últimos ${days(settings.windowDays)}, así que usamos el stock mínimo que cargaste (${formatQty(product.min_stock, product.unit)}). ${have}, así que conviene pedir ${buy}.`;
   }
-  const wanted = Math.max(perDay * (settings.targetDays + leadDays + settings.safetyDays), product.min_stock);
-  const wait =
-    leadDays > 0
-      ? `El pedido tarda ${days(leadDays)} en llegar${settings.safetyDays > 0 ? ` y dejamos ${days(settings.safetyDays)} de margen` : ""}.`
-      : settings.safetyDays > 0
-        ? `Dejamos ${days(settings.safetyDays)} de margen.`
-        : "";
-  return `Vendés ${formatQty(perDay, product.unit)} por día. ${wait} Para tener stock para ${days(settings.targetDays)} después de que llegue, necesitás ${formatQty(wanted, product.unit)} en total. ${have}, así que conviene pedir ${buy}.`
-    .replace(/\s+/g, " ")
-    .trim();
+  const waitDays = leadDays + settings.safetyDays;
+  const raw = perDay * (settings.targetDays + waitDays);
+  const wanted = Math.max(raw, product.min_stock);
+  const lines = [`Vendés unos ${formatQty(perDay, product.unit)} por día.`];
+  if (waitDays > 0) {
+    const cause =
+      leadDays > 0 && settings.safetyDays > 0
+        ? `el pedido tarda ${days(leadDays)} en llegar y sumamos ${days(settings.safetyDays)} de margen`
+        : leadDays > 0
+          ? `el pedido tarda ${days(leadDays)} en llegar`
+          : `dejamos ${days(settings.safetyDays)} de margen`;
+    lines.push(`Hasta que llegue, ${cause}: vas a vender unos ${formatQty(perDay * waitDays, product.unit)}.`);
+  }
+  lines.push(
+    `Después querés tener para ${days(settings.targetDays)} más: otros ${formatQty(perDay * settings.targetDays, product.unit)}.`
+  );
+  lines.push(
+    wanted > raw
+      ? `Como tu stock mínimo es ${formatQty(product.min_stock, product.unit)}, apuntamos a tener eso.`
+      : `En total necesitás ${formatQty(wanted, product.unit)}.`
+  );
+  lines.push(`${have}, así que conviene pedir ${buy}.`);
+  return lines.join("\n");
 }
 
 export function buildFlowGroups(

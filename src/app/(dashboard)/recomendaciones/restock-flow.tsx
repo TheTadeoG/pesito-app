@@ -365,10 +365,19 @@ function OrderRow({
               {row.unitCost !== null ? `${row.packSize ? " · " : ""}${formatCurrency(row.unitCost)} c/u` : ""}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={`Sacar ${row.name} del pedido`}
+            title="Sacar del pedido"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-danger-bg hover:text-danger"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       </div>
       {why && (
-        <div className="mt-2.5 rounded-xl bg-muted/60 px-3.5 py-2.5 text-sm text-foreground">{row.why}</div>
+        <div className="mt-2.5 whitespace-pre-line rounded-xl bg-muted/60 px-3.5 py-2.5 text-sm text-foreground">{row.why}</div>
       )}
     </div>
   );
