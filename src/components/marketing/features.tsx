@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StaggerIn } from "@/components/marketing/stagger-in";
-import { CashCount, TicketScanner } from "@/components/marketing/features-live";
+import { CashBills, OrderChat, TicketPrinter } from "@/components/marketing/features-live";
 import {
   Boxes,
   FileSpreadsheet,
@@ -25,12 +25,6 @@ const cashiers = [
   { name: "Marta G.", note: "Sin diferencias", tone: "success", initials: "MG" },
   { name: "Lucas P.", note: "Faltan $ 500", tone: "danger", initials: "LP" },
   { name: "Rocío A.", note: "Sobran $ 100", tone: "warning", initials: "RA" },
-] as const;
-
-const providers = [
-  { name: "Distribuidora Norte", tag: "Urgente", tone: "danger" },
-  { name: "Lácteos del Sur", tag: "Esta semana", tone: "warning" },
-  { name: "Almacén Mayorista", tag: "Esta semana", tone: "warning" },
 ] as const;
 
 const toneClasses = {
@@ -106,8 +100,8 @@ export function Features() {
       <StaggerIn className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {/* Cobro: la celda alta de la izquierda */}
         <div className={`${cell} flex flex-col sm:col-span-2 lg:col-span-2 lg:row-span-2`}>
-          <Preview className="min-h-[26rem] flex-1">
-            <TicketScanner />
+          <Preview className="min-h-[27rem] flex-1">
+            <TicketPrinter />
           </Preview>
           <Caption icon={ShoppingCart} title="Cobrá en segundos">
             Escaneá el código de barras o buscá por nombre. El total y el vuelto se arman solos.
@@ -116,11 +110,11 @@ export function Features() {
 
         {/* Caja */}
         <div className={`${cell} sm:col-span-2 lg:col-span-4`}>
-          <Preview className="h-44">
-            <CashCount expected={118400} />
+          <Preview className="h-52">
+            <CashBills />
           </Preview>
-          <Caption icon={Wallet} title="Caja sin diferencias">
-            Abrí y cerrá la caja y mirá el efectivo esperado contra lo que contaste.
+          <Caption icon={Wallet} title="Caja sin sorpresas">
+            Contás los billetes y ves al instante si falta o sobra plata.
           </Caption>
         </div>
 
@@ -181,7 +175,7 @@ export function Features() {
 
         {/* Caja de cada empleado */}
         <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-60">
+          <Preview className="h-72">
             <div className="flex h-full flex-col justify-center gap-2.5 p-4">
               {cashiers.map((c) => (
                 <div key={c.name} className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 shadow-sm">
@@ -201,32 +195,13 @@ export function Features() {
           </Caption>
         </div>
 
-        {/* Pedido a proveedores */}
+        {/* Pedido a proveedores: chat con el proveedor */}
         <div className={`${cell} sm:col-span-2 lg:col-span-4`}>
-          <Preview className="h-60">
-            <div className="grid h-full items-center gap-3 p-4 sm:grid-cols-[1.2fr_1fr]">
-              <div className="space-y-2">
-                {providers.map((p) => (
-                  <div key={p.name} className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2.5 shadow-sm">
-                    <p className="min-w-0 truncate text-sm font-semibold text-foreground">{p.name}</p>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${toneClasses[p.tone]}`}>{p.tag}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="hidden flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex">
-                <div>
-                  <p className="text-xs text-muted-foreground">Si no pedís, podrías perder</p>
-                  <p className="font-mono text-3xl font-extrabold tracking-tight text-danger">$ 86.000</p>
-                </div>
-                <span className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  Mandar pedido
-                </span>
-              </div>
-            </div>
+          <Preview className="h-72">
+            <OrderChat />
           </Preview>
           <Caption icon={MessageCircle} title="Qué pedirle a cada proveedor">
-            Sabés a quién pedirle hoy y cuánto perdés si no pedís.
+            Pesito arma el pedido por vos. Vos solo lo mandás.
           </Caption>
         </div>
 
