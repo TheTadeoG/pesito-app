@@ -160,7 +160,7 @@ export default async function RecomendacionesPage() {
       targetDays={settings.targetDays}
       pendingBlock={pendingBlock}
       pricesBlock={pricesSection}
-      settingsBlock={<RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} />}
+      settingsBlock={<RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} defaultOpen />}
     />
   );
 }
