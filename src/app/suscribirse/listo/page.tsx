@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels } from "@/lib/subscription";
 import { syncReturnedPayment } from "@/lib/billing";
 import { formatDate } from "@/lib/utils";
+import { chargeAmount } from "@/lib/billing";
+import { TrackEvent } from "@/components/track-event";
 
 // A dónde vuelve Mercado Pago (en la pestaña del pago) con
 // ?preapproval_id= (débito automático) o ?payment_id=&status= (pago único).
@@ -44,9 +46,33 @@ export default async function PagoListoPage({
       : `Pago hasta el ${periodEnd}. `
     : "";
 
+  // Compra confirmada: se avisa una sola vez por pago (sin datos personales).
+  const transactionId = params.preapproval_id ?? params.payment_id ?? billing?.mpPreapprovalId ?? null;
+  const purchaseValue = paid && subscription.plan !== "gratis" ? chargeAmount(subscription.plan, billing?.cycle ?? "mensual") : 0;
+
   const Icon = paid ? CheckCircle2 : pending ? Clock : Loader2;
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      {paid && transactionId && subscription.plan !== "gratis" && (
+        <TrackEvent
+          event="purchase"
+          dedupeKey={`purchase-${transactionId}`}
+          params={{
+            transaction_id: transactionId,
+            currency: "ARS",
+            value: purchaseValue,
+            items: [
+              {
+                item_id: subscription.plan,
+                item_name: `Plan ${planLabels[subscription.plan]}`,
+                item_variant: billing?.cycle ?? "mensual",
+                price: purchaseValue,
+                quantity: 1,
+              },
+            ],
+          }}
+        />
+      )}
       <div className="w-full max-w-md space-y-5 rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
         <Icon className={paid ? "mx-auto h-14 w-14 text-success" : pending ? "mx-auto h-12 w-12 text-warning" : "mx-auto h-12 w-12 animate-spin text-muted-foreground"} />
         <div>

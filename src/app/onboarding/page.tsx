@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { KioscoForm } from "@/app/onboarding/kiosco-form";
+import { TrackEvent } from "@/components/track-event";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -61,6 +62,7 @@ export default async function OnboardingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <TrackEvent event="sign_up" params={{ method: "email" }} dedupeKey="sign_up" />
           <KioscoForm initialName={initialName} />
         </CardContent>
       </Card>

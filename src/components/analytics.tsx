@@ -22,13 +22,21 @@ const PUBLIC_PATHS = [
   "/suscribirse",
 ];
 
+// Además de la web pública, Analytics (sólo contar, sin grabar) también mide el
+// registro y el pago del plan, para saber cuántos se registran y contratan.
+const CONVERSION_PATHS = ["/registro", "/onboarding", "/suscribirse"];
+
+const matches = (pathname: string, list: string[]) =>
+  list.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
 function isPublicPath(pathname: string): boolean {
-  return pathname === "/" || PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return pathname === "/" || matches(pathname, PUBLIC_PATHS);
 }
 
 export function Analytics() {
   const pathname = usePathname();
-  if (!isPublicPath(pathname)) return null;
+  const isPublic = isPublicPath(pathname);
+  if (!isPublic && !matches(pathname, CONVERSION_PATHS)) return null;
   return (
     <>
       {GA_ID && (
@@ -39,7 +47,7 @@ export function Analytics() {
           </Script>
         </>
       )}
-      {CLARITY_ID && (
+      {CLARITY_ID && isPublic && (
         <Script id="clarity-init" strategy="lazyOnload">
           {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${CLARITY_ID}");`}
         </Script>

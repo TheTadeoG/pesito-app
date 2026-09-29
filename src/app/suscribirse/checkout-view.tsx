@@ -21,6 +21,7 @@ import { ANNUAL_DISCOUNT } from "@/lib/plan-features";
 import { planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import type { PaymentMethod } from "@/lib/billing";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { trackEvent } from "@/lib/track";
 import { useMercadoPagoCheckout } from "@/app/(dashboard)/configuracion/use-mp-checkout";
 
 // Colores del panel izquierdo según el plan (el mismo acento que en precios).
@@ -264,7 +265,14 @@ export function CheckoutView(props: CheckoutViewProps) {
               ) : paymentsEnabled ? (
                 <button
                   type="button"
-                  onClick={() => start(plan, cycle, method)}
+                  onClick={() => {
+                    trackEvent("begin_checkout", {
+                      currency: "ARS",
+                      value: amount,
+                      items: [{ item_id: plan, item_name: planName, item_variant: cycle, price: amount, quantity: 1 }],
+                    });
+                    start(plan, cycle, method);
+                  }}
                   disabled={status === "opening"}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-60"
                 >
