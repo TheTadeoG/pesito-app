@@ -66,9 +66,10 @@ function DaysStepper({
   );
 }
 
-// Línea fija con los ajustes con los que se calcula "qué pedir" y un engranaje
-// que abre una ventanita (sin empujar el resto de la pantalla). Sólo quien
-// administra el negocio los cambia; el resto los ve.
+// Línea fija arriba: los días con los que se calcula "qué pedir", editables ahí
+// mismo con − y +. Se guardan solos y los pedidos se recalculan. El engranaje
+// abre una ventanita (sin empujar nada) con lo menos usado y un ejemplo.
+// Sólo quien administra el negocio los cambia; el resto los ve.
 export function RestockSettingsBar({
   settings,
   canEdit,
@@ -76,14 +77,41 @@ export function RestockSettingsBar({
   settings: RestockSettings;
   canEdit: boolean;
 }) {
-  const { showSuccess, showWarning } = useToast();
+  const { showWarning } = useToast();
   const [open, setOpen] = useState(false);
   const [showExample, setShowExample] = useState(false);
   const [target, setTarget] = useState(String(settings.targetDays));
   const [window, setWindow] = useState(String(settings.windowDays));
   const [safety, setSafety] = useState(String(settings.safetyDays));
-  const [pending, startTransition] = useTransition();
+  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [, startTransition] = useTransition();
   const box = useRef<HTMLDivElement>(null);
+  const saved = useRef(`${settings.targetDays}|${settings.windowDays}|${settings.safetyDays}`);
+
+  // Guarda solo, medio segundo después del último cambio.
+  useEffect(() => {
+    if (!canEdit) return;
+    const key = `${target}|${window}|${safety}`;
+    if (key === saved.current) return;
+    const timer = setTimeout(() => {
+      setStatus("saving");
+      startTransition(async () => {
+        const result = await updateRestockSettings({
+          targetDays: Number(target),
+          windowDays: Number(window),
+          safetyDays: Number(safety),
+        });
+        if (result.error) {
+          showWarning(result.error);
+          setStatus("idle");
+          return;
+        }
+        saved.current = key;
+        setStatus("saved");
+      });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [target, window, safety, canEdit, showWarning]);
 
   // Se cierra al tocar afuera o con Escape.
   useEffect(() => {
@@ -108,57 +136,54 @@ export function RestockSettingsBar({
   };
   const targetDays = num(target, settings.targetDays);
   const safetyDays = num(safety, settings.safetyDays);
+  const windowDays = num(window, settings.windowDays);
   const totalDays = targetDays + EXAMPLE_LEAD + safetyDays;
   const need = EXAMPLE_PER_DAY * totalDays;
   const toBuy = Math.max(0, Math.ceil(need - EXAMPLE_STOCK));
 
-  function save() {
-    startTransition(async () => {
-      const result = await updateRestockSettings({
-        targetDays: Number(target),
-        windowDays: Number(window),
-        safetyDays: Number(safety),
-      });
-      if (result.error) {
-        showWarning(result.error);
-        return;
-      }
-      showSuccess("Ajustes guardados", "La recomendación ya se calculó con los valores nuevos.");
-      setOpen(false);
-    });
-  }
-
-  const summary = `Calculamos para tener stock para ${settings.targetDays} días después de que llegue${settings.safetyDays > 0 ? `, con ${settings.safetyDays} de reserva` : ""} · ventas de ${settings.windowDays} días`;
+  const words = (
+    <>
+      Calculamos para tener stock para{" "}
+      {canEdit ? (
+        <DaysStepper label="Días de stock después de que llegue el pedido" value={target} onChange={setTarget} min={1} max={90} disabled={false} />
+      ) : (
+        <b>{`${settings.targetDays} días`}</b>
+      )}{" "}
+      después de que llegue, con{" "}
+      {canEdit ? (
+        <DaysStepper label="Días de reserva" value={safety} onChange={setSafety} min={0} max={30} disabled={false} />
+      ) : (
+        <b>{`${settings.safetyDays} días`}</b>
+      )}{" "}
+      de reserva
+    </>
+  );
 
   return (
-    <div ref={box} className="relative mt-3 flex items-center justify-between gap-3">
-      <p className="text-sm text-muted-foreground">{summary}</p>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Cambiar cómo se calcula"
-        title="Cambiar cómo se calcula"
-        aria-expanded={open}
-      >
-        <Settings className="h-4 w-4" />
-      </Button>
+    <div ref={box} className="relative mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border pb-4">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm leading-none text-foreground">{words}</div>
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        {status !== "idle" && (
+          <span aria-live="polite">{status === "saving" ? "Guardando…" : "✓ Guardado, ya se recalculó"}</span>
+        )}
+        <span>{`Ventas de ${settings.windowDays} días`}</span>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Más ajustes y ejemplo"
+          title="Más ajustes y ejemplo"
+          aria-expanded={open}
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+      </div>
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-[min(28rem,calc(100vw-2rem))] space-y-4 rounded-2xl border border-border bg-card p-5 shadow-xl">
+        <div className="absolute right-0 top-full z-30 mt-2 w-[min(26rem,calc(100vw-2rem))] space-y-4 rounded-2xl border border-border bg-card p-5 shadow-xl">
           <p className="text-base font-bold text-foreground">Cómo calculamos lo que pedir</p>
-          <div className="space-y-3 text-sm text-foreground">
-            <div className="flex items-center justify-between gap-3">
-              <span>Stock para después de que llegue</span>
-              <DaysStepper label="Días de stock después de que llegue el pedido" value={target} onChange={setTarget} min={1} max={90} disabled={!canEdit} />
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span>Reserva por si se demora o vendés más</span>
-              <DaysStepper label="Días de reserva" value={safety} onChange={setSafety} min={0} max={30} disabled={!canEdit} />
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span>Ventas que miramos para el ritmo</span>
-              <DaysStepper label="Días de ventas a mirar" value={window} onChange={setWindow} min={7} max={180} disabled={!canEdit} />
-            </div>
+          <div className="flex items-center justify-between gap-3 text-sm text-foreground">
+            <span>Ventas que miramos para el ritmo</span>
+            <DaysStepper label="Días de ventas a mirar" value={window} onChange={setWindow} min={7} max={180} disabled={!canEdit} />
           </div>
           <button
             type="button"
@@ -172,7 +197,7 @@ export function RestockSettingsBar({
             <div className="rounded-xl border border-primary/20 bg-accent/50 px-4 py-3 text-sm text-foreground">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ejemplo con estos números</p>
               <p className="mt-1.5">
-                {`Vendés ${EXAMPLE_PER_DAY} por día, el proveedor entrega en ${EXAMPLE_LEAD} días y tenés ${EXAMPLE_STOCK}:`}
+                {`Vendés ${EXAMPLE_PER_DAY} por día (mirando ${windowDays} días), el proveedor entrega en ${EXAMPLE_LEAD} días y tenés ${EXAMPLE_STOCK}:`}
               </p>
               <p className="mt-1.5 leading-relaxed">
                 {`Cubrir ${targetDays} + ${EXAMPLE_LEAD} de espera + ${safetyDays} de reserva = ${totalDays} días`}
@@ -186,16 +211,7 @@ export function RestockSettingsBar({
           <p className="text-xs text-muted-foreground">
             El plazo de entrega se carga en cada proveedor y las unidades por bulto en cada producto.
           </p>
-          {canEdit ? (
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
-                Cancelar
-              </Button>
-              <Button onClick={save} disabled={pending}>
-                {pending ? "Guardando…" : "Guardar"}
-              </Button>
-            </div>
-          ) : (
+          {!canEdit && (
             <p className="text-xs text-muted-foreground">Sólo el dueño o un administrador puede cambiar estos valores.</p>
           )}
         </div>
