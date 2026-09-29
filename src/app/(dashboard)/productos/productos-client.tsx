@@ -477,42 +477,47 @@ export function ProductosClient({
           </button>
         </div>
         <div className="flex items-center gap-2">
-          {canManageCatalog && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => (importLocked ? setImportLockedOpen(true) : setImportOpen(true))}
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-                Cargar desde Excel
-                {importLocked && <Badge tone="accent">Esencial</Badge>}
+          <DropdownMenu
+            trigger={
+              <Button variant="outline" className="whitespace-nowrap">
+                Acciones
+                <ChevronDown className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => (labelsLocked ? setLabelsLockedOpen(true) : setLabelsOpen(true))}
-              >
-                <ScanBarcode className="h-4 w-4" />
-                Etiquetas
-                {labelsLocked && <Badge tone="accent">Esencial</Badge>}
-              </Button>
-            </>
-          )}
-          <Button
-            variant="outline"
-            onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkPriceOpen(true))}
+            }
           >
-            <TrendingUp className="h-4 w-4" />
-            Aumentar precios
-            {bulkLocked && <Badge tone="accent">Pro</Badge>}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkCostOpen(true))}
-          >
-            <TrendingUp className="h-4 w-4" />
-            Aumentar costos
-            {bulkLocked && <Badge tone="accent">Pro</Badge>}
-          </Button>
+            {canManageCatalog && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => (importLocked ? setImportLockedOpen(true) : setImportOpen(true))}
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Cargar desde Excel
+                  {importLocked && <Badge tone="accent">Esencial</Badge>}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => (labelsLocked ? setLabelsLockedOpen(true) : setLabelsOpen(true))}
+                >
+                  <ScanBarcode className="h-4 w-4" />
+                  Etiquetas con código de barras
+                  {labelsLocked && <Badge tone="accent">Esencial</Badge>}
+                </DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuItem
+              onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkPriceOpen(true))}
+            >
+              <TrendingUp className="h-4 w-4" />
+              Aumentar precios
+              {bulkLocked && <Badge tone="accent">Pro</Badge>}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkCostOpen(true))}
+            >
+              <TrendingUp className="h-4 w-4" />
+              Aumentar costos
+              {bulkLocked && <Badge tone="accent">Pro</Badge>}
+            </DropdownMenuItem>
+          </DropdownMenu>
           <Button variant="outline" onClick={() => setShowColumns(true)}>
             <Columns3 className="h-4 w-4" />
             Columnas
