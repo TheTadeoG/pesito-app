@@ -178,7 +178,9 @@ export function RestockSettingsBar({
             <Edited>{safetyDays}</Edited>
             {` extra = ${totalDays} días`}
             <br />
-            {`Necesitás ${EXAMPLE_PER_DAY} × ${totalDays} = ${need} unidades, y ya tenés ${EXAMPLE_STOCK}`}
+            {`Para vender ${totalDays} días necesitás ${need} unidades (${EXAMPLE_PER_DAY} × ${totalDays}).`}
+            <br />
+            {`Ya tenés ${EXAMPLE_STOCK} guardadas en tu negocio, así que te faltan ${Math.max(0, need - EXAMPLE_STOCK)}.`}
             <br />
             <span className="font-bold text-primary">{`→ Pedirías ${toBuy} unidades`}</span>
           </p>
