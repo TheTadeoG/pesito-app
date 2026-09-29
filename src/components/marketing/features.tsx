@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StaggerIn } from "@/components/marketing/stagger-in";
-import { CashBills, OrderChat, TicketPrinter } from "@/components/marketing/features-live";
+import { CashBills, ImportFlow, OrderChat, TicketPrinter } from "@/components/marketing/features-live";
 import {
   Boxes,
   FileSpreadsheet,
@@ -73,16 +73,6 @@ function Caption({
 }
 
 const cell = "rounded-card border border-border bg-card p-4 sm:p-5";
-
-function LabelSheet({ name, price, className = "" }: { name: string; price: string; className?: string }) {
-  return (
-    <div className={`w-[4.6rem] rounded-lg border border-border bg-card p-2 shadow-sm ${className}`}>
-      <p className="truncate text-[10px] font-semibold text-foreground">{name}</p>
-      <div className="barcode-bars mt-1.5 h-7 rounded-sm" />
-      <p className="mt-1 text-center font-mono text-[10px] font-semibold text-foreground">{price}</p>
-    </div>
-  );
-}
 
 export function Features() {
   return (
@@ -246,29 +236,10 @@ export function Features() {
           </Caption>
         </div>
 
-        {/* Excel y etiquetas */}
+        {/* Excel y etiquetas: las filas viajan y se vuelven etiquetas */}
         <div className={`${cell} sm:col-span-2 lg:col-span-3`}>
           <Preview className="h-72">
-            <div className="flex h-full flex-col items-center justify-center gap-2 p-4">
-              <div className="w-36 shrink-0 rounded-lg border border-border bg-card p-2 shadow-sm">
-                <p className="font-mono text-[10px] font-semibold text-primary">productos.xlsx</p>
-                <div className="mt-2 space-y-1">
-                  {[0, 1, 2, 3].map((n) => (
-                    <div key={n} className="grid grid-cols-3 gap-1">
-                      <span className="h-1.5 rounded-sm bg-muted" />
-                      <span className="h-1.5 rounded-sm bg-muted" />
-                      <span className="h-1.5 rounded-sm bg-primary/30" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <span aria-hidden className="text-muted-foreground">↓</span>
-              <div className="flex gap-2">
-                <LabelSheet name="Azúcar 1 kg" price="$ 1.900" className="-rotate-3" />
-                <LabelSheet name="Fideos 500 g" price="$ 1.250" />
-                <LabelSheet name="Yerba 1 kg" price="$ 3.800" className="rotate-3" />
-              </div>
-            </div>
+            <ImportFlow />
           </Preview>
           <Caption icon={FileSpreadsheet} title="Cargá todo en minutos">
             Subí tu catálogo desde un Excel y generá códigos de barras propios con etiquetas para imprimir.

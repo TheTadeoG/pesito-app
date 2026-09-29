@@ -134,84 +134,82 @@ export function TicketPrinter() {
 }
 
 const cases = [
-  { who: "Marta", expected: 96500, bills: [50000, 20000, 20000, 5000, 1000, 500] },
-  { who: "Lucas", expected: 41200, bills: [20000, 10000, 5000, 2000, 1000, 2700] },
+  { who: "Marta", expected: 96500, bills: [50000, 20000, 20000, 5000, 1500] },
+  { who: "Lucas", expected: 41200, bills: [20000, 10000, 5000, 2000, 3700] },
 ];
 
-// Dos cierres seguidos: primero una caja justa y después una con diferencia.
+function CashColumn({ who, expected, bills, dropped, shake }: { who: string; expected: number; bills: number[]; dropped: number; shake: boolean }) {
+  const total = bills.slice(0, dropped).reduce((a, b) => a + b, 0);
+  const counted = bills.reduce((a, b) => a + b, 0);
+  const done = dropped === bills.length;
+  const diff = expected - counted;
+  return (
+    <div key={String(shake)} className={`min-w-0 rounded-xl border border-border bg-card/80 p-3 text-center shadow-sm ${shake ? "shake-x" : ""}`}>
+      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Caja de {who}</p>
+      <div className="mt-2 grid grid-cols-2 gap-1">
+        <div>
+          <p className="text-[10px] text-muted-foreground">Esperado</p>
+          <p className="text-lg font-extrabold tracking-tight tabular-nums text-foreground sm:text-2xl">{ars(expected)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-muted-foreground">Contado</p>
+          <p className="text-lg font-extrabold tracking-tight tabular-nums text-foreground sm:text-2xl">{ars(total)}</p>
+        </div>
+      </div>
+      <div className="relative mx-auto mt-3 h-20 w-32">
+        {bills.slice(0, dropped).map((b, i) => (
+          <div
+            key={i}
+            className="bill-drop absolute left-1/2 grid h-8 w-20 -translate-x-1/2 place-items-center rounded-md border border-primary/40 bg-gradient-to-br from-accent to-primary/25 font-mono text-[10px] font-bold text-accent-foreground"
+            style={{ top: 34 - i * 4, rotate: `${((i % 3) - 1) * 3}deg`, "--r0": `${i % 2 ? 12 : -12}deg` } as React.CSSProperties}
+          >
+            {i < bills.length - 1 ? ars(b) : "Monedas"}
+          </div>
+        ))}
+        <div className="absolute inset-x-1 bottom-0 z-10 h-3 rounded-b-[8px] rounded-t border border-border bg-muted" />
+      </div>
+      <span
+        className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-opacity duration-300 ${
+          diff === 0 ? "bg-success-bg text-success" : "bg-danger-bg text-danger"
+        } ${done ? "opacity-100" : "opacity-0"}`}
+      >
+        {diff === 0 ? "Sin diferencias" : `Faltan ${ars(diff)}`}
+      </span>
+    </div>
+  );
+}
+
+// Dos cajas se cuentan a la vez, lado a lado: una cierra justa y la otra tiene diferencia.
 export function CashBills() {
   const root = useRef<HTMLDivElement>(null);
   const active = useActive(root);
-  const [k, setK] = useState(0);
   const [dropped, setDropped] = useState(cases[0].bills.length);
-  const [shake, setShake] = useState(0);
+  const [shaking, setShaking] = useState(false);
 
   useLoop(
     active,
     async (wait) => {
-      const next = (k + 1) % cases.length;
-      setK(next);
+      setShaking(false);
       setDropped(0);
       await wait(800);
-      for (let i = 1; i <= cases[next].bills.length; i++) {
+      for (let i = 1; i <= cases[0].bills.length; i++) {
         setDropped(i);
-        await wait(560);
+        await wait(620);
       }
-      if (cases[next].bills.reduce((a, b) => a + b, 0) !== cases[next].expected) setShake((n) => n + 1);
-      await wait(3200);
+      setShaking(true);
+      await wait(4200);
     },
     () => {
-      setK(0);
+      setShaking(false);
       setDropped(cases[0].bills.length);
     }
   );
 
-  const c = cases[k];
-  const total = c.bills.slice(0, dropped).reduce((a, b) => a + b, 0);
-  const counted = c.bills.reduce((a, b) => a + b, 0);
-  const done = dropped === c.bills.length;
-  const diff = c.expected - counted;
-
   return (
-    <div
-      ref={root}
-      key={shake}
-      className={`grid h-full grid-cols-2 items-center gap-2 px-4 sm:px-10 ${shake > 0 ? "shake-x" : ""}`}
-    >
-      <div className="text-center">
-        <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          Caja de {c.who}
-        </p>
-        <p className="mt-2 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Esperado</p>
-        <p className="text-2xl font-extrabold tracking-tight tabular-nums text-foreground sm:text-3xl">{ars(c.expected)}</p>
-        <p className="mt-2 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Contado</p>
-        <p className="text-2xl font-extrabold tracking-tight tabular-nums text-foreground sm:text-3xl">{ars(total)}</p>
-        <span
-          className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-opacity duration-300 ${
-            diff === 0 ? "bg-success-bg text-success" : "bg-danger-bg text-danger"
-          } ${done ? "opacity-100" : "opacity-0"}`}
-        >
-          {diff === 0 ? "Sin diferencias" : `Faltan ${ars(diff)}`}
-        </span>
-      </div>
-      <div className="relative mx-auto h-28 w-40">
-        {c.bills.slice(0, dropped).map((b, i) => (
-          <div
-            key={`${k}-${i}`}
-            className="bill-drop absolute left-1/2 grid h-10 w-24 -translate-x-1/2 place-items-center rounded-md border border-primary/40 bg-gradient-to-br from-accent to-primary/25 font-mono text-[11px] font-bold text-accent-foreground"
-            style={
-              {
-                top: 56 - i * 5,
-                rotate: `${((i % 3) - 1) * 3}deg`,
-                "--r0": `${i % 2 ? 12 : -12}deg`,
-              } as React.CSSProperties
-            }
-          >
-            {i < c.bills.length - 1 ? ars(b) : "Monedas"}
-          </div>
-        ))}
-        <div className="absolute inset-x-1.5 bottom-0 z-10 h-4 rounded-b-[10px] rounded-t border border-border bg-muted" />
-      </div>
+    <div ref={root} className="grid h-full grid-cols-2 items-center gap-3 p-3 sm:gap-4 sm:p-5">
+      {cases.map((c, idx) => (
+        <CashColumn key={c.who} {...c} dropped={dropped} shake={shaking && idx === 1} />
+      ))}
     </div>
   );
 }
@@ -222,7 +220,13 @@ const lines = [
   { name: "Leche entera 1 L", qty: 36 },
 ];
 
-// Del pedido armado al chat: Pesito arma el pedido, se manda y el proveedor contesta.
+const ticks = (
+  <span className="ml-1 text-[#53bdeb]" aria-hidden>
+    ✓✓
+  </span>
+);
+
+// Del pedido armado a un chat con el aspecto de WhatsApp: el pedido viaja y el proveedor contesta.
 export function OrderChat() {
   const root = useRef<HTMLDivElement>(null);
   const active = useActive(root);
@@ -238,7 +242,7 @@ export function OrderChat() {
       setStep(2);
       await wait(1500);
       setStep(3);
-      await wait(1400);
+      await wait(1500);
       setStep(4);
       await wait(4400);
     },
@@ -246,7 +250,7 @@ export function OrderChat() {
   );
 
   return (
-    <div ref={root} className="grid h-full gap-3 p-4 md:grid-cols-[1fr_1.1fr]">
+    <div ref={root} className="grid h-full gap-3 p-4 md:grid-cols-[1fr_1.15fr]">
       <div className="hidden flex-col justify-center rounded-xl border border-border bg-card p-3.5 shadow-sm md:flex">
         <p className="font-mono text-[10px] font-bold tracking-wide text-primary">✦ PEDIDO ARMADO POR PESITO</p>
         <div className="mt-2 space-y-1.5 text-xs text-foreground">
@@ -272,34 +276,142 @@ export function OrderChat() {
         )}
       </div>
 
-      <div className="flex min-w-0 flex-col gap-2">
-        <div className="flex items-center gap-2 border-b border-border pb-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-[10px] font-extrabold text-accent-foreground">DN</span>
+      {/* Chat con el aspecto de WhatsApp: colores propios, iguales en tema claro y oscuro */}
+      <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-black/10 bg-[#efeae2] shadow-md">
+        <div className="flex items-center gap-2 bg-[#075e54] px-3 py-2 text-white">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-[11px] font-extrabold">DN</span>
           <span className="leading-tight">
-            <span className="block text-sm font-bold text-foreground">Distribuidora Norte</span>
-            <span className="block text-[10px] text-success">en línea</span>
+            <span className="block text-sm font-semibold">Distribuidora Norte</span>
+            <span className="block text-[10px] text-white/80">{step === 3 ? "escribiendo…" : "en línea"}</span>
           </span>
         </div>
-        <div className="flex flex-1 flex-col justify-end gap-2 overflow-hidden">
+        <div className="flex flex-1 flex-col justify-end gap-1.5 bg-[radial-gradient(rgb(0_0_0/0.05)_1px,transparent_1px)] [background-size:14px_14px] p-2.5">
           {step >= 2 && (
-            <div className="bubble-in max-w-[88%] self-end rounded-xl rounded-br-sm border border-primary/30 bg-primary/15 px-3 py-2 text-xs leading-relaxed text-foreground">
-              <p className="mb-1 font-mono text-[9.5px] font-bold tracking-wide text-primary">✦ ARMADO POR PESITO</p>
+            <div className="bubble-in max-w-[88%] self-end rounded-lg rounded-tr-none bg-[#d9fdd3] px-2.5 py-1.5 text-xs leading-snug text-[#111b21] shadow-sm">
+              <p className="mb-0.5 font-mono text-[9px] font-bold tracking-wide text-[#047857]">✦ ARMADO POR PESITO</p>
               <p>Hola! Te paso el pedido de hoy: aceite x12, arroz x24, leche x36.</p>
-            </div>
-          )}
-          {step === 3 && (
-            <div className="bubble-in flex gap-1 self-start rounded-xl rounded-bl-sm border border-border bg-card px-3 py-2.5">
-              {[0, 1, 2].map((d) => (
-                <span key={d} className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground" style={{ animationDelay: `${d * 150}ms` }} />
-              ))}
+              <p className="mt-0.5 text-right text-[9px] text-[#667781]">
+                18:42{ticks}
+              </p>
             </div>
           )}
           {step >= 4 && (
-            <div className="bubble-in max-w-[88%] self-start rounded-xl rounded-bl-sm border border-border bg-card px-3 py-2 text-xs text-foreground">
-              Perfecto, mañana te lo llevamos.
+            <div className="bubble-in max-w-[88%] self-start rounded-lg rounded-tl-none bg-white px-2.5 py-1.5 text-xs leading-snug text-[#111b21] shadow-sm">
+              <p>Perfecto, mañana te lo llevamos.</p>
+              <p className="mt-0.5 text-right text-[9px] text-[#667781]">18:44</p>
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const sheet = [
+  { name: "Yerba 1 kg", price: "$ 3.800" },
+  { name: "Fideos 500 g", price: "$ 1.250" },
+  { name: "Azúcar 1 kg", price: "$ 1.900" },
+  { name: "Aceite 900 ml", price: "$ 3.850" },
+];
+
+// De la planilla a las etiquetas: cada fila viaja de un lado al otro y se vuelve etiqueta.
+export function ImportFlow() {
+  const root = useRef<HTMLDivElement>(null);
+  const active = useActive(root);
+  const box = useRef<HTMLDivElement>(null);
+  const rows = useRef<(HTMLDivElement | null)[]>([]);
+  const slots = useRef<(HTMLDivElement | null)[]>([]);
+  const chip = useRef<HTMLDivElement>(null);
+  const [made, setMade] = useState(sheet.length);
+  const [current, setCurrent] = useState(-1);
+
+  useLoop(
+    active,
+    async (wait, alive) => {
+      setMade(0);
+      setCurrent(-1);
+      await wait(900);
+      for (let i = 0; i < sheet.length && alive(); i++) {
+        setCurrent(i);
+        await wait(350);
+        const b = box.current;
+        const a = rows.current[i];
+        const t = slots.current[i];
+        const c = chip.current;
+        if (b && a && t && c) {
+          const cb = b.getBoundingClientRect();
+          const ar = a.getBoundingClientRect();
+          const tr = t.getBoundingClientRect();
+          c.textContent = `${sheet[i].name}  ${sheet[i].price}`;
+          c.style.display = "block";
+          c.animate(
+            [
+              { transform: `translate(${ar.left - cb.left}px, ${ar.top - cb.top}px) scale(1)`, opacity: 1 },
+              { transform: `translate(${tr.left - cb.left + tr.width / 2 - 40}px, ${tr.top - cb.top + tr.height / 2 - 10}px) scale(0.8)`, opacity: 1 },
+            ],
+            { duration: 700, easing: "cubic-bezier(0.45, 0.05, 0.25, 1)", fill: "forwards" }
+          );
+        }
+        await wait(720);
+        if (chip.current) chip.current.style.display = "none";
+        setMade(i + 1);
+        await wait(250);
+      }
+      setCurrent(-1);
+      await wait(3600);
+    },
+    () => {
+      setMade(sheet.length);
+      setCurrent(-1);
+      if (chip.current) chip.current.style.display = "none";
+    }
+  );
+
+  return (
+    <div ref={root} className="flex h-full items-center justify-center p-4">
+      <div ref={box} className="relative grid w-full max-w-md grid-cols-[1fr_1.1fr] items-center gap-5">
+        <div className="rounded-lg border border-border bg-card p-2.5 shadow-sm">
+          <p className="mb-2 font-mono text-[10px] font-semibold text-primary">productos.xlsx</p>
+          <div className="space-y-1.5">
+            {sheet.map((r, i) => (
+              <div
+                key={r.name}
+                ref={(el) => {
+                  rows.current[i] = el;
+                }}
+                className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[10px] transition-colors duration-200 ${
+                  current === i ? "bg-primary/20 text-foreground" : i < made ? "text-muted-foreground" : "text-foreground"
+                }`}
+              >
+                <span className="truncate">{r.name}</span>
+                <span className="font-mono">{r.price}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {sheet.map((r, i) => (
+            <div
+              key={r.name}
+              ref={(el) => {
+                slots.current[i] = el;
+              }}
+              className="flex h-[4.4rem] items-center justify-center rounded-lg border border-dashed border-border/80"
+            >
+              {i < made && (
+                <div className="bubble-in w-full rounded-md border border-border bg-card p-1.5 shadow-sm">
+                  <p className="truncate text-[9px] font-semibold text-foreground">{r.name}</p>
+                  <div className="barcode-bars my-1 h-5 rounded-sm" />
+                  <p className="text-center font-mono text-[9px] font-semibold text-foreground">{r.price}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div
+          ref={chip}
+          className="pointer-events-none absolute left-0 top-0 z-10 hidden whitespace-nowrap rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground shadow-lg"
+        />
       </div>
     </div>
   );
