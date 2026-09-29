@@ -9,6 +9,7 @@ import {
   ChevronUp,
   ChevronsUpDown,
   Columns3,
+  FileSpreadsheet,
   Filter,
   History,
   ImageIcon,
@@ -16,6 +17,7 @@ import {
   Pencil,
   Plus,
   Receipt,
+  ScanBarcode,
   Search,
   SlidersHorizontal,
   Trash2,
@@ -44,6 +46,9 @@ import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
+import { ProductImportDialog } from "@/app/(dashboard)/productos/import-dialog";
+import { BarcodeLabelsDialog } from "@/app/(dashboard)/productos/barcode-labels-dialog";
+import { featureMinPlan } from "@/lib/plan-access";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import type { Plan } from "@/lib/subscription";
 
@@ -143,6 +148,9 @@ export function ProductosClient({
   revertLocked,
   productUsage,
   stockAlertsLocked,
+  importLocked,
+  labelsLocked,
+  canManageCatalog,
 }: {
   orgId: string;
   products: Product[];
@@ -158,6 +166,12 @@ export function ProductosClient({
   productUsage: { used: number; limit: number; nextPlan: Plan | null };
   // Sin gestión de stock (Plan Gratis): no se avisa ni se filtra por stock bajo.
   stockAlertsLocked: boolean;
+  /** Carga masiva con Excel: el plan no la incluye (el botón abre el aviso del plan). */
+  importLocked: boolean;
+  /** Generar e imprimir códigos de barras: el plan no lo incluye. */
+  labelsLocked: boolean;
+  /** Sólo quien administra el negocio carga o imprime en masa. */
+  canManageCatalog: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -177,6 +191,10 @@ export function ProductosClient({
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
   const [bulkCostOpen, setBulkCostOpen] = useState(false);
   const [bulkLockedOpen, setBulkLockedOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importLockedOpen, setImportLockedOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
+  const [labelsLockedOpen, setLabelsLockedOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   // Activar/desactivar se ve al toque en vez de esperar el viaje al server +
@@ -459,6 +477,26 @@ export function ProductosClient({
           </button>
         </div>
         <div className="flex items-center gap-2">
+          {canManageCatalog && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => (importLocked ? setImportLockedOpen(true) : setImportOpen(true))}
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Cargar desde Excel
+                {importLocked && <Badge tone="accent">Esencial</Badge>}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => (labelsLocked ? setLabelsLockedOpen(true) : setLabelsOpen(true))}
+              >
+                <ScanBarcode className="h-4 w-4" />
+                Etiquetas
+                {labelsLocked && <Badge tone="accent">Esencial</Badge>}
+              </Button>
+            </>
+          )}
           <Button
             variant="outline"
             onClick={() => (bulkLocked ? setBulkLockedOpen(true) : setBulkPriceOpen(true))}
@@ -954,6 +992,7 @@ export function ProductosClient({
         product={editing}
         brands={localBrands}
         suppliers={localSuppliers}
+        barcodeGenerate={{ locked: labelsLocked }}
         onBrandCreated={(brand) =>
           setLocalBrands((current) => [...current, brand])
         }
@@ -1085,6 +1124,41 @@ export function ProductosClient({
           description="Actualizá de una vez todos los productos de un proveedor o una marca, en porcentaje o monto fijo, y deshacelo si te equivocás."
         />
       </Dialog>
+      <Dialog
+        open={importLockedOpen}
+        onClose={() => setImportLockedOpen(false)}
+        title="Carga masiva con Excel"
+      >
+        <ProLockedCard
+          title="Carga masiva de productos con Excel"
+          plan={featureMinPlan.productImport}
+          description="Subí una planilla con tu catálogo (nombre, código, costo, precio y stock) y cargá todos los productos juntos, en vez de uno por uno."
+        />
+      </Dialog>
+      <Dialog
+        open={labelsLockedOpen}
+        onClose={() => setLabelsLockedOpen(false)}
+        title="Etiquetas con código de barras"
+      >
+        <ProLockedCard
+          title="Códigos de barras propios y etiquetas para imprimir"
+          plan={featureMinPlan.barcodeLabels}
+          description="Generá un código único para los productos que no tienen (no se repite nunca) e imprimí las etiquetas listas para pegar."
+        />
+      </Dialog>
+      <ProductImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        existing={products.map((p) => ({ barcode: p.barcode, sku: p.sku }))}
+        remainingCapacity={Math.max(0, productUsage.limit - productUsage.used)}
+      />
+      <BarcodeLabelsDialog
+        open={labelsOpen}
+        onClose={() => setLabelsOpen(false)}
+        products={products
+          .filter((p) => p.active)
+          .map((p) => ({ id: p.id, name: p.name, barcode: p.barcode, price: p.price }))}
+      />
       <BulkFieldIncreaseDialog
         open={bulkPriceOpen}
         onClose={() => setBulkPriceOpen(false)}

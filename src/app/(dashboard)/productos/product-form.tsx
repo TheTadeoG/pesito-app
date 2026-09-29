@@ -16,6 +16,8 @@ import {
   type ProductFormInput,
   type SaveProductResult,
 } from "@/app/(dashboard)/productos/actions";
+import { generateBarcode } from "@/app/(dashboard)/productos/barcode-actions";
+import { featureLockedMessage } from "@/lib/plan-access";
 import type { Brand, Product, Supplier } from "@/lib/types";
 
 const units = [
@@ -186,6 +188,8 @@ interface ProductFormProps {
   // así el stock inicial entra por un único camino (la compra) y no se
   // duplica sumando el "stock inicial" del alta más la compra en sí.
   initialStockAsPurchase?: boolean;
+  /** Botón "Generar" junto al código de barras (Plan Esencial); `locked` si el plan no lo incluye. */
+  barcodeGenerate?: { locked: boolean };
 }
 
 export function ProductForm({
@@ -199,8 +203,22 @@ export function ProductForm({
   onBrandCreated,
   onSupplierCreated,
   initialStockAsPurchase = false,
+  barcodeGenerate,
 }: ProductFormProps) {
   const isEdit = Boolean(product);
+
+  async function handleGenerateBarcode() {
+    if (barcodeGenerate?.locked) {
+      setBarcodeNote(featureLockedMessage("barcodeLabels"));
+      return;
+    }
+    setGeneratingBarcode(true);
+    setBarcodeNote(null);
+    const res = await generateBarcode();
+    setGeneratingBarcode(false);
+    if (res.code) setBarcode(res.code);
+    else setBarcodeNote(res.error ?? "No pudimos generar el código.");
+  }
   const [name, setName] = useState(product?.name ?? "");
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(
     product?.brand ?? null
@@ -213,6 +231,8 @@ export function ProductForm({
   const [creatingBrand, setCreatingBrand] = useState(false);
   const [brandError, setBrandError] = useState<string | null>(null);
   const [barcode, setBarcode] = useState(product?.barcode ?? "");
+  const [generatingBarcode, setGeneratingBarcode] = useState(false);
+  const [barcodeNote, setBarcodeNote] = useState<string | null>(null);
   const [sku, setSku] = useState(product?.sku ?? "");
   const [price, setPrice] = useState(String(product?.price ?? ""));
   const [cost, setCost] = useState(String(product?.cost ?? ""));
@@ -537,7 +557,21 @@ export function ProductForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="p-barcode">Código de barras (opcional)</Label>
-            <Input id="p-barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+            <div className="flex gap-2">
+              <Input id="p-barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+              {barcodeGenerate && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleGenerateBarcode()}
+                  disabled={generatingBarcode}
+                  title="Genera un código propio que no se repite"
+                >
+                  {generatingBarcode ? "…" : "Generar"}
+                </Button>
+              )}
+            </div>
+            {barcodeNote && <p className="mt-1 text-xs text-warning">{barcodeNote}</p>}
           </div>
           <div>
             <Label htmlFor="p-sku">SKU (opcional)</Label>

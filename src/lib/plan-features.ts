@@ -91,11 +91,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Control de stock, alertas y reposición",
       "Cuentas corrientes de clientes y proveedores",
       "Control de caja por empleado",
+      "Carga masiva de productos con Excel",
+      "Códigos de barras propios y etiquetas para imprimir",
       `Hasta ${products("esencial")}, 2 usuarios y 2 cajas`,
     ],
     soon: [
-      "Carga masiva de productos con Excel",
-      "Generá e imprimí códigos de barras y etiquetas",
       "Talles, combos y kits",
     ],
   },
@@ -215,7 +215,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Ticket de venta (no fiscal)", values: everyPlan },
       {
         label: "Generar e imprimir códigos de barras para productos que no tienen",
-        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+        values: fromEsencial,
       },
       {
         label: "Balanzas conectadas",
@@ -249,7 +249,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Stock que se actualiza con cada venta y compra", values: everyPlan },
       {
         label: "Carga masiva de productos desde Excel, con costos y precios",
-        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+        values: fromEsencial,
       },
       { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromEsencial },
       { label: "Historial de movimientos de stock", values: fromEsencial },

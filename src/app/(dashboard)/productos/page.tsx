@@ -141,6 +141,9 @@ export default async function ProductosPage({
           nextPlan: planForLimit("products", limitsFor(subscription).products + 1),
         }}
         stockAlertsLocked={stockLocked}
+        importLocked={!canUse(subscription, "productImport")}
+        labelsLocked={!canUse(subscription, "barcodeLabels")}
+        canManageCatalog={isOrgAdmin(membership.role)}
       />
     );
   }
