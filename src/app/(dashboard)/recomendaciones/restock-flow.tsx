@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, Search, Settings, SkipForward, Truck, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -413,7 +413,9 @@ function OrderSheet({
     () => new Set(todayRows(group).map((r) => r.id))
   );
   const [amounts, setAmounts] = useState<Record<string, number>>({});
-  const [showRest, setShowRest] = useState(false);
+  const [showAllSuggested, setShowAllSuggested] = useState(false);
+  // Lo último que se sumó, para poder deshacerlo.
+  const [lastAdded, setLastAdded] = useState<{ id: string; name: string } | null>(null);
   const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -423,8 +425,15 @@ function OrderSheet({
     [group.rows, included, amounts]
   );
   const outside = group.rows.filter((r) => !included.has(r.id));
-  const inToday = group.rows.filter((r) => included.has(r.id) && isToday(r));
-  const inWeek = group.rows.filter((r) => included.has(r.id) && !isToday(r));
+  const inOrder = group.rows.filter((r) => included.has(r.id));
+  const suggestedShown = showAllSuggested ? outside : outside.slice(0, 3);
+
+  // El aviso de "Sumado" se va solo.
+  useEffect(() => {
+    if (!lastAdded) return;
+    const id = window.setTimeout(() => setLastAdded(null), 7000);
+    return () => window.clearTimeout(id);
+  }, [lastAdded]);
 
   const cost = chosen.reduce((n, r) => n + (subtotal(r, amountOf(r)) ?? 0), 0);
   const belowMin = group.minOrder !== null && cost > 0 && cost < group.minOrder;
@@ -553,71 +562,107 @@ function OrderSheet({
             )}
           </div>
 
-          {inToday.length > 0 && (
-            <div className="mt-4">
-              <p className="mb-1 text-xs font-bold text-foreground">
-                <span className="text-danger">● </span>
-                Pedilo hoy <span className="font-normal text-muted-foreground">{`· ${inToday.length} ${plural(inToday.length, "producto", "productos")}`}</span>
-              </p>
-              {renderRows(inToday)}
-            </div>
-          )}
-          {inWeek.length > 0 && (
-            <div className="mt-4">
-              <p className="mb-1 text-xs font-bold text-foreground">
-                <span className="text-amber-500">● </span>
-                Pedilo esta semana <span className="font-normal text-muted-foreground">{`· ${inWeek.length} ${plural(inWeek.length, "producto", "productos")}`}</span>
-              </p>
-              {renderRows(inWeek)}
-            </div>
-          )}
+          {/* Lo que se va a pedir */}
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-base font-bold text-foreground">
+              En tu pedido
+              <span className="font-normal text-muted-foreground">
+                {` · ${chosen.length} ${plural(chosen.length, "producto", "productos")}${cost > 0 ? ` · ${formatCurrency(cost)}` : ""}`}
+              </span>
+            </p>
+            <span className="rounded-full bg-accent px-3 py-0.5 text-xs font-bold text-accent-foreground">
+              ✓ Esto es lo que vas a pedir
+            </span>
+          </div>
+          <div className="mt-1">{renderRows(inOrder)}</div>
           {chosen.length === 0 && (
-            <p className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+            <p className="mt-2 rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
               El pedido está vacío. Sumá productos de abajo.
             </p>
           )}
 
+          {lastAdded && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-accent/60 px-4 py-2.5 text-sm">
+              <span className="text-foreground">
+                ✓ Sumado: <span className="font-semibold">{lastAdded.name}</span> ahora está en tu pedido
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const row = group.rows.find((r) => r.id === lastAdded.id);
+                  if (row) remove(row);
+                  setLastAdded(null);
+                }}
+                className="font-bold text-primary hover:underline"
+              >
+                Deshacer
+              </button>
+            </div>
+          )}
+
+          {/* Lo que se puede sumar: otra caja, otro estilo y sin cantidades */}
           {outside.length > 0 && (
-            <div className="mt-5 rounded-xl border border-dashed border-border px-4 py-3">
+            <div className="mt-6 rounded-2xl border border-border bg-muted/40 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">
-                    {outside.every((r) => !isToday(r)) ? "Pueden esperar" : "Fuera del pedido"}
-                  </span>
-                  {` · ${outside.length} ${plural(outside.length, "producto", "productos")}`}
+                <p className="text-base font-bold text-foreground">
+                  ¿Querés sumar algo más?
+                  <span className="font-normal text-muted-foreground"> · todavía no está en tu pedido</span>
                 </p>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setShowRest((v) => !v)}>
-                    {showRest ? "Ocultar" : "Ver"}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => add(outside)}>
-                    <Plus className="h-3.5 w-3.5" />
-                    Sumar {outside.length === 1 ? "al pedido" : "todos"}
-                  </Button>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground">
+                    {`${outside.length} ${plural(outside.length, "sugerido", "sugeridos")}`}
+                  </span>
+                  {outside.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => add(outside)}
+                      className="font-semibold text-primary hover:underline"
+                    >
+                      Sumar todos
+                    </button>
+                  )}
                 </div>
               </div>
-              {!showRest && (
-                <p className="mt-1 truncate text-xs text-muted-foreground">
-                  {outside.map((r) => r.name).join(" · ")}
-                </p>
-              )}
-              {showRest && (
-                <ul className="mt-2 divide-y divide-border">
-                  {outside.map((r) => (
-                    <li key={r.id} className="flex items-center justify-between gap-3 py-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">{r.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {`Tenés ${r.stockLabel} · ${shortState(r)}`}
-                        </p>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => add([r])}>
-                        <Plus className="h-3.5 w-3.5" />
-                        Sumar
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
+              <ul className="mt-3 space-y-2">
+                {suggestedShown.map((r) => (
+                  <li
+                    key={r.id}
+                    className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-dashed border-border bg-card/70 px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1 basis-48">
+                      <p className="text-sm font-semibold text-foreground">
+                        {r.name}
+                        {r.brand && <span className="font-normal text-muted-foreground">{` · ${r.brand}`}</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {`Tenés ${r.stockLabel} · ${shortState(r)}`}
+                      </p>
+                    </div>
+                    {r.unitCost !== null && (
+                      <span className="text-sm text-muted-foreground">{`${formatCurrency(r.unitCost)} c/u`}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        add([r]);
+                        setLastAdded({ id: r.id, name: r.name });
+                      }}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-primary bg-card px-4 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Sumar al pedido
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {outside.length > 3 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllSuggested((v) => !v)}
+                  className="mt-3 text-sm font-semibold text-primary hover:underline"
+                >
+                  {showAllSuggested ? "Ver menos" : `Ver todos (${outside.length})`}
+                </button>
               )}
             </div>
           )}
