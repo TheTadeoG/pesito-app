@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, Search, Truck } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Copy, Mail, MessageCircle, Minus, Plus, Search, SkipForward, Truck, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,11 +166,14 @@ function todayRows(group: FlowGroup): FlowRow[] {
 function SupplierCard({
   group,
   matches,
+  skipped,
   onOpen,
 }: {
   group: FlowGroup;
   /** Con una búsqueda activa: los productos que coinciden, para mostrar esos. */
   matches?: FlowRow[];
+  /** Se salteó en esta vuelta de "Empezar a pedir". */
+  skipped?: boolean;
   onOpen: () => void;
 }) {
   const urgent = group.rows.filter(isToday);
@@ -194,14 +197,21 @@ function SupplierCard({
             {group.minOrder !== null && ` · pedido mínimo ${formatCurrency(group.minOrder)}`}
           </p>
         </div>
-        <span
-          className={cn(
-            "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold",
-            hasUrgent ? "bg-danger-bg text-danger" : "bg-amber-500/15 text-amber-600"
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-0.5 text-xs font-bold",
+              hasUrgent ? "bg-danger-bg text-danger" : "bg-amber-500/15 text-amber-600"
+            )}
+          >
+            {hasUrgent ? "Pedilo hoy" : "Pedilo esta semana"}
+          </span>
+          {skipped && (
+            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+              Salteado
+            </span>
           )}
-        >
-          {hasUrgent ? "Pedilo hoy" : "Pedilo esta semana"}
-        </span>
+        </div>
       </div>
 
       <ul className="mt-3 space-y-1 text-sm">
@@ -369,6 +379,7 @@ function OrderSheet({
   targetDays,
   onBack,
   onDone,
+  onSkip,
   progress,
 }: {
   group: FlowGroup;
@@ -377,6 +388,8 @@ function OrderSheet({
   onBack: () => void;
   /** Se dejó el pedido en camino: sigue con el próximo proveedor o vuelve al inicio. */
   onDone: () => void;
+  /** Pasar al próximo proveedor sin pedirle nada a éste (sólo cuando se recorre de a uno). */
+  onSkip: (() => void) | null;
   /** "Pedido 1 de 2" cuando se viene de "Empezar a pedir". */
   progress: { index: number; total: number } | null;
 }) {
@@ -489,14 +502,22 @@ function OrderSheet({
                   : "Cargale el plazo de entrega al proveedor para saber cuándo llega."}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Volver
-            </button>
+            <div className="flex shrink-0 items-center gap-3">
+              {onSkip && (
+                <Button variant="outline" size="sm" onClick={onSkip}>
+                  <SkipForward className="h-3.5 w-3.5" />
+                  Saltear este proveedor
+                </Button>
+              )}
+              <button
+                type="button"
+                onClick={onBack}
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver
+              </button>
+            </div>
           </div>
 
           {inToday.length > 0 && (
@@ -766,6 +787,9 @@ export function RestockFlow({
   const [activeKey, setActiveKey] = useState<string | null>(null);
   // "Empezar a pedir" recorre a los proveedores urgentes de a uno.
   const [queue, setQueue] = useState<string[]>([]);
+  // Proveedores salteados en esta vuelta, y el aviso al terminar.
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const [skipNotice, setSkipNotice] = useState<string[] | null>(null);
   // Buscador y filtros de los proveedores.
   const [search, setSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState<"todos" | "hoy" | "semana">("todos");
@@ -807,25 +831,43 @@ export function RestockFlow({
   function start() {
     const keys = (urgentGroups.length > 0 ? urgentGroups : groups).map((g) => g.key);
     setQueue(keys);
+    setSkipped([]);
+    setSkipNotice(null);
     setActiveKey(keys[0] ?? null);
   }
 
   function openGroup(key: string) {
     setQueue([]);
+    setSkipped([]);
     setActiveKey(key);
   }
 
   function back() {
     setActiveKey(null);
     setQueue([]);
+    setSkipped([]);
   }
 
-  function done() {
+  /** Sigue con el próximo proveedor de la vuelta; si no hay, vuelve al inicio y avisa lo salteado. */
+  function advance(skippedNow: string[]) {
     const index = activeKey ? queue.indexOf(activeKey) : -1;
     const next = index >= 0 ? queue.slice(index + 1).find((k) => groups.some((g) => g.key === k)) : undefined;
-    if (next) setActiveKey(next);
-    else back();
+    if (next) {
+      setSkipped(skippedNow);
+      setActiveKey(next);
+      return;
+    }
+    const names = skippedNow
+      .map((k) => groups.find((g) => g.key === k)?.supplierName)
+      .filter((n): n is string => Boolean(n));
+    setActiveKey(null);
+    setQueue([]);
+    setSkipped([]);
+    setSkipNotice(names.length > 0 ? names : null);
   }
+
+  const done = () => advance(skipped);
+  const skip = () => advance(activeKey ? [...skipped, activeKey] : skipped);
 
   if (active) {
     const index = queue.indexOf(active.key);
@@ -837,6 +879,7 @@ export function RestockFlow({
         targetDays={targetDays}
         onBack={back}
         onDone={done}
+        onSkip={queue.length > 1 ? skip : null}
         progress={index >= 0 && queue.length > 1 ? { index: index + 1, total: queue.length } : null}
       />
     );
@@ -844,6 +887,23 @@ export function RestockFlow({
 
   return (
     <div className="space-y-6">
+      {skipNotice && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+          <p className="text-foreground">
+            {`Te ${skipNotice.length === 1 ? "quedó" : "quedaron"} ${skipNotice.length} ${plural(skipNotice.length, "proveedor", "proveedores")} sin pedir: `}
+            <span className="font-semibold">{skipNotice.join(", ")}</span>
+            {". Siguen en la lista para cuando quieras."}
+          </p>
+          <button
+            type="button"
+            onClick={() => setSkipNotice(null)}
+            aria-label="Cerrar aviso"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       {groups.length === 0 ? (
         <Card className="p-6">
           <p className="text-lg font-bold text-foreground">No hace falta pedir nada por ahora</p>
@@ -963,6 +1023,7 @@ export function RestockFlow({
                   key={v.group.key}
                   group={v.group}
                   matches={v.focus || urgencyFilter !== "todos" ? v.matches : undefined}
+                  skipped={skipNotice?.includes(v.group.supplierName)}
                   onOpen={() => openGroup(v.group.key)}
                 />
               ))}
