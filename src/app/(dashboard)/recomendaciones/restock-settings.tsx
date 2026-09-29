@@ -132,28 +132,27 @@ export function RestockSettingsBar({
     ) : (
       <b>{`${shown} días`}</b>
     );
-  const line = "flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-foreground";
-
+  const op = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const words = (
-    <div className="space-y-2">
-      <p className={line}>
-        Quiero que, cuando llegue el pedido, me alcance para{" "}
-        {stepper("Días que tiene que durar la mercadería", target, setTarget, settings.targetDays, 1, 90)}.
-      </p>
-      <p className={line}>
-        Sumale {stepper("Días de colchón", safety, setSafety, settings.safetyDays, 0, 30)} más por si el proveedor se
-        demora o vendo más.
-      </p>
-      <p className={line}>
-        Para saber cuánto vendo por día, mirá los últimos{" "}
-        {stepper("Días de ventas a mirar", window, setWindow, settings.windowDays, 7, 180)}.
-      </p>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-foreground">
+      <span className={op}>Cuánto pedir</span>
+      <span>Que me dure</span>
+      {stepper("Días que tiene que durar la mercadería", target, setTarget, settings.targetDays, 1, 90)}
+      <span className="text-lg font-bold text-muted-foreground">+</span>
+      <span>colchón</span>
+      {stepper("Días de colchón", safety, setSafety, settings.safetyDays, 0, 30)}
+      <span className="text-lg font-bold text-muted-foreground">=</span>
+      <b>{`${targetDays + safetyDays} días`}</b>
+      <span className="text-muted-foreground">(+ lo que tarda cada proveedor)</span>
+      <span className="text-muted-foreground">·</span>
+      <span>ventas de los últimos</span>
+      {stepper("Días de ventas a mirar", window, setWindow, settings.windowDays, 7, 180)}
     </div>
   );
 
   return (
-    <div className="mb-4 border-b border-border pb-4">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+    <div className="mt-5 border-t border-border pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div>{words}</div>
         <div className="flex items-center gap-3 text-sm">
           {status !== "idle" && (

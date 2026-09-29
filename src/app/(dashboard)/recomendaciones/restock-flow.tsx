@@ -1015,7 +1015,6 @@ export function RestockFlow({
       ) : (
         <>
           <Card className="p-5">
-            {settingsBlock}
             <div className="grid gap-4 md:grid-cols-2">
               {/* Hoy */}
               <div
@@ -1103,6 +1102,8 @@ export function RestockFlow({
             <div className="mt-5">
               <SpendChart groups={groups} />
             </div>
+
+            {settingsBlock}
 
           </Card>
 
