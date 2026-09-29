@@ -132,6 +132,50 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
         Relationships: [];
       };
+      restock_orders: {
+        Row: {
+          id: string;
+          org_id: string;
+          supplier_id: string;
+          status: "pendiente" | "recibido" | "cancelado";
+          expected_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          closed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          supplier_id: string;
+          status?: "pendiente" | "recibido" | "cancelado";
+          expected_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          closed_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["restock_orders"]["Insert"]>;
+        Relationships: [];
+      };
+      restock_order_items: {
+        Row: {
+          id: string;
+          order_id: string;
+          product_id: string;
+          product_name: string;
+          quantity: number;
+          received_quantity: number;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          product_id: string;
+          product_name: string;
+          quantity: number;
+          received_quantity?: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["restock_order_items"]["Insert"]>;
+        Relationships: [];
+      };
       market_insights: {
         Row: {
           id: string;

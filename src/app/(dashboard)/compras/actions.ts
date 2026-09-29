@@ -6,6 +6,7 @@ import { requireOrgContext } from "@/lib/org";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureLockedMessage } from "@/lib/plan-access";
 import { getBranchContext } from "@/lib/branches";
+import { applyPurchaseToOrders } from "@/lib/restock-orders";
 import { CASH_UNAVAILABLE_ERROR, tryComputeCashOnHand } from "@/lib/caja";
 import type { Json } from "@/lib/database.types";
 
@@ -98,6 +99,12 @@ export async function registerPurchase(
     return { error: error.message || "No pudimos registrar la compra." };
   }
 
+  // Lo que llegó se descuenta de los pedidos en camino a ese proveedor
+  // (Recomendaciones); no depende del resultado de la compra.
+  if (input.supplierId) {
+    await applyPurchaseToOrders(supabase, input.orgId, input.supplierId, input.items);
+  }
+
   // La compra ya quedó registrada: si falla algún precio se avisa, pero no
   // se deshace la compra.
   const priceUpdates = (input.priceUpdates ?? []).filter(
@@ -123,6 +130,7 @@ export async function registerPurchase(
   revalidatePath("/reportes");
   revalidatePath("/proveedores");
   revalidatePath("/caja");
+  revalidatePath("/recomendaciones");
 
   return { purchaseId: data ?? undefined, priceUpdateErrors };
 }

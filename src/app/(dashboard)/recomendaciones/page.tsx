@@ -6,7 +6,8 @@ import { getBranchContext } from "@/lib/branches";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan } from "@/lib/plan-access";
 import { isOrgAdmin } from "@/lib/roles";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { isOrderOverdue, loadPendingOrders, pendingByProduct } from "@/lib/restock-orders";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/lib/product-insights";
 import { PriceSuggestions } from "@/app/(dashboard)/recomendaciones/price-suggestions";
 import { RestockSettingsPanel } from "@/app/(dashboard)/recomendaciones/restock-settings";
+import { OrderPlacedButton, PendingOrderCard } from "@/app/(dashboard)/recomendaciones/restock-orders";
 
 const urgencyStyle: Record<RestockRow["urgency"], { label: string; className: string }> = {
   "sin-stock": { label: "Sin stock", className: "bg-danger-bg text-danger" },
@@ -69,6 +71,10 @@ export default async function RecomendacionesPage() {
   };
   const base = await loadInsightsBase(supabase, organization.id, branch, settings.windowDays);
 
+  // Pedidos en camino (0053): lo ya pedido no se vuelve a sugerir.
+  const pendingOrders = restockOn ? await loadPendingOrders(supabase, organization.id) : [];
+  base.onOrder = pendingByProduct(pendingOrders);
+
   const groups = restockOn ? computeRestock(base, settings) : [];
   const suggestions = pricesOn
     ? computePriceSuggestions(base, await loadPriceHistory(supabase, organization.id))
@@ -87,6 +93,35 @@ export default async function RecomendacionesPage() {
         </div>
         {restockOn && (
           <RestockSettingsPanel settings={settings} canEdit={isOrgAdmin(membership.role)} />
+        )}
+        {pendingOrders.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-foreground">
+              {`Pedidos en camino (${pendingOrders.length})`}
+            </p>
+            {pendingOrders.map((order) => (
+              <PendingOrderCard
+                key={order.id}
+                order={{
+                  id: order.id,
+                  supplierName: base.supplierNames.get(order.supplierId) ?? "Proveedor",
+                  createdLabel: formatDate(order.createdAt),
+                  expectedLabel: order.expectedAt ? formatDate(order.expectedAt) : null,
+                  overdue: isOrderOverdue(order),
+                  items: order.items
+                    .filter((i) => i.quantity - i.received > 0)
+                    .map((i) => {
+                      const unit = base.products.find((p) => p.id === i.productId)?.unit ?? "u";
+                      return { name: i.name, remaining: formatQty(i.quantity - i.received, unit) };
+                    }),
+                }}
+              />
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Se cierran solos cuando cargás una compra a ese proveedor. Lo que ya viene en camino no se
+              vuelve a sugerir abajo.
+            </p>
+          </div>
         )}
         {!restockOn ? (
           <ProLockedCard
@@ -116,6 +151,15 @@ export default async function RecomendacionesPage() {
                     </p>
                   </div>
                   {group.supplierId && (
+                    <div className="flex flex-wrap items-center gap-2">
+                    <OrderPlacedButton
+                      supplierId={group.supplierId}
+                      items={group.rows.map((r) => ({
+                        productId: r.product.id,
+                        name: r.product.name,
+                        quantity: r.suggestedQty,
+                      }))}
+                    />
                     <a
                       href={whatsappOrderLink(restockOrderText(organization.name, group))}
                       target="_blank"
@@ -125,6 +169,7 @@ export default async function RecomendacionesPage() {
                       <MessageCircle className="h-4 w-4" />
                       Armar pedido
                     </a>
+                    </div>
                   )}
                 </div>
                 <div className="divide-y divide-border">
@@ -136,6 +181,11 @@ export default async function RecomendacionesPage() {
                           {`Stock ${formatQty(Math.max(0, r.product.stock), r.product.unit)}`}
                           {r.daysLeft !== null ? ` · alcanza ${Math.floor(r.daysLeft)} días` : " · sin ventas en el período"}
                         </p>
+                        {r.onOrder > 0 && (
+                          <p className="text-xs font-medium text-primary">
+                            {`Ya pedido: ${formatQty(r.onOrder, r.product.unit)} en camino. Esto es lo que falta además.`}
+                          </p>
+                        )}
                         {r.late && (
                           <p className="text-xs font-medium text-danger">
                             Se acaba antes de que llegue un pedido: pedilo hoy.

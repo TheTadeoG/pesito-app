@@ -39,6 +39,8 @@ export interface InsightsBase {
   supplierNames: Map<string, string>;
   /** Días que tarda en llegar un pedido de cada proveedor (0052); sólo los que lo cargaron. */
   supplierLeadDays: Map<string, number>;
+  /** Lo que ya se pidió y todavía no llegó, por producto (0053). Lo carga quien lo use. */
+  onOrder: Map<string, number>;
 }
 
 /** Productos activos (con el stock de la sucursal) + ventas de los últimos `days` días. */
@@ -119,6 +121,7 @@ export async function loadInsightsBase(
         .filter((s) => s.lead_time_days !== null && s.lead_time_days !== undefined)
         .map((s) => [s.id, Number(s.lead_time_days)])
     ),
+    onOrder: new Map(),
   };
 }
 
@@ -203,6 +206,8 @@ export interface RestockRow {
   urgency: "sin-stock" | "urgente" | "pronto";
   /** El stock se acaba antes de que llegue un pedido hecho hoy (según el plazo del proveedor). */
   late: boolean;
+  /** Lo que ya se pidió y no llegó (ya descontado de la cantidad sugerida). */
+  onOrder: number;
 }
 
 export interface RestockGroup {
@@ -255,7 +260,8 @@ export function computeRestock(
       ? base.supplierLeadDays.get(product.default_supplier_id) ?? 0
       : 0;
     const wanted = Math.max(perDay * (targetDays + leadDays + safetyDays), product.min_stock);
-    const missing = wanted - Math.max(0, product.stock);
+    const onOrder = base.onOrder.get(product.id) ?? 0;
+    const missing = wanted - Math.max(0, product.stock) - onOrder;
     if (missing <= 0) continue;
 
     const packSize = product.pack_size !== null && product.pack_size > 0 ? product.pack_size : null;
@@ -284,7 +290,18 @@ export function computeRestock(
         : null,
     };
     const estimatedCost = product.cost !== null && product.cost > 0 ? suggestedQty * product.cost : null;
-    group.rows.push({ product, perDay, daysLeft, suggestedQty, packs, packSize, estimatedCost, urgency, late });
+    group.rows.push({
+      product,
+      perDay,
+      daysLeft,
+      suggestedQty,
+      packs,
+      packSize,
+      estimatedCost,
+      urgency,
+      late,
+      onOrder,
+    });
     group.estimatedCost += estimatedCost ?? 0;
     groups.set(key, group);
   }
