@@ -126,33 +126,35 @@ export function RestockSettingsBar({
   const need = EXAMPLE_PER_DAY * totalDays;
   const toBuy = Math.max(0, Math.ceil(need - EXAMPLE_STOCK));
 
+  const stepper = (label: string, value: string, set: (v: string) => void, shown: number, min: number, max: number) =>
+    canEdit ? (
+      <DaysStepper label={label} value={value} onChange={set} min={min} max={max} disabled={false} />
+    ) : (
+      <b>{`${shown} días`}</b>
+    );
+  const line = "flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-foreground";
+
   const words = (
-    <>
-      Calculamos para tener stock para{" "}
-      {canEdit ? (
-        <DaysStepper label="Días de stock después de que llegue el pedido" value={target} onChange={setTarget} min={1} max={90} disabled={false} />
-      ) : (
-        <b>{`${settings.targetDays} días`}</b>
-      )}{" "}
-      después de que llegue, con{" "}
-      {canEdit ? (
-        <DaysStepper label="Días de reserva" value={safety} onChange={setSafety} min={0} max={30} disabled={false} />
-      ) : (
-        <b>{`${settings.safetyDays} días`}</b>
-      )}{" "}
-      de reserva, mirando las ventas de los últimos{" "}
-      {canEdit ? (
-        <DaysStepper label="Días de ventas a mirar" value={window} onChange={setWindow} min={7} max={180} disabled={false} />
-      ) : (
-        <b>{`${settings.windowDays} días`}</b>
-      )}
-    </>
+    <div className="space-y-2">
+      <p className={line}>
+        Quiero que, cuando llegue el pedido, me alcance para{" "}
+        {stepper("Días que tiene que durar la mercadería", target, setTarget, settings.targetDays, 1, 90)}.
+      </p>
+      <p className={line}>
+        Sumale {stepper("Días de colchón", safety, setSafety, settings.safetyDays, 0, 30)} más por si el proveedor se
+        demora o vendo más.
+      </p>
+      <p className={line}>
+        Para saber cuánto vendo por día, mirá los últimos{" "}
+        {stepper("Días de ventas a mirar", window, setWindow, settings.windowDays, 7, 180)}.
+      </p>
+    </div>
   );
 
   return (
     <div className="mb-4 border-b border-border pb-4">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm leading-none text-foreground">{words}</div>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div>{words}</div>
         <div className="flex items-center gap-3 text-sm">
           {status !== "idle" && (
             <span className="text-muted-foreground" aria-live="polite">
@@ -178,11 +180,11 @@ export function RestockSettingsBar({
             {`), el proveedor entrega en ${EXAMPLE_LEAD} días y tenés ${EXAMPLE_STOCK}:`}
           </p>
           <p className="mt-1.5 leading-relaxed">
-            {"Cubrir "}
+            {"Te tiene que durar "}
             <Edited>{targetDays}</Edited>
             {` + ${EXAMPLE_LEAD} de espera + `}
             <Edited>{safetyDays}</Edited>
-            {` de reserva = ${totalDays} días`}
+            {` de colchón = ${totalDays} días`}
             <br />
             {`Necesitás ${EXAMPLE_PER_DAY} × ${totalDays} = ${need}, y tenés ${EXAMPLE_STOCK}`}
             <br />
