@@ -7,6 +7,7 @@ import { Package, Pencil, Plus, Search, Trash2, Wallet, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SuggestInput } from "@/components/ui/suggest-input";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
@@ -163,19 +164,14 @@ export function ProveedoresClient({
         </div>
         <div className="relative w-full lg:max-w-xs">
           <Package className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <SuggestInput
             value={productQuery}
-            onChange={(e) => setProductQuery(e.target.value)}
+            onChange={setProductQuery}
+            options={allProducts}
             placeholder="Filtrar por producto que le comprás…"
-            aria-label="Filtrar por producto"
-            list="supplier-products"
+            ariaLabel="Filtrar por producto"
             className="pl-10"
           />
-          <datalist id="supplier-products">
-            {allProducts.map((p) => (
-              <option key={p} value={p} />
-            ))}
-          </datalist>
         </div>
         <Select
           value={sort}
