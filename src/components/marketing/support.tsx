@@ -94,14 +94,14 @@ export function Support() {
         </div>
 
         {/*
-          Colores fijos de WhatsApp (no los tokens de la app): es un mock
-          de esa app puntual, no una pantalla de Pesito, así que se ve
-          igual sin importar si el resto de la página está en modo claro
-          u oscuro — como una captura. Sin el logo de WhatsApp, para no
+          Colores de WhatsApp (variables --wa-* de globals.css, no los
+          tokens de la app): es un mock de esa app puntual, no una pantalla
+          de Pesito, pero pasa a su versión oscura cuando la página está en
+          modo oscuro, como la app real. Sin el logo de WhatsApp, para no
           dar a entender una alianza oficial que no existe.
         */}
         <div className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-border shadow-lg shadow-black/5">
-          <div className="flex items-center gap-2.5 bg-[#075E54] px-4 py-3">
+          <div className="flex items-center gap-2.5 bg-[var(--wa-header)] px-4 py-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
               P
             </span>
@@ -119,23 +119,23 @@ export function Support() {
           <div
             className="whatsapp-scroll max-h-64 space-y-2 overflow-y-auto px-3 py-3"
             style={{
-              backgroundColor: "#e5ded8",
+              backgroundColor: "var(--wa-bg)",
               backgroundImage:
-                "radial-gradient(circle at 20% 20%, rgba(0,0,0,0.02) 0%, transparent 40%)",
+                "radial-gradient(var(--wa-dot) 1px, transparent 1px)",
             }}
           >
             {conversation.map((msg, i) => (
               <div
                 key={i}
                 className={cn(
-                  "max-w-[85%] rounded-lg px-3 py-1.5 text-sm leading-snug text-[#111b21] shadow-sm",
+                  "max-w-[85%] rounded-lg px-3 py-1.5 text-sm leading-snug text-[var(--wa-text)] shadow-sm",
                   msg.from === "user"
-                    ? "ml-auto rounded-tr-none bg-[#dcf8c6]"
-                    : "rounded-tl-none bg-white"
+                    ? "ml-auto rounded-tr-none bg-[var(--wa-out)]"
+                    : "rounded-tl-none bg-[var(--wa-in)]"
                 )}
               >
                 {msg.text}
-                <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-[#667781]">
+                <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-[var(--wa-meta)]">
                   {msg.time}
                   {msg.from === "user" && <CheckCheck className="h-3 w-3 text-[#53bdeb]" />}
                 </span>
@@ -143,11 +143,11 @@ export function Support() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 bg-[#f0f0f0] px-3 py-2">
-            <div className="flex-1 rounded-full bg-white px-3.5 py-2 text-sm text-[#8696a0]">
+          <div className="flex items-center gap-2 bg-[var(--wa-bar)] px-3 py-2">
+            <div className="flex-1 rounded-full bg-[var(--wa-input)] px-3.5 py-2 text-sm text-[var(--wa-input-text)]">
               Escribí un mensaje…
             </div>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#075E54] text-white">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--wa-accent)] text-white">
               <MessageCircle className="h-4 w-4" />
             </span>
           </div>

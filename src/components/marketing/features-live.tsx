@@ -277,28 +277,28 @@ export function OrderChat() {
       </div>
 
       {/* Chat con el aspecto de WhatsApp: colores propios, iguales en tema claro y oscuro */}
-      <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-black/10 bg-[#efeae2] shadow-md">
-        <div className="flex items-center gap-2 bg-[#075e54] px-3 py-2 text-white">
+      <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--wa-border)] bg-[var(--wa-bg)] shadow-md">
+        <div className="flex items-center gap-2 bg-[var(--wa-header)] px-3 py-2 text-white">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-[11px] font-extrabold">DN</span>
           <span className="leading-tight">
             <span className="block text-sm font-semibold">Distribuidora Norte</span>
             <span className="block text-[10px] text-white/80">{step === 3 ? "escribiendo…" : "en línea"}</span>
           </span>
         </div>
-        <div className="flex flex-1 flex-col justify-end gap-1.5 bg-[radial-gradient(rgb(0_0_0/0.05)_1px,transparent_1px)] [background-size:14px_14px] p-2.5">
+        <div className="flex flex-1 flex-col justify-end gap-1.5 bg-[radial-gradient(var(--wa-dot)_1px,transparent_1px)] [background-size:14px_14px] p-2.5">
           {step >= 2 && (
-            <div className="bubble-in max-w-[88%] self-end rounded-lg rounded-tr-none bg-[#d9fdd3] px-2.5 py-1.5 text-xs leading-snug text-[#111b21] shadow-sm">
-              <p className="mb-0.5 font-mono text-[9px] font-bold tracking-wide text-[#047857]">✦ ARMADO POR PESITO</p>
+            <div className="bubble-in max-w-[88%] self-end rounded-lg rounded-tr-none bg-[var(--wa-out)] px-2.5 py-1.5 text-xs leading-snug text-[var(--wa-text)] shadow-sm">
+              <p className="mb-0.5 font-mono text-[9px] font-bold tracking-wide text-[var(--wa-tag)]">✦ ARMADO POR PESITO</p>
               <p>Hola! Te paso el pedido de hoy: aceite x12, arroz x24, leche x36.</p>
-              <p className="mt-0.5 text-right text-[9px] text-[#667781]">
+              <p className="mt-0.5 text-right text-[9px] text-[var(--wa-meta)]">
                 18:42{ticks}
               </p>
             </div>
           )}
           {step >= 4 && (
-            <div className="bubble-in max-w-[88%] self-start rounded-lg rounded-tl-none bg-white px-2.5 py-1.5 text-xs leading-snug text-[#111b21] shadow-sm">
+            <div className="bubble-in max-w-[88%] self-start rounded-lg rounded-tl-none bg-[var(--wa-in)] px-2.5 py-1.5 text-xs leading-snug text-[var(--wa-text)] shadow-sm">
               <p>Perfecto, mañana te lo llevamos.</p>
-              <p className="mt-0.5 text-right text-[9px] text-[#667781]">18:44</p>
+              <p className="mt-0.5 text-right text-[9px] text-[var(--wa-meta)]">18:44</p>
             </div>
           )}
         </div>

@@ -40,6 +40,20 @@
   --color-hero-accent: #047857;
   --color-hero-line: rgb(4 120 87 / 0.45);
   --hero-glow: rgb(5 150 105 / 0.18);
+  /* Chats que simulan WhatsApp en la landing: claros u oscuros según el tema. */
+  --wa-header: #075e54;
+  --wa-accent: #075e54;
+  --wa-bg: #e5ded8;
+  --wa-dot: rgb(0 0 0 / 0.05);
+  --wa-out: #d9fdd3;
+  --wa-in: #ffffff;
+  --wa-text: #111b21;
+  --wa-meta: #667781;
+  --wa-tag: #047857;
+  --wa-bar: #f0f0f0;
+  --wa-input: #ffffff;
+  --wa-input-text: #8696a0;
+  --wa-border: rgb(0 0 0 / 0.1);
 }
 
 /* Landing: bloques oscuros y verde vivo, iguales en tema claro y oscuro. */
@@ -128,6 +142,19 @@
     --color-hero-accent: #34d399;
     --color-hero-line: rgb(255 255 255 / 0.2);
     --hero-glow: rgb(52 211 153 / 0.16);
+    --wa-header: #1f2c34;
+    --wa-accent: #00a884;
+    --wa-bg: #0b141a;
+    --wa-dot: rgb(255 255 255 / 0.04);
+    --wa-out: #005c4b;
+    --wa-in: #202c33;
+    --wa-text: #e9edef;
+    --wa-meta: #8696a0;
+    --wa-tag: #6ee7b7;
+    --wa-bar: #1f2c34;
+    --wa-input: #2a3942;
+    --wa-input-text: #8696a0;
+    --wa-border: rgb(255 255 255 / 0.08);
   }
 }
 
@@ -169,6 +196,19 @@
   --color-hero-accent: #34d399;
   --color-hero-line: rgb(255 255 255 / 0.2);
   --hero-glow: rgb(52 211 153 / 0.16);
+  --wa-header: #1f2c34;
+  --wa-accent: #00a884;
+  --wa-bg: #0b141a;
+  --wa-dot: rgb(255 255 255 / 0.04);
+  --wa-out: #005c4b;
+  --wa-in: #202c33;
+  --wa-text: #e9edef;
+  --wa-meta: #8696a0;
+  --wa-tag: #6ee7b7;
+  --wa-bar: #1f2c34;
+  --wa-input: #2a3942;
+  --wa-input-text: #8696a0;
+  --wa-border: rgb(255 255 255 / 0.08);
 }
 
 html {
