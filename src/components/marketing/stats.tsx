@@ -38,7 +38,11 @@ export async function Stats() {
   const tiles: Tile[] = (
     [
       stats.kioscos > 0 && {
-        label: "Negocios usando Pesito",
+        label: (
+          <>
+            Negocios usando <span className="font-bold text-foreground">Pesito</span>
+          </>
+        ),
         value: `+${numberFormatter.format(stats.kioscos)}`,
       },
       stats.ventas > 0 && {
