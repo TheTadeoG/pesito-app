@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Pause,
   Play,
+  RotateCcw,
   Radio,
   ShoppingBag,
   ShoppingCart,
@@ -276,13 +277,27 @@ export function HeroPanel() {
   const targets = useRef<(HTMLElement | null)[]>([]);
   const inView = useActive(root);
   const [paused, setPaused] = useState(false);
-  const active = inView && !paused;
+  // Corre una sola vez: arranca unos segundos después de cargar (o al primer
+  // scroll) para que primero se lea el título, y después queda quieta.
+  const [armed, setArmed] = useState(false);
+  const [done, setDone] = useState(false);
+  const active = inView && armed && !paused && !done;
   const [scene, setScene] = useState<SceneId>("pos");
   const [ph, setPh] = useState(0);
   const [auto, setAuto] = useState(true);
   const [runs, setRuns] = useState(0);
   const [geo, setGeo] = useState<Geo | null>(null);
   const shown = active ? ph : LAST_PHASE;
+
+  useEffect(() => {
+    const start = () => setArmed(true);
+    const timer = window.setTimeout(start, 2200);
+    window.addEventListener("scroll", start, { once: true, passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", start);
+    };
+  }, []);
 
   useEffect(() => {
     if (!active) return;
@@ -305,7 +320,13 @@ export function HeroPanel() {
       if (cancelled) return;
       setPh(0);
       setRuns((r) => r + 1);
-      if (auto) setScene(TOUR[(TOUR.indexOf(scene) + 1) % TOUR.length]);
+      const i = TOUR.indexOf(scene);
+      if (auto && i < TOUR.length - 1) {
+        setScene(TOUR[i + 1]);
+      } else {
+        setDone(true);
+        if (auto) setScene("pos");
+      }
     })();
     return () => {
       cancelled = true;
@@ -356,13 +377,27 @@ export function HeroPanel() {
 
   function go(id: SceneId) {
     setAuto(false);
+    setDone(false);
+    setArmed(true);
+    setPaused(false);
     setPh(0);
     setRuns((r) => r + 1);
     setScene(id);
   }
 
+  function replay() {
+    setAuto(true);
+    setDone(false);
+    setArmed(true);
+    setPaused(false);
+    setPh(0);
+    setRuns((r) => r + 1);
+    setScene("pos");
+  }
+
   const Scene = SCENES[scene];
-  const sceneKey = `${scene}-${runs}`;
+  // Al arrancar o terminar se vuelve a montar la escena, así los números no "rebobinan".
+  const sceneKey = `${scene}-${runs}-${active ? 1 : 0}`;
   const tg = (i: number) => (el: HTMLElement | null) => {
     targets.current[i] = el;
   };
@@ -446,24 +481,31 @@ export function HeroPanel() {
               {!auto && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setAuto(true);
-                    setPh(0);
-                    setScene("pos");
-                  }}
+                  onClick={replay}
                   className="rounded-full border border-border px-2.5 py-0.5 font-semibold hover:text-foreground"
                 >
                   Volver al recorrido
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => setPaused((p) => !p)}
-                aria-label={paused ? "Reanudar animación" : "Pausar animación"}
-                className="flex h-6 w-6 items-center justify-center rounded-full border border-border hover:text-foreground"
-              >
-                {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
-              </button>
+              {done ? (
+                <button
+                  type="button"
+                  onClick={replay}
+                  aria-label="Repetir animación"
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-border hover:text-foreground"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPaused((p) => !p)}
+                  aria-label={paused ? "Reanudar animación" : "Pausar animación"}
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-border hover:text-foreground"
+                >
+                  {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+                </button>
+              )}
               <span>Caja 1</span>
             </div>
           </div>
@@ -504,7 +546,7 @@ export function HeroPanel() {
                 style={{
                   transform: `translate(${shown >= 1 ? geo.cursor.x : geo.start.x}px, ${shown >= 1 ? geo.cursor.y : geo.start.y}px)`,
                   transition: "transform 1000ms cubic-bezier(0.4, 0.1, 0.2, 1), opacity 300ms",
-                  opacity: active && shown <= 4 ? 1 : 0,
+                  opacity: active && scene === "pos" && shown <= 4 ? 1 : 0,
                 }}
               >
                 <path d="M4 2l15 9-6.5 1.6L9.6 19z" className="fill-foreground stroke-background" strokeWidth={1.5} />

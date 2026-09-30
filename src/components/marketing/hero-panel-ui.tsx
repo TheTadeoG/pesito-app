@@ -42,7 +42,7 @@ export function Card({
       ref={tgRef}
       className={cn(
         "relative rounded-xl border border-border bg-card p-3 transition-[box-shadow,border-color] duration-500",
-        hit && "border-primary! shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-primary)_30%,transparent)]",
+        hit && "border-primary! shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
         className
       )}
     >
