@@ -1,67 +1,53 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+
 import { AnchorLink } from "@/components/marketing/anchor-link";
 
 const trust = ["Plan Gratis para siempre", "Sin tarjeta", "14 días de Plan Pro de regalo"];
 
-// De la libreta al sistema: cada garabato de cuaderno aparece al lado con lo
-// que hace Pesito. Explica qué es sin listar funciones. Datos de ejemplo.
-function Note({ children, tilt }: { children: ReactNode; tilt: string }) {
+function Rows({ items }: { items: [string, string][] }) {
   return (
-    <div
-      className={cn(
-        "rounded bg-[#f4ecc8] px-3 py-2 font-[cursive] text-sm leading-snug text-[#4a3f14] shadow-md shadow-black/20",
-        tilt
-      )}
-    >
-      {children}
-    </div>
+    <ul>
+      {items.map(([a, b]) => (
+        <li key={a} className="flex justify-between border-b border-border py-1 last:border-0">
+          <span>{a}</span>
+          <span className="font-semibold tabular-nums">{b}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
-function Result({ left, right }: { left: ReactNode; right: ReactNode }) {
+// Mostrador (compu) y celular con las ventas en vivo: explica que se cobra
+// en un lado y se controla desde otro. Datos de ejemplo.
+function Devices() {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-[13.5px] text-card-foreground shadow-lg shadow-black/10">
-      <span className="min-w-0">{left}</span>
-      <span className="shrink-0">{right}</span>
+    <div className="relative pb-6">
+      <div className="w-[63%] rounded-t-2xl rounded-b-md border-[6px] border-foreground! bg-card p-3 text-card-foreground shadow-2xl shadow-black/30">
+        <Rows items={[["Gaseosa cola 1.5L", "$2.200"], ["Alfajor triple x2", "$1.800"], ["Chicles menta", "$500"]]} />
+        <div className="mt-2 flex items-baseline justify-between text-sm text-muted-foreground">
+          <span>Total</span>
+          <b className="text-xl text-foreground">$4.500</b>
+        </div>
+        <div className="mt-2 rounded-lg bg-primary py-2 text-center text-sm font-bold text-primary-foreground">
+          Cobrar venta
+        </div>
+      </div>
+      <div className="absolute bottom-0 right-0 w-[38%] rounded-3xl border-[5px] border-foreground! bg-card p-3 text-card-foreground shadow-2xl shadow-black/40">
+        <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-success-bg px-2 py-0.5 text-[10px] font-bold text-success">
+          <i className="h-1.5 w-1.5 rounded-full bg-success" />
+          En vivo
+        </span>
+        <p className="text-[10.5px] text-muted-foreground">Ventas de hoy</p>
+        <p className="text-2xl font-extrabold tabular-nums tracking-tight">$284.500</p>
+        <div className="mt-1 text-[11px]">
+          <Rows items={[["Efectivo", "$164k"], ["Tarjeta", "$77k"], ["Transf.", "$43k"]]} />
+        </div>
+      </div>
     </div>
   );
 }
-
-function Tag({ tone, children }: { tone: "ok" | "bad" | "warn"; children: ReactNode }) {
-  const c = {
-    ok: "bg-success-bg text-success",
-    bad: "bg-danger-bg text-danger",
-    warn: "bg-warning-bg text-warning",
-  }[tone];
-  return <span className={cn("whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold", c)}>{children}</span>;
-}
-
-const notebookRows: { note: ReactNode; result: ReactNode }[] = [
-  {
-    note: (
-      <>
-        Carlos debe 9800, <s className="opacity-60">Diego 6300</s> 5300?
-      </>
-    ),
-    result: (
-      <Result
-        left="Carlos R. · hace 12 días"
-        right={
-          <>
-            <b className="tabular-nums">$9.800</b> <Tag tone="bad">Atrasado</Tag>
-          </>
-        }
-      />
-    ),
-  },
-  { note: "¿Cuánto vendí hoy??", result: <Result left="Ventas de hoy" right={<b className="tabular-nums">$284.500</b>} /> },
-  { note: "Pedir aceite, arroz, leche…", result: <Result left="Pedido armado" right={<Tag tone="ok">Listo para enviar</Tag>} /> },
-  { note: "Caja: falta plata??", result: <Result left="Caja de Lucas" right={<Tag tone="warn">Faltan $500</Tag>} /> },
-];
 
 export function Hero() {
   return (
@@ -71,18 +57,22 @@ export function Hero() {
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_80%_0%,var(--hero-glow),transparent_70%)]"
         />
-        <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:pb-24 lg:pt-20">
+        <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1fr] lg:items-center lg:pb-24 lg:pt-20">
           <div>
+            <p className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-hero-accent">
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              Funciona en el navegador, sin instalar nada
+            </p>
             <h1 className="text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.4rem]">
-              Lo que hoy anotás en el cuaderno, <span className="text-hero-accent">lo hace Pesito</span>
+              Cobrá en el mostrador. <span className="text-hero-accent">Controlá desde donde estés.</span>
             </h1>
 
             <p
               className="fx-up mt-6 max-w-md text-lg leading-relaxed text-hero-muted"
               style={{ animationDelay: "80ms" }}
             >
-              Quién te debe, cuánto vendiste, qué pedir, si la caja cuadra. Todo ordenado, sin sumar a
-              mano.
+              Vendés desde la compu o la tablet y mirás las ventas del día en tu celular. Stock y caja
+              siempre al día.
             </p>
 
             <div
@@ -103,21 +93,8 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="fx-up flex flex-col gap-2.5" style={{ animationDelay: "240ms" }}>
-            <div className="hidden grid-cols-[1fr_1.75rem_1.25fr] gap-x-2 text-[11px] font-bold uppercase tracking-widest text-hero-muted sm:grid">
-              <span>Hoy</span>
-              <span />
-              <span>Con Pesito</span>
-            </div>
-            {notebookRows.map((r, i) => (
-              <div key={i} className="grid items-center gap-2 sm:grid-cols-[1fr_1.75rem_1.25fr]">
-                <Note tilt={i % 2 ? "rotate-1" : "-rotate-1"}>{r.note}</Note>
-                <span aria-hidden className="hidden text-center text-lg font-extrabold text-hero-accent sm:block">
-                  →
-                </span>
-                {r.result}
-              </div>
-            ))}
+          <div className="fx-up" style={{ animationDelay: "240ms" }}>
+            <Devices />
             <p className="mt-1 text-center text-xs text-hero-muted">Datos de ejemplo, no de un negocio real.</p>
           </div>
         </div>
