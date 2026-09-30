@@ -40,7 +40,7 @@ export async function Stats() {
       stats.kioscos > 0 && {
         label: (
           <>
-            Negocios usando <span className="font-bold text-foreground">pesito</span>
+            Negocios usando <span className="font-bold text-foreground">Pesito</span>
           </>
         ),
         value: `+${numberFormatter.format(stats.kioscos)}`,
