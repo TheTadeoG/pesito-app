@@ -102,8 +102,15 @@ function Column({ side, defs, lit, fire }: { side: "left" | "right"; defs: NodeD
 }
 
 export function HeroSides() {
-  const { fire } = useSale();
+  const { begin, fire } = useSale();
   const [lit, setLit] = useState<number[]>(REST);
+
+  // Al empezar la venta de ejemplo los avisos se ocultan hasta que se cobra.
+  useEffect(() => {
+    if (begin === 0) return;
+    const id = window.setTimeout(() => setLit([]), 0);
+    return () => window.clearTimeout(id);
+  }, [begin]);
 
   useEffect(() => {
     if (fire === 0) return;

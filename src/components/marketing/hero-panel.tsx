@@ -277,7 +277,7 @@ export function HeroPanel() {
   const mainRef = useRef<HTMLDivElement>(null);
   const btnEl = useRef<HTMLDivElement | null>(null);
   const targets = useRef<(HTMLElement | null)[]>([]);
-  const { trigger: fireSale } = useSale();
+  const { start: startSale, trigger: fireSale } = useSale();
   const inView = useActive(root);
   const [paused, setPaused] = useState(false);
   // Corre una sola vez apenas entra en pantalla y después queda quieta.
@@ -296,6 +296,7 @@ export function HeroPanel() {
     const timers: number[] = [];
     const wait = (ms: number) => new Promise<void>((resolve) => timers.push(window.setTimeout(resolve, ms)));
     (async () => {
+      if (scene === "pos") startSale();
       setPh(0);
       await wait(300);
       setPh(1);
@@ -324,7 +325,7 @@ export function HeroPanel() {
       cancelled = true;
       timers.forEach(window.clearTimeout);
     };
-  }, [active, scene, auto, runs, fireSale]);
+  }, [active, scene, auto, runs, startSale, fireSale]);
 
   const measure = useCallback(() => {
     const main = mainRef.current;
