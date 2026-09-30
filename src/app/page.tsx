@@ -24,13 +24,19 @@ export default function LandingPage() {
         <Hero />
         <DashboardShowcase />
         <Stats />
-        <Features />
+        <div className="border-y border-border/60 bg-accent/30">
+          <Features />
+        </div>
         <BulkPrices />
         <HowItWorks />
         <Comparison />
-        <Pricing />
+        <div className="border-y border-border/60 bg-accent/30">
+          <Pricing />
+        </div>
         <Testimonials />
-        <Support />
+        <div className="border-y border-border/60 bg-accent/30">
+          <Support />
+        </div>
         <Faq />
         <Cta />
       </main>
