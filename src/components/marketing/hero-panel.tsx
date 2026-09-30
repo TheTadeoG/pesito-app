@@ -277,18 +277,45 @@ export function HeroPanel() {
   const mainRef = useRef<HTMLDivElement>(null);
   const btnEl = useRef<HTMLDivElement | null>(null);
   const targets = useRef<(HTMLElement | null)[]>([]);
-  const { start: startSale, trigger: fireSale } = useSale();
+  const { setWaiting, start: startSale, trigger: fireSale } = useSale();
   const inView = useActive(root);
   const [paused, setPaused] = useState(false);
   // Corre una sola vez apenas entra en pantalla y después queda quieta.
   const [done, setDone] = useState(false);
-  const active = inView && !paused && !done;
+  // Corre una sola vez y espera: arranca al primer scroll o a los 2,5 segundos,
+  // lo que pase antes, para que primero se lea el título. Mientras espera (y ya
+  // hay JS y movimiento) muestra la escena sin cobrar; sin JS o con movimiento
+  // reducido queda el estado final completo.
+  const [armed, setArmed] = useState(false);
+  const [mode, setMode] = useState<"ssr" | "wait" | "static">("ssr");
+  const waiting = mode === "wait" && !done && !paused;
+  const active = inView && armed && !paused && !done;
   const [scene, setScene] = useState<SceneId>("pos");
   const [ph, setPh] = useState(0);
   const [auto, setAuto] = useState(true);
   const [runs, setRuns] = useState(0);
   const [geo, setGeo] = useState<Geo | null>(null);
-  const shown = active ? ph : LAST_PHASE;
+  const shown = active ? ph : waiting ? 0 : LAST_PHASE;
+
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const id = window.setTimeout(() => setMode(reduced ? "static" : "wait"), 0);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  useEffect(() => {
+    setWaiting(waiting);
+  }, [waiting, setWaiting]);
+
+  useEffect(() => {
+    const start = () => setArmed(true);
+    const timer = window.setTimeout(start, 2500);
+    window.addEventListener("scroll", start, { once: true, passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", start);
+    };
+  }, []);
 
   useEffect(() => {
     if (!active) return;
@@ -369,6 +396,7 @@ export function HeroPanel() {
   }, [scene, runs, shown, measure]);
 
   function go(id: SceneId) {
+    setArmed(true);
     setAuto(false);
     setDone(false);
     setPaused(false);
@@ -378,6 +406,7 @@ export function HeroPanel() {
   }
 
   function replay() {
+    setArmed(true);
     setAuto(true);
     setDone(false);
     setPaused(false);

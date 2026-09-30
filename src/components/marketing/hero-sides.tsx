@@ -102,7 +102,7 @@ function Column({ side, defs, lit, fire }: { side: "left" | "right"; defs: NodeD
 }
 
 export function HeroSides() {
-  const { begin, fire } = useSale();
+  const { begin, fire, waiting } = useSale();
   const [lit, setLit] = useState<number[]>(REST);
 
   // Al empezar la venta de ejemplo los avisos se ocultan hasta que se cobra.
@@ -122,10 +122,13 @@ export function HeroSides() {
     return () => timers.forEach(window.clearTimeout);
   }, [fire]);
 
+  // Antes de la primera venta (o mientras espera) los avisos no se ven.
+  const shownLit = waiting && fire === 0 ? [] : lit;
+
   return (
     <>
-      <Column side="left" defs={LEFT} lit={lit} fire={fire} />
-      <Column side="right" defs={RIGHT} lit={lit} fire={fire} />
+      <Column side="left" defs={LEFT} lit={shownLit} fire={fire} />
+      <Column side="right" defs={RIGHT} lit={shownLit} fire={fire} />
     </>
   );
 }
