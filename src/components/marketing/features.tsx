@@ -135,7 +135,7 @@ export function Features() {
             <LivePhone />
           </Preview>
           <Caption icon={Smartphone} title="Tu negocio desde casa">
-            Mirá las ventas del día en tu celular, sin estar en el mostrador. ¿Sos dueño y querés tener todo bajo control?
+            Mirá las ventas del día desde tu celular, estés donde estés. Tené todo bajo control sin quedarte en el mostrador.
           </Caption>
         </div>
       </StaggerIn>
