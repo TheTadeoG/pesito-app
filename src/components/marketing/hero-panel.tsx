@@ -67,6 +67,9 @@ const NAV = [
   ] },
 ];
 
+// Ancho al que se dibuja el panel; por debajo de eso se achica.
+const DESIGN_WIDTH = 680;
+
 const isScene = (id: string): id is SceneId => id in TITLES;
 
 /* ---------------- escenas del recorrido ---------------- */
@@ -273,12 +276,13 @@ interface Geo {
 }
 
 export function HeroPanel() {
-  const root = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
   const btnEl = useRef<HTMLDivElement | null>(null);
   const targets = useRef<(HTMLElement | null)[]>([]);
-  const { setWaiting, start: startSale, trigger: fireSale } = useSale();
-  const inView = useActive(root);
+  const { trigger: fireSale } = useSale();
+  const inView = useActive(wrapRef);
   const [paused, setPaused] = useState(false);
   // Corre una sola vez apenas entra en pantalla y después queda quieta.
   const [done, setDone] = useState(false);
@@ -295,6 +299,9 @@ export function HeroPanel() {
   const [auto, setAuto] = useState(true);
   const [runs, setRuns] = useState(0);
   const [geo, setGeo] = useState<Geo | null>(null);
+  // En pantallas angostas el mismo panel se dibuja a un ancho de escritorio y se
+  // achica para que entre, en vez de rearmarlo distinto.
+  const [fit, setFit] = useState({ scale: 1, height: 0 });
   const shown = active ? ph : waiting ? 0 : LAST_PHASE;
 
   useEffect(() => {
@@ -302,10 +309,6 @@ export function HeroPanel() {
     const id = window.setTimeout(() => setMode(reduced ? "static" : "wait"), 0);
     return () => window.clearTimeout(id);
   }, []);
-
-  useEffect(() => {
-    setWaiting(waiting);
-  }, [waiting, setWaiting]);
 
   useEffect(() => {
     const start = () => setArmed(true);
@@ -323,7 +326,6 @@ export function HeroPanel() {
     const timers: number[] = [];
     const wait = (ms: number) => new Promise<void>((resolve) => timers.push(window.setTimeout(resolve, ms)));
     (async () => {
-      if (scene === "pos") startSale();
       setPh(0);
       await wait(300);
       setPh(1);
@@ -352,35 +354,52 @@ export function HeroPanel() {
       cancelled = true;
       timers.forEach(window.clearTimeout);
     };
-  }, [active, scene, auto, runs, startSale, fireSale]);
+  }, [active, scene, auto, runs, fireSale]);
 
   const measure = useCallback(() => {
     const main = mainRef.current;
     const btn = btnEl.current;
-    if (!main || !btn || !window.matchMedia("(min-width: 1024px)").matches) {
+    if (!main || !btn) {
       setGeo(null);
       return;
     }
     const m = main.getBoundingClientRect();
     const b = btn.getBoundingClientRect();
-    const ax = b.right - m.left - 4;
-    const ay = b.top + b.height / 2 - m.top;
+    // Si el panel está achicado, las medidas de pantalla se llevan a las del panel.
+    const k = m.width / main.offsetWidth || 1;
+    const ax = (b.right - m.left) / k - 4;
+    const ay = (b.top + b.height / 2 - m.top) / k;
     const paths = targets.current
       .filter((el): el is HTMLElement => Boolean(el))
       .map((el) => {
         const r = el.getBoundingClientRect();
-        const bx = r.left - m.left - 2;
-        const by = r.top + r.height / 2 - m.top;
+        const bx = (r.left - m.left) / k - 2;
+        const by = (r.top + r.height / 2 - m.top) / k;
         const mx = (ax + bx) / 2;
         return `M${ax} ${ay} C ${mx} ${ay}, ${mx} ${by}, ${bx} ${by}`;
       });
     const next: Geo = {
       key: paths.join("|"),
       paths,
-      cursor: { x: b.left - m.left + b.width * 0.55, y: b.top - m.top + b.height * 0.4 },
-      start: { x: m.width - 60, y: b.top - m.top - 60 },
+      cursor: { x: (b.left - m.left + b.width * 0.55) / k, y: (b.top - m.top + b.height * 0.4) / k },
+      start: { x: m.width / k - 60, y: (b.top - m.top) / k - 60 },
     };
     setGeo((prev) => (prev && prev.key === next.key ? prev : next));
+  }, []);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const inner = innerRef.current;
+    if (!wrap || !inner) return;
+    const update = () => {
+      const w = wrap.clientWidth;
+      const scale = w >= DESIGN_WIDTH ? 1 : w / DESIGN_WIDTH;
+      setFit((f) => (f.scale === scale && f.height === inner.offsetHeight ? f : { scale, height: inner.offsetHeight }));
+    };
+    const ro = new ResizeObserver(update);
+    ro.observe(wrap);
+    ro.observe(inner);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -422,12 +441,18 @@ export function HeroPanel() {
     targets.current[i] = el;
   };
 
+  const scaled = fit.scale < 1;
   return (
+    <div ref={wrapRef} className="w-full" style={scaled ? { height: fit.height * fit.scale } : undefined}>
     <div
-      ref={root}
-      className="relative overflow-hidden rounded-t-2xl border border-b-0 border-border bg-background text-left text-xs text-foreground shadow-2xl shadow-black/20 lg:grid lg:grid-cols-[11.5rem_1fr]"
+      ref={innerRef}
+      className="@container"
+      style={scaled ? { width: DESIGN_WIDTH, transform: `scale(${fit.scale})`, transformOrigin: "top left" } : { minWidth: DESIGN_WIDTH }}
     >
-      <aside className="hidden flex-col gap-0.5 border-r border-border bg-sidebar p-3.5 lg:flex">
+    <div
+      className="relative overflow-hidden rounded-t-2xl border border-b-0 border-border bg-background text-left text-xs text-foreground shadow-2xl shadow-black/20 @xl:grid @xl:grid-cols-[11.5rem_1fr]"
+    >
+      <aside className="hidden flex-col gap-0.5 border-r border-border bg-sidebar p-3.5 @xl:flex">
         <Wordmark className="mx-2 text-xl" />
         <div className="mx-2 mb-1 mt-2 border-b border-border pb-2.5 text-[11.5px] text-muted-foreground">
           <strong className="block text-[12.5px] text-foreground">Kiosco Don Pepe</strong>
@@ -478,22 +503,6 @@ export function HeroPanel() {
       </aside>
 
       <div className="min-w-0">
-        <div className="flex gap-1.5 overflow-x-auto border-b border-border bg-sidebar px-3 py-2.5 lg:hidden">
-          {(Object.keys(TITLES) as SceneId[]).map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => go(id)}
-              className={cn(
-                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold",
-                id === scene ? "border-transparent bg-accent text-accent-foreground" : "border-border text-muted-foreground"
-              )}
-            >
-              {TITLES[id]}
-            </button>
-          ))}
-        </div>
-
         <div ref={mainRef} className="relative min-h-[27rem] px-4 pb-5 pt-3.5">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h3 className="text-[15px] font-bold">{TITLES[scene]}</h3>
@@ -575,6 +584,8 @@ export function HeroPanel() {
           )}
         </div>
       </div>
+    </div>
+    </div>
     </div>
   );
 }

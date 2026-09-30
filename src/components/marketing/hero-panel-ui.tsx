@@ -163,4 +163,4 @@ export function ActionButton({
   );
 }
 
-export const cols = "grid gap-3 lg:grid-cols-[1.05fr_1fr] lg:gap-[34px]";
+export const cols = "grid gap-3 @xl:grid-cols-[1.05fr_1fr] @xl:gap-[34px]";

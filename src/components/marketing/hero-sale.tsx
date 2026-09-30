@@ -2,34 +2,14 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
-// Avisa a los costados de la portada (hero-sides.tsx) cuando el panel empieza la
-// venta de ejemplo (los avisos se ocultan) y cuando la cobra (los nodos se encienden).
-const SaleContext = createContext<{
-  begin: number;
-  fire: number;
-  waiting: boolean;
-  setWaiting: (w: boolean) => void;
-  start: () => void;
-  trigger: () => void;
-}>({
-  begin: 0,
-  fire: 0,
-  waiting: false,
-  setWaiting: () => {},
-  start: () => {},
-  trigger: () => {},
-});
+// Avisa a los costados de la portada (hero-sides.tsx) cuando en el panel se
+// cobra la venta de ejemplo, para que los nodos se enciendan en ese momento.
+const SaleContext = createContext<{ fire: number; trigger: () => void }>({ fire: 0, trigger: () => {} });
 
 export function SaleProvider({ children }: { children: ReactNode }) {
-  const [begin, setBegin] = useState(0);
   const [fire, setFire] = useState(0);
-  const [waiting, setWaiting] = useState(false);
-  const start = useCallback(() => setBegin((b) => b + 1), []);
   const trigger = useCallback(() => setFire((f) => f + 1), []);
-  const value = useMemo(
-    () => ({ begin, fire, waiting, setWaiting, start, trigger }),
-    [begin, fire, waiting, start, trigger]
-  );
+  const value = useMemo(() => ({ fire, trigger }), [fire, trigger]);
   return <SaleContext.Provider value={value}>{children}</SaleContext.Provider>;
 }
 

@@ -6,8 +6,8 @@ import { useSale } from "@/components/marketing/hero-sale";
 import { cn } from "@/lib/utils";
 
 // Costados de la portada en pantallas anchas: al cobrar la venta del panel, seis
-// nodos se encienden uno tras otro y muestran lo que Pesito hizo. Después queda
-// quieto con dos avisos visibles. Todos los datos son de ejemplo.
+// nodos se encienden uno tras otro y muestran lo que Pesito hizo; después los
+// avisos se retiran y quedan sólo los nodos. Todos los datos son de ejemplo.
 
 interface NodeDef {
   icon: ComponentType<{ className?: string }>;
@@ -27,7 +27,6 @@ const RIGHT: NodeDef[] = [
   { icon: BarChart3, label: "Reportes", title: "Ventas de hoy $284.500", detail: "48 ventas" },
 ];
 
-const REST = [2, 5];
 const NODE_Y = [40, 170, 300];
 const EDGE_Y = [90, 190, 290];
 const W = 232;
@@ -102,15 +101,8 @@ function Column({ side, defs, lit, fire }: { side: "left" | "right"; defs: NodeD
 }
 
 export function HeroSides() {
-  const { begin, fire, waiting } = useSale();
-  const [lit, setLit] = useState<number[]>(REST);
-
-  // Al empezar la venta de ejemplo los avisos se ocultan hasta que se cobra.
-  useEffect(() => {
-    if (begin === 0) return;
-    const id = window.setTimeout(() => setLit([]), 0);
-    return () => window.clearTimeout(id);
-  }, [begin]);
+  const { fire } = useSale();
+  const [lit, setLit] = useState<number[]>([]);
 
   useEffect(() => {
     if (fire === 0) return;
@@ -118,17 +110,14 @@ export function HeroSides() {
     [0, 3, 1, 4, 2, 5].forEach((n, k) => {
       timers.push(window.setTimeout(() => setLit((l) => (l.includes(n) ? l : [...l, n])), 900 + k * 450));
     });
-    timers.push(window.setTimeout(() => setLit(REST), 900 + 6 * 450 + 2400));
+    timers.push(window.setTimeout(() => setLit([]), 900 + 6 * 450 + 2400));
     return () => timers.forEach(window.clearTimeout);
   }, [fire]);
 
-  // Antes de la primera venta (o mientras espera) los avisos no se ven.
-  const shownLit = waiting && fire === 0 ? [] : lit;
-
   return (
     <>
-      <Column side="left" defs={LEFT} lit={shownLit} fire={fire} />
-      <Column side="right" defs={RIGHT} lit={shownLit} fire={fire} />
+      <Column side="left" defs={LEFT} lit={lit} fire={fire} />
+      <Column side="right" defs={RIGHT} lit={lit} fire={fire} />
     </>
   );
 }
