@@ -496,3 +496,369 @@ export function StockAlerts() {
     </div>
   );
 }
+
+// Cuenta hasta el nuevo valor en vez de saltar. Sin movimiento (o sin JS) el valor ya es el final.
+function useCountUp(target: number, ms = 500) {
+  const [value, setValue] = useState(target);
+  const from = useRef(target);
+  useEffect(() => {
+    const start = from.current;
+    if (start === target) return;
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / ms);
+      const v = start + (target - start) * (1 - Math.pow(1 - p, 3));
+      from.current = v;
+      setValue(v);
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else from.current = target;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return value;
+}
+
+// Historial de precios: un cursor recorre el gráfico y cada cambio se suma a la lista.
+const PH_PTS: [number, number][] = [[6, 42], [80, 32], [160, 20], [240, 8]];
+const PH_END = 294;
+const PH_D = `M${PH_PTS[0][0]} ${PH_PTS[0][1]}${PH_PTS.slice(1).map(([x, y]) => ` H${x} V${y}`).join("")} H${PH_END}`;
+// Largo del trazo hasta el final de cada tramo horizontal (h) y de cada escalón (v).
+const PH_LEN = (() => {
+  let acc = 0;
+  const h: number[] = [0];
+  const v: number[] = [0];
+  for (let i = 1; i < PH_PTS.length; i++) {
+    acc += PH_PTS[i][0] - PH_PTS[i - 1][0];
+    h.push(acc);
+    acc += Math.abs(PH_PTS[i][1] - PH_PTS[i - 1][1]);
+    v.push(acc);
+  }
+  return { h, v, total: acc + PH_END - PH_PTS[PH_PTS.length - 1][0] };
+})();
+const PRICE_ROWS = [
+  { price: 2950, sub: "hace 3 meses · Manual" },
+  { price: 3100, sub: "hace 2 meses · Manual" },
+  { price: 3400, sub: "hace 30 días · Aumento masivo +10%" },
+  { price: 3842, sub: "Aumento masivo +13% · Distribuidora Norte" },
+];
+
+export function PriceHistory() {
+  const root = useRef<HTMLDivElement>(null);
+  const active = useActive(root);
+  const last = PH_PTS.length - 1;
+  const [shown, setShown] = useState(PRICE_ROWS.length);
+  const [x, setX] = useState(PH_END);
+  const [y, setY] = useState(PH_PTS[last][1]);
+  const [prog, setProg] = useState(1);
+  const [dur, setDur] = useState(0);
+
+  useLoop(
+    active,
+    async (wait) => {
+      setDur(0);
+      setShown(1);
+      setX(PH_PTS[0][0]);
+      setY(PH_PTS[0][1]);
+      setProg(0);
+      await wait(80);
+      await wait(900);
+      for (let i = 1; i <= last; i++) {
+        setDur(800);
+        setX(PH_PTS[i][0]);
+        setProg(PH_LEN.h[i] / PH_LEN.total);
+        await wait(820);
+        setDur(300);
+        setY(PH_PTS[i][1]);
+        setProg(PH_LEN.v[i] / PH_LEN.total);
+        setShown(i + 1);
+        await wait(850);
+      }
+      setDur(800);
+      setX(PH_END);
+      setProg(1);
+      await wait(4400);
+    },
+    () => {
+      setDur(0);
+      setShown(PRICE_ROWS.length);
+      setX(PH_END);
+      setY(PH_PTS[last][1]);
+      setProg(1);
+    }
+  );
+
+  const ease = (ms: number) => (dur ? `transform ${ms}ms linear` : "none");
+  return (
+    <div ref={root} className="flex h-full flex-col p-4">
+      <div className="flex items-baseline justify-between">
+        <p className="text-sm font-bold tracking-tight text-foreground">Yerba 1 kg</p>
+        <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Precio de venta</p>
+      </div>
+      <svg viewBox="0 0 300 50" className="mt-2 w-full overflow-visible" aria-hidden>
+        <path d={PH_D} fill="none" stroke="var(--color-border)" strokeWidth="2" strokeLinejoin="round" />
+        <path
+          d={PH_D}
+          pathLength={1}
+          fill="none"
+          stroke="var(--color-primary)"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          strokeDasharray={1}
+          strokeDashoffset={1 - prog}
+          style={{ transition: dur ? `stroke-dashoffset ${dur}ms linear` : "none" }}
+        />
+        {PH_PTS.map(([px, py]) => (
+          <circle key={px} cx={px} cy={py} r="4" fill="var(--color-card)" stroke="var(--color-primary)" strokeWidth="2" />
+        ))}
+        <g style={{ transform: `translateX(${x}px)`, transition: ease(dur) }}>
+          <line y1="0" y2="50" stroke="var(--color-foreground)" strokeWidth="1" strokeDasharray="3 3" opacity="0.4" />
+          <g style={{ transform: `translateY(${y}px)`, transition: ease(dur) }}>
+            <circle r="6" fill="var(--color-primary)" fillOpacity="0.25" />
+            <circle r="3.5" fill="var(--color-primary)" />
+          </g>
+        </g>
+      </svg>
+      <div className="mt-2 flex flex-col-reverse justify-end">
+        {PRICE_ROWS.map((r, i) => {
+          const isNow = i === PRICE_ROWS.length - 1;
+          return (
+            <div
+              key={r.price}
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out ${
+                i < shown ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div
+                  className={`mt-1.5 flex items-center justify-between gap-2 rounded-xl border bg-card px-3 py-1 shadow-sm ${
+                    isNow ? "border-primary/40" : "border-border"
+                  }`}
+                >
+                  <div className="min-w-0 leading-tight">
+                    <p className="font-mono text-xs font-bold tabular-nums text-foreground">{ars(r.price)}</p>
+                    <p className="truncate text-[10px] text-muted-foreground">{r.sub}</p>
+                  </div>
+                  {isNow ? (
+                    <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">Hoy</span>
+                  ) : (
+                    <span className="shrink-0 rounded-md border border-primary px-2 py-0.5 text-[10px] font-semibold text-primary">Volver</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Celular en vivo: se cobra en el mostrador y la venta viaja hasta el celular.
+const LIVE_SALES = [
+  { amount: 3200, method: "Efectivo" },
+  { amount: 5400, method: "Transferencia" },
+  { amount: 2300, method: "Tarjeta" },
+];
+const LIVE_BASE = 212750;
+const LIVE_SALES_BASE = 47;
+
+export function LivePhone() {
+  const root = useRef<HTMLDivElement>(null);
+  const active = useActive(root);
+  const last = LIVE_SALES.length - 1;
+  const [saleIdx, setSaleIdx] = useState(last);
+  const [saleKey, setSaleKey] = useState(0);
+  const [packetKey, setPacketKey] = useState(0);
+  const [count, setCount] = useState(LIVE_SALES.length);
+  const total = useCountUp(LIVE_BASE + LIVE_SALES.slice(0, count).reduce((a, s) => a + s.amount, 0), 450);
+  const sale = LIVE_SALES[saleIdx];
+
+  useLoop(
+    active,
+    async (wait) => {
+      setCount(0);
+      setSaleIdx(0);
+      await wait(1200);
+      for (let i = 0; i < LIVE_SALES.length; i++) {
+        setSaleIdx(i);
+        setSaleKey((k) => k + 1);
+        await wait(500);
+        setPacketKey((k) => k + 1);
+        await wait(850);
+        setCount(i + 1);
+        await wait(1500);
+      }
+      await wait(2200);
+    },
+    () => {
+      setCount(LIVE_SALES.length);
+      setSaleIdx(last);
+    }
+  );
+
+  return (
+    <div ref={root} className="grid h-full grid-cols-[minmax(0,1fr)_2.25rem_auto] items-center gap-1 pl-3 sm:grid-cols-[minmax(0,1fr)_4.5rem_auto] sm:pl-5">
+      <div>
+        <p className="mb-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Mostrador</p>
+        <div
+          key={saleKey}
+          className={`rounded-xl border border-border bg-card p-2.5 shadow-sm ${saleKey > 0 ? "bubble-in" : ""}`}
+        >
+          <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Cobro</p>
+          <p className="font-mono text-base font-bold tabular-nums text-foreground">{ars(sale.amount)}</p>
+          <span className="mt-1 inline-block rounded-full bg-success-bg px-2 py-0.5 text-[10px] font-bold text-success">{sale.method}</span>
+        </div>
+      </div>
+
+      <div className="relative h-0.5 bg-[repeating-linear-gradient(90deg,var(--color-border)_0_6px,transparent_6px_12px)]" aria-hidden>
+        <span
+          key={packetKey}
+          className={`absolute -top-1 left-0 h-2.5 w-2.5 rounded-full bg-primary opacity-0 shadow-[0_0_10px_var(--color-primary)] ${
+            packetKey > 0 ? "pkt-fly" : ""
+          }`}
+        />
+      </div>
+
+      <div className="flex h-full items-end self-end overflow-hidden pt-6">
+        <div className="w-36 translate-y-2 rounded-t-[1.6rem] border-2 border-b-0 border-foreground/80 bg-card px-3 pb-8 pt-2 shadow-xl sm:w-44">
+          <div className="mx-auto mb-1.5 h-1 w-10 rounded-full bg-foreground/70" />
+          <div className="flex justify-between font-mono text-[8px] text-muted-foreground">
+            <span>18:42</span>
+            <span>●●●</span>
+          </div>
+          <div className="mt-1.5 flex items-center justify-between">
+            <span className="text-[11px] font-bold tracking-tight text-foreground">pesito.</span>
+            <span className="flex items-center gap-1 font-mono text-[9px] font-semibold text-primary">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+              </span>
+              EN VIVO
+            </span>
+          </div>
+          <p className="mt-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Ventas de hoy</p>
+          <p className="text-xl font-extrabold tracking-tight tabular-nums text-foreground sm:text-2xl">{ars(total)}</p>
+          <p className="text-[10px] text-muted-foreground">{`${LIVE_SALES_BASE + count} ventas hoy`}</p>
+          <svg viewBox="0 0 100 30" className="mt-1 h-7 w-full" aria-hidden>
+            <path d="M0 24 L15 20 L30 22 L45 12 L60 15 L75 6 L100 3" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Fiado: pasan los días y cada deuda cambia de color; después se cobra y baja el total.
+const DEBTS = [
+  { id: "CR", name: "Carlos R.", base: 6, amount: 9800 },
+  { id: "DM", name: "Diego M.", base: 5, amount: 6300 },
+  { id: "AP", name: "Ana P.", base: 1, amount: 2100 },
+  { id: "MG", name: "Marta G.", base: 2, amount: 1250 },
+];
+const DEBT_DAYS = 6;
+const COLLECT = ["CR", "DM", "AP"];
+
+function debtTone(age: number) {
+  if (age < 5) return { chip: "bg-success-bg text-success", dot: "bg-success" };
+  if (age < 10) return { chip: "bg-warning-bg text-warning", dot: "bg-warning" };
+  return { chip: "bg-danger-bg text-danger", dot: "bg-danger" };
+}
+
+export function DebtFlow() {
+  const root = useRef<HTMLDivElement>(null);
+  const active = useActive(root);
+  const [day, setDay] = useState(DEBT_DAYS);
+  const [showDay, setShowDay] = useState(false);
+  const [paid, setPaid] = useState<string[]>([]);
+  const [gone, setGone] = useState<string[]>([]);
+  const owe = useCountUp(DEBTS.filter((d) => !paid.includes(d.id)).reduce((a, d) => a + d.amount, 0), 600);
+  const got = useCountUp(DEBTS.filter((d) => paid.includes(d.id)).reduce((a, d) => a + d.amount, 0), 600);
+  const late = DEBTS.filter((d) => d.base + day >= 10).length;
+
+  useLoop(
+    active,
+    async (wait) => {
+      setPaid([]);
+      setGone([]);
+      setDay(0);
+      setShowDay(true);
+      await wait(1300);
+      for (let d = 1; d <= DEBT_DAYS; d++) {
+        setDay(d);
+        await wait(620);
+      }
+      await wait(900);
+      setShowDay(false);
+      await wait(400);
+      for (const id of COLLECT) {
+        setPaid((p) => [...p, id]);
+        await wait(520);
+        setGone((g) => [...g, id]);
+        await wait(1100);
+      }
+      await wait(3000);
+    },
+    () => {
+      setPaid([]);
+      setGone([]);
+      setDay(DEBT_DAYS);
+      setShowDay(false);
+    }
+  );
+
+  return (
+    <div ref={root} className="relative flex h-full flex-col p-4">
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Te deben</p>
+          <p className="text-xl font-extrabold tracking-tight tabular-nums text-foreground">{ars(owe)}</p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Cobrado hoy</p>
+          <p className="text-xl font-extrabold tracking-tight tabular-nums text-success">{ars(got)}</p>
+        </div>
+      </div>
+      <span
+        className={`absolute left-1/2 top-4 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-0.5 font-mono text-[10px] font-bold transition-[opacity,background-color,color] duration-300 ${
+          showDay ? "opacity-100" : "opacity-0"
+        } ${late ? "bg-danger-bg text-danger" : "bg-accent text-accent-foreground"}`}
+        aria-hidden
+      >
+        {`Día ${day}`}
+        {late > 0 && <span className="hidden sm:inline">{` · ${late} atrasadas`}</span>}
+      </span>
+      <div className="mt-2.5 flex-1">
+        {DEBTS.map((d) => {
+          const age = d.base + day;
+          const tone = debtTone(age);
+          const isPaid = paid.includes(d.id);
+          return (
+            <div
+              key={d.id}
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out ${
+                gone.includes(d.id) ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div
+                  className={`mb-1.5 flex items-center gap-2 rounded-xl border px-2.5 py-1 shadow-sm transition-[background-color,border-color,transform] duration-300 ${
+                    isPaid ? "translate-x-2 border-success/40 bg-success-bg" : "border-border bg-card"
+                  }`}
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">{d.id}</span>
+                  <p className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">{d.name}</p>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors duration-300 ${isPaid ? "bg-success text-white" : tone.chip}`}>
+                    {isPaid ? "Cobrado ✓" : `hace ${age} días`}
+                  </span>
+                  <span className="w-16 shrink-0 text-right font-mono text-xs font-semibold tabular-nums text-foreground">{ars(d.amount)}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

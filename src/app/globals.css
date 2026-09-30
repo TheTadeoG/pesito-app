@@ -650,3 +650,28 @@ body {
     opacity: 1;
   }
 }
+
+/* Landing: el punto de la venta viaja del mostrador al celular. */
+@keyframes pkt-fly {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% - 0.625rem);
+    opacity: 0;
+  }
+}
+
+.pkt-fly {
+  animation: pkt-fly 850ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pkt-fly {
+    animation: none;
+  }
+}

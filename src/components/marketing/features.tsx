@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StaggerIn } from "@/components/marketing/stagger-in";
-import { CashBills, ImportFlow, OrderChat, StockAlerts, TicketPrinter } from "@/components/marketing/features-live";
+import { CashBills, DebtFlow, ImportFlow, LivePhone, OrderChat, PriceHistory, StockAlerts, TicketPrinter } from "@/components/marketing/features-live";
 import {
   Boxes,
   FileSpreadsheet,
@@ -12,14 +12,6 @@ import {
   Wallet,
 } from "lucide-react";
 
-// Los datos de las vistas previas son de ejemplo, no de un negocio real.
-const debtors = [
-  { name: "Carlos R.", ago: "hace 12 días", amount: "$ 9.800", late: true, initials: "CR" },
-  { name: "Marta G.", ago: "hace 1 día", amount: "$ 1.250", late: false, initials: "MG" },
-  { name: "Diego M.", ago: "hace 7 días", amount: "$ 6.300", late: false, initials: "DM" },
-  { name: "Ana P.", ago: "hace 6 días", amount: "$ 2.100", late: false, initials: "AP" },
-];
-
 function Preview({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div
@@ -28,14 +20,6 @@ function Preview({ children, className = "" }: { children: ReactNode; className?
       <div aria-hidden className="bento-grid-bg absolute inset-0" />
       <div className="relative h-full">{children}</div>
     </div>
-  );
-}
-
-function Label({ children }: { children: ReactNode }) {
-  return (
-    <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-      {children}
-    </p>
   );
 }
 
@@ -97,7 +81,7 @@ export function Features() {
 
         {/* Alertas de stock: el stock baja con cada venta */}
         <div className={`${cell} lg:col-span-3`}>
-          <Preview className="h-60">
+          <Preview className="h-64">
             <StockAlerts />
           </Preview>
           <Caption icon={Boxes} title="Alertas de stock">
@@ -107,28 +91,8 @@ export function Features() {
 
         {/* Fiado: la lista de clientes */}
         <div className={`${cell} lg:col-span-3`}>
-          <Preview className="h-60">
-            <div className="space-y-2 p-4 [mask-image:linear-gradient(to_bottom,#000_72%,transparent)]">
-              {debtors.map((d, i) => (
-                <div
-                  key={d.name}
-                  className={`flex items-center gap-2.5 rounded-xl border border-border bg-card px-2.5 py-2 shadow-sm ${
-                    i % 2 ? "ml-5" : "mr-5"
-                  }`}
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
-                    {d.initials}
-                  </span>
-                  <div className="min-w-0 flex-1 leading-tight">
-                    <p className="truncate text-xs font-semibold text-foreground">{d.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{d.ago}</p>
-                  </div>
-                  <span className={`font-mono text-xs font-semibold tabular-nums ${d.late ? "text-danger" : "text-foreground"}`}>
-                    {d.amount}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <Preview className="h-64">
+            <DebtFlow />
           </Preview>
           <Caption icon={Users} title="Fiado bajo control">
             Quién te debe, cuánto y desde cuándo. Cobrar es más fácil cuando lo tenés todo a la vista.
@@ -148,38 +112,7 @@ export function Features() {
         {/* Historial de precios */}
         <div className={`${cell} lg:col-span-2`}>
           <Preview className="h-72">
-            <div className="flex h-full flex-col p-4">
-              <div className="flex items-baseline justify-between">
-                <p className="text-sm font-bold tracking-tight text-foreground">Yerba 1 kg</p>
-                <Label>Precio de venta</Label>
-              </div>
-              <svg viewBox="0 0 300 90" className="mt-1 h-24 w-full" aria-hidden>
-                <path d="M6 70 H80 V52 H160 V34 H240 V14 H294" fill="none" stroke="var(--color-border)" strokeWidth="2" />
-                <path d="M6 70 H80 V52 H160 V34 H240 V14 H294" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinejoin="round" strokeDasharray="0" />
-                {[[6, 70], [80, 52], [160, 34], [240, 14]].map(([x, y]) => (
-                  <circle key={x} cx={x} cy={y} r="4" fill="var(--color-card)" stroke="var(--color-primary)" strokeWidth="2" />
-                ))}
-                <circle cx="240" cy="14" r="6" fill="var(--color-primary)" fillOpacity="0.2" />
-              </svg>
-              <div className="mt-auto space-y-2">
-                <div className="flex items-center justify-between rounded-xl border border-primary/40 bg-card px-3 py-2 shadow-sm">
-                  <div className="leading-tight">
-                    <p className="font-mono text-sm font-bold tabular-nums text-foreground">$ 3.842</p>
-                    <p className="text-[10px] text-muted-foreground">Aumento masivo +13% · Distribuidora Norte</p>
-                  </div>
-                  <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">Hoy</span>
-                </div>
-                <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2">
-                  <div className="leading-tight">
-                    <p className="font-mono text-sm font-semibold tabular-nums text-foreground">$ 3.400</p>
-                    <p className="text-[10px] text-muted-foreground">hace 30 días</p>
-                  </div>
-                  <span className="rounded-md border border-primary px-2 py-1 text-[10px] font-semibold text-primary">
-                    Volver a este precio
-                  </span>
-                </div>
-              </div>
-            </div>
+            <PriceHistory />
           </Preview>
           <Caption icon={History} title="Cada cambio de precio, guardado">
             Mirá cuándo subió cada producto y volvé a un precio anterior con un toque.
@@ -199,35 +132,7 @@ export function Features() {
         {/* En vivo: como se ve desde un celular */}
         <div className={`${cell} sm:col-span-2 lg:col-span-3`}>
           <Preview className="h-72">
-            <div className="flex h-full items-end justify-center overflow-hidden">
-              <div className="w-44 translate-y-2 rounded-t-[1.6rem] border-2 border-b-0 border-foreground/80 bg-card px-3 pb-6 pt-2 shadow-xl">
-                <div className="mx-auto mb-1.5 h-1 w-10 rounded-full bg-foreground/70" />
-                <div className="flex justify-between font-mono text-[8px] text-muted-foreground">
-                  <span>18:42</span>
-                  <span>●●●</span>
-                </div>
-                <div className="mt-1.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold tracking-tight text-foreground">pesito.</span>
-                  <span className="flex items-center gap-1 font-mono text-[9px] font-semibold text-primary">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-                    </span>
-                    EN VIVO
-                  </span>
-                </div>
-                <p className="mt-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Ventas de hoy</p>
-                <p className="text-2xl font-extrabold tracking-tight tabular-nums text-foreground">$ 212.750</p>
-                <p className="text-[10px] text-muted-foreground">47 ventas hoy</p>
-                <svg viewBox="0 0 100 30" className="mt-1 h-7 w-full" aria-hidden>
-                  <path d="M0 24 L15 20 L30 22 L45 12 L60 15 L75 6 L100 3" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <div className="mt-2 flex justify-between border-t border-border pt-1.5 text-[10px]">
-                  <span className="text-muted-foreground">Efectivo</span>
-                  <span className="font-mono font-semibold text-foreground">+ $ 3.200</span>
-                </div>
-              </div>
-            </div>
+            <LivePhone />
           </Preview>
           <Caption icon={Smartphone} title="Tu negocio desde casa">
             Mirá las ventas del día en tu celular, sin estar en el mostrador.
