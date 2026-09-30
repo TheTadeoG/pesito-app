@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StaggerIn } from "@/components/marketing/stagger-in";
-import { CashBills, ImportFlow, OrderChat, TicketPrinter } from "@/components/marketing/features-live";
+import { CashBills, ImportFlow, OrderChat, StockAlerts, TicketPrinter } from "@/components/marketing/features-live";
 import {
   Boxes,
   FileSpreadsheet,
@@ -95,28 +95,13 @@ export function Features() {
           </Caption>
         </div>
 
-        {/* Stock: aviso con acción */}
+        {/* Alertas de stock: el stock baja con cada venta */}
         <div className={`${cell} lg:col-span-3`}>
           <Preview className="h-60">
-            <div className="flex h-full flex-col justify-center gap-2.5 p-3.5">
-              <div className="rounded-xl border border-warning/40 bg-card p-3 shadow-sm">
-                <span className="rounded-full bg-warning-bg px-2 py-0.5 text-[10px] font-bold text-warning">
-                  Se acaba antes de que llegue un pedido
-                </span>
-                <p className="mt-2 text-sm font-bold text-foreground">Leche entera 1 L</p>
-                <p className="text-[11px] text-muted-foreground">Vendés unas 9 por día. Quedan 2.</p>
-                <span className="mt-2.5 inline-block rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">
-                  Armar pedido
-                </span>
-              </div>
-              <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-[11px]">
-                <span className="text-foreground">Fideos 500 g</span>
-                <span className="rounded-full bg-danger-bg px-2 py-0.5 text-[10px] font-bold text-danger">Ya se acabó</span>
-              </div>
-            </div>
+            <StockAlerts />
           </Preview>
-          <Caption icon={Boxes} title="Stock siempre al día">
-            Baja con cada venta y te avisa qué se está acabando, antes de quedarte sin nada.
+          <Caption icon={Boxes} title="Alertas de stock">
+            Te avisa qué se está acabando, antes de quedarte sin nada.
           </Caption>
         </div>
 

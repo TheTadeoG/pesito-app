@@ -583,3 +583,30 @@ body {
     animation: none;
   }
 }
+
+/* Landing: cartelito "Venta: - 1 unidad" de las alertas de stock. */
+@keyframes sale-go {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  20%,
+  70% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.sale-go {
+  animation: sale-go 1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sale-go {
+    animation: none;
+    opacity: 1;
+  }
+}

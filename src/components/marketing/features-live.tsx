@@ -416,3 +416,83 @@ export function ImportFlow() {
     </div>
   );
 }
+
+type StockAlert = { id: string; title: string; note: string; tag: string; tone: "warning" | "danger" };
+
+const stockAlerts: Record<number, StockAlert> = {
+  5: { id: "low", title: "Queda poco", note: "Quedan 5", tag: "Aviso", tone: "warning" },
+  2: { id: "soon", title: "Se acaba antes de que llegue un pedido", note: "Vendés unas 9 por día", tag: "Aviso", tone: "warning" },
+  0: { id: "out", title: "Ya se acabó", note: "Leche entera 1 L", tag: "Sin stock", tone: "danger" },
+};
+
+// Alertas de stock: cada venta resta una unidad y, en cada umbral, aparece la alerta que corresponde.
+export function StockAlerts() {
+  const root = useRef<HTMLDivElement>(null);
+  const active = useActive(root);
+  const [n, setN] = useState(2);
+  const [saleKey, setSaleKey] = useState(0);
+  const [shown, setShown] = useState<StockAlert[]>([stockAlerts[2], stockAlerts[5]]);
+
+  useLoop(
+    active,
+    async (wait, alive) => {
+      setN(8);
+      setShown([]);
+      setSaleKey(0);
+      await wait(1200);
+      for (let left = 7; left >= 0 && alive(); left--) {
+        setN(left);
+        setSaleKey((k) => k + 1);
+        const alert = stockAlerts[left];
+        if (alert) setShown((prev) => [alert, ...prev].slice(0, 3));
+        await wait(alert ? 1500 : 850);
+      }
+      await wait(3600);
+    },
+    () => {
+      setN(2);
+      setSaleKey(0);
+      setShown([stockAlerts[2], stockAlerts[5]]);
+    }
+  );
+
+  const color = n <= 2 ? "var(--color-danger)" : n <= 5 ? "var(--color-warning)" : "var(--color-success)";
+
+  return (
+    <div ref={root} className="grid h-full items-center gap-4 p-4 sm:grid-cols-[1fr_1.1fr] sm:p-5">
+      <div className="min-w-0">
+        <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Leche entera 1 L</p>
+        <p className="text-5xl font-extrabold leading-none tracking-tight tabular-nums transition-colors duration-300 sm:text-6xl" style={{ color: n <= 5 ? color : undefined }}>
+          {n}
+        </p>
+        <p className="mt-1 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">unidades</p>
+        <div className="mt-3 h-2.5 overflow-hidden rounded-full border border-border bg-muted">
+          <div
+            className="h-full rounded-full transition-[width,background-color] duration-500 ease-out"
+            style={{ width: `${(n / 8) * 100}%`, backgroundColor: color }}
+          />
+        </div>
+        <p key={saleKey} className={`mt-2 h-4 font-mono text-[10.5px] font-semibold text-muted-foreground ${saleKey > 0 ? "sale-go" : "opacity-0"}`}>
+          Venta: - 1 unidad
+        </p>
+      </div>
+      <div className="min-h-[7.5rem] space-y-2">
+        {shown.map((a) => (
+          <div key={a.id} className="bubble-in flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
+            <span className="min-w-0 leading-tight">
+              <span className="block text-xs font-bold text-foreground">{a.title}</span>
+              <span className="block text-[10.5px] text-muted-foreground">{a.note}</span>
+            </span>
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-bold ${
+                a.tone === "danger" ? "bg-danger-bg text-danger" : "bg-warning-bg text-warning"
+              }`}
+            >
+              {a.tag}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
