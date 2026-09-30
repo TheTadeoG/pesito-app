@@ -8,7 +8,6 @@ import {
   MessageCircle,
   ShoppingCart,
   Smartphone,
-  UserCheck,
   Users,
   Wallet,
 } from "lucide-react";
@@ -20,18 +19,6 @@ const debtors = [
   { name: "Diego M.", ago: "hace 7 días", amount: "$ 6.300", late: false, initials: "DM" },
   { name: "Ana P.", ago: "hace 6 días", amount: "$ 2.100", late: false, initials: "AP" },
 ];
-
-const cashiers = [
-  { name: "Marta G.", note: "Sin diferencias", tone: "success", initials: "MG" },
-  { name: "Lucas P.", note: "Faltan $ 500", tone: "danger", initials: "LP" },
-  { name: "Rocío A.", note: "Sobran $ 100", tone: "warning", initials: "RA" },
-] as const;
-
-const toneClasses = {
-  danger: "bg-danger-bg text-danger",
-  warning: "bg-warning-bg text-warning",
-  success: "bg-success-bg text-success",
-} as const;
 
 function Preview({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -109,7 +96,7 @@ export function Features() {
         </div>
 
         {/* Stock: aviso con acción */}
-        <div className={`${cell} lg:col-span-2`}>
+        <div className={`${cell} lg:col-span-3`}>
           <Preview className="h-60">
             <div className="flex h-full flex-col justify-center gap-2.5 p-3.5">
               <div className="rounded-xl border border-warning/40 bg-card p-3 shadow-sm">
@@ -134,7 +121,7 @@ export function Features() {
         </div>
 
         {/* Fiado: la lista de clientes */}
-        <div className={`${cell} lg:col-span-2`}>
+        <div className={`${cell} lg:col-span-3`}>
           <Preview className="h-60">
             <div className="space-y-2 p-4 [mask-image:linear-gradient(to_bottom,#000_72%,transparent)]">
               {debtors.map((d, i) => (
@@ -160,28 +147,6 @@ export function Features() {
           </Preview>
           <Caption icon={Users} title="Fiado bajo control">
             Quién te debe, cuánto y desde cuándo. Cobrar es más fácil cuando lo tenés todo a la vista.
-          </Caption>
-        </div>
-
-        {/* Caja de cada empleado */}
-        <div className={`${cell} lg:col-span-2`}>
-          <Preview className="h-60">
-            <div className="flex h-full flex-col justify-center gap-2.5 p-4">
-              {cashiers.map((c) => (
-                <div key={c.name} className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 shadow-sm">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
-                    {c.initials}
-                  </span>
-                  <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{c.name}</p>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${toneClasses[c.tone]}`}>
-                    {c.note}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Preview>
-          <Caption icon={UserCheck} title="La caja de cada empleado">
-            Mirá quién cerró justo y quién tuvo diferencia.
           </Caption>
         </div>
 
