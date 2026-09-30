@@ -1,164 +1,125 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Wordmark } from "@/components/marketing/wordmark";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 import { AnchorLink } from "@/components/marketing/anchor-link";
 
 const trust = ["Plan Gratis para siempre", "Sin tarjeta", "14 días de Plan Pro de regalo"];
 
-function Kpi({ label, value }: { label: string; value: string }) {
+// De la libreta al sistema: cada garabato de cuaderno aparece al lado con lo
+// que hace Pesito. Explica qué es sin listar funciones. Datos de ejemplo.
+function Note({ children, tilt }: { children: ReactNode; tilt: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className="text-lg font-bold tabular-nums tracking-tight">{value}</p>
+    <div
+      className={cn(
+        "rounded bg-[#f4ecc8] px-3 py-2 font-[cursive] text-sm leading-snug text-[#4a3f14] shadow-md shadow-black/20",
+        tilt
+      )}
+    >
+      {children}
     </div>
   );
 }
 
-function Rows({ items }: { items: [string, string][] }) {
+function Result({ left, right }: { left: ReactNode; right: ReactNode }) {
   return (
-    <ul>
-      {items.map(([a, b]) => (
-        <li key={a} className="flex justify-between border-b border-border py-1 last:border-0">
-          <span>{a}</span>
-          <span className="font-semibold tabular-nums">{b}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-// El panel de Pesito con datos de ejemplo: la portada muestra el sistema en
-// vez de un carrito suelto, así se entiende qué es de un vistazo.
-function AppWindow({ variant = "resumen" }: { variant?: "resumen" | "venta" }) {
-  const nav = ["Vender", "Productos", "Caja", "Clientes", "Proveedores", "Reportes"];
-  return (
-    <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-background text-left text-xs text-foreground shadow-2xl shadow-black/20 sm:grid-cols-[8.25rem_1fr]">
-      <div className="hidden flex-col gap-0.5 border-r border-border bg-sidebar p-3 sm:flex">
-        <Wordmark className="mx-1.5 text-lg" />
-        <p className="mx-1.5 mb-2 border-b border-border pb-2 text-[11px] text-muted-foreground">
-          Kiosco Don Pepe
-        </p>
-        {nav.map((n, i) => (
-          <span
-            key={n}
-            className={cn(
-              "rounded-md px-2 py-1.5 font-medium",
-              (variant === "venta" ? i === 0 : i === 5) ? "bg-sidebar-active-bg font-bold text-sidebar-active-foreground" : "text-sidebar-foreground"
-            )}
-          >
-            {n}
-          </span>
-        ))}
-      </div>
-      <div className="flex min-w-0 flex-col gap-2.5 p-3.5">
-        {variant === "resumen" ? (
-          <>
-            <p className="text-sm font-bold">Resumen de hoy</p>
-            <div className="grid grid-cols-3 gap-2">
-              <Kpi label="Ventas" value="$284.500" />
-              <Kpi label="Ganancia" value="$113.300" />
-              <Kpi label="Te deben" value="$19.450" />
-            </div>
-            <div className="grid gap-2 sm:grid-cols-[1.1fr_1fr]">
-              <div className="rounded-lg border border-border bg-card p-2.5">
-                <p className="text-[11px] font-semibold text-muted-foreground">Ventas de la semana</p>
-                <div className="mt-2 flex h-16 items-end gap-1.5">
-                  {[36, 48, 44, 62, 78, 100, 58].map((h, i) => (
-                    <i
-                      key={i}
-                      style={{ height: `${h}%` }}
-                      className={cn("flex-1 rounded-t-sm", i === 5 ? "bg-primary" : "bg-accent")}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-lg border border-border bg-card p-2.5">
-                <p className="text-[11px] font-semibold text-muted-foreground">Alertas de stock</p>
-                <Rows items={[["Coca-Cola 2.25L", "Sin stock"], ["Pan lactal", "Bajo"], ["Detergente", "Bajo"]]} />
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="grid grid-cols-3 gap-2">
-              <Kpi label="Ventas de hoy" value="$284.500" />
-              <Kpi label="Caja" value="Cuadra" />
-              <Kpi label="Stock bajo" value="3" />
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="rounded-lg border border-border bg-card p-2.5">
-                <p className="text-[11px] font-semibold text-muted-foreground">Venta actual</p>
-                <Rows
-                  items={[
-                    ["Gaseosa cola 1.5L", "$2.200"],
-                    ["Alfajor triple x2", "$1.800"],
-                    ["Chicles menta", "$500"],
-                    ["Total", "$4.500"],
-                  ]}
-                />
-              </div>
-              <div className="rounded-lg border border-border bg-card p-2.5">
-                <p className="text-[11px] font-semibold text-muted-foreground">Quién te debe</p>
-                <Rows items={[["Carlos R.", "$9.800"], ["Diego M.", "$6.300"], ["Ana P.", "$2.100"]]} />
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-[13.5px] text-card-foreground shadow-lg shadow-black/10">
+      <span className="min-w-0">{left}</span>
+      <span className="shrink-0">{right}</span>
     </div>
   );
 }
+
+function Tag({ tone, children }: { tone: "ok" | "bad" | "warn"; children: ReactNode }) {
+  const c = {
+    ok: "bg-success-bg text-success",
+    bad: "bg-danger-bg text-danger",
+    warn: "bg-warning-bg text-warning",
+  }[tone];
+  return <span className={cn("whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold", c)}>{children}</span>;
+}
+
+const notebookRows: { note: ReactNode; result: ReactNode }[] = [
+  {
+    note: (
+      <>
+        Carlos debe 9800, <s className="opacity-60">Diego 6300</s> 5300?
+      </>
+    ),
+    result: (
+      <Result
+        left="Carlos R. · hace 12 días"
+        right={
+          <>
+            <b className="tabular-nums">$9.800</b> <Tag tone="bad">Atrasado</Tag>
+          </>
+        }
+      />
+    ),
+  },
+  { note: "¿Cuánto vendí hoy??", result: <Result left="Ventas de hoy" right={<b className="tabular-nums">$284.500</b>} /> },
+  { note: "Pedir aceite, arroz, leche…", result: <Result left="Pedido armado" right={<Tag tone="ok">Listo para enviar</Tag>} /> },
+  { note: "Caja: falta plata??", result: <Result left="Caja de Lucas" right={<Tag tone="warn">Faltan $500</Tag>} /> },
+];
 
 export function Hero() {
   return (
     <>
-      <section className="relative overflow-hidden bg-background text-foreground">
+      <section className="relative overflow-hidden bg-hero text-hero-foreground">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(var(--color-border)_1px,transparent_1.2px)] [background-size:18px_18px] [mask-image:linear-gradient(#000_40%,transparent)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_80%_0%,var(--hero-glow),transparent_70%)]"
         />
-        <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pb-20 pt-14 text-center sm:px-6 sm:pt-20">
-          <p className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            Punto de venta para tu negocio
-          </p>
-          <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.4rem]">
-            Cobrás, y todo lo demás <span className="text-primary">se hace solo</span>
-          </h1>
+        <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:pb-24 lg:pt-20">
+          <div>
+            <h1 className="text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.4rem]">
+              Lo que hoy anotás en el cuaderno, <span className="text-hero-accent">lo hace Pesito</span>
+            </h1>
 
-          <p
-            className="fx-up mx-auto mt-6 max-w-md text-lg leading-relaxed text-muted-foreground"
-            style={{ animationDelay: "80ms" }}
-          >
-            Stock, caja y fiado se actualizan con cada venta. Empezás gratis, sin tarjeta.
-          </p>
+            <p
+              className="fx-up mt-6 max-w-md text-lg leading-relaxed text-hero-muted"
+              style={{ animationDelay: "80ms" }}
+            >
+              Quién te debe, cuánto vendiste, qué pedir, si la caja cuadra. Todo ordenado, sin sumar a
+              mano.
+            </p>
 
-          <div
-            className="fx-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center"
-            style={{ animationDelay: "150ms" }}
-          >
-            <Link href="/registro">
-              <Button size="lg" variant="primary" className="w-full font-bold sm:w-auto">
-                Empezar gratis
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <AnchorLink href="#como-funciona">
-              <Button size="lg" variant="heroGhost" className="w-full sm:w-auto">
-                Ver cómo funciona
-              </Button>
-            </AnchorLink>
+            <div
+              className="fx-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
+              style={{ animationDelay: "150ms" }}
+            >
+              <Link href="/registro">
+                <Button size="lg" variant="primary" className="w-full font-bold sm:w-auto">
+                  Empezar gratis
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <AnchorLink href="#como-funciona">
+                <Button size="lg" variant="heroGhost" className="w-full sm:w-auto">
+                  Ver cómo funciona
+                </Button>
+              </AnchorLink>
+            </div>
           </div>
 
-          <div
-            className="fx-up mt-10 max-h-[21rem] w-full max-w-3xl overflow-hidden [mask-image:linear-gradient(#000_70%,transparent)]"
-            style={{ animationDelay: "240ms" }}
-          >
-            <AppWindow variant="venta" />
+          <div className="fx-up flex flex-col gap-2.5" style={{ animationDelay: "240ms" }}>
+            <div className="hidden grid-cols-[1fr_1.75rem_1.25fr] gap-x-2 text-[11px] font-bold uppercase tracking-widest text-hero-muted sm:grid">
+              <span>Hoy</span>
+              <span />
+              <span>Con Pesito</span>
+            </div>
+            {notebookRows.map((r, i) => (
+              <div key={i} className="grid items-center gap-2 sm:grid-cols-[1fr_1.75rem_1.25fr]">
+                <Note tilt={i % 2 ? "rotate-1" : "-rotate-1"}>{r.note}</Note>
+                <span aria-hidden className="hidden text-center text-lg font-extrabold text-hero-accent sm:block">
+                  →
+                </span>
+                {r.result}
+              </div>
+            ))}
+            <p className="mt-1 text-center text-xs text-hero-muted">Datos de ejemplo, no de un negocio real.</p>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Datos de ejemplo, no de un negocio real.</p>
         </div>
       </section>
 
