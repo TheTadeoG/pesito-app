@@ -53,7 +53,7 @@ export function Hero() {
           >
             <HeroPanel />
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">Datos de ejemplo, no de un negocio real.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Tocá cualquier sección del menú para verla en acción. Datos de ejemplo, no de un negocio real.</p>
         </div>
       </section>
 

@@ -33,12 +33,13 @@ import { cn } from "@/lib/utils";
 
 // Panel de la portada: el menú es el del sistema real. Sin JS, fuera de
 // pantalla o con movimiento reducido queda el estado final completo; con
-// movimiento recorre solo tres escenas (venta, aumento de precios y fiado) y
-// las demás se cargan sólo si alguien las toca. Todos los datos son de ejemplo.
+// movimiento corre sola la venta y las demás pantallas se animan (y se cargan,
+// las que pesan) sólo si alguien las toca. Todos los datos son de ejemplo.
 
 type SceneId = "pos" | "caja" | "productos" | "clientes" | "proveedores";
 
-const TOUR: SceneId[] = ["pos", "productos", "clientes"];
+// Sola corre únicamente la venta; las demás pantallas se animan si alguien las toca.
+const TOUR: SceneId[] = ["pos"];
 
 const TITLES: Record<SceneId, string> = {
   pos: "Punto de Venta",
@@ -484,7 +485,7 @@ export function HeroPanel() {
                   onClick={replay}
                   className="rounded-full border border-border px-2.5 py-0.5 font-semibold hover:text-foreground"
                 >
-                  Volver al recorrido
+                  Volver a la venta
                 </button>
               )}
               {done ? (
@@ -546,7 +547,7 @@ export function HeroPanel() {
                 style={{
                   transform: `translate(${shown >= 1 ? geo.cursor.x : geo.start.x}px, ${shown >= 1 ? geo.cursor.y : geo.start.y}px)`,
                   transition: "transform 700ms cubic-bezier(0.4, 0.1, 0.2, 1), opacity 300ms",
-                  opacity: active && scene === "pos" && shown <= 4 ? 1 : 0,
+                  opacity: active && shown <= 4 ? 1 : 0,
                 }}
               >
                 <path d="M4 2l15 9-6.5 1.6L9.6 19z" className="fill-foreground stroke-background" strokeWidth={1.5} />
