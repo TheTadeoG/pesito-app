@@ -678,8 +678,10 @@ body {
 
 /* Puntito que viaja por las líneas del panel de la portada (hero-panel.tsx). */
 @keyframes hp-dot {
-  from { offset-distance: 0%; }
-  to { offset-distance: 100%; }
+  from { offset-distance: 0%; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  to { offset-distance: 100%; opacity: 0; }
 }
 .hp-dot {
   position: absolute;

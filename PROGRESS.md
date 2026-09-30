@@ -258,3 +258,33 @@ No commitear `supabase/config.toml`, `supabase/.gitignore`, `supabase/.branches/
 - Recomendación de compra, etapa 3 (migración 0054, aplicada en producción el 2026-09-29): pedido mínimo por proveedor (`suppliers.min_order_amount`, en el formulario del proveedor; el grupo avisa cuánto falta para llegar). Sin migración: resumen arriba de Recomendaciones (sin stock, urgentes, pedido estimado, en camino), barra de días de stock por producto, gráfico de cuánto se gastaría en cada proveedor y aviso "Pocos datos de venta" (producto de menos de 14 días o con ventas en menos de 3 días). Código en `recomendaciones/restock-visuals.tsx`.
 - Recomendación de compra, etapa 2 (migración 0053, aplicada en producción el 2026-09-29): pedidos en camino (`restock_orders` y `restock_order_items`). El botón "Ya lo pedí" de cada proveedor en Recomendaciones guarda el pedido con la fecha estimada (pedido + plazo del proveedor); mientras está pendiente, la cantidad sugerida descuenta lo que viene en camino. Se cierra solo cuando se registra una compra a ese proveedor (`registerPurchase` llama a `applyPurchaseToOrders`: descuenta lo recibido producto por producto, del pedido más viejo al más nuevo, y cierra los completos) o a mano con "Llegó" / "Cancelar". Anular una compra no reabre el pedido. Código en `src/lib/restock-orders.ts`.
 - Texto público alineado (`plan-features`, comparar planes, FAQ, llms.txt, landing, indumentaria). Quedan como "Pronto" en el Plan IA sólo las ganancias por sucursal. Análisis de competidores puntuales NO existe y se quitó del texto público (llms.txt lo aclara).
+
+## Frases de portada para reutilizar (rediseño de la landing, 2026-09-30)
+
+La portada quedó con **"El sistema para manejar tu negocio sin dolores de cabeza"** (pedido del usuario: le gusta esa frase). Estas otras se probaron y se guardan para usar en otros lados (secciones, CTA final, blog, anuncios, redes). Sólo prometen lo que el sistema ya hace.
+
+Títulos:
+- "Cobrás, y todo lo demás se hace solo" (ahora en el subtítulo de la portada)
+- "Tu negocio entero, en una sola pantalla"
+- "Lo que hoy anotás en el cuaderno, lo hace Pesito"
+- "Dejá el cuaderno y la calculadora. Pesito lleva la cuenta."
+- "Cobrá en el mostrador. Controlá desde donde estés."
+- "De abrir la caja a cerrarla, Pesito te acompaña"
+- "Cobrá, controlá el stock y cerrá la caja desde un solo lugar"
+- "Una venta. Todo se actualiza solo."
+- "Sabé cuánto vendiste, qué te falta y quién te debe"
+- "Hacé tu primera venta en 10 segundos" (para una demo que se toca)
+
+Subtítulos:
+- "Cobrá, controlá el stock, cerrá la caja y anotá el fiado. Todo se actualiza solo con cada venta."
+- "Quién te debe, cuánto vendiste, qué pedir, si la caja cuadra. Todo ordenado, sin sumar a mano."
+- "Vendés desde la compu o la tablet y mirás las ventas del día en tu celular. Stock y caja siempre al día."
+- "Un solo sistema para todo el día del negocio."
+
+Frases chicas (eyebrows, etiquetas):
+- "Sistema de ventas, stock y caja"
+- "Punto de venta para tu negocio" (la que usa la portada)
+- "Funciona en el navegador, sin instalar nada"
+- "Probalo ahora, sin registrarte"
+
+Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F), celular + impresora + tarjetas conectadas (K), avisos que salen del panel (H), nodos con datos (I), un aviso a la vez (J), feed de avisos (E). Escenas del panel que hoy no corren solas pero se pueden tocar: Caja, Productos, Clientes, Proveedores.

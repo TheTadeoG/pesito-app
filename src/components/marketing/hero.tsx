@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroPanel } from "@/components/marketing/hero-panel";
+import { HeroSides } from "@/components/marketing/hero-sides";
+import { SaleProvider } from "@/components/marketing/hero-sale";
 import { AnchorLink } from "@/components/marketing/anchor-link";
 
 const trust = ["Plan Gratis para siempre", "Sin tarjeta", "14 días de Plan Pro de regalo"];
@@ -19,15 +21,16 @@ export function Hero() {
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             Punto de venta para tu negocio
           </p>
-          <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.4rem]">
-            Cobrás, y todo lo demás <span className="text-primary">se hace solo</span>
+          <h1 className="max-w-4xl text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.4rem]">
+            El sistema para manejar tu negocio <span className="text-primary">sin dolores de cabeza</span>
           </h1>
 
           <p
-            className="fx-up mx-auto mt-6 max-w-md text-lg leading-relaxed text-muted-foreground"
+            className="fx-up mx-auto mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground"
             style={{ animationDelay: "80ms" }}
           >
-            Stock, caja y fiado se actualizan con cada venta. Empezás gratis, sin tarjeta.
+            Cobrá y todo lo demás se hace solo: stock, caja y fiado se actualizan con cada venta. Empezás
+            gratis, sin tarjeta.
           </p>
 
           <div
@@ -47,12 +50,17 @@ export function Hero() {
             </AnchorLink>
           </div>
 
-          <div
-            className="fx-up mt-10 w-full max-w-4xl lg:max-h-[35rem] lg:overflow-hidden lg:[mask-image:linear-gradient(#000_84%,transparent)]"
-            style={{ animationDelay: "240ms" }}
-          >
-            <HeroPanel />
-          </div>
+          <SaleProvider>
+            <div className="relative mt-10 w-full max-w-4xl">
+              <HeroSides />
+              <div
+                className="fx-up lg:max-h-[35rem] lg:overflow-hidden lg:[mask-image:linear-gradient(#000_84%,transparent)]"
+                style={{ animationDelay: "240ms" }}
+              >
+                <HeroPanel />
+              </div>
+            </div>
+          </SaleProvider>
           <p className="mt-2 text-xs text-muted-foreground">Tocá cualquier sección del menú para verla en acción. Datos de ejemplo, no de un negocio real.</p>
         </div>
       </section>

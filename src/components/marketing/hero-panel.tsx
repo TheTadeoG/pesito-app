@@ -29,6 +29,7 @@ import {
   cols,
   type SceneProps,
 } from "@/components/marketing/hero-panel-ui";
+import { useSale } from "@/components/marketing/hero-sale";
 import { cn } from "@/lib/utils";
 
 // Panel de la portada: el menú es el del sistema real. Sin JS, fuera de
@@ -276,6 +277,7 @@ export function HeroPanel() {
   const mainRef = useRef<HTMLDivElement>(null);
   const btnEl = useRef<HTMLDivElement | null>(null);
   const targets = useRef<(HTMLElement | null)[]>([]);
+  const { trigger: fireSale } = useSale();
   const inView = useActive(root);
   const [paused, setPaused] = useState(false);
   // Corre una sola vez: arranca unos segundos después de cargar (o al primer
@@ -313,6 +315,7 @@ export function HeroPanel() {
       setPh(2);
       await wait(150);
       setPh(3);
+      if (scene === "pos") fireSale();
       await wait(800);
       setPh(4);
       await wait(1000);
@@ -333,7 +336,7 @@ export function HeroPanel() {
       cancelled = true;
       timers.forEach(window.clearTimeout);
     };
-  }, [active, scene, auto, runs]);
+  }, [active, scene, auto, runs, fireSale]);
 
   const measure = useCallback(() => {
     const main = mainRef.current;
