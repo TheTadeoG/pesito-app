@@ -75,7 +75,7 @@ export function Features() {
             <CashBills />
           </Preview>
           <Caption icon={Wallet} title="Caja sin sorpresas">
-            Contás los billetes y ves al instante si falta o sobra plata.
+            Contás los billetes y ves al toque si falta o sobra plata, de cualquier sucursal, caja o empleado.
           </Caption>
         </div>
 
@@ -85,7 +85,7 @@ export function Features() {
             <StockAlerts />
           </Preview>
           <Caption icon={Boxes} title="Alertas de stock">
-            Te avisa qué se está acabando, antes de quedarte sin nada.
+            Te avisa qué se está acabando, antes de quedarte sin nada. Así no perdés ventas.
           </Caption>
         </div>
 
@@ -105,7 +105,7 @@ export function Features() {
             <OrderChat />
           </Preview>
           <Caption icon={MessageCircle} title="Qué pedirle a cada proveedor">
-            Pesito arma el pedido por vos. Vos solo lo mandás.
+            Pesito arma el pedido por vos, con cantidades calculadas según tus ventas. Vos solo lo mandás.
           </Caption>
         </div>
 
@@ -135,7 +135,7 @@ export function Features() {
             <LivePhone />
           </Preview>
           <Caption icon={Smartphone} title="Tu negocio desde casa">
-            Mirá las ventas del día en tu celular, sin estar en el mostrador.
+            Mirá las ventas del día en tu celular, sin estar en el mostrador. ¿Sos dueño y querés tener todo bajo control?
           </Caption>
         </div>
       </StaggerIn>
