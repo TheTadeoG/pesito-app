@@ -280,27 +280,15 @@ export function HeroPanel() {
   const { trigger: fireSale } = useSale();
   const inView = useActive(root);
   const [paused, setPaused] = useState(false);
-  // Corre una sola vez: arranca unos segundos después de cargar (o al primer
-  // scroll) para que primero se lea el título, y después queda quieta.
-  const [armed, setArmed] = useState(false);
+  // Corre una sola vez apenas entra en pantalla y después queda quieta.
   const [done, setDone] = useState(false);
-  const active = inView && armed && !paused && !done;
+  const active = inView && !paused && !done;
   const [scene, setScene] = useState<SceneId>("pos");
   const [ph, setPh] = useState(0);
   const [auto, setAuto] = useState(true);
   const [runs, setRuns] = useState(0);
   const [geo, setGeo] = useState<Geo | null>(null);
   const shown = active ? ph : LAST_PHASE;
-
-  useEffect(() => {
-    const start = () => setArmed(true);
-    const timer = window.setTimeout(start, 2200);
-    window.addEventListener("scroll", start, { once: true, passive: true });
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("scroll", start);
-    };
-  }, []);
 
   useEffect(() => {
     if (!active) return;
@@ -382,7 +370,6 @@ export function HeroPanel() {
   function go(id: SceneId) {
     setAuto(false);
     setDone(false);
-    setArmed(true);
     setPaused(false);
     setPh(0);
     setRuns((r) => r + 1);
@@ -392,7 +379,6 @@ export function HeroPanel() {
   function replay() {
     setAuto(true);
     setDone(false);
-    setArmed(true);
     setPaused(false);
     setPh(0);
     setRuns((r) => r + 1);
