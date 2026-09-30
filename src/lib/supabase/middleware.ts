@@ -19,8 +19,6 @@ const PUBLIC_PATHS = [
   "/comparar-planes",
   "/diccionario",
   "/pesito-para",
-  // Temporal: portadas de prueba (se saca al elegir una).
-  "/portadas",
   "/preguntas-frecuentes",
   "/privacidad",
   "/terminos",
