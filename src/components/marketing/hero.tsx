@@ -31,7 +31,7 @@ function Rows({ items }: { items: [string, string][] }) {
 
 // El panel de Pesito con datos de ejemplo: la portada muestra el sistema en
 // vez de un carrito suelto, así se entiende qué es de un vistazo.
-function AppWindow() {
+function AppWindow({ variant = "resumen" }: { variant?: "resumen" | "venta" }) {
   const nav = ["Vender", "Productos", "Caja", "Clientes", "Proveedores", "Reportes"];
   return (
     <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-background text-left text-xs text-foreground shadow-2xl shadow-black/20 sm:grid-cols-[8.25rem_1fr]">
@@ -45,7 +45,7 @@ function AppWindow() {
             key={n}
             className={cn(
               "rounded-md px-2 py-1.5 font-medium",
-              i === 5 ? "bg-sidebar-active-bg font-bold text-sidebar-active-foreground" : "text-sidebar-foreground"
+              (variant === "venta" ? i === 0 : i === 5) ? "bg-sidebar-active-bg font-bold text-sidebar-active-foreground" : "text-sidebar-foreground"
             )}
           >
             {n}
@@ -53,30 +53,59 @@ function AppWindow() {
         ))}
       </div>
       <div className="flex min-w-0 flex-col gap-2.5 p-3.5">
-        <p className="text-sm font-bold">Resumen de hoy</p>
-        <div className="grid grid-cols-3 gap-2">
-          <Kpi label="Ventas" value="$284.500" />
-          <Kpi label="Ganancia" value="$113.300" />
-          <Kpi label="Te deben" value="$19.450" />
-        </div>
-        <div className="grid gap-2 sm:grid-cols-[1.1fr_1fr]">
-          <div className="rounded-lg border border-border bg-card p-2.5">
-            <p className="text-[11px] font-semibold text-muted-foreground">Ventas de la semana</p>
-            <div className="mt-2 flex h-16 items-end gap-1.5">
-              {[36, 48, 44, 62, 78, 100, 58].map((h, i) => (
-                <i
-                  key={i}
-                  style={{ height: `${h}%` }}
-                  className={cn("flex-1 rounded-t-sm", i === 5 ? "bg-primary" : "bg-accent")}
-                />
-              ))}
+        {variant === "resumen" ? (
+          <>
+            <p className="text-sm font-bold">Resumen de hoy</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Kpi label="Ventas" value="$284.500" />
+              <Kpi label="Ganancia" value="$113.300" />
+              <Kpi label="Te deben" value="$19.450" />
             </div>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-2.5">
-            <p className="text-[11px] font-semibold text-muted-foreground">Alertas de stock</p>
-            <Rows items={[["Coca-Cola 2.25L", "Sin stock"], ["Pan lactal", "Bajo"], ["Detergente", "Bajo"]]} />
-          </div>
-        </div>
+            <div className="grid gap-2 sm:grid-cols-[1.1fr_1fr]">
+              <div className="rounded-lg border border-border bg-card p-2.5">
+                <p className="text-[11px] font-semibold text-muted-foreground">Ventas de la semana</p>
+                <div className="mt-2 flex h-16 items-end gap-1.5">
+                  {[36, 48, 44, 62, 78, 100, 58].map((h, i) => (
+                    <i
+                      key={i}
+                      style={{ height: `${h}%` }}
+                      className={cn("flex-1 rounded-t-sm", i === 5 ? "bg-primary" : "bg-accent")}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-2.5">
+                <p className="text-[11px] font-semibold text-muted-foreground">Alertas de stock</p>
+                <Rows items={[["Coca-Cola 2.25L", "Sin stock"], ["Pan lactal", "Bajo"], ["Detergente", "Bajo"]]} />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-2">
+              <Kpi label="Ventas de hoy" value="$284.500" />
+              <Kpi label="Caja" value="Cuadra" />
+              <Kpi label="Stock bajo" value="3" />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="rounded-lg border border-border bg-card p-2.5">
+                <p className="text-[11px] font-semibold text-muted-foreground">Venta actual</p>
+                <Rows
+                  items={[
+                    ["Gaseosa cola 1.5L", "$2.200"],
+                    ["Alfajor triple x2", "$1.800"],
+                    ["Chicles menta", "$500"],
+                    ["Total", "$4.500"],
+                  ]}
+                />
+              </div>
+              <div className="rounded-lg border border-border bg-card p-2.5">
+                <p className="text-[11px] font-semibold text-muted-foreground">Quién te debe</p>
+                <Rows items={[["Carlos R.", "$9.800"], ["Diego M.", "$6.300"], ["Ana P.", "$2.100"]]} />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -90,51 +119,46 @@ export function Hero() {
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(var(--color-border)_1px,transparent_1.2px)] [background-size:18px_18px] [mask-image:linear-gradient(#000_40%,transparent)]"
         />
-        <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-24 lg:pt-20">
-          <div>
-            <p className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              Sistema de ventas, stock y caja
-            </p>
-            <h1 className="text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.4rem]">
-              Tu negocio entero, en <span className="text-primary">una sola pantalla</span>
-            </h1>
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pb-20 pt-14 text-center sm:px-6 sm:pt-20">
+          <p className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            Punto de venta para tu negocio
+          </p>
+          <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.4rem]">
+            Cobrás, y todo lo demás <span className="text-primary">se hace solo</span>
+          </h1>
 
-            <p
-              className="fx-up mt-6 max-w-md text-lg leading-relaxed text-muted-foreground"
-              style={{ animationDelay: "80ms" }}
-            >
-              Cobrá, controlá el stock, cerrá la caja y anotá el fiado. Todo se actualiza solo con cada
-              venta.
-            </p>
+          <p
+            className="fx-up mx-auto mt-6 max-w-md text-lg leading-relaxed text-muted-foreground"
+            style={{ animationDelay: "80ms" }}
+          >
+            Stock, caja y fiado se actualizan con cada venta. Empezás gratis, sin tarjeta.
+          </p>
 
-            <div
-              className="fx-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
-              style={{ animationDelay: "150ms" }}
-            >
-              <Link href="/registro">
-                <Button size="lg" variant="primary" className="w-full font-bold sm:w-auto">
-                  Empezar gratis
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <AnchorLink href="#como-funciona">
-                <Button size="lg" variant="heroGhost" className="w-full sm:w-auto">
-                  Ver cómo funciona
-                </Button>
-              </AnchorLink>
-            </div>
+          <div
+            className="fx-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center"
+            style={{ animationDelay: "150ms" }}
+          >
+            <Link href="/registro">
+              <Button size="lg" variant="primary" className="w-full font-bold sm:w-auto">
+                Empezar gratis
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <AnchorLink href="#como-funciona">
+              <Button size="lg" variant="heroGhost" className="w-full sm:w-auto">
+                Ver cómo funciona
+              </Button>
+            </AnchorLink>
           </div>
 
           <div
-            className="fx-up relative mx-auto w-full max-w-xl lg:max-w-none"
+            className="fx-up mt-10 max-h-[21rem] w-full max-w-3xl overflow-hidden [mask-image:linear-gradient(#000_70%,transparent)]"
             style={{ animationDelay: "240ms" }}
           >
-            <AppWindow />
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              Datos de ejemplo, no de un negocio real.
-            </p>
+            <AppWindow variant="venta" />
           </div>
+          <p className="mt-1 text-xs text-muted-foreground">Datos de ejemplo, no de un negocio real.</p>
         </div>
       </section>
 
