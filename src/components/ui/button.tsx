@@ -30,7 +30,7 @@ const variantClasses: Record<Variant, string> = {
   // por className, que no es confiable con clsx (sin tailwind-merge).
   gold: "bg-amber-500 text-amber-950 hover:bg-amber-400 shadow-sm shadow-amber-500/25",
   // Botón secundario sobre la portada y el cierre de la landing (claros u oscuros según el tema).
-  heroGhost: "border border-hero-line text-hero-foreground hover:border-hero-accent",
+  heroGhost: "border-2 border-hero-accent/60! bg-card/50 text-hero-foreground hover:border-hero-accent! hover:bg-card",
   violet: "bg-violet-500 text-white hover:bg-violet-400 shadow-sm shadow-violet-500/25",
 };
 
