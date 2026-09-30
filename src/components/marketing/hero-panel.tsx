@@ -306,17 +306,17 @@ export function HeroPanel() {
     const wait = (ms: number) => new Promise<void>((resolve) => timers.push(window.setTimeout(resolve, ms)));
     (async () => {
       setPh(0);
-      await wait(600);
+      await wait(300);
       setPh(1);
-      await wait(1100);
+      await wait(700);
       setPh(2);
-      await wait(220);
+      await wait(150);
       setPh(3);
-      await wait(1000);
+      await wait(800);
       setPh(4);
-      await wait(1800);
+      await wait(1000);
       setPh(5);
-      await wait(2600);
+      await wait(900);
       if (cancelled) return;
       setPh(0);
       setRuns((r) => r + 1);
@@ -531,7 +531,7 @@ export function HeroPanel() {
                         strokeDasharray: 1,
                         strokeDashoffset: shown >= 3 ? 0 : 1,
                         opacity: shown >= 3 ? 1 : 0,
-                        transition: shown >= 3 ? "stroke-dashoffset 900ms cubic-bezier(0.4, 0.1, 0.2, 1)" : "none",
+                        transition: shown >= 3 ? "stroke-dashoffset 800ms cubic-bezier(0.4, 0.1, 0.2, 1)" : "none",
                       }}
                     />
                   </g>
@@ -545,7 +545,7 @@ export function HeroPanel() {
                 className="pointer-events-none absolute left-0 top-0 z-[4] h-5 w-5 drop-shadow-md"
                 style={{
                   transform: `translate(${shown >= 1 ? geo.cursor.x : geo.start.x}px, ${shown >= 1 ? geo.cursor.y : geo.start.y}px)`,
-                  transition: "transform 1000ms cubic-bezier(0.4, 0.1, 0.2, 1), opacity 300ms",
+                  transition: "transform 700ms cubic-bezier(0.4, 0.1, 0.2, 1), opacity 300ms",
                   opacity: active && scene === "pos" && shown <= 4 ? 1 : 0,
                 }}
               >
