@@ -675,3 +675,26 @@ body {
     animation: none;
   }
 }
+
+/* Puntito que viaja por las líneas del panel de la portada (hero-panel.tsx). */
+@keyframes hp-dot {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+.hp-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary);
+  offset-rotate: 0deg;
+  pointer-events: none;
+  animation: hp-dot 900ms cubic-bezier(0.4, 0.1, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hp-dot { display: none; }
+}

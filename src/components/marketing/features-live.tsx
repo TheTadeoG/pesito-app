@@ -6,7 +6,7 @@ const ars = (n: number) => `$ ${Math.round(n).toLocaleString("es-AR")}`;
 
 // Las demos sólo corren mientras se ven en pantalla y sin movimiento reducido.
 // Sin eso (o sin JS) queda el estado final completo, que es lo que ven los buscadores.
-function useActive(ref: React.RefObject<HTMLElement | null>) {
+export function useActive(ref: React.RefObject<HTMLElement | null>) {
   const [active, setActive] = useState(false);
   useEffect(() => {
     const el = ref.current;
@@ -498,7 +498,7 @@ export function StockAlerts() {
 }
 
 // Cuenta hasta el nuevo valor en vez de saltar. Sin movimiento (o sin JS) el valor ya es el final.
-function useCountUp(target: number, ms = 500) {
+export function useCountUp(target: number, ms = 500) {
   const [value, setValue] = useState(target);
   const from = useRef(target);
   useEffect(() => {
