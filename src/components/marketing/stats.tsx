@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import { Receipt, ShoppingBag, Store } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { getLandingStats } from "@/lib/landing-stats";
 
 const numberFormatter = new Intl.NumberFormat("es-AR");
@@ -18,29 +16,20 @@ function formatRoundedCount(value: number) {
   return `+${numberFormatter.format(roundToStep(value, 10_000))}`;
 }
 
-// Montos grandes se muestran abreviados en millones ("+1025M") en vez del
-// número completo con todos los decimales — para un total en miles de
-// millones, sigue expresándose como millones (más legible que "1,025 mil M").
-function formatAbbreviatedAmount(value: number) {
+// Montos grandes se muestran en millones ("+$1.026" con la unidad "millones")
+// en vez del número completo — para un total en miles de millones, sigue
+// expresándose como millones (más legible que "1,025 mil M").
+function formatAbbreviatedAmount(value: number): { value: string; unit?: string } {
   if (value >= 1_000_000) {
-    return `+$${Math.round(value / 1_000_000)}M`;
+    return { value: `+$${numberFormatter.format(Math.round(value / 1_000_000))}`, unit: "millones" };
   }
-  return `+$${numberFormatter.format(roundToStep(value, 10_000))}`;
+  return { value: `+$${numberFormatter.format(roundToStep(value, 10_000))}` };
 }
 
-// Tailwind necesita ver la clase completa en el código para generarla —
-// de ahí el mapa en vez de armar `grid-cols-${n}` con un template string.
-const gridColsByCount: Record<number, string> = {
-  1: "sm:grid-cols-1",
-  2: "sm:grid-cols-2",
-  3: "sm:grid-cols-3",
-};
-
 interface Tile {
-  icon: typeof Store;
   label: ReactNode;
   value: string;
-  tone: string;
+  unit?: string;
 }
 
 export async function Stats() {
@@ -49,26 +38,20 @@ export async function Stats() {
   const tiles: Tile[] = (
     [
       stats.kioscos > 0 && {
-        icon: Store,
-        label: "Comercios usando Pesito",
+        label: "Negocios usando Pesito",
         value: `+${numberFormatter.format(stats.kioscos)}`,
-        tone: "text-foreground",
       },
       stats.ventas > 0 && {
-        icon: ShoppingBag,
         label: "Ventas registradas",
         value: formatRoundedCount(stats.ventas),
-        tone: "text-foreground",
       },
       stats.monto > 0 && {
-        icon: Receipt,
         label: (
           <>
             <span className="font-bold text-success">Pesitos</span> procesados
           </>
         ),
-        value: formatAbbreviatedAmount(stats.monto),
-        tone: "text-foreground",
+        ...formatAbbreviatedAmount(stats.monto),
       },
     ] as (Tile | false)[]
   ).filter((t): t is Tile => Boolean(t));
@@ -78,22 +61,21 @@ export async function Stats() {
   if (tiles.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <div
-        className={cn(
-          "grid gap-4 rounded-card border border-border bg-card p-6",
-          gridColsByCount[tiles.length]
-        )}
-      >
+    <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+      <div className="grid divide-y divide-border sm:grid-flow-col sm:auto-cols-fr sm:divide-x sm:divide-y-0">
         {tiles.map((tile) => (
-          <div key={tile.value} className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-              <tile.icon className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className={cn("truncate text-xl font-bold", tile.tone)}>{tile.value}</p>
-              <p className="truncate text-xs text-muted-foreground">{tile.label}</p>
-            </div>
+          <div
+            key={tile.value}
+            className="py-5 first:pt-0 last:pb-0 sm:px-8 sm:py-1 sm:first:pl-0 sm:last:pr-0"
+          >
+            <p className="text-4xl font-extrabold tracking-[-0.035em] tabular-nums text-foreground sm:text-5xl">
+              <span className="text-primary">{tile.value.charAt(0)}</span>
+              {tile.value.slice(1)}
+              {tile.unit && (
+                <span className="ml-1.5 text-xl font-bold tracking-normal sm:text-2xl">{tile.unit}</span>
+              )}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">{tile.label}</p>
           </div>
         ))}
       </div>
