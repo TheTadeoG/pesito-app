@@ -146,14 +146,14 @@ function CashColumn({ who, expected, bills, dropped, shake }: { who: string; exp
   return (
     <div key={String(shake)} className={`min-w-0 rounded-xl border border-border bg-card/80 p-3 text-center shadow-sm ${shake ? "shake-x" : ""}`}>
       <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Caja de {who}</p>
-      <div className="mt-2 grid grid-cols-2 gap-1">
+      <div className="mt-2 grid gap-1.5 sm:grid-cols-2 sm:gap-1">
         <div>
           <p className="text-[10px] text-muted-foreground">Esperado</p>
-          <p className="text-lg font-extrabold tracking-tight tabular-nums text-foreground sm:text-2xl">{ars(expected)}</p>
+          <p className="whitespace-nowrap text-lg font-extrabold tracking-tight tabular-nums text-foreground sm:text-2xl">{ars(expected)}</p>
         </div>
         <div>
           <p className="text-[10px] text-muted-foreground">Contado</p>
-          <p className="text-lg font-extrabold tracking-tight tabular-nums text-foreground sm:text-2xl">{ars(total)}</p>
+          <p className="whitespace-nowrap text-lg font-extrabold tracking-tight tabular-nums text-foreground sm:text-2xl">{ars(total)}</p>
         </div>
       </div>
       <div className="relative mx-auto mt-3 h-20 w-32">

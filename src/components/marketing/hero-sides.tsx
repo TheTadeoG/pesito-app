@@ -3,7 +3,6 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { BarChart3, Banknote, MessageCircle, Printer, Smartphone, TriangleAlert } from "lucide-react";
 import { useSale } from "@/components/marketing/hero-sale";
-import { useStaticHero } from "@/components/marketing/hero-static";
 import { cn } from "@/lib/utils";
 
 // Costados de la portada en pantallas anchas: al cobrar la venta del panel, seis
@@ -37,13 +36,11 @@ function Column({
   defs,
   lit,
   fire,
-  fixedDots,
 }: {
   side: "left" | "right";
   defs: NodeDef[];
   lit: number[];
   fire: number;
-  fixedDots: boolean;
 }) {
   const offset = side === "left" ? 0 : 3;
   const nodeX = side === "left" ? 100 : W - 100;
@@ -61,21 +58,8 @@ function Column({
       <svg className="absolute inset-0 h-full w-full overflow-visible">
         {defs.map((_, i) => {
           const y = NODE_Y[i] + 27;
-          const d =
-            side === "left"
-              ? `M${edgeX} ${EDGE_Y[i]} C ${(edgeX + nodeEdge) / 2} ${EDGE_Y[i]}, ${(edgeX + nodeEdge) / 2} ${y}, ${nodeEdge} ${y}`
-              : `M${edgeX} ${EDGE_Y[i]} C ${(edgeX + nodeEdge) / 2} ${EDGE_Y[i]}, ${(edgeX + nodeEdge) / 2} ${y}, ${nodeEdge} ${y}`;
-          return (
-            <g key={i}>
-              <path d={d} fill="none" strokeWidth={2} strokeDasharray="3 5" strokeLinecap="round" className="stroke-border" />
-              {fixedDots && (
-                <>
-                  <circle cx={edgeX} cy={EDGE_Y[i]} r={4.5} className="fill-primary" />
-                  <circle cx={nodeEdge} cy={y} r={4.5} className="fill-primary" />
-                </>
-              )}
-            </g>
-          );
+          const d = `M${edgeX} ${EDGE_Y[i]} C ${(edgeX + nodeEdge) / 2} ${EDGE_Y[i]}, ${(edgeX + nodeEdge) / 2} ${y}, ${nodeEdge} ${y}`;
+          return <path key={i} d={d} fill="none" strokeWidth={2} strokeDasharray="3 5" strokeLinecap="round" className="stroke-border" />;
         })}
       </svg>
       {fire > 0 &&
@@ -125,7 +109,6 @@ function Column({
 
 export function HeroSides() {
   const { fire } = useSale();
-  const fixedDots = useStaticHero();
   const [lit, setLit] = useState<number[]>([]);
 
   useEffect(() => {
@@ -140,8 +123,8 @@ export function HeroSides() {
 
   return (
     <>
-      <Column side="left" defs={LEFT} lit={lit} fire={fire} fixedDots={fixedDots} />
-      <Column side="right" defs={RIGHT} lit={lit} fire={fire} fixedDots={fixedDots} />
+      <Column side="left" defs={LEFT} lit={lit} fire={fire} />
+      <Column side="right" defs={RIGHT} lit={lit} fire={fire} />
     </>
   );
 }

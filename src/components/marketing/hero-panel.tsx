@@ -30,7 +30,6 @@ import {
   type SceneProps,
 } from "@/components/marketing/hero-panel-ui";
 import { useSale } from "@/components/marketing/hero-sale";
-import { useStaticHero } from "@/components/marketing/hero-static";
 import { cn } from "@/lib/utils";
 
 // Panel de la portada: el menú es el del sistema real. Sin JS, fuera de
@@ -272,8 +271,6 @@ const SCENES: Record<SceneId, ComponentType<SceneProps>> = {
 interface Geo {
   key: string;
   paths: string[];
-  ends: { x: number; y: number }[];
-  origin: { x: number; y: number };
   cursor: { x: number; y: number };
   start: { x: number; y: number };
 }
@@ -285,7 +282,6 @@ export function HeroPanel() {
   const btnEl = useRef<HTMLDivElement | null>(null);
   const targets = useRef<(HTMLElement | null)[]>([]);
   const { trigger: fireSale } = useSale();
-  const staticHero = useStaticHero();
   const inView = useActive(wrapRef);
   const [paused, setPaused] = useState(false);
   // Corre una sola vez apenas entra en pantalla y después queda quieta.
@@ -310,9 +306,9 @@ export function HeroPanel() {
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const id = window.setTimeout(() => setMode(reduced || staticHero ? "static" : "wait"), 0);
+    const id = window.setTimeout(() => setMode(reduced ? "static" : "wait"), 0);
     return () => window.clearTimeout(id);
-  }, [staticHero]);
+  }, []);
 
   useEffect(() => {
     const start = () => setArmed(true);
@@ -373,7 +369,6 @@ export function HeroPanel() {
     const k = m.width / main.offsetWidth || 1;
     const ax = (b.right - m.left) / k - 4;
     const ay = (b.top + b.height / 2 - m.top) / k;
-    const ends: { x: number; y: number }[] = [];
     const paths = targets.current
       .filter((el): el is HTMLElement => Boolean(el))
       .map((el) => {
@@ -381,14 +376,11 @@ export function HeroPanel() {
         const bx = (r.left - m.left) / k - 2;
         const by = (r.top + r.height / 2 - m.top) / k;
         const mx = (ax + bx) / 2;
-        ends.push({ x: bx, y: by });
         return `M${ax} ${ay} C ${mx} ${ay}, ${mx} ${by}, ${bx} ${by}`;
       });
     const next: Geo = {
       key: paths.join("|"),
       paths,
-      ends,
-      origin: { x: ax, y: ay },
       cursor: { x: (b.left - m.left + b.width * 0.55) / k, y: (b.top - m.top + b.height * 0.4) / k },
       start: { x: m.width / k - 60, y: (b.top - m.top) / k - 60 },
     };
@@ -574,14 +566,6 @@ export function HeroPanel() {
                   </g>
                 ))}
               </svg>
-              {staticHero && shown >= 3 && (
-                <svg aria-hidden className="pointer-events-none absolute inset-0 z-[3] h-full w-full overflow-visible">
-                  <circle cx={geo.origin.x} cy={geo.origin.y} r={4.5} className="fill-primary" />
-                  {geo.ends.map((e, i) => (
-                    <circle key={i} cx={e.x} cy={e.y} r={4.5} className="fill-primary" />
-                  ))}
-                </svg>
-              )}
               {active && shown === 3 &&
                 geo.paths.map((d, i) => <i key={`${sceneKey}-${i}`} className="hp-dot" style={{ offsetPath: `path('${d}')` }} />)}
               <svg
