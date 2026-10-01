@@ -187,12 +187,20 @@ export default function CompararPlanesPage() {
             <p className="max-w-md text-primary-foreground/85">
               Sin tarjeta y sin vencimiento. Y 14 días del Plan Pro de regalo para probar todo.
             </p>
-            <Link href="/registro">
-              <Button size="lg" variant="onColor">
-                Empezar gratis
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+              <Link href="/registro">
+                <Button size="lg" variant="onColor" className="w-full sm:w-auto">
+                  Empezar gratis
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link
+                href="/#precios"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-primary-foreground/60! px-6 text-base font-medium text-primary-foreground transition-colors hover:border-primary-foreground! hover:bg-primary-foreground/10"
+              >
+                Volver a los planes
+              </Link>
+            </div>
           </div>
         </div>
       </main>
