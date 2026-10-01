@@ -42,9 +42,9 @@ export function Hero() {
                 <ArrowRight className="h-[18px] w-[18px]" />
               </Button>
             </Link>
-            <AnchorLink href="#como-funciona">
+            <AnchorLink href="#funciones">
               <Button size="lg" variant="heroGhost" className="h-[54px] w-full px-8 text-[17px] sm:w-auto">
-                Ver cómo funciona
+                Ver qué hace Pesito
               </Button>
             </AnchorLink>
           </div>
