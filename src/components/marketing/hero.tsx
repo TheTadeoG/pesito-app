@@ -29,26 +29,44 @@ export function Hero() {
             className="fx-up mx-auto mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground"
             style={{ animationDelay: "80ms" }}
           >
-            Cobrá y todo lo demás se hace solo: stock, caja y fiado se actualizan con cada venta. Empezás
-            gratis, sin tarjeta.
+            Cobrá y todo lo demás se hace solo: stock, caja y fiado se actualizan con cada venta.
           </p>
 
           <div
-            className="fx-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center"
+            className="fx-up mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-center"
             style={{ animationDelay: "150ms" }}
           >
             <Link href="/registro">
-              <Button size="lg" variant="primary" className="w-full font-bold sm:w-auto">
+              <Button size="lg" variant="primary" className="h-[54px] w-full px-8 text-[17px] font-bold sm:w-auto">
                 Empezar gratis
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-[18px] w-[18px]" />
               </Button>
             </Link>
             <AnchorLink href="#como-funciona">
-              <Button size="lg" variant="heroGhost" className="w-full sm:w-auto">
+              <Button size="lg" variant="heroGhost" className="h-[54px] w-full px-8 text-[17px] sm:w-auto">
                 Ver cómo funciona
               </Button>
             </AnchorLink>
           </div>
+
+          <ul
+            className="fx-up mt-5 flex flex-wrap justify-center gap-x-6 gap-y-1.5 text-sm font-medium text-muted-foreground"
+            style={{ animationDelay: "190ms" }}
+          >
+            {trust.map((item) => (
+              <li key={item} className="flex items-center gap-1.5">
+                <span aria-hidden className="font-extrabold text-primary">
+                  ✓
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <p className="fx-up mt-2" style={{ animationDelay: "210ms" }}>
+            <AnchorLink href="#precios" className="text-sm font-medium text-primary hover:underline">
+              Ver qué incluye cada plan →
+            </AnchorLink>
+          </p>
 
           <SaleProvider>
             <div className="relative mt-10 w-full max-w-4xl">
@@ -64,27 +82,6 @@ export function Hero() {
           <p className="mt-2 text-xs text-muted-foreground">Tocá cualquier sección del menú para verla en acción. Datos de ejemplo, no de un negocio real.</p>
         </div>
       </section>
-
-      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
-        <ul className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm font-medium text-foreground">
-          {trust.map((item) => (
-            <li key={item} className="flex items-center gap-2">
-              <span aria-hidden className="font-extrabold text-primary">
-                ✓
-              </span>
-              {item}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-center">
-          <AnchorLink
-            href="#precios"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Ver qué incluye cada plan →
-          </AnchorLink>
-        </p>
-      </div>
     </>
   );
 }
