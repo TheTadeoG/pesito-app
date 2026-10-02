@@ -115,7 +115,7 @@ export function Pricing() {
           <span
             className={cn(
               "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-              annual ? "bg-white/20" : "bg-success-bg text-success"
+              annual ? "bg-white/10" : "bg-success-bg text-success"
             )}
           >
             -20%

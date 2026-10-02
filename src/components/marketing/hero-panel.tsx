@@ -447,7 +447,7 @@ export function HeroPanel() {
     <div
       ref={innerRef}
       className="@container"
-      style={scaled ? { width: DESIGN_WIDTH, transform: `scale(${fit.scale})`, transformOrigin: "top left" } : { minWidth: DESIGN_WIDTH }}
+      style={scaled ? { width: DESIGN_WIDTH, transform: `scale(${fit.scale})`, transformOrigin: "top left", "--hp-min": `${24 / fit.scale}px` } as React.CSSProperties : { minWidth: DESIGN_WIDTH }}
     >
     <div
       className="relative overflow-hidden rounded-t-2xl border border-b-0 border-border bg-background text-left text-xs text-foreground shadow-2xl shadow-black/20 @xl:grid @xl:grid-cols-[11.5rem_1fr]"
@@ -472,7 +472,7 @@ export function HeroPanel() {
               const cls = "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-[12.5px] font-medium";
               if (!isScene(item.id)) {
                 return (
-                  <span key={item.id} className={cn(cls, "text-sidebar-foreground/70")}>
+                  <span key={item.id} className={cn(cls, "text-muted-foreground")}>
                     <Icon className="h-[15px] w-[15px] shrink-0" />
                     {item.label}
                   </span>
@@ -487,7 +487,7 @@ export function HeroPanel() {
                   aria-current={on ? "page" : undefined}
                   className={cn(
                     cls,
-                    "cursor-pointer transition-colors",
+                    "min-h-[var(--hp-min,0px)] cursor-pointer transition-colors",
                     on
                       ? "bg-sidebar-active-bg font-bold text-sidebar-active-foreground"
                       : "text-sidebar-foreground hover:bg-muted hover:text-foreground"
@@ -505,13 +505,13 @@ export function HeroPanel() {
       <div className="min-w-0">
         <div ref={mainRef} className="relative min-h-[27rem] px-4 pb-5 pt-3.5">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h3 className="text-[15px] font-bold">{TITLES[scene]}</h3>
+            <p className="text-[15px] font-bold">{TITLES[scene]}</p>
             <div className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
               {!auto && (
                 <button
                   type="button"
                   onClick={replay}
-                  className="rounded-full border border-border px-2.5 py-0.5 font-semibold hover:text-foreground"
+                  className="min-h-[var(--hp-min,0px)] rounded-full border border-border px-2.5 py-0.5 font-semibold hover:text-foreground"
                 >
                   Volver a la venta
                 </button>
@@ -521,7 +521,7 @@ export function HeroPanel() {
                   type="button"
                   onClick={replay}
                   aria-label="Repetir animación"
-                  className="flex h-6 w-6 items-center justify-center rounded-full border border-border hover:text-foreground"
+                  className="flex h-6 min-h-[var(--hp-min,0px)] w-6 min-w-[var(--hp-min,0px)] items-center justify-center rounded-full border border-border hover:text-foreground"
                 >
                   <RotateCcw className="h-3 w-3" />
                 </button>
@@ -530,7 +530,7 @@ export function HeroPanel() {
                   type="button"
                   onClick={() => setPaused((p) => !p)}
                   aria-label={paused ? "Reanudar animación" : "Pausar animación"}
-                  className="flex h-6 w-6 items-center justify-center rounded-full border border-border hover:text-foreground"
+                  className="flex h-6 min-h-[var(--hp-min,0px)] w-6 min-w-[var(--hp-min,0px)] items-center justify-center rounded-full border border-border hover:text-foreground"
                 >
                   {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
                 </button>

@@ -8,20 +8,20 @@
   --color-card-foreground: #14181a;
   --color-border: #e6e8e6;
 
-  --color-primary: #059669;
-  --color-primary-hover: #047857;
+  --color-primary: #047857;
+  --color-primary-hover: #065f46;
   --color-primary-foreground: #ffffff;
 
   --color-secondary: #eef1ef;
   --color-secondary-foreground: #374151;
 
   --color-muted: #f2f3f1;
-  --color-muted-foreground: #6b7280;
+  --color-muted-foreground: #5b6370;
 
   --color-accent: #d6f3e3;
   --color-accent-foreground: #047857;
 
-  --color-success: #16a34a;
+  --color-success: #15803d;
   --color-success-bg: #dcfce7;
   --color-warning: #b45309;
   --color-warning-bg: #fef3c7;
@@ -48,7 +48,7 @@
   --wa-out: #d9fdd3;
   --wa-in: #ffffff;
   --wa-text: #111b21;
-  --wa-meta: #667781;
+  --wa-meta: #55656e;
   --wa-tag: #047857;
   --wa-bar: #f0f0f0;
   --wa-input: #ffffff;

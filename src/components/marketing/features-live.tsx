@@ -282,7 +282,7 @@ export function OrderChat() {
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-[11px] font-extrabold">DN</span>
           <span className="leading-tight">
             <span className="block text-sm font-semibold">Distribuidora Norte</span>
-            <span className="block text-[10px] text-white/80">{step === 3 ? "escribiendo…" : "en línea"}</span>
+            <span className="block text-[10px] text-white/90">{step === 3 ? "escribiendo…" : "en línea"}</span>
           </span>
         </div>
         <div className="flex flex-1 flex-col justify-end gap-1.5 bg-[radial-gradient(var(--wa-dot)_1px,transparent_1px)] [background-size:14px_14px] p-2.5">

@@ -123,7 +123,7 @@ export function Comparison() {
                       {col.label}
                     </span>
                     <span className="mt-1 block text-xs text-muted-foreground">{col.price}</span>
-                    <span className="block text-[11px] text-muted-foreground/70">
+                    <span className="block text-[11px] text-muted-foreground">
                       {col.priceSub}
                     </span>
                   </th>

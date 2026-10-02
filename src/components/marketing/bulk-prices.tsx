@@ -29,7 +29,7 @@ export function BulkPrices() {
           <h2 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] sm:text-5xl">
             ¿Te aumentó el proveedor? <span className="text-emerald-200">Actualizás todo en segundos</span>
           </h2>
-          <p className="mt-4 text-lg text-white/80">
+          <p className="mt-4 text-lg text-white/90">
             Elegís el proveedor o la marca, ponés el porcentaje y Pesito actualiza
             los precios o los costos de todos sus productos de una vez. Nada de
             cambiar uno por uno.
