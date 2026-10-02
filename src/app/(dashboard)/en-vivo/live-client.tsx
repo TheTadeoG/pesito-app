@@ -50,6 +50,7 @@ interface BranchMember {
   label: string;
   salesCount: number;
   salesTotal: number;
+  salesProfit: number | null;
   lastSaleAt: string | null;
   openRegister: LiveOpenRegister | null;
   closedRegisters: LiveClosedRegister[];
@@ -60,6 +61,7 @@ interface BranchView {
   name: string;
   count: number;
   total: number;
+  profit: number | null;
   yesterdayTotal: number | null;
   openRegisters: number;
   members: BranchMember[];
@@ -145,6 +147,7 @@ export function LiveClient({
           name: orgName,
           count: data.today.count,
           total: data.today.total,
+          profit: data.today.profit ?? null,
           yesterdayTotal: data.yesterday_same_time.total,
           openRegisters: data.members.filter((m) => m.open_register).length,
           members: data.members.map((m) => ({
@@ -152,6 +155,7 @@ export function LiveClient({
             label: labelFor(m),
             salesCount: m.sales_count,
             salesTotal: Number(m.sales_total),
+            salesProfit: m.sales_profit === undefined ? null : Number(m.sales_profit),
             lastSaleAt: m.last_sale_at,
             openRegister: m.open_register,
             closedRegisters: m.closed_today,
@@ -178,6 +182,7 @@ export function LiveClient({
           label: labelFor(m),
           salesCount: sold?.count ?? 0,
           salesTotal: Number(sold?.total ?? 0),
+          salesProfit: sold?.profit === undefined ? (sold ? null : 0) : Number(sold.profit),
           lastSaleAt: sold?.last_sale_at ?? null,
           openRegister: open,
           closedRegisters: closed,
@@ -193,6 +198,7 @@ export function LiveClient({
         name: b.name,
         count: b.count,
         total: Number(b.total),
+        profit: b.profit === undefined ? null : Number(b.profit),
         yesterdayTotal: Number(b.yesterday_total),
         openRegisters: b.open_registers,
         members,
@@ -237,10 +243,19 @@ export function LiveClient({
       {/* 1. Negocio */}
       <section className="space-y-3">
         <SectionTitle icon={Building2}>{orgName}</SectionTitle>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <Stat label="Vendido hoy" value={formatCurrency(data.today.total)}>
             <Delta pct={businessDelta} />
           </Stat>
+          {data.today.profit !== undefined && (
+            <Stat label="Ganado hoy" value={formatCurrency(data.today.profit)}>
+              <span className="text-muted-foreground">
+                {data.today.total > 0
+                  ? `${Math.round((data.today.profit / data.today.total) * 100)}% de lo vendido · estimada`
+                  : "Ganancia estimada (venta menos costo)"}
+              </span>
+            </Stat>
+          )}
           <Stat label="Ventas" value={String(data.today.count)}>
             <span className="text-muted-foreground">
               Ayer a esta hora: {data.yesterday_same_time.count}
@@ -413,6 +428,11 @@ function BranchCard({
           </div>
           <div className="text-right">
             <p className="text-xl font-bold text-foreground">{formatCurrency(branch.total)}</p>
+            {branch.profit !== null && (
+              <p className="text-xs font-medium text-success">
+                Ganó {formatCurrency(branch.profit)}
+              </p>
+            )}
             <p className="text-xs">
               <Delta pct={pct} />
             </p>
@@ -466,6 +486,11 @@ function SellerRow({ seller, now }: { seller: BranchMember; now: number }) {
         </div>
         <div className="text-right">
           <p className="text-lg font-semibold text-foreground">{formatCurrency(seller.salesTotal)}</p>
+          {seller.salesProfit !== null && (
+            <p className="text-xs font-medium text-success">
+              Ganó {formatCurrency(seller.salesProfit)}
+            </p>
+          )}
           <p className="text-xs text-muted-foreground">
             {seller.salesCount} {seller.salesCount === 1 ? "venta" : "ventas"} hoy
             {seller.lastSaleAt && ` · última ${agoLabel(seller.lastSaleAt, now)}`}
@@ -486,6 +511,7 @@ function SellerRow({ seller, now }: { seller: BranchMember; now: number }) {
                       open.sales_count === 1 ? "venta" : "ventas"
                     }`
                   : null,
+                open.sales_profit !== undefined ? `ganó ${formatCurrency(Number(open.sales_profit))}` : null,
               ]}
             />
           )}
@@ -502,6 +528,7 @@ function SellerRow({ seller, now }: { seller: BranchMember; now: number }) {
                         c.sales_count === 1 ? "venta" : "ventas"
                       }`
                     : null,
+                  c.sales_profit !== undefined ? `ganó ${formatCurrency(Number(c.sales_profit))}` : null,
                   diff < 0
                     ? `faltante de ${formatCurrency(-diff)}`
                     : diff > 0

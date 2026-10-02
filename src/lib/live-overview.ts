@@ -8,6 +8,8 @@ export interface LiveBranch {
   is_main: boolean;
   count: number;
   total: number;
+  // Desde 0055: ganancia estimada de hoy (igual en todos los "profit").
+  profit?: number;
   yesterday_total: number;
   open_registers: number;
   by_hour: number[];
@@ -22,6 +24,7 @@ export interface LiveOpenRegister {
   // Desde 0044: lo vendido en esta caja.
   sales_count?: number;
   sales_total?: number;
+  sales_profit?: number;
 }
 
 export interface LiveClosedRegister {
@@ -34,6 +37,7 @@ export interface LiveClosedRegister {
   closing_amount?: number | null;
   sales_count?: number;
   sales_total?: number;
+  sales_profit?: number;
 }
 
 export interface LiveMember {
@@ -44,11 +48,12 @@ export interface LiveMember {
   role: "owner" | "admin" | "vendedor";
   sales_count: number;
   sales_total: number;
+  sales_profit?: number;
   last_sale_at: string | null;
   open_register: LiveOpenRegister | null;
   closed_today: LiveClosedRegister[];
   // Con sucursales: lo vendido hoy en cada una (branch_id -> totales).
-  by_branch?: Record<string, { count: number; total: number; last_sale_at: string }>;
+  by_branch?: Record<string, { count: number; total: number; profit?: number; last_sale_at: string }>;
 }
 
 export interface LiveSale {
@@ -63,7 +68,7 @@ export interface LiveSale {
 
 export interface LiveOverview {
   generated_at: string;
-  today: { count: number; total: number };
+  today: { count: number; total: number; profit?: number };
   yesterday_same_time: { count: number; total: number };
   by_hour: number[];
   // Sin la migración 0043 no viene.
