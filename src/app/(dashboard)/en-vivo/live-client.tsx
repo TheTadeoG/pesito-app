@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart } from "@/components/dashboard/bar-chart";
 import { paymentLabels } from "@/lib/payment-labels";
-import { cn, formatCurrency, formatTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDateTime, formatTime } from "@/lib/utils";
 import {
   parseLiveOverview,
   type LiveClosedRegister,
@@ -37,6 +37,32 @@ function durationLabel(iso: string, now: number) {
   const m = minutesAgo(iso, now);
   if (m < 60) return `${m} min`;
   return `${Math.floor(m / 60)} h ${m % 60} min`;
+}
+
+const dayKey = (value: string | number) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date(value));
+
+/** Detalle de ventas de una caja: el turno completo y, si arrancó antes de hoy, lo de hoy. */
+function registerSalesDetail(
+  r: LiveOpenRegister | LiveClosedRegister,
+  now: number
+): (string | null)[] {
+  if (r.sales_total === undefined) return [];
+  const count = r.sales_count ?? 0;
+  const turno = `${formatCurrency(Number(r.sales_total))} en ${count} ${count === 1 ? "venta" : "ventas"}`;
+  const profit = r.sales_profit !== undefined ? `ganó ${formatCurrency(Number(r.sales_profit))}` : null;
+  const startedBefore = r.opened_at !== undefined && dayKey(r.opened_at) !== dayKey(now);
+  if (!startedBefore) return [`vendió ${turno}`, profit];
+  const hoyCount = r.today_count ?? 0;
+  return [
+    `en el turno vendió ${turno}`,
+    profit,
+    r.today_total !== undefined
+      ? `de eso hoy: ${formatCurrency(Number(r.today_total))} en ${hoyCount} ${hoyCount === 1 ? "venta" : "ventas"}${
+          r.today_profit !== undefined ? `, ganó ${formatCurrency(Number(r.today_profit))}` : ""
+        }`
+      : null,
+  ];
 }
 
 function deltaPct(today: number, yesterday: number) {
@@ -503,15 +529,12 @@ function SellerRow({ seller, now }: { seller: BranchMember; now: number }) {
           {open && (
             <CajaLine
               tone="open"
-              title={`Caja abierta hace ${durationLabel(open.opened_at, now)}`}
+              title={`Caja abierta hace ${durationLabel(open.opened_at, now)}${
+                dayKey(open.opened_at) !== dayKey(now) ? ` (desde ${formatDateTime(open.opened_at)})` : ""
+              }`}
               detail={[
                 open.cash !== null ? `${formatCurrency(Number(open.cash))} en caja` : null,
-                open.sales_total !== undefined
-                  ? `vendió ${formatCurrency(Number(open.sales_total))} en ${open.sales_count} ${
-                      open.sales_count === 1 ? "venta" : "ventas"
-                    }`
-                  : null,
-                open.sales_profit !== undefined ? `ganó ${formatCurrency(Number(open.sales_profit))}` : null,
+                ...registerSalesDetail(open, now),
               ]}
             />
           )}
@@ -521,14 +544,13 @@ function SellerRow({ seller, now }: { seller: BranchMember; now: number }) {
               <CajaLine
                 key={c.id ?? i}
                 tone={diff < 0 ? "danger" : "closed"}
-                title={`Caja cerrada ${c.opened_at ? `${formatTime(c.opened_at)}–` : "a las "}${formatTime(c.closed_at)}`}
+                title={`Caja cerrada ${
+                  c.opened_at
+                    ? `${dayKey(c.opened_at) !== dayKey(now) ? formatDateTime(c.opened_at) : formatTime(c.opened_at)}–`
+                    : "a las "
+                }${formatTime(c.closed_at)}`}
                 detail={[
-                  c.sales_total !== undefined
-                    ? `vendió ${formatCurrency(Number(c.sales_total))} en ${c.sales_count} ${
-                        c.sales_count === 1 ? "venta" : "ventas"
-                      }`
-                    : null,
-                  c.sales_profit !== undefined ? `ganó ${formatCurrency(Number(c.sales_profit))}` : null,
+                  ...registerSalesDetail(c, now),
                   diff < 0
                     ? `faltante de ${formatCurrency(-diff)}`
                     : diff > 0

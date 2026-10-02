@@ -53,7 +53,13 @@ begin
     select s.cash_register_id, count(*) as sales_count, sum(s.total) as sales_total,
       sum(s.total - coalesce((select sum(si.quantity * coalesce(p.cost, 0))
         from sale_items si left join products p on p.id = si.product_id
-        where si.sale_id = s.id), 0)) as sales_profit
+        where si.sale_id = s.id), 0)) as sales_profit,
+      -- Lo mismo, pero sólo lo vendido hoy (para cajas abiertas desde antes).
+      count(*) filter (where s.created_at >= v_today) as today_count,
+      coalesce(sum(s.total) filter (where s.created_at >= v_today), 0) as today_total,
+      coalesce(sum(s.total - coalesce((select sum(si.quantity * coalesce(p.cost, 0))
+        from sale_items si left join products p on p.id = si.product_id
+        where si.sale_id = s.id), 0)) filter (where s.created_at >= v_today), 0) as today_profit
     from sales s
     where s.cash_register_id in (select id from registers)
       and s.status = 'completada'
@@ -92,7 +98,10 @@ begin
           'cash', oc.cash,
           'sales_count', coalesce(rs.sales_count, 0),
           'sales_total', coalesce(rs.sales_total, 0),
-          'sales_profit', coalesce(rs.sales_profit, 0)
+          'sales_profit', coalesce(rs.sales_profit, 0),
+          'today_count', coalesce(rs.today_count, 0),
+          'today_total', coalesce(rs.today_total, 0),
+          'today_profit', coalesce(rs.today_profit, 0)
         )
         from registers r
         left join open_cash oc on oc.cash_register_id = r.id
@@ -111,7 +120,10 @@ begin
           'difference', coalesce(r.closing_amount, 0) - coalesce(r.expected_amount, 0),
           'sales_count', coalesce(rs.sales_count, 0),
           'sales_total', coalesce(rs.sales_total, 0),
-          'sales_profit', coalesce(rs.sales_profit, 0)
+          'sales_profit', coalesce(rs.sales_profit, 0),
+          'today_count', coalesce(rs.today_count, 0),
+          'today_total', coalesce(rs.today_total, 0),
+          'today_profit', coalesce(rs.today_profit, 0)
         ) order by r.closed_at)
         from registers r
         left join register_sales rs on rs.cash_register_id = r.id

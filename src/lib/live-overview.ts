@@ -25,6 +25,10 @@ export interface LiveOpenRegister {
   sales_count?: number;
   sales_total?: number;
   sales_profit?: number;
+  // Desde 0055: la parte del turno vendida hoy.
+  today_count?: number;
+  today_total?: number;
+  today_profit?: number;
 }
 
 export interface LiveClosedRegister {
@@ -38,6 +42,10 @@ export interface LiveClosedRegister {
   sales_count?: number;
   sales_total?: number;
   sales_profit?: number;
+  // Desde 0055: la parte del turno vendida hoy.
+  today_count?: number;
+  today_total?: number;
+  today_profit?: number;
 }
 
 export interface LiveMember {
