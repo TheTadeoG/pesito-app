@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
@@ -69,9 +70,14 @@ export function ProveedoresClient({
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [paying, setPaying] = useState<Supplier | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const allItems = useMemo(() => rows.flatMap((r) => r.items), [rows]);
   const totals = useMemo(() => totalsOf(allItems), [allItems]);
+  const debtors = useMemo(
+    () => rows.filter((r) => r.balance > 0).sort((a, b) => b.balance - a.balance),
+    [rows]
+  );
   const debtorsCount = rows.filter((r) => r.items.length > 0).length;
   const upcoming = useMemo(() => nextDue(allItems), [allItems]);
   const overdueSuppliers = useMemo(
@@ -138,6 +144,13 @@ export function ProveedoresClient({
     [rows, todayKey]
   );
 
+  // "Registrar pago" de la barra de arriba: con un solo deudor va directo, con
+  // varios se elige a quién.
+  function startPayment() {
+    if (debtors.length === 1) setPaying(debtors[0]);
+    else setPickerOpen(true);
+  }
+
   async function handleDelete(supplier: Supplier) {
     if (!confirm(`¿Borrar a "${supplier.name}"?`)) return;
     setBusyId(supplier.id);
@@ -185,6 +198,47 @@ export function ProveedoresClient({
 
   return (
     <div className="space-y-3">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+        <div className="relative w-full lg:max-w-sm">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre o contacto…"
+            aria-label="Buscar proveedor"
+            className="pl-10"
+          />
+        </div>
+        <Select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          aria-label="Ordenar proveedores"
+          className="lg:w-52"
+        >
+          {accountsEnabled && <option value="urgency">Ordenar por vencimiento</option>}
+          {accountsEnabled && <option value="debt">Mayor deuda primero</option>}
+          <option value="name">Ordenar por nombre</option>
+          <option value="last">Última compra</option>
+        </Select>
+        <div className="flex flex-col gap-2 sm:flex-row lg:ml-auto">
+          {accountsEnabled && debtors.length > 0 && (
+            <Button variant="outline" onClick={startPayment}>
+              <Wallet className="h-4 w-4" />
+              Registrar pago
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo proveedor
+          </Button>
+        </div>
+      </div>
+
       {accountsEnabled ? (
         <div className="grid gap-3 lg:grid-cols-[1.7fr_1fr_1fr]">
           <Card>
@@ -434,40 +488,6 @@ export function ProveedoresClient({
         )}
       </div>
 
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <div className="relative w-full lg:max-w-xs">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre o contacto…"
-            aria-label="Buscar proveedor"
-            className="pl-10"
-          />
-        </div>
-        <Select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
-          aria-label="Ordenar proveedores"
-          className="lg:w-52"
-        >
-          {accountsEnabled && <option value="urgency">Ordenar por vencimiento</option>}
-          {accountsEnabled && <option value="debt">Mayor deuda primero</option>}
-          <option value="name">Ordenar por nombre</option>
-          <option value="last">Última compra</option>
-        </Select>
-        <Button
-          className="lg:ml-auto"
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo proveedor
-        </Button>
-      </div>
-
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
         <Card>
           <CardContent className="p-0">
@@ -690,6 +710,41 @@ export function ProveedoresClient({
         onClose={() => setFormOpen(false)}
         supplier={editing}
       />
+      <Dialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title="¿A quién le pagás?"
+        description="Elegí el proveedor al que le vas a registrar el pago."
+      >
+        <div className="divide-y divide-border rounded-xl border border-border">
+          {debtors.map((s) => {
+            const summary = debtSummary(s.items);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => {
+                  setPickerOpen(false);
+                  setPaying(s);
+                }}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-foreground">{s.name}</span>
+                  {summary && (
+                    <span className={cn("block truncate text-xs", TONE_TEXT[summary.tone])}>
+                      {summary.headline}
+                    </span>
+                  )}
+                </span>
+                <span className="shrink-0 text-base font-bold text-warning">
+                  {formatCurrency(s.balance)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Dialog>
       <SupplierPaymentDialog
         supplier={paying}
         onClose={() => setPaying(null)}
