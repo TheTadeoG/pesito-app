@@ -23,7 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { addDays, dayKey } from "@/lib/supplier-debt";
 import { useToast } from "@/components/toast/toast-provider";
 import {
   registerPurchase,
@@ -167,6 +168,10 @@ export function ComprasClient({
     for (const name of customPaymentMethods) initial[name] = "";
     return initial;
   });
+  // Vencimiento de lo que queda a cuenta: días desde hoy, fecha elegida o ninguno.
+  const [dueMode, setDueMode] = useState<"none" | "7" | "15" | "30" | "custom">("none");
+  const [dueCustom, setDueCustom] = useState("");
+  const [todayKey] = useState(() => dayKey(Date.now()));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [browseProducts, setBrowseProducts] = useState(false);
@@ -216,6 +221,12 @@ export function ComprasClient({
       : [];
   const accountAmount = payments.find((p) => p.method === "cuenta_corriente")?.amount ?? 0;
   const paidNow = total - accountAmount;
+  const dueDate =
+    accountAmount <= 0 || dueMode === "none"
+      ? null
+      : dueMode === "custom"
+        ? dueCustom || null
+        : addDays(todayKey, Number(dueMode));
   const paymentsValid = splitPayment
     ? mixedEntries.length > 0 && Math.abs(mixedRemaining) < 0.01
     : Boolean(singleMethod);
@@ -454,6 +465,8 @@ export function ComprasClient({
   function resetPayment() {
     setSplitPayment(false);
     setSingleMethod(null);
+    setDueMode("none");
+    setDueCustom("");
     setMixedAmounts({ efectivo: "", tarjeta: "", transferencia: "", qr: "", cuenta_corriente: "" });
   }
 
@@ -541,6 +554,7 @@ export function ComprasClient({
       items,
       payments,
       priceUpdates: changedPrices,
+      dueDate,
     });
 
     setPending(false);
@@ -560,7 +574,11 @@ export function ComprasClient({
             `${formatCurrency(total)} a cuenta corriente · ${itemCount} unidades`
           : `${formatCurrency(total)} · ${formatCurrency(accountAmount)} a cuenta corriente`
     );
-    if (result.priceUpdateErrors) {
+    if (result.dueDateError) {
+      setError(
+        "La compra se registró, pero no pudimos guardar el vencimiento. Podés asignarlo desde el calendario de Proveedores."
+      );
+    } else if (result.priceUpdateErrors) {
       setError(
         `La compra se registró, pero no pudimos actualizar ${result.priceUpdateErrors} precio${result.priceUpdateErrors === 1 ? "" : "s"} de venta. Cambialo${result.priceUpdateErrors === 1 ? "" : "s"} desde Productos.`
       );
@@ -1092,6 +1110,52 @@ export function ComprasClient({
                     <span className="text-base font-semibold text-warning">
                       {formatCurrency(accountAmount)}
                     </span>
+                  </div>
+                  <div className="border-t border-border pt-2">
+                    <p className="text-sm text-muted-foreground">
+                      ¿Cuándo vence? <span className="text-xs">(opcional)</span>
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {(
+                        [
+                          ["7", "A 7 días"],
+                          ["15", "A 15 días"],
+                          ["30", "A 30 días"],
+                          ["custom", "Elegir fecha"],
+                          ["none", "Sin fecha"],
+                        ] as const
+                      ).map(([mode, label]) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          aria-pressed={dueMode === mode}
+                          onClick={() => setDueMode(mode)}
+                          className={cn(
+                            "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                            dueMode === mode
+                              ? "border-primary bg-accent text-accent-foreground"
+                              : "border-border text-muted-foreground hover:bg-muted"
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    {dueMode === "custom" && (
+                      <Input
+                        type="date"
+                        value={dueCustom}
+                        min={todayKey}
+                        onChange={(e) => setDueCustom(e.target.value)}
+                        className="mt-2"
+                        aria-label="Fecha de vencimiento"
+                      />
+                    )}
+                    {dueDate && (
+                      <p className="mt-1.5 text-xs text-muted-foreground">
+                        {`Vence el ${formatDate(`${dueDate}T12:00:00-03:00`)}`}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

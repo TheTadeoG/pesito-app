@@ -531,6 +531,8 @@ export interface Database {
           lead_time_days?: number | null;
           /** Monto mínimo de pedido en pesos (0054). undefined si falta la migración. */
           min_order_amount?: number | null;
+          /** Días de entrega, 0 = lunes ... 6 = domingo (0056). undefined si falta la migración. */
+          delivery_days?: number[];
           created_at: string;
         };
         Insert: {
@@ -543,6 +545,7 @@ export interface Database {
           balance?: number;
           lead_time_days?: number | null;
           min_order_amount?: number | null;
+          delivery_days?: number[];
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;
@@ -563,6 +566,8 @@ export interface Database {
           payment_method: "efectivo" | "tarjeta" | "transferencia" | "qr" | null;
           created_at: string;
           branch_id: string | null;
+          /** Vencimiento de lo que quedó a cuenta (0056). undefined si falta la migración. */
+          due_date?: string | null;
         };
         Insert: {
           id?: string;
@@ -578,6 +583,7 @@ export interface Database {
           payment_method?: "efectivo" | "tarjeta" | "transferencia" | "qr" | null;
           created_at?: string;
           branch_id?: string | null;
+          due_date?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["purchases"]["Insert"]>;
         Relationships: [];
@@ -929,6 +935,10 @@ export interface Database {
           cash_purchases: number;
           payment_breakdown: Json;
         }[];
+      };
+      set_purchase_due_date: {
+        Args: { p_purchase_id: string; p_due_date: string | null };
+        Returns: undefined;
       };
       live_overview: {
         Args: { p_org_id: string };

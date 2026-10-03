@@ -5,8 +5,11 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { saveSupplier, type SupplierFormInput } from "@/app/(dashboard)/proveedores/actions";
 import type { Supplier } from "@/lib/types";
+
+const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 interface SupplierFormProps {
   open: boolean;
@@ -30,6 +33,7 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
       ? String(supplier.min_order_amount)
       : ""
   );
+  const [deliveryDays, setDeliveryDays] = useState<number[]>(supplier?.delivery_days ?? []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +52,8 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
       hadLeadTime: supplier?.lead_time_days !== null && supplier?.lead_time_days !== undefined,
       minOrderAmount,
       hadMinOrder: supplier?.min_order_amount !== null && supplier?.min_order_amount !== undefined,
+      deliveryDays,
+      hadDeliveryDays: (supplier?.delivery_days?.length ?? 0) > 0,
     };
 
     const result = await saveSupplier(input);
@@ -90,6 +96,38 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+        </div>
+
+        <div>
+          <Label>Días de entrega (opcional)</Label>
+          <div className="mt-1.5 flex flex-wrap gap-1.5" role="group" aria-label="Días de entrega">
+            {WEEKDAYS.map((label, day) => {
+              const on = deliveryDays.includes(day);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() =>
+                    setDeliveryDays((current) =>
+                      on ? current.filter((d) => d !== day) : [...current, day]
+                    )
+                  }
+                  className={cn(
+                    "h-9 min-w-12 rounded-lg border px-3 text-sm font-medium transition-colors",
+                    on
+                      ? "border-primary bg-accent text-accent-foreground"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Los días en que el proveedor entrega. Aparecen en el calendario de Proveedores.
+          </p>
         </div>
 
         <div>

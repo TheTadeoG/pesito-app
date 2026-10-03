@@ -23,6 +23,10 @@ export interface SupplierFormInput {
   minOrderAmount: string;
   /** Ya tenía un mínimo cargado (para poder borrarlo). */
   hadMinOrder: boolean;
+  /** Días de entrega: 0 = lunes ... 6 = domingo. */
+  deliveryDays: number[];
+  /** Ya tenía días de entrega cargados (para poder borrarlos). */
+  hadDeliveryDays: boolean;
 }
 
 export async function saveSupplier(input: SupplierFormInput): Promise<ActionState> {
@@ -49,6 +53,12 @@ export async function saveSupplier(input: SupplierFormInput): Promise<ActionStat
     return { error: "El pedido mínimo tiene que ser un monto válido." };
   }
 
+  // Días de entrega (0056): mismo criterio, sólo se manda con valores o al borrarlos.
+  const deliveryDays = Array.from(new Set(input.deliveryDays)).sort((a, b) => a - b);
+  if (deliveryDays.some((d) => !Number.isInteger(d) || d < 0 || d > 6)) {
+    return { error: "Los días de entrega no son válidos." };
+  }
+
   const payload = {
     org_id: organization.id,
     name: input.name.trim(),
@@ -57,6 +67,7 @@ export async function saveSupplier(input: SupplierFormInput): Promise<ActionStat
     notes: input.notes.trim() || null,
     ...(leadTimeDays !== null || input.hadLeadTime ? { lead_time_days: leadTimeDays } : {}),
     ...(minOrderAmount !== null || input.hadMinOrder ? { min_order_amount: minOrderAmount } : {}),
+    ...(deliveryDays.length > 0 || input.hadDeliveryDays ? { delivery_days: deliveryDays } : {}),
   };
 
   if (input.id) {
@@ -123,5 +134,26 @@ export async function registerSupplierPayment(
   revalidatePath("/proveedores");
   revalidatePath("/compras");
   revalidatePath("/caja");
+  return {};
+}
+
+/** Carga o cambia el vencimiento de una compra a cuenta (null = sin fecha). */
+export async function setPurchaseDueDate(
+  purchaseId: string,
+  dueDate: string | null
+): Promise<ActionState> {
+  if (dueDate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    return { error: "Elegí una fecha válida." };
+  }
+  await requireOrgContext();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_purchase_due_date", {
+    p_purchase_id: purchaseId,
+    p_due_date: dueDate,
+  });
+  if (error) return { error: "No pudimos guardar el vencimiento." };
+
+  revalidatePath("/proveedores");
+  revalidatePath("/proveedores/calendario");
   return {};
 }

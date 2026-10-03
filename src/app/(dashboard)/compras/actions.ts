@@ -40,11 +40,18 @@ export interface RegisterPurchaseInput {
   // Precios de venta a actualizar junto con la compra (sólo los que el
   // usuario cambió). El historial de precios los registra solo (trigger).
   priceUpdates?: { productId: string; price: number }[];
+  // Vencimiento de lo que queda a cuenta corriente (YYYY-MM-DD). Opcional.
+  dueDate?: string | null;
 }
 
 export async function registerPurchase(
   input: RegisterPurchaseInput
-): Promise<{ error?: string; purchaseId?: string; priceUpdateErrors?: number }> {
+): Promise<{
+  error?: string;
+  purchaseId?: string;
+  priceUpdateErrors?: number;
+  dueDateError?: boolean;
+}> {
   if (input.items.length === 0) {
     return { error: "Agregá al menos un producto a la compra." };
   }
@@ -105,6 +112,22 @@ export async function registerPurchase(
     await applyPurchaseToOrders(supabase, input.orgId, input.supplierId, input.items);
   }
 
+  // Vencimiento (0056): la compra ya está registrada; si falla, se avisa y se
+  // puede asignar después desde el calendario de Proveedores.
+  let dueDateError = false;
+  const hasAccount = input.payments.some((p) => p.method === "cuenta_corriente" && p.amount > 0);
+  if (input.dueDate && data && hasAccount) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)) {
+      dueDateError = true;
+    } else {
+      const { error: dueError } = await supabase.rpc("set_purchase_due_date", {
+        p_purchase_id: data,
+        p_due_date: input.dueDate,
+      });
+      dueDateError = Boolean(dueError);
+    }
+  }
+
   // La compra ya quedó registrada: si falla algún precio se avisa, pero no
   // se deshace la compra.
   const priceUpdates = (input.priceUpdates ?? []).filter(
@@ -132,7 +155,7 @@ export async function registerPurchase(
   revalidatePath("/caja");
   revalidatePath("/recomendaciones");
 
-  return { purchaseId: data ?? undefined, priceUpdateErrors };
+  return { purchaseId: data ?? undefined, priceUpdateErrors, dueDateError };
 }
 
 export interface PurchaseDetailItem {

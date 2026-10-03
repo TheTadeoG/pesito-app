@@ -107,7 +107,14 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/compras": { title: "Compras", description: "Registrá el ingreso de mercadería." },
   "/productos": { title: "Productos", description: "Tu catálogo, el stock y las marcas." },
   "/clientes": { title: "Clientes", description: "Tus clientes y sus cuentas." },
-  "/proveedores": { title: "Proveedores", description: "Tus proveedores y sus cuentas." },
+  "/proveedores": {
+    title: "Proveedores",
+    description: "Lo que les debés, cuándo vence y cuándo entrega cada uno.",
+  },
+  "/proveedores/calendario": {
+    title: "Calendario de proveedores",
+    description: "Vencimientos de tus compras a cuenta y entregas de cada proveedor.",
+  },
   "/usuarios": { title: "Usuarios", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
   "/en-vivo": { title: "En vivo", description: "Cómo viene el día, vendedor por vendedor." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
