@@ -3,7 +3,7 @@
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Package, Pencil, Plus, Search, Trash2, Wallet, X } from "lucide-react";
+import { LayoutGrid, List, Package, Pencil, Plus, Search, Trash2, Wallet, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ export interface SupplierRow extends Supplier {
 }
 
 type SortKey = "name" | "debt" | "last" | "purchased";
+type ViewMode = "cards" | "list";
 
 const TOP_DEBTORS = 5;
 
@@ -41,6 +42,7 @@ export function ProveedoresClient({
   const [productQuery, setProductQuery] = useState("");
   const [onlyDebt, setOnlyDebt] = useState(false);
   const [sort, setSort] = useState<SortKey>("name");
+  const [view, setView] = useState<ViewMode>("cards");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [paying, setPaying] = useState<Supplier | null>(null);
@@ -53,7 +55,10 @@ export function ProveedoresClient({
   const totalDebt = debtors.reduce((acc, s) => acc + s.balance, 0);
 
   const allProducts = useMemo(
-    () => Array.from(new Set(suppliers.flatMap((s) => s.products))).sort((a, b) => a.localeCompare(b, "es")),
+    () =>
+      Array.from(new Set(suppliers.flatMap((s) => s.products))).sort((a, b) =>
+        a.localeCompare(b, "es")
+      ),
     [suppliers]
   );
 
@@ -76,7 +81,8 @@ export function ProveedoresClient({
     const sorted = [...rows];
     if (sort === "debt") sorted.sort((a, b) => b.balance - a.balance);
     if (sort === "purchased") sorted.sort((a, b) => b.totalPurchased - a.totalPurchased);
-    if (sort === "last") sorted.sort((a, b) => (b.lastPurchaseAt ?? "").localeCompare(a.lastPurchaseAt ?? ""));
+    if (sort === "last")
+      sorted.sort((a, b) => (b.lastPurchaseAt ?? "").localeCompare(a.lastPurchaseAt ?? ""));
     return sorted;
   }, [suppliers, query, productQuery, onlyDebt, sort]);
 
@@ -88,6 +94,48 @@ export function ProveedoresClient({
     await deleteSupplier(supplier.id);
     setBusyId(null);
   }
+
+  const actions = (supplier: Supplier, withPayLabel: boolean) => (
+    <>
+      {supplier.balance > 0 &&
+        (withPayLabel ? (
+          <Button size="sm" onClick={() => setPaying(supplier)}>
+            <Wallet className="h-3.5 w-3.5" />
+            Registrar pago
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setPaying(supplier)}
+            aria-label="Registrar pago"
+            title="Registrar pago"
+          >
+            <Wallet className="h-4 w-4" />
+          </Button>
+        ))}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => {
+          setEditing(supplier);
+          setFormOpen(true);
+        }}
+        aria-label="Editar"
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => handleDelete(supplier)}
+        disabled={busyId === supplier.id}
+        aria-label="Borrar"
+      >
+        <Trash2 className="h-4 w-4 text-danger" />
+      </Button>
+    </>
+  );
 
   return (
     <div className="space-y-4">
@@ -124,18 +172,28 @@ export function ProveedoresClient({
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
               {debtors.length === 0 ? (
-                <p className="py-4 text-sm text-muted-foreground">No les debés nada a tus proveedores.</p>
+                <p className="py-4 text-sm text-muted-foreground">
+                  No les debés nada a tus proveedores.
+                </p>
               ) : (
                 debtors.slice(0, TOP_DEBTORS).map((s) => (
-                  <Link key={s.id} href={`/proveedores/${s.id}`} className="block rounded-lg hover:bg-muted/60">
+                  <Link
+                    key={s.id}
+                    href={`/proveedores/${s.id}`}
+                    className="block rounded-lg hover:bg-muted/60"
+                  >
                     <div className="flex items-center justify-between gap-3 text-sm">
                       <span className="truncate text-foreground">{s.name}</span>
-                      <span className="shrink-0 font-semibold text-foreground">{formatCurrency(s.balance)}</span>
+                      <span className="shrink-0 font-semibold text-foreground">
+                        {formatCurrency(s.balance)}
+                      </span>
                     </div>
                     <div className="mt-1 h-1.5 rounded-full bg-muted">
                       <div
                         className="h-1.5 rounded-full bg-warning"
-                        style={{ width: `${Math.max(4, (s.balance / debtors[0].balance) * 100)}%` }}
+                        style={{
+                          width: `${Math.max(4, (s.balance / debtors[0].balance) * 100)}%`,
+                        }}
                       />
                     </div>
                   </Link>
@@ -198,8 +256,34 @@ export function ProveedoresClient({
             Limpiar filtros
           </Button>
         )}
+        <div
+          className="flex rounded-xl border border-border p-0.5 lg:ml-auto"
+          role="group"
+          aria-label="Vista"
+        >
+          {(
+            [
+              ["cards", LayoutGrid, "Tarjetas"],
+              ["list", List, "Lista"],
+            ] as const
+          ).map(([mode, Icon, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setView(mode)}
+              aria-pressed={view === mode}
+              aria-label={label}
+              title={label}
+              className={cn(
+                "flex h-8 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors",
+                view === mode && "bg-muted text-foreground"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+            </button>
+          ))}
+        </div>
         <Button
-          className="lg:ml-auto"
           onClick={() => {
             setEditing(null);
             setFormOpen(true);
@@ -210,121 +294,170 @@ export function ProveedoresClient({
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          {filtered.length === 0 ? (
-            <p className="px-5 py-14 text-center text-sm text-muted-foreground">
-              {suppliers.length === 0
-                ? "Todavía no cargaste proveedores."
-                : "No hay proveedores con esos filtros."}
-            </p>
-          ) : (
-            <div className="divide-y divide-border">
-              <div
-                className={cn(
-                  "hidden gap-4 px-5 py-2.5 text-xs font-medium text-muted-foreground lg:grid",
-                  accountsEnabled
-                    ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_7rem_8rem_8rem_auto]"
-                    : "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_7rem_8rem_auto]"
-                )}
+      {view === "cards" && filtered.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((supplier) => {
+            const owed = supplier.balance > 0;
+            const shown = supplier.products.slice(0, 3);
+            const extra = supplier.products.length - shown.length;
+            return (
+              <Card
+                key={supplier.id}
+                className={cn("flex flex-col", owed && accountsEnabled && "border-warning")}
               >
-                <span>Proveedor</span>
-                <span>Productos que le comprás</span>
-                <span>Última compra</span>
-                <span className="text-right">Total comprado</span>
-                {accountsEnabled && <span className="text-right">Le debés</span>}
-                <span className="w-[7.5rem]" />
-              </div>
-              {filtered.map((supplier) => (
+                <CardContent className="flex flex-1 flex-col gap-4 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <Link
+                      href={`/proveedores/${supplier.id}`}
+                      title="Ver ficha del proveedor"
+                      className="-m-1.5 min-w-0 rounded-xl p-1.5 transition-colors hover:bg-muted"
+                    >
+                      <p className="truncate font-semibold text-foreground">{supplier.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {[supplier.phone, supplier.email].filter(Boolean).join(" · ") ||
+                          "Sin datos de contacto"}
+                      </p>
+                    </Link>
+                    {accountsEnabled &&
+                      (owed ? (
+                        <Badge tone="warning" className="shrink-0">
+                          {`Le debés ${formatCurrency(supplier.balance)}`}
+                        </Badge>
+                      ) : (
+                        <span className="shrink-0 text-xs text-muted-foreground">Al día</span>
+                      ))}
+                  </div>
+
+                  <div className="flex min-h-6 flex-wrap gap-1.5">
+                    {shown.length === 0 ? (
+                      <span className="text-xs text-muted-foreground">Sin compras cargadas</span>
+                    ) : (
+                      <>
+                        {shown.map((p) => (
+                          <span
+                            key={p}
+                            className="max-w-full truncate rounded-full bg-muted px-2.5 py-0.5 text-xs text-foreground"
+                          >
+                            {p}
+                          </span>
+                        ))}
+                        {extra > 0 && (
+                          <span className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground">{`+${extra} más`}</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <dl className="mt-auto grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Total comprado</dt>
+                      <dd className="font-medium text-foreground">
+                        {formatCurrency(supplier.totalPurchased)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Última compra</dt>
+                      <dd className="font-medium text-foreground">
+                        {supplier.lastPurchaseAt ? formatDate(supplier.lastPurchaseAt) : "—"}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <div className="flex items-center justify-end gap-1.5">
+                    {actions(supplier, true)}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            {filtered.length === 0 ? (
+              <p className="px-5 py-14 text-center text-sm text-muted-foreground">
+                {suppliers.length === 0
+                  ? "Todavía no cargaste proveedores."
+                  : "No hay proveedores con esos filtros."}
+              </p>
+            ) : (
+              <div className="divide-y divide-border">
                 <div
-                  key={supplier.id}
                   className={cn(
-                    "grid gap-2 px-5 py-3.5 lg:items-center lg:gap-4",
+                    "hidden gap-4 px-5 py-2.5 text-xs font-medium text-muted-foreground lg:grid",
                     accountsEnabled
                       ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_7rem_8rem_8rem_auto]"
                       : "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_7rem_8rem_auto]"
                   )}
                 >
-                  <Link
-                    href={`/proveedores/${supplier.id}`}
-                    title="Ver ficha del proveedor"
-                    className="-mx-2.5 min-w-0 rounded-xl px-2.5 py-1 transition-colors hover:bg-muted"
-                  >
-                    <p className="truncate font-medium text-foreground">{supplier.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {[supplier.phone, supplier.email].filter(Boolean).join(" · ") ||
-                        "Sin datos de contacto"}
-                    </p>
-                  </Link>
-
-                  <p
-                    className="min-w-0 truncate text-sm text-muted-foreground"
-                    title={supplier.products.join(", ")}
-                  >
-                    {supplier.products.length === 0
-                      ? "Sin compras cargadas"
-                      : `${supplier.products.length} ${supplier.products.length === 1 ? "producto" : "productos"}: ${supplier.products.slice(0, 3).join(", ")}${supplier.products.length > 3 ? "…" : ""}`}
-                  </p>
-
-                  <p className="text-sm text-muted-foreground">
-                    <span className="lg:hidden">Última compra: </span>
-                    {supplier.lastPurchaseAt ? formatDate(supplier.lastPurchaseAt) : "—"}
-                  </p>
-
-                  <p className="text-sm text-foreground lg:text-right">
-                    <span className="text-muted-foreground lg:hidden">Total comprado: </span>
-                    {formatCurrency(supplier.totalPurchased)}
-                  </p>
-
-                  {accountsEnabled && (
-                    <p className="text-sm lg:text-right">
-                      {supplier.balance > 0 ? (
-                        <Badge tone="warning">{formatCurrency(supplier.balance)}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">Al día</span>
-                      )}
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-1.5 lg:w-[7.5rem] lg:justify-end">
-                    {supplier.balance > 0 && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setPaying(supplier)}
-                        aria-label="Registrar pago"
-                        title="Registrar pago"
-                      >
-                        <Wallet className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        setEditing(supplier);
-                        setFormOpen(true);
-                      }}
-                      aria-label="Editar"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDelete(supplier)}
-                      disabled={busyId === supplier.id}
-                      aria-label="Borrar"
-                    >
-                      <Trash2 className="h-4 w-4 text-danger" />
-                    </Button>
-                  </div>
+                  <span>Proveedor</span>
+                  <span>Productos que le comprás</span>
+                  <span>Última compra</span>
+                  <span className="text-right">Total comprado</span>
+                  {accountsEnabled && <span className="text-right">Le debés</span>}
+                  <span className="w-[7.5rem]" />
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                {filtered.map((supplier) => (
+                  <div
+                    key={supplier.id}
+                    className={cn(
+                      "grid gap-2 px-5 py-3.5 lg:items-center lg:gap-4",
+                      accountsEnabled
+                        ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_7rem_8rem_8rem_auto]"
+                        : "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_7rem_8rem_auto]"
+                    )}
+                  >
+                    <Link
+                      href={`/proveedores/${supplier.id}`}
+                      title="Ver ficha del proveedor"
+                      className="-mx-2.5 min-w-0 rounded-xl px-2.5 py-1 transition-colors hover:bg-muted"
+                    >
+                      <p className="truncate font-medium text-foreground">{supplier.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {[supplier.phone, supplier.email].filter(Boolean).join(" · ") ||
+                          "Sin datos de contacto"}
+                      </p>
+                    </Link>
+
+                    <p
+                      className="min-w-0 truncate text-sm text-muted-foreground"
+                      title={supplier.products.join(", ")}
+                    >
+                      {supplier.products.length === 0
+                        ? "Sin compras cargadas"
+                        : `${supplier.products.length} ${supplier.products.length === 1 ? "producto" : "productos"}: ${supplier.products.slice(0, 3).join(", ")}${supplier.products.length > 3 ? "…" : ""}`}
+                    </p>
+
+                    <p className="text-sm text-muted-foreground">
+                      <span className="lg:hidden">Última compra: </span>
+                      {supplier.lastPurchaseAt ? formatDate(supplier.lastPurchaseAt) : "—"}
+                    </p>
+
+                    <p className="text-sm text-foreground lg:text-right">
+                      <span className="text-muted-foreground lg:hidden">Total comprado: </span>
+                      {formatCurrency(supplier.totalPurchased)}
+                    </p>
+
+                    {accountsEnabled && (
+                      <p className="text-sm lg:text-right">
+                        {supplier.balance > 0 ? (
+                          <Badge tone="warning">{formatCurrency(supplier.balance)}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">Al día</span>
+                        )}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-1.5 lg:w-[7.5rem] lg:justify-end">
+                      {actions(supplier, false)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <SupplierForm
         key={editing?.id ?? "new"}
