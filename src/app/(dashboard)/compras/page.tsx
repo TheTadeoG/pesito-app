@@ -7,6 +7,7 @@ import { canUse } from "@/lib/plan-access";
 import { loadPendingOrders } from "@/lib/restock-orders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComprasClient } from "@/app/(dashboard)/compras/compras-client";
+import { loadPurchaseDueDates } from "@/lib/supplier-overview";
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
 
 const RECENT_PURCHASES_LIMIT = 20;
@@ -69,6 +70,7 @@ export default async function ComprasPage({
     account_amount: Number(p.account_amount ?? 0),
   }));
   const purchaseIds = purchases.map((p) => p.id);
+  const dueDates = await loadPurchaseDueDates(supabase, organization.id);
 
   const [{ data: itemsRaw }, { data: purchaseSuppliersRaw }] = await Promise.all([
     purchaseIds.length > 0
@@ -107,6 +109,7 @@ export default async function ComprasPage({
     itemsSummary: (itemsByPurchase.get(purchase.id) ?? []).join(", ") || "Sin detalle",
     notes: purchase.notes,
     accountAmount: purchase.account_amount,
+    dueDate: dueDates.get(purchase.id) ?? null,
   }));
 
   // "Llegó → cargar la compra" desde Recomendaciones: la compra arranca con

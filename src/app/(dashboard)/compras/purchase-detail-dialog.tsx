@@ -1,6 +1,6 @@
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 import type { PurchaseDetail } from "@/app/(dashboard)/compras/actions";
 
@@ -9,11 +9,14 @@ export function PurchaseDetailDialog({
   onClose,
   loading,
   purchase,
+  dueDate = null,
 }: {
   open: boolean;
   onClose: () => void;
   loading: boolean;
   purchase: PurchaseDetail | null;
+  /** Vencimiento de lo que quedó a cuenta (YYYY-MM-DD). */
+  dueDate?: string | null;
 }) {
   return (
     <Dialog
@@ -112,6 +115,14 @@ export function PurchaseDetailDialog({
                 <div className="flex justify-between text-sm text-warning">
                   <span>A cuenta corriente</span>
                   <span className="font-medium">{formatCurrency(purchase.accountAmount)}</span>
+                </div>
+              )}
+              {purchase.accountAmount > 0 && dueDate && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Vence el</span>
+                  <span className="font-medium text-foreground">
+                    {formatDate(`${dueDate}T12:00:00-03:00`)}
+                  </span>
                 </div>
               )}
             </div>

@@ -9,6 +9,12 @@ import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 import { CuentaCorriente, type CuentaCorrienteMovement } from "@/components/dashboard/cuenta-corriente";
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
+import { getSubscription } from "@/lib/subscription";
+import { canUse } from "@/lib/plan-access";
+import { loadPurchaseDueDates } from "@/lib/supplier-overview";
+import { outstandingItems, todayInArgentina } from "@/lib/supplier-debt";
+import { shortDate } from "@/app/(dashboard)/proveedores/debt-format";
+import { SupplierDebtCard } from "@/app/(dashboard)/proveedores/[id]/debt-card";
 import { ProveedorDetailClient } from "@/app/(dashboard)/proveedores/[id]/proveedor-detail-client";
 
 export default async function ProveedorDetailPage({
@@ -31,8 +37,13 @@ export default async function ProveedorDetailPage({
 
   const supplier = { ...supplierRaw, balance: Number(supplierRaw.balance) };
 
-  const [{ data: purchasesRaw }, { data: paymentsRaw }, { data: customPaymentMethods }] =
-    await Promise.all([
+  const [
+    { data: purchasesRaw },
+    { data: paymentsRaw },
+    { data: customPaymentMethods },
+    dueDates,
+    subscription,
+  ] = await Promise.all([
       supabase
         .from("purchases")
         .select("id, total, notes, status, created_at, account_amount")
@@ -49,6 +60,8 @@ export default async function ProveedorDetailPage({
         .select("name")
         .eq("org_id", organization.id)
         .order("created_at"),
+      loadPurchaseDueDates(supabase, organization.id),
+      getSubscription(supabase, organization.id),
     ]);
 
   const purchases = (purchasesRaw ?? []).map((p) => ({
@@ -85,6 +98,7 @@ export default async function ProveedorDetailPage({
     itemsSummary: (itemsByPurchase.get(purchase.id) ?? []).join(", ") || "Sin detalle",
     notes: purchase.notes,
     accountAmount: purchase.account_amount,
+    dueDate: dueDates.get(purchase.id) ?? null,
   }));
 
   const payments = (paymentsRaw ?? []).map((p) => ({ ...p, amount: Number(p.amount) }));
@@ -95,7 +109,9 @@ export default async function ProveedorDetailPage({
       .map((p) => ({
         id: `purchase-${p.id}`,
         date: p.created_at,
-        label: `Compra · ${formatCurrency(p.total)} total`,
+        label: `Compra · ${formatCurrency(p.total)} total${
+          dueDates.get(p.id) ? ` · vence ${shortDate(dueDates.get(p.id) as string)}` : ""
+        }`,
         cargo: p.account_amount,
         pago: 0,
       })),
@@ -107,6 +123,21 @@ export default async function ProveedorDetailPage({
       pago: pay.amount,
     })),
   ];
+
+  const accountsEnabled = canUse(subscription, "supplierAccounts");
+  const debtItems = outstandingItems(
+    completedPurchases
+      .filter((p) => p.account_amount > 0)
+      .map((p) => ({
+        id: p.id,
+        supplierId: supplier.id,
+        accountAmount: p.account_amount,
+        createdAt: p.created_at,
+        dueDate: dueDates.get(p.id) ?? null,
+      })),
+    new Map([[supplier.id, supplier.balance]]),
+    todayInArgentina()
+  );
 
   const totalComprado = completedPurchases.reduce((acc, p) => acc + p.total, 0);
   const cantidadCompras = completedPurchases.length;
@@ -153,6 +184,8 @@ export default async function ProveedorDetailPage({
           </Card>
         ))}
       </div>
+
+      {accountsEnabled && debtItems.length > 0 && <SupplierDebtCard items={debtItems} />}
 
       <Card>
         <CardHeader>

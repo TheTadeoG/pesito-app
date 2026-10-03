@@ -39,6 +39,11 @@ export function dayKey(value: string | number | Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(new Date(value));
 }
 
+/** Hoy (YYYY-MM-DD) en hora argentina. */
+export function todayInArgentina(): string {
+  return dayKey(Date.now());
+}
+
 function dayNumber(key: string): number {
   const [y, m, d] = key.split("-").map(Number);
   return Math.round(Date.UTC(y, m - 1, d) / 86_400_000);

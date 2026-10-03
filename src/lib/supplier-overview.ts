@@ -57,6 +57,34 @@ export interface SupplierOverview {
 
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
+/**
+ * Vencimiento de cada compra a cuenta (purchase id -> YYYY-MM-DD). Si la
+ * migración 0056 todavía no está aplicada, la consulta falla y todo queda
+ * "sin fecha".
+ */
+export async function loadPurchaseDueDates(
+  supabase: SupabaseClient<Database>,
+  orgId: string
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    const dues = await fetchAll((from, to) =>
+      supabase
+        .from("purchases")
+        .select("id, due_date")
+        .eq("org_id", orgId)
+        .eq("status", "completada")
+        .not("due_date", "is", null)
+        .order("id")
+        .range(from, to)
+    );
+    for (const d of dues) if (d.due_date) map.set(d.id, d.due_date);
+  } catch {
+    // sin migración 0056
+  }
+  return map;
+}
+
 export async function loadSupplierOverview(
   supabase: SupabaseClient<Database>,
   orgId: string
@@ -84,24 +112,7 @@ export async function loadSupplierOverview(
     ),
   ]);
 
-  // Vencimientos (0056): si la columna todavía no existe la consulta falla y
-  // todo queda "sin fecha".
-  const dueByPurchase = new Map<string, string>();
-  try {
-    const dues = await fetchAll((from, to) =>
-      supabase
-        .from("purchases")
-        .select("id, due_date")
-        .eq("org_id", orgId)
-        .eq("status", "completada")
-        .not("due_date", "is", null)
-        .order("id")
-        .range(from, to)
-    );
-    for (const d of dues) if (d.due_date) dueByPurchase.set(d.id, d.due_date);
-  } catch {
-    // sin migración 0056
-  }
+  const dueByPurchase = await loadPurchaseDueDates(supabase, orgId);
 
   const todayKey = dayKey(Date.now());
   const suppliers = suppliersRaw ?? [];

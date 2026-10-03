@@ -6,6 +6,7 @@ import { Ban, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { shortDate } from "@/app/(dashboard)/proveedores/debt-format";
 import {
   getPurchaseDetail,
   voidPurchase,
@@ -23,6 +24,8 @@ export interface PurchaseRow {
   itemsSummary: string;
   notes: string | null;
   accountAmount: number;
+  /** Vencimiento de lo que quedó a cuenta (YYYY-MM-DD). */
+  dueDate?: string | null;
 }
 
 export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
@@ -31,11 +34,13 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailPurchase, setDetailPurchase] = useState<PurchaseDetail | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function openDetail(purchaseId: string) {
     setDetailOpen(true);
+    setDetailId(purchaseId);
     setDetailLoading(true);
     setDetailPurchase(null);
     const result = await getPurchaseDetail(purchaseId);
@@ -98,6 +103,7 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
                 {purchase.status !== "anulada" && purchase.accountAmount > 0 && (
                   <Badge tone="warning">
                     Cuenta corriente {formatCurrency(purchase.accountAmount)}
+                    {purchase.dueDate ? ` · vence ${shortDate(purchase.dueDate)}` : ""}
                   </Badge>
                 )}
               </div>
@@ -147,6 +153,7 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
         onClose={() => setDetailOpen(false)}
         loading={detailLoading}
         purchase={detailPurchase}
+        dueDate={purchases.find((p) => p.id === detailId)?.dueDate ?? null}
       />
     </div>
   );
