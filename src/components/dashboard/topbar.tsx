@@ -14,16 +14,18 @@ interface TopbarProps {
   userLabel: string;
   greetingName?: string | null;
   branch?: BranchSwitcherProps | null;
+  /** Numerito rojo por ruta (menú del celular). */
+  alerts?: Record<string, number>;
 }
 
-export function Topbar({ orgName, userLabel, greetingName, branch }: TopbarProps) {
+export function Topbar({ orgName, userLabel, greetingName, branch, alerts }: TopbarProps) {
   const pathname = usePathname();
   const page = pageTitles[pathname] ?? { title: orgName, description: "" };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/90 px-4 backdrop-blur sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <MobileNav orgName={orgName} branch={branch} />
+        <MobileNav orgName={orgName} branch={branch} alerts={alerts} />
         <div className="min-w-0">
           <h1 className="truncate text-lg font-semibold text-foreground">{page.title}</h1>
           {page.description && (

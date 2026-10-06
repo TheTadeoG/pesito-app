@@ -424,7 +424,47 @@ export function ProveedoresClient({
                     <span>· tocá un día para ver quién</span>
                   </p>
                 </div>
-                <div className="-mx-1 overflow-x-auto px-1 pb-1">
+                <div className="flex flex-wrap gap-2 sm:hidden">
+                  {strip.filter((d) => d.count > 0).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No vence nada en estos 14 días.</p>
+                  ) : (
+                    strip
+                      .filter((d) => d.count > 0)
+                      .map((d) => {
+                        const active = dayFilter === d.day;
+                        const wd = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"][weekdayIndex(d.day)];
+                        return (
+                          <button
+                            key={d.day}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => setDayFilter(active ? null : d.day)}
+                            className={cn(
+                              "flex items-center gap-2 rounded-xl border px-3 py-2 text-left",
+                              active ? "border-primary bg-accent" : "border-border"
+                            )}
+                          >
+                            <span className="text-xs text-muted-foreground">
+                              {d.day === todayKey ? "Hoy" : `${wd} ${Number(d.day.slice(8))}`}
+                            </span>
+                            <span
+                              className={cn(
+                                "rounded-md px-1.5 py-0.5 text-xs font-bold",
+                                d.tone === "danger"
+                                  ? "bg-danger-bg text-danger"
+                                  : d.tone === "warning"
+                                    ? "bg-warning-bg text-warning"
+                                    : "bg-muted text-foreground"
+                              )}
+                            >
+                              {formatCurrency(d.amount)}
+                            </span>
+                          </button>
+                        );
+                      })
+                  )}
+                </div>
+                <div className="-mx-1 hidden overflow-x-auto px-1 pb-1 sm:block">
                   <div className="grid min-w-[44rem] gap-1.5" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
                     {strip.map((d, n) => {
                       const weekday = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"][weekdayIndex(d.day)];

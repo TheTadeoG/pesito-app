@@ -201,7 +201,13 @@ export default async function ProveedorDetailPage({
         ))}
       </div>
 
-      {accountsEnabled && debtItems.length > 0 && <SupplierDebtCard items={debtItems} />}
+      {accountsEnabled && debtItems.length > 0 && (
+        <SupplierDebtCard
+          items={debtItems}
+          supplier={supplier}
+          customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
+        />
+      )}
 
       <Card>
         <CardHeader>

@@ -134,6 +134,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const memberName = greetingName || membership.username || email || "";
 
   const expiringBilling = expiringPaidPlan(subscription);
+  const navAlerts: Record<string, number> = canUse(subscription, "supplierAccounts")
+    ? { "/proveedores": overdueSuppliers }
+    : {};
 
   return (
     <ToastProvider>
@@ -152,10 +155,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
           cashRegister={cashRegister}
           branch={branch}
           lockedFeatures={lockedFeatures}
-          alerts={canUse(subscription, "supplierAccounts") ? { "/proveedores": overdueSuppliers } : {}}
+          alerts={navAlerts}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar
+            alerts={navAlerts}
             orgName={organization.name}
             userLabel={membership.username ?? email ?? ""}
             greetingName={greetingName}

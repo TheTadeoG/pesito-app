@@ -9,7 +9,16 @@ import { Wordmark } from "@/components/marketing/wordmark";
 import { cn } from "@/lib/utils";
 import { BranchSwitcher, type BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
 
-export function MobileNav({ orgName, branch }: { orgName: string; branch?: BranchSwitcherProps | null }) {
+export function MobileNav({
+  orgName,
+  branch,
+  alerts = {},
+}: {
+  orgName: string;
+  branch?: BranchSwitcherProps | null;
+  alerts?: Record<string, number>;
+}) {
+  const hasAlerts = Object.values(alerts).some((n) => n > 0);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -20,10 +29,11 @@ export function MobileNav({ orgName, branch }: { orgName: string; branch?: Branc
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-foreground lg:hidden"
-        aria-label="Abrir menú"
+        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border text-foreground lg:hidden"
+        aria-label={hasAlerts ? "Abrir menú (hay avisos)" : "Abrir menú"}
       >
         <Menu className="h-5 w-5" />
+        {hasAlerts && <i className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-danger ring-2 ring-background" />}
       </button>
 
       {open && (
@@ -80,7 +90,15 @@ export function MobileNav({ orgName, branch }: { orgName: string; branch?: Branc
                           )}
                         >
                           <item.icon className="h-4 w-4" />
-                          {item.label}
+                          <span className="flex-1">{item.label}</span>
+                          {(alerts[item.href] ?? 0) > 0 && (
+                            <span
+                              className="min-w-5 rounded-full bg-danger px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
+                              aria-label={`${alerts[item.href]} con deuda vencida`}
+                            >
+                              {alerts[item.href]}
+                            </span>
+                          )}
                         </Link>
                       );
                     })}

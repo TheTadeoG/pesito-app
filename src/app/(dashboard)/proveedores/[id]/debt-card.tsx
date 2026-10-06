@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { DebtItem } from "@/lib/supplier-debt";
+import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
+import type { Supplier } from "@/lib/types";
 import { setPurchaseDueDate } from "@/app/(dashboard)/proveedores/actions";
 import { shortDate } from "@/app/(dashboard)/proveedores/debt-format";
 
@@ -30,7 +32,17 @@ function statusText(item: DebtItem): string {
 
 // Lo que se le debe al proveedor, compra por compra y con su vencimiento
 // (se puede asignar o cambiar la fecha).
-export function SupplierDebtCard({ items }: { items: DebtItem[] }) {
+export function SupplierDebtCard({
+  items,
+  supplier,
+  customPaymentMethods = [],
+}: {
+  items: DebtItem[];
+  supplier: Supplier;
+  customPaymentMethods?: string[];
+}) {
+  const router = useRouter();
+  const [payingId, setPayingId] = useState<string | null>(null);
   const sorted = [...items].sort((a, b) =>
     (a.dueDate ?? "9999-12-31").localeCompare(b.dueDate ?? "9999-12-31") ||
     a.purchaseDay.localeCompare(b.purchaseDay)
@@ -46,14 +58,28 @@ export function SupplierDebtCard({ items }: { items: DebtItem[] }) {
       </CardHeader>
       <CardContent className="divide-y divide-border p-0">
         {sorted.map((item, idx) => (
-          <DebtRow key={item.purchaseId ?? `adj-${idx}`} item={item} />
+          <DebtRow
+            key={item.purchaseId ?? `adj-${idx}`}
+            item={item}
+            onPay={item.purchaseId ? () => setPayingId(item.purchaseId) : undefined}
+          />
         ))}
       </CardContent>
+      <SupplierPaymentDialog
+        supplier={payingId ? supplier : null}
+        items={items}
+        initialPurchaseId={payingId}
+        onClose={() => {
+          setPayingId(null);
+          router.refresh();
+        }}
+        customPaymentMethods={customPaymentMethods}
+      />
     </Card>
   );
 }
 
-function DebtRow({ item }: { item: DebtItem }) {
+function DebtRow({ item, onPay }: { item: DebtItem; onPay?: () => void }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(item.dueDate ?? "");
@@ -97,6 +123,7 @@ function DebtRow({ item }: { item: DebtItem }) {
               {item.dueDate ? "Cambiar fecha" : "Asignar fecha"}
             </Button>
           )}
+          {onPay && !editing && <Button size="sm" onClick={onPay}>Pagar esta</Button>}
         </div>
       </div>
       {editing && (
