@@ -167,6 +167,7 @@ export default async function ProveedorDetailPage({
       <ProveedorDetailClient
         supplier={supplier}
         customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
+        debtItems={debtItems}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

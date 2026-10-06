@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
-import type { Supplier } from "@/lib/types";
+import type { SupplierRow } from "@/lib/supplier-overview";
 import { addDays, daysBetween, type CalendarEvent } from "@/lib/supplier-debt";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import { setPurchaseDueDate } from "@/app/(dashboard)/proveedores/actions";
@@ -92,7 +92,7 @@ export function CalendarioClient({
   events: CalendarEvent[];
   undated: UndatedItem[];
   overdueTotal: number;
-  suppliers: Supplier[];
+  suppliers: SupplierRow[];
   customPaymentMethods: string[];
 }) {
   const router = useRouter();
@@ -100,7 +100,7 @@ export function CalendarioClient({
   const [selected, setSelected] = useState<string>(
     todayKey.slice(0, 7) === monthKey ? todayKey : `${monthKey}-01`
   );
-  const [paying, setPaying] = useState<Supplier | null>(null);
+  const [paying, setPaying] = useState<SupplierRow | null>(null);
 
   const [yearStr, monthStr] = monthKey.split("-");
   const monthName = MONTHS[Number(monthStr) - 1];
@@ -429,6 +429,7 @@ export function CalendarioClient({
 
       <SupplierPaymentDialog
         supplier={paying}
+        items={paying?.items}
         onClose={() => setPaying(null)}
         customPaymentMethods={customPaymentMethods}
       />

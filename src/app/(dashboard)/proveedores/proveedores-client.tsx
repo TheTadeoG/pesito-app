@@ -892,6 +892,7 @@ export function ProveedoresClient({
       </Dialog>
       <SupplierPaymentDialog
         supplier={paying}
+        items={paying?.items}
         onClose={() => setPaying(null)}
         customPaymentMethods={customPaymentMethods}
       />

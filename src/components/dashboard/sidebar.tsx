@@ -28,6 +28,8 @@ interface SidebarProps {
   branch: BranchSwitcherProps | null;
   /** Funciones que el plan no incluye, con el plan que las trae ("Pro"). */
   lockedFeatures: Partial<Record<PlanFeature, string>>;
+  /** Numerito rojo por ruta (ej. proveedores con deuda vencida). 0 no se muestra. */
+  alerts?: Record<string, number>;
 }
 
 export function Sidebar({
@@ -40,6 +42,7 @@ export function Sidebar({
   cashRegister,
   branch,
   lockedFeatures,
+  alerts = {},
 }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -118,6 +121,15 @@ export function Sidebar({
                       {badge && (
                         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
                           {badge}
+                        </span>
+                      )}
+                      {(alerts[item.href] ?? 0) > 0 && (
+                        <span
+                          className="min-w-5 rounded-full bg-danger px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
+                          title="Con deuda vencida"
+                          aria-label={`${alerts[item.href]} con deuda vencida`}
+                        >
+                          {alerts[item.href]}
                         </span>
                       )}
                     </Link>

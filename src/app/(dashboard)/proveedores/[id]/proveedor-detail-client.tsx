@@ -10,13 +10,17 @@ import { formatCurrency } from "@/lib/utils";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import type { Supplier } from "@/lib/types";
+import type { DebtItem } from "@/lib/supplier-debt";
 
 export function ProveedorDetailClient({
   supplier,
   customPaymentMethods = [],
+  debtItems = [],
 }: {
   supplier: Supplier;
   customPaymentMethods?: string[];
+  /** Lo que se le debe, compra por compra (para el pago). */
+  debtItems?: DebtItem[];
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -67,6 +71,7 @@ export function ProveedorDetailClient({
       />
       <SupplierPaymentDialog
         supplier={paying ? supplier : null}
+        items={debtItems}
         onClose={() => {
           setPaying(false);
           router.refresh();

@@ -1,12 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
-import { fetchAll } from "@/lib/supabase/fetch-all";
+import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import type { Supplier } from "@/lib/types";
 import {
   addDays,
   dayKey,
   daysBetween,
   outstandingItems,
+  todayInArgentina,
   type DebtItem,
   type DebtPurchase,
 } from "@/lib/supplier-debt";
@@ -203,4 +204,59 @@ export async function loadSupplierOverview(
   }));
 
   return { todayKey, rows, monthly, top, topTotal, paid30, account30 };
+}
+
+/**
+ * Cuántos proveedores tienen deuda vencida (para el numerito del menú).
+ * Liviano: sólo mira a los proveedores con saldo y sus compras a cuenta. Si
+ * algo falla devuelve 0 (no tiene que romper el menú).
+ */
+export async function countOverdueSuppliers(
+  supabase: SupabaseClient<Database>,
+  orgId: string
+): Promise<number> {
+  try {
+    const { data: debtors } = await supabase
+      .from("suppliers")
+      .select("id, balance")
+      .eq("org_id", orgId)
+      .gt("balance", 0);
+    if (!debtors || debtors.length === 0) return 0;
+
+    const ids = debtors.map((d) => d.id);
+    const columns = "id, supplier_id, account_amount, created_at";
+    let rows: { id: string; supplier_id: string | null; account_amount: number | null; created_at: string; due_date?: string | null }[];
+    try {
+      rows = await fetchAllIn(ids, (chunk, from, to) =>
+        supabase
+          .from("purchases")
+          .select(`${columns}, due_date`)
+          .eq("org_id", orgId)
+          .eq("status", "completada")
+          .gt("account_amount", 0)
+          .in("supplier_id", chunk)
+          .order("id")
+          .range(from, to)
+      );
+    } catch {
+      // Sin la migración 0056 no hay vencimientos: nada puede estar vencido.
+      return 0;
+    }
+
+    const purchases: DebtPurchase[] = rows.map((p) => ({
+      id: p.id,
+      supplierId: p.supplier_id as string,
+      accountAmount: Number(p.account_amount),
+      createdAt: p.created_at,
+      dueDate: p.due_date ?? null,
+    }));
+    const items = outstandingItems(
+      purchases,
+      new Map(debtors.map((d) => [d.id, Number(d.balance)])),
+      todayInArgentina()
+    );
+    return new Set(items.filter((i) => i.status === "vencida").map((i) => i.supplierId)).size;
+  } catch {
+    return 0;
+  }
 }

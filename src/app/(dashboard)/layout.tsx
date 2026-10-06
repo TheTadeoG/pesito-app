@@ -18,6 +18,7 @@ import { getUpcomingCommercialDates } from "@/lib/commercial-dates";
 import { argDateString } from "@/lib/timezone";
 import { expiringPaidPlan, getSubscription, planLabels } from "@/lib/subscription";
 import { canUse, featureMinPlan, type PlanFeature } from "@/lib/plan-access";
+import { countOverdueSuppliers } from "@/lib/supplier-overview";
 import { getBranchContext } from "@/lib/branches";
 import { cookies } from "next/headers";
 import { isOrgAdmin } from "@/lib/roles";
@@ -37,7 +38,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // van en paralelo en vez de una atrás de la otra.
   const cookieStore = await cookies();
   const thisDevice = cookieStore.get(DEVICE_COOKIE)?.value ?? "";
-  const [subscription, { data: openRegister }, branchContext, { data: newDeviceRows }] = await Promise.all([
+  const [
+    subscription,
+    { data: openRegister },
+    branchContext,
+    { data: newDeviceRows },
+    overdueSuppliers,
+  ] = await Promise.all([
     getSubscription(supabase, organization.id),
     supabase
       .from("cash_registers")
@@ -60,6 +67,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           .order("created_at", { ascending: false })
           .limit(5)
       : Promise.resolve({ data: null }),
+    // Proveedores con deuda vencida (numerito del menú).
+    countOverdueSuppliers(supabase, organization.id),
   ]);
   const branch = branchContext.current
     ? {
@@ -143,6 +152,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           cashRegister={cashRegister}
           branch={branch}
           lockedFeatures={lockedFeatures}
+          alerts={canUse(subscription, "supplierAccounts") ? { "/proveedores": overdueSuppliers } : {}}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar

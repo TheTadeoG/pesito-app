@@ -2,7 +2,8 @@
 //
 // Cada compra a cuenta (purchases.account_amount) puede tener un vencimiento
 // (purchases.due_date). Los pagos no se asignan a una compra puntual: se
-// aplican primero a la que vence antes (y, sin fecha, a la más vieja). Eso se
+// aplican primero a la que vence antes y después a las que no tienen fecha
+// (la más vieja primero). Eso se
 // calcula acá, a partir del saldo actual del proveedor, sin guardar nada.
 
 export const SOON_DAYS = 7;
@@ -90,6 +91,10 @@ export function outstandingItems(
     const list = (bySupplier.get(supplierId) ?? [])
       .map((p) => ({ p, day: dayKey(p.createdAt) }))
       .sort((a, b) => {
+        // Primero las que tienen vencimiento (la que vence antes, primero);
+        // después las que no tienen fecha, la más vieja primero.
+        const dated = Number(!a.p.dueDate) - Number(!b.p.dueDate);
+        if (dated !== 0) return dated;
         const ka = a.p.dueDate ?? a.day;
         const kb = b.p.dueDate ?? b.day;
         return ka.localeCompare(kb) || a.p.createdAt.localeCompare(b.p.createdAt);
