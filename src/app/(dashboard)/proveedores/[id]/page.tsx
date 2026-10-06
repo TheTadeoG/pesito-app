@@ -7,6 +7,7 @@ import { fetchAllIn } from "@/lib/supabase/fetch-all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
+import { VoidPaymentButton } from "@/app/(dashboard)/proveedores/[id]/void-payment-button";
 import { CuentaCorriente, type CuentaCorrienteMovement } from "@/components/dashboard/cuenta-corriente";
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
 import { getSubscription } from "@/lib/subscription";
@@ -52,7 +53,7 @@ export default async function ProveedorDetailPage({
         .order("created_at", { ascending: false }),
       supabase
         .from("supplier_payments")
-        .select("id, amount, method, created_at")
+        .select("id, amount, method, created_at, cash_register_id")
         .eq("supplier_id", id)
         .order("created_at", { ascending: false }),
       supabase
@@ -64,6 +65,7 @@ export default async function ProveedorDetailPage({
       getSubscription(supabase, organization.id),
     ]);
 
+  const accountsEnabled = canUse(subscription, "supplierAccounts");
   const dueDates = extras.due;
   const purchases = (purchasesRaw ?? []).map((p) => ({
     ...p,
@@ -104,6 +106,14 @@ export default async function ProveedorDetailPage({
 
   const payments = (paymentsRaw ?? []).map((p) => ({ ...p, amount: Number(p.amount) }));
 
+  // Un pago se puede anular mientras la caja donde se registró siga abierta.
+  const registerIds = Array.from(new Set(payments.map((p) => p.cash_register_id).filter(Boolean))) as string[];
+  const { data: openRegisters } =
+    registerIds.length > 0
+      ? await supabase.from("cash_registers").select("id").eq("status", "abierta").in("id", registerIds)
+      : { data: [] as { id: string }[] };
+  const openRegisterIds = new Set((openRegisters ?? []).map((r) => r.id));
+
   const movements: CuentaCorrienteMovement[] = [
     ...completedPurchases
       .filter((p) => p.account_amount > 0)
@@ -122,10 +132,13 @@ export default async function ProveedorDetailPage({
       label: `Pago · ${paymentLabels[pay.method] ?? pay.method}`,
       cargo: 0,
       pago: pay.amount,
+      action:
+        accountsEnabled && pay.cash_register_id && openRegisterIds.has(pay.cash_register_id) ? (
+          <VoidPaymentButton paymentId={pay.id} label={`el pago de ${formatCurrency(pay.amount)}`} />
+        ) : undefined,
     })),
   ];
 
-  const accountsEnabled = canUse(subscription, "supplierAccounts");
   const debtItems = outstandingItems(
     completedPurchases
       .filter((p) => p.account_amount > 0)

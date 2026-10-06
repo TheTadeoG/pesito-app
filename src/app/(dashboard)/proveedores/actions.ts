@@ -267,3 +267,29 @@ export async function registerSupplierPurchasePayments(
   revalidatePath("/caja");
   return {};
 }
+
+/**
+ * Anula un pago a un proveedor: vuelve la deuda y el dinero a la caja. Sólo
+ * si la caja donde se registró sigue abierta (migración 0060).
+ */
+export async function voidSupplierPayment(paymentId: string): Promise<ActionState> {
+  await requireOrgContext();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("void_supplier_payment", { p_payment_id: paymentId });
+
+  if (error) {
+    if (error.code === "PGRST202") {
+      return { error: "Falta actualizar la base de datos (migración 0060) para anular pagos." };
+    }
+    if (error.message.includes("ya está cerrada")) {
+      return { error: "No se puede anular: la caja donde se registró este pago ya está cerrada." };
+    }
+    return { error: "No pudimos anular el pago." };
+  }
+
+  revalidatePath("/proveedores");
+  revalidatePath("/proveedores/calendario");
+  revalidatePath("/compras");
+  revalidatePath("/caja");
+  return {};
+}

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export interface CuentaCorrienteMovement {
@@ -8,6 +9,8 @@ export interface CuentaCorrienteMovement {
   cargo: number;
   // Reduce el saldo (un cobro o un pago).
   pago: number;
+  /** Botón opcional al final de la fila (ej. anular un pago). */
+  action?: ReactNode;
 }
 
 export function CuentaCorriente({
@@ -44,6 +47,7 @@ export function CuentaCorriente({
     },
     []
   );
+  const hasActions = movements.some((m) => m.action);
   const displayRows = oldestFirst ? rows : [...rows].reverse();
   const finalSaldo = rows[rows.length - 1].saldo;
 
@@ -57,6 +61,7 @@ export function CuentaCorriente({
             <th className="whitespace-nowrap px-3 py-2.5 text-right">Cargo</th>
             <th className="whitespace-nowrap px-3 py-2.5 text-right">Pago</th>
             <th className="whitespace-nowrap px-5 py-2.5 text-right">Saldo</th>
+            {hasActions && <th className="px-3 py-2.5" />}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -75,6 +80,7 @@ export function CuentaCorriente({
               <td className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-foreground">
                 {formatCurrency(row.saldo)}
               </td>
+              {hasActions && <td className="whitespace-nowrap px-3 py-2.5 text-right">{row.action}</td>}
             </tr>
           ))}
         </tbody>

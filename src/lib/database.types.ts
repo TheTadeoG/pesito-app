@@ -942,6 +942,10 @@ export interface Database {
           payment_breakdown: Json;
         }[];
       };
+      void_supplier_payment: {
+        Args: { p_payment_id: string };
+        Returns: undefined;
+      };
       register_supplier_purchase_payments: {
         Args: {
           p_supplier_id: string;
