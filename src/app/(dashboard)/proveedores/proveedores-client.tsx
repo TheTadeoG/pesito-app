@@ -13,13 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { paymentLabels } from "@/lib/payment-labels";
 import type { Supplier } from "@/lib/types";
 import {
   SOON_DAYS,
   addDays,
   calendarEvents,
-  dayKey,
   daysBetween,
   nextDue,
   totalsOf,
@@ -488,7 +486,7 @@ export function ProveedoresClient({
         )}
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
+      <div>
         <Card>
           <CardContent className="p-0">
             {accountsEnabled && (
@@ -661,43 +659,6 @@ export function ProveedoresClient({
                     </div>
                   );
                 })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="py-4">
-            <p className="text-sm font-semibold text-foreground">Últimos movimientos</p>
-            {overview.feed.length === 0 ? (
-              <p className="mt-3 text-sm text-muted-foreground">
-                Acá vas a ver las compras a cuenta y los pagos a proveedores.
-              </p>
-            ) : (
-              <div className="mt-1 divide-y divide-border">
-                {overview.feed.map((f) => (
-                  <div key={f.id} className="flex items-center gap-3 py-2.5">
-                    <span className="w-10 shrink-0 text-xs text-muted-foreground">
-                      {shortDate(dayKey(f.at))}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-foreground">{f.supplierName}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {f.kind === "pago"
-                          ? `Pago${f.detail ? ` · ${(paymentLabels[f.detail] ?? f.detail).toLowerCase()}` : ""}`
-                          : `A cuenta${f.detail ? ` · vence ${shortDate(f.detail)}` : ""}`}
-                      </p>
-                    </div>
-                    <span
-                      className={cn(
-                        "shrink-0 text-sm font-semibold",
-                        f.kind === "pago" ? "text-success" : "text-warning"
-                      )}
-                    >
-                      {`${f.kind === "pago" ? "−" : "+"}${formatCurrency(f.amount)}`}
-                    </span>
-                  </div>
-                ))}
               </div>
             )}
           </CardContent>

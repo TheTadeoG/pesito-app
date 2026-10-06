@@ -28,16 +28,6 @@ export interface MonthlyPoint {
   pagos: number;
 }
 
-export interface FeedEntry {
-  id: string;
-  at: string;
-  kind: "compra_cuenta" | "pago";
-  supplierName: string;
-  amount: number;
-  /** Medio de pago (pagos) o vencimiento (compras a cuenta). */
-  detail: string | null;
-}
-
 export interface TopSupplier {
   name: string;
   amount: number;
@@ -50,7 +40,6 @@ export interface SupplierOverview {
   monthly: MonthlyPoint[];
   top: TopSupplier[];
   topTotal: number;
-  feed: FeedEntry[];
   paid30: { total: number; count: number; byMethod: Record<string, number> };
   account30: { total: number; count: number };
 }
@@ -213,29 +202,5 @@ export async function loadSupplierOverview(
     pct: topTotal > 0 ? Math.round((amount / topTotal) * 100) : 0,
   }));
 
-  // Últimos movimientos: compras a cuenta y pagos.
-  const feed: FeedEntry[] = [
-    ...purchases
-      .filter((p) => Number(p.account_amount ?? 0) > 0)
-      .map((p) => ({
-        id: `c-${p.id}`,
-        at: p.created_at,
-        kind: "compra_cuenta" as const,
-        supplierName: nameById.get(p.supplier_id as string) ?? "Proveedor eliminado",
-        amount: Number(p.account_amount),
-        detail: dueByPurchase.get(p.id) ?? null,
-      })),
-    ...payments.map((p) => ({
-      id: `p-${p.id}`,
-      at: p.created_at,
-      kind: "pago" as const,
-      supplierName: nameById.get(p.supplier_id) ?? "Proveedor eliminado",
-      amount: Number(p.amount),
-      detail: p.method,
-    })),
-  ]
-    .sort((a, b) => b.at.localeCompare(a.at))
-    .slice(0, 6);
-
-  return { todayKey, rows, monthly, top, topTotal, feed, paid30, account30 };
+  return { todayKey, rows, monthly, top, topTotal, paid30, account30 };
 }
