@@ -82,3 +82,54 @@ export function debtSummary(items: readonly DebtItem[]): DebtSummary | null {
     sub: `Deuda de hace ${plural(oldest, "día", "días")}`,
   };
 }
+
+export interface NextPayment {
+  amount: number;
+  /** "vencida hace 3 días", "mañana", "el 12/10", "sin fecha". */
+  when: string;
+  tone: DebtTone;
+  /** Otras partes de la deuda que no entran en este monto. */
+  more: number;
+}
+
+/**
+ * Lo próximo que hay que pagarle a un proveedor, como "monto · cuándo": lo
+ * vencido si hay; si no, lo que vence antes; si nada tiene fecha, todo sin fecha.
+ */
+export function nextPayment(items: readonly DebtItem[]): NextPayment | null {
+  if (items.length === 0) return null;
+  const overdue = items.filter((i) => i.status === "vencida");
+  if (overdue.length > 0) {
+    const days = oldestOverdueDays(items);
+    return {
+      amount: overdue.reduce((acc, i) => acc + i.amount, 0),
+      when: `vencida hace ${plural(days, "día", "días")}`,
+      tone: "danger",
+      more: items.length - overdue.length,
+    };
+  }
+  const dated = items
+    .filter((i) => i.dueDate)
+    .sort((a, b) => (a.dueDate as string).localeCompare(b.dueDate as string));
+  if (dated.length > 0) {
+    const first = dated[0];
+    const sameDay = dated.filter((i) => i.dueDate === first.dueDate);
+    return {
+      amount: sameDay.reduce((acc, i) => acc + i.amount, 0),
+      when:
+        first.daysToDue === 0
+          ? "hoy"
+          : first.daysToDue === 1
+            ? "mañana"
+            : `el ${shortDate(first.dueDate as string)}`,
+      tone: first.status === "pronto" ? "warning" : "muted",
+      more: items.length - sameDay.length,
+    };
+  }
+  return {
+    amount: items.reduce((acc, i) => acc + i.amount, 0),
+    when: "sin fecha",
+    tone: "muted",
+    more: 0,
+  };
+}

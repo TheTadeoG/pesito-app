@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowUpDown,
+  ArrowDown,
+  ArrowUp,
   BarChart3,
   CalendarDays,
   ChevronDown,
+  ChevronRight,
   Download,
-  Filter,
+  ListFilter,
   MessageCircle,
   MoreHorizontal,
   Pencil,
@@ -33,11 +35,12 @@ import { SOON_DAYS, nextDue, totalsOf, urgencyRank, type DebtItem } from "@/lib/
 import type { SupplierOverview, SupplierRow } from "@/lib/supplier-overview";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
-import { deleteSupplier } from "@/app/(dashboard)/proveedores/actions";
+import { deleteSupplier, setPurchaseDueDate } from "@/app/(dashboard)/proveedores/actions";
 import { downloadDebtExcel } from "@/app/(dashboard)/proveedores/debt-excel";
 import {
   agoLabel,
   debtSummary,
+  nextPayment,
   shortDate,
   type DebtTone,
 } from "@/app/(dashboard)/proveedores/debt-format";
@@ -63,20 +66,12 @@ const ESTADO_LABEL: Record<EstadoKey, string> = {
 
 const WITH_DEBT: EstadoKey[] = ["vencida", "pronto", "no_vencida", "sin_fecha"];
 
-// Las pestañas son atajos del filtro de la columna "Estado de la deuda".
+// Las pestañas son atajos del filtro por estado ("Filtrar").
 const TABS: { key: string; label: string; estados: EstadoKey[] }[] = [
   { key: "debt", label: "Con deuda", estados: WITH_DEBT },
   { key: "all", label: "Todos", estados: [] },
-  { key: "vencida", label: "Vencidas", estados: ["vencida"] },
-  { key: "pronto", label: "Vencen pronto", estados: ["pronto"] },
-  { key: "sin_fecha", label: "Sin fecha", estados: ["sin_fecha"] },
   { key: "al_dia", label: "Al día", estados: ["al_dia"] },
 ];
-
-function initialsOf(name: string) {
-  const words = name.trim().split(/\s+/);
-  return ((words[0]?.[0] ?? "") + (words[1]?.[0] ?? "")).toUpperCase();
-}
 
 const hasStatus = (items: readonly DebtItem[], status: DebtItem["status"]) =>
   items.some((i) => i.status === status);
@@ -115,7 +110,8 @@ export function ProveedoresClient({
   const [statsOpen, setStatsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
-  const [paying, setPaying] = useState<SupplierRow | null>(null);
+  const [paying, setPaying] = useState<{ row: SupplierRow; purchaseId: string | null } | null>(null);
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -216,11 +212,25 @@ export function ProveedoresClient({
   // "Registrar pago" de la barra de arriba: con un solo deudor va directo, con
   // varios se elige a quién.
   function startPayment() {
-    if (debtors.length === 1) setPaying(debtors[0]);
+    if (debtors.length === 1) setPaying({ row: debtors[0], purchaseId: null });
     else {
       setPickerQuery("");
       setPickerOpen(true);
     }
+  }
+
+  function toggleOpen(id: string) {
+    setOpen((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // Tocar el título de una columna ordena; tocarlo de nuevo invierte el orden.
+  function sortBy(key: SortKey, firstDir: SortDir) {
+    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === "asc" ? "desc" : "asc" } : { key, dir: firstDir }));
   }
 
   function toggleEstado(key: EstadoKey) {
@@ -259,8 +269,8 @@ export function ProveedoresClient({
         ];
 
   const gridCols = accountsEnabled
-    ? "lg:grid-cols-[2.25rem_minmax(0,1.3fr)_6.5rem_minmax(0,2fr)_7rem_12.5rem_1.75rem]"
-    : "lg:grid-cols-[2.25rem_minmax(0,1.6fr)_7rem_8rem_10rem_1.75rem]";
+    ? "lg:grid-cols-[minmax(0,1.5fr)_8rem_minmax(0,1.6fr)_7rem_9.5rem]"
+    : "lg:grid-cols-[minmax(0,1.6fr)_7rem_8rem_9.5rem]";
 
   const upcomingWhen = upcoming
     ? upcoming.daysToDue === 0
@@ -539,8 +549,8 @@ export function ProveedoresClient({
 
       <Card>
         <CardContent className="p-0">
-          {accountsEnabled && (
-            <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5">
+            {accountsEnabled && (
               <div className="flex flex-1 flex-wrap gap-1">
                 {TABS.map((t) => (
                   <button
@@ -555,47 +565,80 @@ export function ProveedoresClient({
                         : "text-muted-foreground hover:bg-muted"
                     )}
                   >
-                    {t.label}
-                    <span className="ml-1.5 font-medium opacity-70">{counts[t.key]}</span>
+                    {`${t.label} ${counts[t.key]}`}
                   </button>
                 ))}
               </div>
-              {debtors.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => downloadDebtExcel(rows, todayKey)}
-                  title="Baja la deuda, compra por compra, a una planilla de Excel"
+            )}
+            {accountsEnabled && (
+              <FilterPanel
+                trigger={
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className={cn(
+                      "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-muted",
+                      !activeTab && estados.size > 0 ? "bg-accent text-accent-foreground" : "text-foreground"
+                    )}
+                  >
+                    <ListFilter className="h-3.5 w-3.5" />
+                    Filtrar
+                  </span>
+                }
+              >
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Mostrar proveedores con…</p>
+                <div className="space-y-0.5">
+                  {(Object.keys(ESTADO_LABEL) as EstadoKey[]).map((key) => (
+                    <label
+                      key={key}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={estados.has(key)}
+                        onChange={() => toggleEstado(key)}
+                        className="h-4 w-4 accent-[var(--color-primary)]"
+                      />
+                      <span className="flex-1 font-medium text-foreground">{ESTADO_LABEL[key]}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {rows.filter((r) => matchesEstado(r, key)).length}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEstados(new Set())}
+                  className="mt-2 text-xs font-semibold text-primary hover:underline"
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  Descargar deuda (Excel)
-                </Button>
-              )}
-            </div>
-          )}
+                  Limpiar
+                </button>
+              </FilterPanel>
+            )}
+            {accountsEnabled && debtors.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-9 px-0"
+                onClick={() => downloadDebtExcel(rows, todayKey)}
+                title="Descargar la deuda en Excel"
+                aria-label="Descargar la deuda en Excel"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
 
           {accountsEnabled && !activeTab && estados.size > 0 && (
             <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2 text-xs">
-              <span className="text-muted-foreground">Filtros:</span>
               <span className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 font-semibold text-accent-foreground">
                 {`Estado: ${Array.from(estados)
                   .map((e) => ESTADO_LABEL[e].replace(/ \(.*\)/, ""))
                   .join(", ")}`}
-                <button
-                  type="button"
-                  aria-label="Quitar el filtro de estado"
-                  onClick={() => setEstados(new Set())}
-                >
+                <button type="button" aria-label="Quitar el filtro de estado" onClick={() => setEstados(new Set())}>
                   <X className="h-3 w-3" />
                 </button>
               </span>
-              <button
-                type="button"
-                onClick={() => setEstados(new Set())}
-                className="font-semibold text-primary hover:underline"
-              >
-                Limpiar todo
-              </button>
             </div>
           )}
 
@@ -629,246 +672,180 @@ export function ProveedoresClient({
                   gridCols
                 )}
               >
-                <span />
-                <SortMenu
-                  label="Proveedor"
-                  active={sort.key === "name"}
-                  onPick={(dir) => setSort({ key: "name", dir })}
-                  options={[
-                    ["asc", "De la A a la Z"],
-                    ["desc", "De la Z a la A"],
-                  ]}
-                  dir={sort.dir}
-                />
+                <SortHeader label="Proveedor" active={sort.key === "name"} dir={sort.dir} onClick={() => sortBy("name", "asc")} />
                 {accountsEnabled ? (
-                  <SortMenu
-                    label="Le debés"
-                    active={sort.key === "debt"}
-                    onPick={(dir) => setSort({ key: "debt", dir })}
-                    options={[
-                      ["desc", "De mayor a menor"],
-                      ["asc", "De menor a mayor"],
-                    ]}
-                    dir={sort.dir}
-                  />
+                  <>
+                    <SortHeader label="Le debés" active={sort.key === "debt"} dir={sort.dir} onClick={() => sortBy("debt", "desc")} />
+                    <SortHeader label="Próximo pago" active={sort.key === "urgency"} dir={sort.dir} onClick={() => sortBy("urgency", "asc")} />
+                    <SortHeader label="Última compra" active={sort.key === "last"} dir={sort.dir} onClick={() => sortBy("last", "desc")} />
+                  </>
                 ) : (
-                  <SortMenu
-                    label="Última compra"
-                    active={sort.key === "last"}
-                    onPick={(dir) => setSort({ key: "last", dir })}
-                    options={[
-                      ["desc", "La más reciente primero"],
-                      ["asc", "La más vieja primero"],
-                    ]}
-                    dir={sort.dir}
-                  />
+                  <>
+                    <SortHeader label="Última compra" active={sort.key === "last"} dir={sort.dir} onClick={() => sortBy("last", "desc")} />
+                    <span>Total comprado</span>
+                  </>
                 )}
-                {accountsEnabled ? (
-                  <FilterPanel
-                    align="left"
-                    trigger={
-                      <HeaderButton active={estados.size > 0 && !activeTab} icon={Filter}>
-                        Estado de la deuda
-                      </HeaderButton>
-                    }
-                  >
-                    <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                      Mostrar proveedores con…
-                    </p>
-                    <div className="space-y-0.5">
-                      {(Object.keys(ESTADO_LABEL) as EstadoKey[]).map((key) => (
-                        <label
-                          key={key}
-                          className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={estados.has(key)}
-                            onChange={() => toggleEstado(key)}
-                            className="h-4 w-4 accent-[var(--color-primary)]"
-                          />
-                          <span className="flex-1 font-medium text-foreground">{ESTADO_LABEL[key]}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {rows.filter((r) => matchesEstado(r, key)).length}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEstados(new Set())}
-                      className="mt-2 text-xs font-semibold text-primary hover:underline"
-                    >
-                      Limpiar
-                    </button>
-                  </FilterPanel>
-                ) : (
-                  <span>Total comprado</span>
-                )}
-                {accountsEnabled ? (
-                  <SortMenu
-                    label="Última compra"
-                    active={sort.key === "last"}
-                    onPick={(dir) => setSort({ key: "last", dir })}
-                    options={[
-                      ["desc", "La más reciente primero"],
-                      ["asc", "La más vieja primero"],
-                    ]}
-                    dir={sort.dir}
-                  />
-                ) : null}
-                <span />
                 <span />
               </div>
               {filtered.map((s) => {
-                const summary = debtSummary(s.items);
+                const next = nextPayment(s.items);
                 const owes = s.balance > 0;
+                const credit = s.balance < -0.004;
                 const whatsapp = chatWhatsappUrl(s.phone);
+                const expanded = accountsEnabled && owes && open.has(s.id);
                 return (
-                  <div
-                    key={s.id}
-                    className={cn(
-                      "group grid gap-2 px-4 py-2.5 hover:bg-muted/30 lg:items-center lg:gap-3",
-                      gridCols
-                    )}
-                  >
+                  <div key={s.id}>
                     <div
                       className={cn(
-                        "hidden h-9 w-9 items-center justify-center rounded-xl text-xs font-bold lg:flex",
-                        owes ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+                        "group grid gap-1.5 px-4 py-2.5 hover:bg-muted/30 lg:items-center lg:gap-3",
+                        gridCols
                       )}
                     >
-                      {initialsOf(s.name)}
-                    </div>
-                    <Link
-                      href={`/proveedores/${s.id}`}
-                      title="Ver ficha del proveedor"
-                      className="-mx-2 min-w-0 rounded-lg px-2 py-0.5 transition-colors hover:bg-muted"
-                    >
-                      <p className="truncate text-sm font-semibold text-foreground">{s.name}</p>
-                      {(s.phone || s.email) && (
-                        <p className="truncate text-xs text-muted-foreground">
-                          {[s.phone, s.email].filter(Boolean).join(" · ")}
-                        </p>
-                      )}
-                    </Link>
-
-                    {accountsEnabled ? (
-                      <>
-                        <p className="text-sm">
-                          {owes ? (
-                            <span className="text-base font-bold text-warning">
-                              {formatCurrency(s.balance)}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">Al día</span>
-                          )}
-                        </p>
-                        <div className="min-w-0">
-                          {summary ? (
-                            <>
-                              <p
-                                className={cn(
-                                  "truncate text-sm font-semibold",
-                                  TONE_TEXT[summary.tone]
-                                )}
-                              >
-                                {summary.headline}
-                              </p>
-                              {summary.sub && (
-                                <p className="truncate text-xs text-muted-foreground">{summary.sub}</p>
-                              )}
-                            </>
-                          ) : (
-                            <span className="hidden text-sm text-muted-foreground lg:inline">—</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          <span className="lg:hidden">Última compra: </span>
-                          {agoLabel(s.lastPurchaseAt, todayKey)}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-muted-foreground">
-                          <span className="lg:hidden">Última compra: </span>
-                          {agoLabel(s.lastPurchaseAt, todayKey)}
-                        </p>
-                        <p className="text-sm text-foreground">
-                          <span className="text-muted-foreground lg:hidden">Total comprado: </span>
-                          {formatCurrency(s.totalPurchased)}
-                        </p>
-                      </>
-                    )}
-
-                    <div
-                      className={cn(
-                        "flex items-center gap-1.5 lg:justify-end",
-                        !(accountsEnabled && owes) &&
-                          "lg:opacity-0 lg:transition-opacity lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
-                      )}
-                    >
-                      {whatsapp && (
-                        <a
-                          href={whatsapp}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Escribirle a ${s.name} por WhatsApp`}
-                          title="Escribirle por WhatsApp"
-                        >
-                          <Button size="sm" variant="outline" className="w-8 px-0" tabIndex={-1}>
-                            <MessageCircle className="h-4 w-4 shrink-0" />
-                          </Button>
-                        </a>
-                      )}
-                      {accountsEnabled && owes ? (
-                        <Button size="sm" onClick={() => setPaying(s)}>
-                          <Wallet className="h-3.5 w-3.5" />
-                          Registrar pago
-                        </Button>
-                      ) : (
-                        <Link href="/compras">
-                          <Button size="sm" variant="outline">
-                            Cargar compra
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
-
-                    <div className="flex justify-end lg:justify-center">
-                      <DropdownMenu
-                        trigger={
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        {accountsEnabled && owes ? (
                           <button
                             type="button"
-                            aria-label={`Más opciones de ${s.name}`}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                            aria-expanded={expanded}
+                            aria-label={expanded ? `Ocultar las compras de ${s.name}` : `Ver las compras que le debés a ${s.name}`}
+                            onClick={() => toggleOpen(s.id)}
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
                           >
-                            <MoreHorizontal className="h-4 w-4" />
+                            <ChevronRight className={cn("h-4 w-4 transition-transform", expanded && "rotate-90")} />
                           </button>
-                        }
-                      >
-                        <DropdownMenuItem onClick={() => router.push(`/proveedores/${s.id}`)}>
-                          Ver ficha
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setEditing(s);
-                            setFormOpen(true);
-                          }}
+                        ) : (
+                          <span className="h-7 w-7 shrink-0" />
+                        )}
+                        <Link
+                          href={`/proveedores/${s.id}`}
+                          title="Ver ficha del proveedor"
+                          className="min-w-0 rounded-lg px-1.5 py-0.5 transition-colors hover:bg-muted"
                         >
-                          <Pencil className="h-4 w-4" />
-                          Editar datos
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          danger
-                          disabled={busyId === s.id}
-                          onClick={() => handleDelete(s)}
+                          <p className="truncate text-sm font-semibold text-foreground">{s.name}</p>
+                          {(s.phone || s.email) && (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {[s.phone, s.email].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                        </Link>
+                      </div>
+
+                      {accountsEnabled ? (
+                        <>
+                          <p className="text-sm">
+                            {owes ? (
+                              <span className="text-base font-bold text-foreground">{formatCurrency(s.balance)}</span>
+                            ) : credit ? (
+                              <span className="font-semibold text-success">{`A tu favor ${formatCurrency(-s.balance)}`}</span>
+                            ) : (
+                              <span className="text-muted-foreground">Al día</span>
+                            )}
+                          </p>
+                          <p className="min-w-0 truncate text-sm">
+                            {next ? (
+                              <>
+                                <span className="font-semibold text-foreground">{formatCurrency(next.amount)}</span>
+                                <span className="text-muted-foreground">{" · "}</span>
+                                <span className={cn("font-medium", TONE_TEXT[next.tone])}>
+                                  {next.more > 0 ? `${next.when} (+${next.more} más)` : next.when}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="hidden text-muted-foreground lg:inline">—</span>
+                            )}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            <span className="lg:hidden">Última compra: </span>
+                            {agoLabel(s.lastPurchaseAt, todayKey)}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-muted-foreground">
+                            <span className="lg:hidden">Última compra: </span>
+                            {agoLabel(s.lastPurchaseAt, todayKey)}
+                          </p>
+                          <p className="text-sm text-foreground">
+                            <span className="text-muted-foreground lg:hidden">Total comprado: </span>
+                            {formatCurrency(s.totalPurchased)}
+                          </p>
+                        </>
+                      )}
+
+                      <div className="flex items-center gap-1.5 lg:justify-end">
+                        {whatsapp && (
+                          <a
+                            href={whatsapp}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Escribirle a ${s.name} por WhatsApp`}
+                            title="Escribirle por WhatsApp"
+                            className="lg:opacity-0 lg:transition-opacity lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+                          >
+                            <Button size="sm" variant="ghost" className="w-8 px-0" tabIndex={-1}>
+                              <MessageCircle className="h-4 w-4 shrink-0" />
+                            </Button>
+                          </a>
+                        )}
+                        {accountsEnabled && owes ? (
+                          <Button size="sm" onClick={() => setPaying({ row: s, purchaseId: null })}>
+                            Pagar
+                          </Button>
+                        ) : (
+                          <Link href="/compras">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="lg:opacity-0 lg:transition-opacity lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+                            >
+                              Cargar compra
+                            </Button>
+                          </Link>
+                        )}
+                        <DropdownMenu
+                          trigger={
+                            <button
+                              type="button"
+                              aria-label={`Más opciones de ${s.name}`}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          }
                         >
-                          <Trash2 className="h-4 w-4" />
-                          Borrar proveedor
-                        </DropdownMenuItem>
-                      </DropdownMenu>
+                          <DropdownMenuItem onClick={() => router.push(`/proveedores/${s.id}`)}>
+                            Ver ficha
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditing(s);
+                              setFormOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Editar datos
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            danger
+                            disabled={busyId === s.id}
+                            onClick={() => handleDelete(s)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Borrar proveedor
+                          </DropdownMenuItem>
+                        </DropdownMenu>
+                      </div>
                     </div>
+                    {expanded && (
+                      <div className="divide-y divide-border border-t border-border bg-muted/30 pl-4 lg:pl-14">
+                        {s.items.map((item, idx) => (
+                          <ItemRow
+                            key={item.purchaseId ?? `adj-${idx}`}
+                            item={item}
+                            onPay={() => setPaying({ row: s, purchaseId: item.purchaseId })}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -914,7 +891,7 @@ export function ProveedoresClient({
                 type="button"
                 onClick={() => {
                   setPickerOpen(false);
-                  setPaying(s);
+                  setPaying({ row: s, purchaseId: null });
                 }}
                 className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
               >
@@ -935,8 +912,9 @@ export function ProveedoresClient({
         </div>
       </Dialog>
       <SupplierPaymentDialog
-        supplier={paying}
-        items={paying?.items}
+        supplier={paying?.row ?? null}
+        items={paying?.row.items}
+        initialPurchaseId={paying?.purchaseId ?? null}
         onClose={() => setPaying(null)}
         customPaymentMethods={customPaymentMethods}
       />
@@ -944,62 +922,116 @@ export function ProveedoresClient({
   );
 }
 
-/** Título de columna que se puede tocar (orden o filtro). */
-function HeaderButton({
-  active,
-  icon: Icon,
-  children,
-}: {
-  active: boolean;
-  icon: React.ComponentType<{ className?: string }>;
-  children: ReactNode;
-}) {
-  return (
-    <span
-      role="button"
-      tabIndex={0}
-      className={cn(
-        "-ml-2 inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1 transition-colors hover:bg-muted",
-        active ? "bg-accent font-semibold text-accent-foreground" : "text-muted-foreground"
-      )}
-    >
-      {children}
-      <Icon className="h-3 w-3" />
-    </span>
-  );
-}
-
-/** Título de columna con menú de orden. */
-function SortMenu({
+/** Título de columna: se toca para ordenar. */
+function SortHeader({
   label,
   active,
   dir,
-  options,
-  onPick,
+  onClick,
 }: {
   label: string;
   active: boolean;
   dir: SortDir;
-  options: [SortDir, string][];
-  onPick: (dir: SortDir) => void;
+  onClick: () => void;
 }) {
+  const Arrow = dir === "asc" ? ArrowUp : ArrowDown;
   return (
-    <DropdownMenu
-      align="left"
-      trigger={
-        <HeaderButton active={active} icon={ArrowUpDown}>
-          {label}
-        </HeaderButton>
-      }
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1 whitespace-nowrap text-left transition-colors hover:text-foreground",
+        active && "font-semibold text-foreground"
+      )}
     >
-      {options.map(([value, text]) => (
-        <DropdownMenuItem key={value} onClick={() => onPick(value)}>
-          <span className={cn(active && dir === value && "font-semibold text-primary")}>
-            {active && dir === value ? `✓ ${text}` : text}
-          </span>
-        </DropdownMenuItem>
-      ))}
-    </DropdownMenu>
+      {label}
+      {active && <Arrow className="h-3 w-3" />}
+    </button>
+  );
+}
+
+/** Una compra que se debe, dentro de la fila desplegada del proveedor. */
+function ItemRow({ item, onPay }: { item: DebtItem; onPay: () => void }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [date, setDate] = useState(item.dueDate ?? "");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const title = item.purchaseId ? `Compra del ${shortDate(item.purchaseDay)}` : "Saldo sin compra asociada";
+  const when =
+    item.daysToDue === null || !item.dueDate
+      ? { text: "sin fecha", tone: "muted" as const }
+      : item.daysToDue < 0
+        ? { text: `vencida hace ${-item.daysToDue} ${item.daysToDue === -1 ? "día" : "días"}`, tone: "danger" as const }
+        : item.daysToDue === 0
+          ? { text: "vence hoy", tone: "warning" as const }
+          : item.daysToDue === 1
+            ? { text: "vence mañana", tone: "warning" as const }
+            : { text: `vence el ${shortDate(item.dueDate)}`, tone: item.status === "pronto" ? ("warning" as const) : ("muted" as const) };
+
+  async function save() {
+    if (!item.purchaseId || !date) return;
+    setPending(true);
+    setError(null);
+    const result = await setPurchaseDueDate(item.purchaseId, date);
+    setPending(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setEditing(false);
+    router.refresh();
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 py-2 pr-4">
+      <div className="min-w-0 flex-1 basis-44">
+        <p className="truncate text-sm text-foreground">
+          <span className="font-medium">{title}</span>
+          <span className="text-muted-foreground">{" · "}</span>
+          <span className="font-semibold">{formatCurrency(item.amount)}</span>
+        </p>
+        <p className={cn("text-xs font-medium", TONE_TEXT[when.tone])}>{when.text}</p>
+      </div>
+      {item.purchaseId && (
+        <div className="flex items-center gap-2">
+          {editing ? (
+            <>
+              <div className="w-40">
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  aria-label="Fecha de vencimiento"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <Button size="sm" disabled={pending || !date} onClick={save}>
+                {pending ? "…" : "Guardar"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                Cancelar
+              </Button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                {item.dueDate ? "Cambiar fecha" : "Asignar fecha"}
+              </button>
+              <Button size="sm" variant="outline" onClick={onPay}>
+                Pagar esta
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+      {error && <p className="basis-full text-xs text-danger">{error}</p>}
+    </div>
   );
 }
 

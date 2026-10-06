@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { CASH_UNAVAILABLE_ERROR, tryComputeCashOnHand } from "@/lib/caja";
+import type { Json } from "@/lib/database.types";
 
 export interface ActionState {
   error?: string;
@@ -207,4 +208,62 @@ export async function setPurchaseDueDates(
   revalidatePath("/proveedores");
   revalidatePath("/proveedores/calendario");
   return { saved, failed };
+}
+
+/**
+ * Paga facturas puntuales de un proveedor: cada una con su monto (nunca más
+ * de lo que le falta). Los pagos sueltos de un solo monto siguen usando
+ * registerSupplierPayment.
+ */
+export async function registerSupplierPurchasePayments(
+  supplierId: string,
+  allocations: { purchaseId: string; amount: number }[],
+  method: string
+): Promise<ActionState> {
+  const clean = allocations.filter((a) => a.amount > 0);
+  if (clean.length === 0) return { error: "Elegí al menos una factura y un monto." };
+  const total = clean.reduce((acc, a) => acc + a.amount, 0);
+
+  const { userId } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const { data: register } = await supabase
+    .from("cash_registers")
+    .select("id, opening_amount")
+    .eq("user_id", userId)
+    .eq("status", "abierta")
+    .maybeSingle();
+
+  if (!register) {
+    return { error: "Abrí tu caja para poder registrar pagos a proveedores." };
+  }
+
+  if (method === "efectivo") {
+    const cashOnHand = await tryComputeCashOnHand(supabase, register.id, Number(register.opening_amount));
+    if (cashOnHand === null) return { error: CASH_UNAVAILABLE_ERROR };
+    if (total > cashOnHand) {
+      return { error: "No hay suficiente efectivo en la caja para este pago." };
+    }
+  }
+
+  const { error } = await supabase.rpc("register_supplier_purchase_payments", {
+    p_supplier_id: supplierId,
+    p_cash_register_id: register.id,
+    p_method: method,
+    p_allocations: clean.map((a) => ({ purchase_id: a.purchaseId, amount: a.amount })) as unknown as Json,
+  });
+
+  if (error) {
+    // PGRST202: la función no existe (falta aplicar la migración 0059).
+    if (error.code === "PGRST202") {
+      return { error: "Falta actualizar la base de datos (migración 0059) para pagar facturas puntuales." };
+    }
+    return { error: "No pudimos registrar el pago." };
+  }
+
+  revalidatePath("/proveedores");
+  revalidatePath("/proveedores/calendario");
+  revalidatePath("/compras");
+  revalidatePath("/caja");
+  return {};
 }

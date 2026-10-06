@@ -942,6 +942,15 @@ export interface Database {
           payment_breakdown: Json;
         }[];
       };
+      register_supplier_purchase_payments: {
+        Args: {
+          p_supplier_id: string;
+          p_cash_register_id: string;
+          p_method: string;
+          p_allocations: Json;
+        };
+        Returns: undefined;
+      };
       set_purchase_due_date: {
         Args: { p_purchase_id: string; p_due_date: string | null };
         Returns: undefined;

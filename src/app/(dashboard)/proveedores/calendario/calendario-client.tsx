@@ -114,7 +114,7 @@ export function CalendarioClient({
   const [selected, setSelected] = useState<string>(
     todayKey.slice(0, 7) === monthKey ? todayKey : `${monthKey}-01`
   );
-  const [paying, setPaying] = useState<SupplierRow | null>(null);
+  const [paying, setPaying] = useState<{ row: SupplierRow; purchaseId: string | null } | null>(null);
 
   const [yearStr, monthStr] = monthKey.split("-");
   const monthName = MONTHS[Number(monthStr) - 1];
@@ -141,6 +141,10 @@ export function CalendarioClient({
     .reduce((acc, e) => acc + (e.amount ?? 0), 0);
   const selectedEvents = byDay.get(selected) ?? [];
   const supplierById = useMemo(() => new Map(suppliers.map((s) => [s.id, s])), [suppliers]);
+  const openPayment = (supplierId: string, purchaseId: string | null) => {
+    const row = supplierById.get(supplierId);
+    if (row) setPaying({ row, purchaseId });
+  };
 
   const undated = useMemo(() => debts.filter((d) => !d.dueDate), [debts]);
   const undatedTotal = undated.reduce((acc, d) => acc + d.amount, 0);
@@ -387,7 +391,12 @@ export function CalendarioClient({
                           <div className="mt-2 flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() => setPaying(supplierById.get(e.supplierId) ?? null)}
+                              onClick={() =>
+                                openPayment(
+                                  e.supplierId,
+                                  e.purchaseIds?.length === 1 ? e.purchaseIds[0] : null
+                                )
+                              }
                             >
                               <Wallet className="h-3.5 w-3.5" />
                               Registrar pago
@@ -413,13 +422,14 @@ export function CalendarioClient({
           filter={debtFilter}
           onFilter={setDebtFilter}
           counts={counts}
-          onPay={(supplierId) => setPaying(supplierById.get(supplierId) ?? null)}
+          onPay={openPayment}
         />
       )}
 
       <SupplierPaymentDialog
-        supplier={paying}
-        items={paying?.items}
+        supplier={paying?.row ?? null}
+        items={paying?.row.items}
+        initialPurchaseId={paying?.purchaseId ?? null}
         onClose={() => setPaying(null)}
         customPaymentMethods={customPaymentMethods}
       />
@@ -439,7 +449,7 @@ function AllDebts({
   filter: DebtFilter;
   onFilter: (f: DebtFilter) => void;
   counts: Record<DebtFilter, number>;
-  onPay: (supplierId: string) => void;
+  onPay: (supplierId: string, purchaseId: string | null) => void;
 }) {
   const router = useRouter();
   const [bulkDate, setBulkDate] = useState("");
@@ -569,7 +579,7 @@ function AllDebts({
         ) : (
           <div className="divide-y divide-border">
             {list.map((d, idx) => (
-              <DebtListRow key={d.purchaseId ?? `adj-${idx}`} debt={d} onPay={() => onPay(d.supplierId)} />
+              <DebtListRow key={d.purchaseId ?? `adj-${idx}`} debt={d} onPay={() => onPay(d.supplierId, d.purchaseId)} />
             ))}
           </div>
         )}
