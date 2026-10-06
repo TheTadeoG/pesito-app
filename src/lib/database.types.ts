@@ -571,6 +571,8 @@ export interface Database {
           branch_id: string | null;
           /** Vencimiento de lo que quedó a cuenta (0056). undefined si falta la migración. */
           due_date?: string | null;
+          /** Lo ya pagado de lo que quedó a cuenta (0058). undefined si falta la migración. */
+          paid_amount?: number;
         };
         Insert: {
           id?: string;
@@ -587,6 +589,7 @@ export interface Database {
           created_at?: string;
           branch_id?: string | null;
           due_date?: string | null;
+          paid_amount?: number;
         };
         Update: Partial<Database["public"]["Tables"]["purchases"]["Insert"]>;
         Relationships: [];

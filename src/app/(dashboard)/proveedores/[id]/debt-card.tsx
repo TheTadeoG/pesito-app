@@ -101,13 +101,15 @@ function DebtRow({ item }: { item: DebtItem }) {
       </div>
       {editing && (
         <div className="flex flex-wrap items-center gap-2">
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            aria-label="Fecha de vencimiento"
-            className="h-9 w-44"
-          />
+          <div className="w-44">
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              aria-label="Fecha de vencimiento"
+              className="h-9"
+            />
+          </div>
           <Button size="sm" disabled={!date || pending} onClick={() => save(date)}>
             {pending ? "Guardando…" : "Guardar"}
           </Button>

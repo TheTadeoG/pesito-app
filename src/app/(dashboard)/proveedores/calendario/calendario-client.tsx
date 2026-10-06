@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { SupplierRow } from "@/lib/supplier-overview";
-import { addDays, daysBetween, type CalendarEvent } from "@/lib/supplier-debt";
+import { addDays, daysBetween, type CalendarEvent, type DebtItem } from "@/lib/supplier-debt";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
-import { setPurchaseDueDate } from "@/app/(dashboard)/proveedores/actions";
+import { setPurchaseDueDate, setPurchaseDueDates } from "@/app/(dashboard)/proveedores/actions";
 import { shortDate } from "@/app/(dashboard)/proveedores/debt-format";
 
 const MONTHS = [
@@ -30,12 +30,15 @@ const MONTHS = [
 ];
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-interface UndatedItem {
-  purchaseId: string | null;
+/** Una compra a cuenta que todavía se debe, con el proveedor al que es. */
+export interface CalendarDebt extends DebtItem {
   supplierName: string;
-  amount: number;
-  purchaseDay: string;
+  /** Plazo de pago del proveedor en días (para completar el vencimiento). */
+  termsDays: number | null;
 }
+
+type View = "mes" | "todas";
+type DebtFilter = "all" | "dated" | "undated" | "overdue";
 
 const STATUS_CHIP: Record<string, string> = {
   vencida: "bg-danger-bg text-danger",
@@ -68,6 +71,17 @@ function relativeDay(key: string, todayKey: string) {
   return diff > 0 ? `En ${diff} días` : `Hace ${-diff} días`;
 }
 
+function debtStatusText(item: DebtItem): string {
+  if (!item.dueDate || item.daysToDue === null) return "Sin fecha de vencimiento";
+  if (item.daysToDue < 0) {
+    const n = -item.daysToDue;
+    return `Vencida hace ${n} ${n === 1 ? "día" : "días"} (${shortDate(item.dueDate)})`;
+  }
+  if (item.daysToDue === 0) return "Vence hoy";
+  if (item.daysToDue === 1) return `Vence mañana (${shortDate(item.dueDate)})`;
+  return `Vence el ${shortDate(item.dueDate)} (en ${item.daysToDue} días)`;
+}
+
 export function CalendarioClient({
   todayKey,
   monthKey,
@@ -77,7 +91,7 @@ export function CalendarioClient({
   gridStart,
   gridEnd,
   events,
-  undated,
+  debts,
   overdueTotal,
   suppliers,
   customPaymentMethods,
@@ -90,13 +104,13 @@ export function CalendarioClient({
   gridStart: string;
   gridEnd: string;
   events: CalendarEvent[];
-  undated: UndatedItem[];
+  debts: CalendarDebt[];
   overdueTotal: number;
   suppliers: SupplierRow[];
   customPaymentMethods: string[];
 }) {
-  const router = useRouter();
-  const [view, setView] = useState<"mes" | "lista">("mes");
+  const [view, setView] = useState<View>("mes");
+  const [debtFilter, setDebtFilter] = useState<DebtFilter>("all");
   const [selected, setSelected] = useState<string>(
     todayKey.slice(0, 7) === monthKey ? todayKey : `${monthKey}-01`
   );
@@ -126,8 +140,21 @@ export function CalendarioClient({
     .filter((e) => e.kind === "vencimiento" && e.status !== "vencida")
     .reduce((acc, e) => acc + (e.amount ?? 0), 0);
   const selectedEvents = byDay.get(selected) ?? [];
-
   const supplierById = useMemo(() => new Map(suppliers.map((s) => [s.id, s])), [suppliers]);
+
+  const undated = useMemo(() => debts.filter((d) => !d.dueDate), [debts]);
+  const undatedTotal = undated.reduce((acc, d) => acc + d.amount, 0);
+  const counts: Record<DebtFilter, number> = {
+    all: debts.length,
+    dated: debts.length - undated.length,
+    undated: undated.length,
+    overdue: debts.filter((d) => d.status === "vencida").length,
+  };
+
+  function showUndated() {
+    setView("todas");
+    setDebtFilter("undated");
+  }
 
   return (
     <div className="space-y-3">
@@ -140,51 +167,59 @@ export function CalendarioClient({
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Link href={`/proveedores/calendario?mes=${prevMonth}`} aria-label="Mes anterior">
-            <Button variant="outline" size="icon">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h2 className="min-w-44 text-center text-xl font-bold text-foreground">
-            {`${monthName} ${yearStr}`}
-          </h2>
-          <Link href={`/proveedores/calendario?mes=${nextMonth}`} aria-label="Mes siguiente">
-            <Button variant="outline" size="icon">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </Link>
-          {monthKey !== currentMonth && (
-            <Link href="/proveedores/calendario">
-              <Button variant="outline" size="sm">
-                Hoy
-              </Button>
-            </Link>
+          {view === "mes" ? (
+            <>
+              <Link href={`/proveedores/calendario?mes=${prevMonth}`} aria-label="Mes anterior">
+                <Button variant="outline" size="icon">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <h2 className="min-w-44 text-center text-xl font-bold text-foreground">
+                {`${monthName} ${yearStr}`}
+              </h2>
+              <Link href={`/proveedores/calendario?mes=${nextMonth}`} aria-label="Mes siguiente">
+                <Button variant="outline" size="icon">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              {monthKey !== currentMonth && (
+                <Link href="/proveedores/calendario">
+                  <Button variant="outline" size="sm">
+                    Hoy
+                  </Button>
+                </Link>
+              )}
+            </>
+          ) : (
+            <h2 className="text-xl font-bold text-foreground">Todas las deudas</h2>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-danger-bg ring-1 ring-danger/30" />
-              Vencida
-            </span>
-            <span className="flex items-center gap-1.5">
-              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-warning-bg ring-1 ring-warning/30" />
-              Vence pronto
-            </span>
-            <span className="flex items-center gap-1.5">
-              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-success-bg ring-1 ring-success/30" />
-              No vencida
-            </span>
-            <span className="flex items-center gap-1.5">
-              <i className="inline-block h-2 w-2 rounded-full bg-muted-foreground/50" />
-              Entrega
-            </span>
-          </div>
+          {view === "mes" && (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <i className="inline-block h-2.5 w-2.5 rounded-sm bg-danger-bg ring-1 ring-danger/30" />
+                Vencida
+              </span>
+              <span className="flex items-center gap-1.5">
+                <i className="inline-block h-2.5 w-2.5 rounded-sm bg-warning-bg ring-1 ring-warning/30" />
+                Vence pronto
+              </span>
+              <span className="flex items-center gap-1.5">
+                <i className="inline-block h-2.5 w-2.5 rounded-sm bg-success-bg ring-1 ring-success/30" />
+                No vencida
+              </span>
+              <span className="flex items-center gap-1.5">
+                <i className="inline-block h-2 w-2 rounded-full bg-muted-foreground/50" />
+                Entrega
+              </span>
+            </div>
+          )}
           <div className="flex rounded-lg bg-muted p-0.5 text-sm font-semibold" role="group" aria-label="Vista">
             {(
               [
                 ["mes", "Mes"],
-                ["lista", "Lista"],
+                ["todas", "Todas las deudas"],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -204,10 +239,10 @@ export function CalendarioClient({
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20.5rem] lg:items-start">
-        <Card className="overflow-hidden">
-          <CardContent className="p-0">
-            {view === "mes" ? (
+      {view === "mes" ? (
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20.5rem] lg:items-start">
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
               <div className="grid grid-cols-7">
                 {WEEKDAYS.map((w) => (
                   <div
@@ -223,6 +258,7 @@ export function CalendarioClient({
                   const venc = dayEvents.filter((e) => e.kind === "vencimiento");
                   const entregas = dayEvents.filter((e) => e.kind === "entrega");
                   const isToday = d === todayKey;
+                  const room = venc.length > 0 ? 1 : 2;
                   return (
                     <button
                       key={d}
@@ -263,7 +299,7 @@ export function CalendarioClient({
                       {venc.length > 2 && (
                         <span className="text-[11px] text-muted-foreground">{`+${venc.length - 2} más`}</span>
                       )}
-                      {entregas.slice(0, venc.length > 0 ? 1 : 2).map((e) => (
+                      {entregas.slice(0, room).map((e) => (
                         <span
                           key={`${e.supplierId}-e`}
                           className="flex items-center gap-1 truncate text-[11px] text-muted-foreground"
@@ -272,160 +308,114 @@ export function CalendarioClient({
                           <span className="truncate">{`Entrega ${e.supplierName}`}</span>
                         </span>
                       ))}
-                      {entregas.length > (venc.length > 0 ? 1 : 2) && (
+                      {entregas.length > room && (
                         <span className="text-[11px] text-muted-foreground">
-                          {`+${entregas.length - (venc.length > 0 ? 1 : 2)} entregas`}
+                          {`+${entregas.length - room} entregas`}
                         </span>
                       )}
                     </button>
                   );
                 })}
               </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {monthEvents.length === 0 ? (
-                  <p className="px-5 py-14 text-center text-sm text-muted-foreground">
-                    No hay vencimientos ni entregas este mes.
-                  </p>
-                ) : (
-                  monthEvents.map((e, idx) => (
-                    <button
-                      key={`${e.day}-${e.supplierId}-${e.kind}-${idx}`}
-                      type="button"
-                      onClick={() => {
-                        setSelected(e.day);
-                        setView("mes");
-                      }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/60"
-                    >
-                      <span className="w-20 shrink-0 text-sm font-semibold text-foreground">
-                        {`${["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][(daysBetween("1970-01-05", e.day) % 7 + 7) % 7]} ${Number(e.day.slice(8))}`}
-                      </span>
-                      <span
-                        className={cn(
-                          "shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold",
-                          e.kind === "entrega"
-                            ? "bg-muted text-muted-foreground"
-                            : STATUS_CHIP[e.status ?? "sin_fecha"]
-                        )}
-                      >
-                        {e.kind === "entrega" ? "Entrega" : (STATUS_LABEL[e.status ?? ""] ?? "Vencimiento")}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{e.supplierName}</span>
-                      {e.kind === "vencimiento" && (
-                        <span className="shrink-0 text-sm font-semibold text-foreground">
-                          {formatCurrency(e.amount ?? 0)}
-                        </span>
-                      )}
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-3">
-          <Card>
-            <CardContent className="py-4">
-              <p className="text-sm font-semibold text-foreground">{`${monthName} en números`}</p>
-              <div className="mt-2 divide-y divide-border text-sm">
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-muted-foreground">Vencido, sin pagar</span>
-                  <span className={cn("font-semibold", overdueTotal > 0 ? "text-danger" : "text-foreground")}>
-                    {formatCurrency(overdueTotal)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-muted-foreground">Vence este mes</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(dueThisMonth)}</span>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-muted-foreground">Sin fecha de vencimiento</span>
-                  <span className="font-semibold text-foreground">
-                    {formatCurrency(undated.reduce((acc, u) => acc + u.amount, 0))}
-                  </span>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-primary/60">
-            <CardContent className="py-4">
-              <p className="text-sm font-semibold text-foreground">{longDay(selected)}</p>
-              <p className="text-xs text-muted-foreground">{relativeDay(selected, todayKey)}</p>
-              {selectedEvents.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  No hay vencimientos ni entregas este día.
-                </p>
-              ) : (
-                <div className="mt-3 space-y-2">
-                  {selectedEvents.map((e, idx) =>
-                    e.kind === "entrega" ? (
-                      <p
-                        key={`${e.supplierId}-e-${idx}`}
-                        className="rounded-xl bg-muted px-3 py-2 text-sm text-foreground"
-                      >
-                        {`Entrega de ${e.supplierName}`}
-                      </p>
-                    ) : (
-                      <div
-                        key={`${e.supplierId}-v-${idx}`}
-                        className={cn("rounded-xl px-3 py-2.5", STATUS_CHIP[e.status ?? "sin_fecha"])}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold">{e.supplierName}</p>
-                            <p className="text-xs opacity-80">{STATUS_LABEL[e.status ?? ""] ?? "Vencimiento"}</p>
-                          </div>
-                          <p className="shrink-0 text-base font-bold">{formatCurrency(e.amount ?? 0)}</p>
-                        </div>
-                        <div className="mt-2 flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => setPaying(supplierById.get(e.supplierId) ?? null)}
-                          >
-                            <Wallet className="h-3.5 w-3.5" />
-                            Registrar pago
-                          </Button>
-                          <Link href={`/proveedores/${e.supplierId}`}>
-                            <Button size="sm" variant="outline">
-                              Ver ficha
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {undated.length > 0 && (
+          <div className="space-y-3">
             <Card>
               <CardContent className="py-4">
-                <p className="text-sm font-semibold text-foreground">Compras sin fecha de vencimiento</p>
-                <p className="text-xs text-muted-foreground">
-                  Asignales una fecha para verlas en el calendario.
-                </p>
-                <div className="mt-2 divide-y divide-border">
-                  {undated.slice(0, 6).map((u, idx) => (
-                    <UndatedRow
-                      key={u.purchaseId ?? `adj-${idx}`}
-                      item={u}
-                      onSaved={() => router.refresh()}
-                    />
-                  ))}
-                  {undated.length > 6 && (
-                    <p className="pt-2 text-xs text-muted-foreground">{`Y ${undated.length - 6} más.`}</p>
-                  )}
+                <p className="text-sm font-semibold text-foreground">{`${monthName} en números`}</p>
+                <div className="mt-2 divide-y divide-border text-sm">
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-muted-foreground">Vencido, sin pagar</span>
+                    <span className={cn("font-semibold", overdueTotal > 0 ? "text-danger" : "text-foreground")}>
+                      {formatCurrency(overdueTotal)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-muted-foreground">Vence este mes</span>
+                    <span className="font-semibold text-foreground">{formatCurrency(dueThisMonth)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 py-2">
+                    <span className="text-muted-foreground">
+                      Sin fecha de vencimiento
+                      {undated.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={showUndated}
+                          className="mt-0.5 block text-xs font-semibold text-primary hover:underline"
+                        >
+                          {`Ver las ${undated.length} y asignar fecha →`}
+                        </button>
+                      )}
+                    </span>
+                    <span className="font-semibold text-foreground">{formatCurrency(undatedTotal)}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
+
+            <Card className="border-primary/60">
+              <CardContent className="py-4">
+                <p className="text-sm font-semibold text-foreground">{longDay(selected)}</p>
+                <p className="text-xs text-muted-foreground">{relativeDay(selected, todayKey)}</p>
+                {selectedEvents.length === 0 ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    No hay vencimientos ni entregas este día.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {selectedEvents.map((e, idx) =>
+                      e.kind === "entrega" ? (
+                        <p
+                          key={`${e.supplierId}-e-${idx}`}
+                          className="rounded-xl bg-muted px-3 py-2 text-sm text-foreground"
+                        >
+                          {`Entrega de ${e.supplierName}`}
+                        </p>
+                      ) : (
+                        <div
+                          key={`${e.supplierId}-v-${idx}`}
+                          className={cn("rounded-xl px-3 py-2.5", STATUS_CHIP[e.status ?? "sin_fecha"])}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold">{e.supplierName}</p>
+                              <p className="text-xs opacity-80">{STATUS_LABEL[e.status ?? ""] ?? "Vencimiento"}</p>
+                            </div>
+                            <p className="shrink-0 text-base font-bold">{formatCurrency(e.amount ?? 0)}</p>
+                          </div>
+                          <div className="mt-2 flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => setPaying(supplierById.get(e.supplierId) ?? null)}
+                            >
+                              <Wallet className="h-3.5 w-3.5" />
+                              Registrar pago
+                            </Button>
+                            <Link href={`/proveedores/${e.supplierId}`}>
+                              <Button size="sm" variant="outline">
+                                Ver ficha
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      ) : (
+        <AllDebts
+          debts={debts}
+          filter={debtFilter}
+          onFilter={setDebtFilter}
+          counts={counts}
+          onPay={(supplierId) => setPaying(supplierById.get(supplierId) ?? null)}
+        />
+      )}
 
       <SupplierPaymentDialog
         supplier={paying}
@@ -437,48 +427,238 @@ export function CalendarioClient({
   );
 }
 
-function UndatedRow({ item, onSaved }: { item: UndatedItem; onSaved: () => void }) {
-  const [date, setDate] = useState("");
+/** Todas las compras que se deben, con fecha y sin fecha, para ver y asignar vencimientos. */
+function AllDebts({
+  debts,
+  filter,
+  onFilter,
+  counts,
+  onPay,
+}: {
+  debts: CalendarDebt[];
+  filter: DebtFilter;
+  onFilter: (f: DebtFilter) => void;
+  counts: Record<DebtFilter, number>;
+  onPay: (supplierId: string) => void;
+}) {
+  const router = useRouter();
+  const [bulkDate, setBulkDate] = useState("");
+  const [bulkPending, setBulkPending] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState<string | null>(null);
+
+  const list = useMemo(() => {
+    const filtered = debts.filter((d) => {
+      if (filter === "dated") return Boolean(d.dueDate);
+      if (filter === "undated") return !d.dueDate;
+      if (filter === "overdue") return d.status === "vencida";
+      return true;
+    });
+    // Con fecha primero (la que vence antes, primero); sin fecha, la más vieja primero.
+    return filtered.sort((a, b) => {
+      const dated = Number(!a.dueDate) - Number(!b.dueDate);
+      if (dated !== 0) return dated;
+      return (
+        (a.dueDate ?? a.purchaseDay).localeCompare(b.dueDate ?? b.purchaseDay) ||
+        a.supplierName.localeCompare(b.supplierName, "es")
+      );
+    });
+  }, [debts, filter]);
+
+  const filters: { key: DebtFilter; label: string }[] = [
+    { key: "all", label: "Todas" },
+    { key: "dated", label: "Con fecha" },
+    { key: "undated", label: "Sin fecha" },
+    { key: "overdue", label: "Vencidas" },
+  ];
+
+  const withTerms = list.filter((d) => !d.dueDate && d.purchaseId && d.termsDays);
+  const assignable = list.filter((d) => !d.dueDate && d.purchaseId);
+
+  async function runBulk(entries: { purchaseId: string; dueDate: string }[]) {
+    setBulkPending(true);
+    setBulkMessage(null);
+    const result = await setPurchaseDueDates(entries);
+    setBulkPending(false);
+    if (result.error) {
+      setBulkMessage(result.error);
+      return;
+    }
+    setBulkMessage(
+      result.failed > 0
+        ? `Se asignaron ${result.saved} y ${result.failed} no se pudieron guardar.`
+        : `Listo: se asignaron ${result.saved} vencimientos.`
+    );
+    setBulkDate("");
+    router.refresh();
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <div className="flex flex-wrap items-center gap-1 border-b border-border px-3 py-2.5">
+          {filters.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              aria-pressed={filter === f.key}
+              onClick={() => onFilter(f.key)}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
+                filter === f.key ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {f.label}
+              <span className="ml-1.5 font-medium opacity-70">{counts[f.key]}</span>
+            </button>
+          ))}
+        </div>
+
+        {filter === "undated" && assignable.length > 0 && (
+          <div className="space-y-2 border-b border-border bg-muted/40 px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">
+              {`Asignar fecha a las ${assignable.length} de una vez`}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              {withTerms.length > 0 && (
+                <Button
+                  size="sm"
+                  disabled={bulkPending}
+                  onClick={() =>
+                    runBulk(
+                      withTerms.map((d) => ({
+                        purchaseId: d.purchaseId as string,
+                        dueDate: addDays(d.purchaseDay, d.termsDays as number),
+                      }))
+                    )
+                  }
+                >
+                  {`Usar el plazo de pago de cada proveedor (${withTerms.length})`}
+                </Button>
+              )}
+              <span className="text-xs text-muted-foreground">o la misma fecha para todas:</span>
+              <div className="w-44">
+                <Input
+                  type="date"
+                  value={bulkDate}
+                  onChange={(e) => setBulkDate(e.target.value)}
+                  aria-label="Fecha para todas las compras sin vencimiento"
+                  className="h-9"
+                />
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!bulkDate || bulkPending}
+                onClick={() =>
+                  runBulk(
+                    assignable.map((d) => ({ purchaseId: d.purchaseId as string, dueDate: bulkDate }))
+                  )
+                }
+              >
+                {bulkPending ? "Guardando…" : "Asignar a todas"}
+              </Button>
+            </div>
+            {bulkMessage && <p className="text-xs text-muted-foreground">{bulkMessage}</p>}
+          </div>
+        )}
+
+        {list.length === 0 ? (
+          <p className="px-5 py-14 text-center text-sm text-muted-foreground">
+            {debts.length === 0 ? "No les debés nada a tus proveedores." : "No hay compras con ese filtro."}
+          </p>
+        ) : (
+          <div className="divide-y divide-border">
+            {list.map((d, idx) => (
+              <DebtListRow key={d.purchaseId ?? `adj-${idx}`} debt={d} onPay={() => onPay(d.supplierId)} />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DebtListRow({ debt, onPay }: { debt: CalendarDebt; onPay: () => void }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [date, setDate] = useState(debt.dueDate ?? "");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save() {
-    if (!item.purchaseId || !date) return;
+  async function save(value: string | null) {
+    if (!debt.purchaseId) return;
     setPending(true);
     setError(null);
-    const result = await setPurchaseDueDate(item.purchaseId, date);
+    const result = await setPurchaseDueDate(debt.purchaseId, value);
     setPending(false);
     if (result.error) {
       setError(result.error);
       return;
     }
-    onSaved();
+    setEditing(false);
+    router.refresh();
   }
 
+  const termsDate = !debt.dueDate && debt.termsDays ? addDays(debt.purchaseDay, debt.termsDays) : null;
+
   return (
-    <div className="space-y-1.5 py-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-foreground">{item.supplierName}</p>
-          <p className="text-xs text-muted-foreground">{`Compra del ${shortDate(item.purchaseDay)}`}</p>
+    <div className="space-y-2 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="min-w-0 flex-1 basis-48">
+          <p className="truncate text-sm font-semibold text-foreground">{debt.supplierName}</p>
+          <p className="text-xs text-muted-foreground">
+            {debt.purchaseId ? `Compra del ${shortDate(debt.purchaseDay)}` : "Saldo sin compra asociada"}
+          </p>
         </div>
-        <p className="shrink-0 text-sm font-semibold text-foreground">{formatCurrency(item.amount)}</p>
-      </div>
-      {item.purchaseId ? (
-        <div className="flex gap-2">
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            aria-label={`Vencimiento de la compra de ${item.supplierName}`}
-            className="h-9"
-          />
-          <Button size="sm" variant="outline" disabled={!date || pending} onClick={save}>
-            {pending ? "…" : "Asignar"}
+        <span className={cn("rounded-md px-2 py-0.5 text-xs font-semibold", STATUS_CHIP[debt.status])}>
+          {debtStatusText(debt)}
+        </span>
+        <p className="w-28 text-right text-base font-bold text-warning">{formatCurrency(debt.amount)}</p>
+        <div className="flex items-center gap-1.5">
+          {debt.purchaseId && !editing && (
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              {debt.dueDate ? "Cambiar fecha" : "Asignar fecha"}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onPay}
+            aria-label={`Registrar pago a ${debt.supplierName}`}
+          >
+            <Wallet className="h-3.5 w-3.5" />
+            Pagar
           </Button>
         </div>
-      ) : (
-        <p className="text-xs text-muted-foreground">Saldo sin compra asociada: no tiene fecha.</p>
+      </div>
+      {editing && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="w-44">
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              aria-label="Fecha de vencimiento"
+              className="h-9"
+            />
+          </div>
+          <Button size="sm" disabled={!date || pending} onClick={() => save(date)}>
+            {pending ? "Guardando…" : "Guardar"}
+          </Button>
+          {termsDate && (
+            <Button size="sm" variant="outline" disabled={pending} onClick={() => save(termsDate)}>
+              {`Usar su plazo (${debt.termsDays} días → ${shortDate(termsDate)})`}
+            </Button>
+          )}
+          {debt.dueDate && (
+            <Button size="sm" variant="outline" disabled={pending} onClick={() => save(null)}>
+              Quitar fecha
+            </Button>
+          )}
+          <Button size="sm" variant="outline" disabled={pending} onClick={() => setEditing(false)}>
+            Cancelar
+          </Button>
+        </div>
       )}
       {error && <p className="text-xs text-danger">{error}</p>}
     </div>

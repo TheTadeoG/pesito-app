@@ -174,3 +174,37 @@ export async function setPurchaseDueDate(
   revalidatePath("/proveedores/calendario");
   return {};
 }
+
+/**
+ * Asigna vencimientos a varias compras de una vez. Devuelve cuántas se
+ * guardaron y cuántas fallaron.
+ */
+export async function setPurchaseDueDates(
+  entries: { purchaseId: string; dueDate: string }[]
+): Promise<{ saved: number; failed: number; error?: string }> {
+  if (entries.length === 0) return { saved: 0, failed: 0 };
+  if (entries.length > 500) return { saved: 0, failed: 0, error: "Son demasiadas compras juntas." };
+  if (entries.some((e) => !/^\d{4}-\d{2}-\d{2}$/.test(e.dueDate))) {
+    return { saved: 0, failed: 0, error: "Hay una fecha que no es válida." };
+  }
+  await requireOrgContext();
+  const supabase = await createClient();
+
+  let saved = 0;
+  let failed = 0;
+  for (let i = 0; i < entries.length; i += 10) {
+    const results = await Promise.all(
+      entries.slice(i, i + 10).map((e) =>
+        supabase.rpc("set_purchase_due_date", { p_purchase_id: e.purchaseId, p_due_date: e.dueDate })
+      )
+    );
+    for (const r of results) {
+      if (r.error) failed += 1;
+      else saved += 1;
+    }
+  }
+
+  revalidatePath("/proveedores");
+  revalidatePath("/proveedores/calendario");
+  return { saved, failed };
+}

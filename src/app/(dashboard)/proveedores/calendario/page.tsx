@@ -56,15 +56,12 @@ export default async function CalendarioProveedoresPage({
     gridEnd
   );
 
-  const undated = overview.rows.flatMap((r) =>
-    r.items
-      .filter((i) => i.status === "sin_fecha")
-      .map((i) => ({
-        purchaseId: i.purchaseId,
-        supplierName: r.name,
-        amount: i.amount,
-        purchaseDay: i.purchaseDay,
-      }))
+  const debts = overview.rows.flatMap((r) =>
+    r.items.map((i) => ({
+      ...i,
+      supplierName: r.name,
+      termsDays: r.payment_terms_days && r.payment_terms_days > 0 ? r.payment_terms_days : null,
+    }))
   );
   const overdueTotal = overview.rows
     .flatMap((r) => r.items)
@@ -81,7 +78,7 @@ export default async function CalendarioProveedoresPage({
       gridStart={gridStart}
       gridEnd={gridEnd}
       events={events}
-      undated={undated}
+      debts={debts}
       overdueTotal={overdueTotal}
       suppliers={overview.rows}
       customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}

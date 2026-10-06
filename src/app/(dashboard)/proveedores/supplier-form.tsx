@@ -150,7 +150,7 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground">
             Cuánto tiempo tenés para pagarle. Al cargar una compra a cuenta, el vencimiento se completa
-            solo con este plazo (lo podés cambiar en cada compra).
+            automáticamente con este plazo (lo podés cambiar en cada compra).
           </p>
         </div>
 

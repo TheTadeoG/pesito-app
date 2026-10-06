@@ -16,6 +16,11 @@ export interface DebtPurchase {
   createdAt: string;
   /** YYYY-MM-DD o null (sin fecha). */
   dueDate: string | null;
+  /**
+   * Lo ya pagado de esta compra (purchases.paid_amount, migración 0058).
+   * Sin el dato (null/undefined) el reparto de los pagos se calcula.
+   */
+  paidAmount?: number | null;
 }
 
 export type DebtStatus = "vencida" | "pronto" | "no_vencida" | "sin_fecha";
@@ -99,11 +104,16 @@ export function outstandingItems(
         const kb = b.p.dueDate ?? b.day;
         return ka.localeCompare(kb) || a.p.createdAt.localeCompare(b.p.createdAt);
       });
-    const accounted = list.reduce((acc, x) => acc + x.p.accountAmount, 0);
-    // Lo pagado (o anulado) sale primero de lo que vence antes.
+    // Con paid_amount cargado se sabe qué compra está pagada; sin él, el pago
+    // se descuenta de las que vencen antes.
+    const stored = list.length > 0 && list.every((x) => x.p.paidAmount != null);
+    const pendingOf = (p: DebtPurchase) =>
+      stored ? Math.max(0, p.accountAmount - (p.paidAmount ?? 0)) : p.accountAmount;
+    const accounted = list.reduce((acc, x) => acc + pendingOf(x.p), 0);
+    // Lo pagado de más (o anulado) sale primero de lo que vence antes.
     let toDiscount = Math.max(0, accounted - balance);
     for (const { p, day } of list) {
-      let amount = p.accountAmount;
+      let amount = pendingOf(p);
       const used = Math.min(amount, toDiscount);
       amount -= used;
       toDiscount -= used;

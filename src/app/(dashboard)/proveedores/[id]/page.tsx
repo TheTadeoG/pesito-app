@@ -11,7 +11,7 @@ import { CuentaCorriente, type CuentaCorrienteMovement } from "@/components/dash
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
 import { getSubscription } from "@/lib/subscription";
 import { canUse } from "@/lib/plan-access";
-import { loadPurchaseDueDates } from "@/lib/supplier-overview";
+import { loadPurchaseExtras } from "@/lib/supplier-overview";
 import { outstandingItems, todayInArgentina } from "@/lib/supplier-debt";
 import { shortDate } from "@/app/(dashboard)/proveedores/debt-format";
 import { SupplierDebtCard } from "@/app/(dashboard)/proveedores/[id]/debt-card";
@@ -41,7 +41,7 @@ export default async function ProveedorDetailPage({
     { data: purchasesRaw },
     { data: paymentsRaw },
     { data: customPaymentMethods },
-    dueDates,
+    extras,
     subscription,
   ] = await Promise.all([
       supabase
@@ -60,10 +60,11 @@ export default async function ProveedorDetailPage({
         .select("name")
         .eq("org_id", organization.id)
         .order("created_at"),
-      loadPurchaseDueDates(supabase, organization.id),
+      loadPurchaseExtras(supabase, organization.id),
       getSubscription(supabase, organization.id),
     ]);
 
+  const dueDates = extras.due;
   const purchases = (purchasesRaw ?? []).map((p) => ({
     ...p,
     total: Number(p.total),
@@ -134,6 +135,7 @@ export default async function ProveedorDetailPage({
         accountAmount: p.account_amount,
         createdAt: p.created_at,
         dueDate: dueDates.get(p.id) ?? null,
+        paidAmount: extras.paid ? (extras.paid.get(p.id) ?? 0) : null,
       })),
     new Map([[supplier.id, supplier.balance]]),
     todayInArgentina()

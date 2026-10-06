@@ -117,6 +117,7 @@ export function ProveedoresClient({
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [paying, setPaying] = useState<SupplierRow | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerQuery, setPickerQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const allItems = useMemo(() => rows.flatMap((r) => r.items), [rows]);
@@ -126,11 +127,40 @@ export function ProveedoresClient({
     () => rows.filter((r) => r.balance > 0).sort((a, b) => b.balance - a.balance),
     [rows]
   );
+  const pickerDebtors = useMemo(() => {
+    const q = pickerQuery.trim().toLowerCase();
+    return q ? debtors.filter((d) => d.name.toLowerCase().includes(q)) : debtors;
+  }, [debtors, pickerQuery]);
   const debtorsCount = rows.filter((r) => r.items.length > 0).length;
   const overdueSuppliers = useMemo(
     () => rows.filter((r) => hasStatus(r.items, "vencida")),
     [rows]
   );
+
+  // Cuánto de la deuda es de cada proveedor (los 5 que más, y el resto junto).
+  const debtShare = useMemo<DebtShareRow[]>(() => {
+    const perSupplier = rows
+      .filter((r) => r.items.length > 0)
+      .map((r) => {
+        const t = totalsOf(r.items);
+        return { id: r.id, name: r.name, total: t.total, vencida: t.vencida, pronto: t.pronto, no_vencida: t.no_vencida, sin_fecha: t.sin_fecha };
+      })
+      .sort((a, b) => b.total - a.total);
+    const top = perSupplier.slice(0, 5);
+    const rest = perSupplier.slice(5);
+    if (rest.length > 0) {
+      top.push({
+        id: "otros",
+        name: `Otros (${rest.length})`,
+        total: rest.reduce((acc, r) => acc + r.total, 0),
+        vencida: rest.reduce((acc, r) => acc + r.vencida, 0),
+        pronto: rest.reduce((acc, r) => acc + r.pronto, 0),
+        no_vencida: rest.reduce((acc, r) => acc + r.no_vencida, 0),
+        sin_fecha: rest.reduce((acc, r) => acc + r.sin_fecha, 0),
+      });
+    }
+    return top;
+  }, [rows]);
 
   const counts = useMemo(() => {
     const result: Record<string, number> = {};
@@ -187,7 +217,10 @@ export function ProveedoresClient({
   // varios se elige a quién.
   function startPayment() {
     if (debtors.length === 1) setPaying(debtors[0]);
-    else setPickerOpen(true);
+    else {
+      setPickerQuery("");
+      setPickerOpen(true);
+    }
   }
 
   function toggleEstado(key: EstadoKey) {
@@ -445,7 +478,9 @@ export function ProveedoresClient({
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold text-foreground">Estadísticas</span>
             <span className="block truncate text-xs text-muted-foreground">
-              Compras y pagos por mes · a quién le comprás más
+              {accountsEnabled
+                ? "Cuánto le debés a cada uno · a quién le comprás más"
+                : "A quién le comprás más"}
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground">
@@ -454,25 +489,18 @@ export function ProveedoresClient({
           </span>
         </button>
         {statsOpen && (
-          <div className="grid gap-3 bg-muted/30 p-4 lg:grid-cols-2">
-            <Card>
-              <CardContent className="py-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-foreground">Compras y pagos por mes</p>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <i className="inline-block h-2 w-2 rounded-sm bg-primary" />
-                      Compras
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <i className="inline-block h-2 w-2 rounded-sm bg-primary/40" />
-                      Pagos
-                    </span>
-                  </div>
-                </div>
-                <MonthlyBars data={overview.monthly} />
-              </CardContent>
-            </Card>
+          <div className={cn("grid gap-3 bg-muted/30 p-4", accountsEnabled && "lg:grid-cols-2")}>
+            {accountsEnabled && (
+              <Card>
+                <CardContent className="py-4">
+                  <p className="text-sm font-semibold text-foreground">Cuánto le debés a cada uno</p>
+                  <p className="text-xs text-muted-foreground">
+                    {`Total que les debés · ${formatCurrency(totals.total)}`}
+                  </p>
+                  <DebtShare rows={debtShare} total={totals.total} />
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardContent className="py-4">
                 <p className="text-sm font-semibold text-foreground">A quién le comprás más</p>
@@ -861,8 +889,24 @@ export function ProveedoresClient({
         title="¿A quién le pagás?"
         description="Elegí el proveedor al que le vas a registrar el pago."
       >
-        <div className="divide-y divide-border rounded-xl border border-border">
-          {debtors.map((s) => {
+        <div className="relative mb-3">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={pickerQuery}
+            onChange={(e) => setPickerQuery(e.target.value)}
+            placeholder="Buscar proveedor…"
+            aria-label="Buscar proveedor para pagarle"
+            autoFocus
+            className="pl-10"
+          />
+        </div>
+        <div className="max-h-[50vh] divide-y divide-border overflow-y-auto rounded-xl border border-border">
+          {pickerDebtors.length === 0 && (
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              No hay proveedores con deuda que coincidan.
+            </p>
+          )}
+          {pickerDebtors.map((s) => {
             const summary = debtSummary(s.items);
             return (
               <button
@@ -959,61 +1003,60 @@ function SortMenu({
   );
 }
 
-function MonthlyBars({ data }: { data: SupplierOverview["monthly"] }) {
-  const W = 330;
-  const H = 120;
-  const padBottom = 18;
-  const top = 4;
-  const chartH = H - padBottom - top;
-  const max = Math.max(1, ...data.flatMap((d) => [d.compras, d.pagos]));
-  const groupW = W / data.length;
-  const barW = groupW * 0.3;
-  const empty = data.every((d) => d.compras === 0 && d.pagos === 0);
+interface DebtShareRow {
+  id: string;
+  name: string;
+  total: number;
+  vencida: number;
+  pronto: number;
+  no_vencida: number;
+  sin_fecha: number;
+}
 
+const SHARE_SEGMENTS = [
+  { key: "vencida", label: "vencida", bar: "bg-danger" },
+  { key: "pronto", label: "vence pronto", bar: "bg-warning" },
+  { key: "no_vencida", label: "no vencida", bar: "bg-success" },
+  { key: "sin_fecha", label: "sin fecha", bar: "bg-muted-foreground/50" },
+] as const;
+
+/** Qué parte de la deuda es de cada proveedor, con el estado de cada parte. */
+function DebtShare({ rows, total }: { rows: DebtShareRow[]; total: number }) {
+  if (total <= 0 || rows.length === 0) {
+    return <p className="mt-3 text-sm text-muted-foreground">No les debés nada a tus proveedores.</p>;
+  }
+  const max = Math.max(...rows.map((r) => r.total));
   return (
-    <div className="mt-2">
-      {empty ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Todavía no hay compras en los últimos 6 meses.
-        </p>
-      ) : (
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="h-auto w-full"
-          role="img"
-          aria-label="Compras y pagos a proveedores de los últimos 6 meses"
-        >
-          <line x1={0} x2={W} y1={top + chartH} y2={top + chartH} className="stroke-border" />
-          {data.map((d, i) => {
-            const x0 = i * groupW + groupW * 0.17;
-            const hc = (d.compras / max) * chartH;
-            const hp = (d.pagos / max) * chartH;
-            return (
-              <g key={`${d.label}-${i}`}>
-                <title>{`${d.label}: compras ${formatCurrency(d.compras)} · pagos ${formatCurrency(d.pagos)}`}</title>
-                <rect x={x0} y={top + chartH - hc} width={barW} height={hc} rx={3} className="fill-primary" />
-                <rect
-                  x={x0 + barW + 3}
-                  y={top + chartH - hp}
-                  width={barW}
-                  height={hp}
-                  rx={3}
-                  className="fill-primary/40"
+    <div className="mt-2 space-y-2.5">
+      {rows.map((r) => (
+        <div key={r.id}>
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="truncate font-medium text-foreground">{r.name}</span>
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {`${Math.round((r.total / total) * 100)}% · ${formatCurrency(r.total)}`}
+            </span>
+          </div>
+          <div className="mt-1 flex h-2 overflow-hidden rounded-full bg-muted">
+            <div className="flex h-full gap-px" style={{ width: `${Math.max(4, (r.total / max) * 100)}%` }}>
+              {SHARE_SEGMENTS.filter((seg) => r[seg.key] > 0).map((seg) => (
+                <div
+                  key={seg.key}
+                  className={cn("h-full", seg.bar)}
+                  style={{ width: `${(r[seg.key] / r.total) * 100}%` }}
                 />
-                <text
-                  x={x0 + barW}
-                  y={H - 4}
-                  textAnchor="middle"
-                  fontSize={10}
-                  className="fill-muted-foreground"
-                >
-                  {d.label}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-      )}
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 text-xs text-muted-foreground">
+        {SHARE_SEGMENTS.map((seg) => (
+          <span key={seg.key} className="flex items-center gap-1.5">
+            <i className={cn("inline-block h-2 w-2 rounded-sm", seg.bar)} />
+            {seg.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
