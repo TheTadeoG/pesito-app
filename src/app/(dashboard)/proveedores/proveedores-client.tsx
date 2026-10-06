@@ -31,7 +31,8 @@ import { DropdownMenu, DropdownMenuItem, FilterPanel } from "@/components/ui/dro
 import { cn, formatCurrency } from "@/lib/utils";
 import { chatWhatsappUrl } from "@/lib/whatsapp";
 import type { Supplier } from "@/lib/types";
-import { SOON_DAYS, nextDue, totalsOf, urgencyRank, type DebtItem } from "@/lib/supplier-debt";
+import { SOON_DAYS, addDays, daysBetween, nextDue, totalsOf, urgencyRank, type DebtItem } from "@/lib/supplier-debt";
+import { weekdayIndex } from "@/lib/supplier-debt";
 import type { SupplierOverview, SupplierRow } from "@/lib/supplier-overview";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
@@ -48,7 +49,6 @@ import {
 type SortKey = "urgency" | "name" | "debt" | "last";
 type SortDir = "asc" | "desc";
 type EstadoKey = "vencida" | "pronto" | "no_vencida" | "sin_fecha" | "al_dia";
-type Mode = "vencimiento" | "antiguedad";
 
 const TONE_TEXT: Record<DebtTone, string> = {
   danger: "text-danger",
@@ -80,6 +80,19 @@ function matchesEstado(row: SupplierRow, estado: EstadoKey): boolean {
   return estado === "al_dia" ? row.items.length === 0 : hasStatus(row.items, estado);
 }
 
+/** La hoy-celda junta lo vencido y lo de hoy; las demás, lo que vence ese día. */
+function matchesDay(item: DebtItem, day: string, todayKey: string): boolean {
+  if (day === todayKey) return item.status === "vencida" || item.dueDate === day;
+  return item.dueDate === day;
+}
+
+/** Monto corto para casilleros chicos: 18.000 -> "$18 mil", 1.250.000 -> "$1,3 M". */
+function compactMoney(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1).replace(".", ",")} M`;
+  if (n >= 1000) return `$${Math.round(n / 1000)} mil`;
+  return formatCurrency(n);
+}
+
 function sameSet(a: ReadonlySet<EstadoKey>, b: readonly EstadoKey[]) {
   return a.size === b.length && b.every((k) => a.has(k));
 }
@@ -106,7 +119,7 @@ export function ProveedoresClient({
     key: accountsEnabled ? "urgency" : "name",
     dir: "asc",
   });
-  const [mode, setMode] = useState<Mode>("vencimiento");
+  const [dayFilter, setDayFilter] = useState<string | null>(null);
   const [statsOpen, setStatsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
@@ -175,6 +188,7 @@ export function ProveedoresClient({
     const q = query.trim().toLowerCase();
     const list = rows.filter((s) => {
       if (estados.size > 0 && !Array.from(estados).some((e) => matchesEstado(s, e))) return false;
+      if (dayFilter && !s.items.some((i) => matchesDay(i, dayFilter, todayKey))) return false;
       if (!q) return true;
       return (
         s.name.toLowerCase().includes(q) ||
@@ -200,7 +214,7 @@ export function ProveedoresClient({
     };
     const sign = sort.dir === "asc" ? 1 : -1;
     return list.sort((a, b) => sign * compare(a, b));
-  }, [rows, query, estados, sort]);
+  }, [rows, query, estados, sort, dayFilter, todayKey]);
 
   async function handleDelete(supplier: Supplier) {
     if (!confirm(`¿Borrar a "${supplier.name}"?`)) return;
@@ -242,31 +256,26 @@ export function ProveedoresClient({
     });
   }
 
-  const segments =
-    mode === "vencimiento"
-      ? [
-          { key: "vencida", label: "vencida", value: totals.vencida, bar: "bg-danger", text: "text-danger" },
-          {
-            key: "pronto",
-            label: "vence pronto",
-            value: totals.pronto,
-            bar: "bg-warning",
-            text: "text-warning",
-          },
-          { key: "no_vencida", label: "no vencida", value: totals.no_vencida, bar: "bg-success", text: "text-success" },
-          {
-            key: "sin_fecha",
-            label: "sin fecha",
-            value: totals.sin_fecha,
-            bar: "bg-muted-foreground/50",
-            text: "text-muted-foreground",
-          },
-        ]
-      : [
-          { key: "h7", label: "hasta 7 días", value: totals.hasta7, bar: "bg-success", text: "text-success" },
-          { key: "h30", label: "8 a 30 días", value: totals.de8a30, bar: "bg-warning", text: "text-warning" },
-          { key: "m30", label: "más de 30 días", value: totals.mas30, bar: "bg-danger", text: "text-danger" },
-        ];
+  // Próximos 14 días: lo que vence cada día (hoy suma también lo vencido).
+  const strip = useMemo(
+    () =>
+      Array.from({ length: 14 }, (_, n) => {
+        const day = addDays(todayKey, n);
+        const list = allItems.filter((i) => matchesDay(i, day, todayKey));
+        return {
+          day,
+          amount: list.reduce((acc, i) => acc + i.amount, 0),
+          tone: list.some((i) => i.status === "vencida")
+            ? ("danger" as const)
+            : list.some((i) => i.status === "pronto")
+              ? ("warning" as const)
+              : ("muted" as const),
+          count: list.length,
+        };
+      }),
+    [allItems, todayKey]
+  );
+  const laterTotal = totals.no_vencida;
 
   const gridCols = accountsEnabled
     ? "lg:grid-cols-[minmax(0,1.5fr)_8rem_minmax(0,1.6fr)_7rem_9.5rem]"
@@ -321,150 +330,133 @@ export function ProveedoresClient({
       </div>
 
       {accountsEnabled ? (
-        <Card>
-          <CardContent className="grid gap-4 py-4 lg:grid-cols-[1.6fr_1fr_1fr] lg:gap-0">
-            <div className="space-y-2.5 lg:pr-6">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="text-xs text-muted-foreground">Les debés en total</p>
-                  <p className="text-3xl font-bold leading-tight text-warning">
-                    {formatCurrency(totals.total)}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1.5">
-                  <div
-                    className="flex rounded-lg bg-muted p-0.5 text-xs font-semibold"
-                    role="group"
-                    aria-label="Ver la deuda"
-                  >
-                    {(
-                      [
-                        ["vencimiento", "Por vencimiento"],
-                        ["antiguedad", "Por antigüedad"],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        aria-pressed={mode === key}
-                        onClick={() => setMode(key)}
-                        className={cn(
-                          "rounded-md px-2.5 py-1 transition-colors",
-                          mode === key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {`${debtorsCount} de ${rows.length} proveedores`}
-                  </p>
-                </div>
-              </div>
-              {totals.total > 0 ? (
-                <>
-                  <div className="flex h-2 gap-0.5 overflow-hidden rounded-full">
-                    {segments
-                      .filter((s) => s.value > 0)
-                      .map((s) => (
-                        <div
-                          key={s.key}
-                          className={cn("h-full", s.bar)}
-                          style={{ width: `${(s.value / totals.total) * 100}%` }}
-                        />
-                      ))}
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    {segments
-                      .filter((s) => s.value > 0)
-                      .map((s) => (
-                        <span key={s.key} className="flex items-center gap-1.5">
-                          <i className={cn("inline-block h-2 w-2 rounded-sm", s.bar)} />
-                          <b className={cn("font-semibold", s.text)}>{formatCurrency(s.value)}</b>
-                          {s.label}
-                        </span>
-                      ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">No les debés nada a tus proveedores.</p>
-              )}
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-foreground/20 bg-card px-4 py-3">
+              <p className="text-xs font-semibold text-muted-foreground">Deuda total</p>
+              <p className="text-3xl font-bold leading-tight text-foreground">{formatCurrency(totals.total)}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {totals.total > 0
+                  ? `${debtorsCount} de ${rows.length} proveedores`
+                  : "No les debés nada a tus proveedores."}
+              </p>
             </div>
-
-            {totals.vencida === 0 && !upcoming ? (
-              <div className="border-border lg:col-span-2 lg:border-l lg:pl-6">
-                <p className="text-sm font-semibold text-foreground">
-                  {totals.total > 0 ? "Nada vencido" : "Todo al día"}
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  {totals.sin_fecha > 0
-                    ? "Asignale fecha a las compras sin vencimiento para ver cuánto vence pronto."
-                    : "Cuando cargues una compra a cuenta con vencimiento, lo ves acá."}
-                </p>
-                {totals.sin_fecha > 0 && (
-                  <Link
-                    href="/proveedores/calendario"
-                    className="mt-1.5 inline-block text-xs font-semibold text-primary hover:underline"
-                  >
-                    Asignar fechas →
-                  </Link>
+            <div
+              className={cn(
+                "rounded-2xl border px-4 py-3",
+                totals.vencida > 0 ? "border-danger/30 bg-danger-bg" : "border-border bg-card"
+              )}
+            >
+              <p className={cn("text-xs font-semibold", totals.vencida > 0 ? "text-danger" : "text-muted-foreground")}>
+                Vencido · hay que pagar
+              </p>
+              <p className={cn("text-2xl font-bold", totals.vencida > 0 ? "text-danger" : "text-foreground")}>
+                {formatCurrency(totals.vencida)}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {overdueSuppliers.length === 0
+                  ? "No tenés deudas vencidas."
+                  : `${overdueSuppliers
+                      .slice(0, 2)
+                      .map((s) => s.name)
+                      .join(" · ")}${overdueSuppliers.length > 2 ? ` y ${overdueSuppliers.length - 2} más` : ""}`}
+              </p>
+            </div>
+            <div
+              className={cn(
+                "rounded-2xl border px-4 py-3",
+                totals.pronto > 0 ? "border-warning/30 bg-warning-bg" : "border-border bg-card"
+              )}
+            >
+              <p className={cn("text-xs font-semibold", totals.pronto > 0 ? "text-warning" : "text-muted-foreground")}>
+                {`Vence esta semana (${SOON_DAYS} días)`}
+              </p>
+              <p className={cn("text-2xl font-bold", totals.pronto > 0 ? "text-warning" : "text-foreground")}>
+                {formatCurrency(totals.pronto)}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {upcoming && (upcoming.daysToDue ?? 99) <= SOON_DAYS
+                  ? `${rows.find((r) => r.id === upcoming.supplierId)?.name ?? "Proveedor"} · ${upcomingWhen.toLowerCase()}`
+                  : "Nada vence en estos días."}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card px-4 py-3">
+              <p className="text-xs font-semibold text-muted-foreground">Más adelante</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(laterTotal)}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {totals.sin_fecha > 0 ? (
+                  <>
+                    {`${formatCurrency(totals.sin_fecha)} sin fecha · `}
+                    <Link href="/proveedores/calendario" className="font-semibold text-primary hover:underline">
+                      Asignar fechas
+                    </Link>
+                  </>
+                ) : (
+                  "Con fecha de vencimiento."
                 )}
-              </div>
-            ) : (
-              <>
-                <div className="border-border lg:border-l lg:px-6">
-                  <p
-                    className={cn(
-                      "text-xs font-semibold",
-                      totals.vencida > 0 ? "text-danger" : "text-muted-foreground"
-                    )}
-                  >
-                    Vencidas · hay que pagar
-                  </p>
-                  <p
-                    className={cn(
-                      "mt-0.5 text-2xl font-bold",
-                      totals.vencida > 0 ? "text-danger" : "text-foreground"
-                    )}
-                  >
-                    {formatCurrency(totals.vencida)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {overdueSuppliers.length === 0
-                      ? "No tenés deudas vencidas."
-                      : overdueSuppliers.length <= 2
-                        ? overdueSuppliers.map((s) => s.name).join(" · ")
-                        : `${overdueSuppliers
-                            .slice(0, 2)
-                            .map((s) => s.name)
-                            .join(" · ")} y ${overdueSuppliers.length - 2} más`}
+              </p>
+            </div>
+          </div>
+
+          {totals.total > 0 && (
+            <Card>
+              <CardContent className="py-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <p className="text-sm font-semibold text-foreground">Próximos 14 días</p>
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+                    <span className="flex items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-sm bg-danger" />vencida</span>
+                    <span className="flex items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-sm bg-warning" />esta semana</span>
+                    <span className="flex items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-sm bg-muted-foreground/50" />más adelante</span>
+                    <span>· tocá un día para ver quién</span>
                   </p>
                 </div>
-                <div className="border-border lg:border-l lg:pl-6">
-                  <p className="text-xs text-muted-foreground">Próximo vencimiento</p>
-                  {upcoming ? (
-                    <>
-                      <p className="mt-0.5 text-2xl font-bold text-foreground">{upcomingWhen}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {`${rows.find((r) => r.id === upcoming.supplierId)?.name ?? "Proveedor"} · ${formatCurrency(upcoming.amount)}${
-                          upcoming.daysToDue !== null && upcoming.daysToDue > 1
-                            ? ` · ${shortDate(upcoming.dueDate as string)}`
-                            : ""
-                        }`}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="mt-0.5 text-2xl font-bold text-foreground">—</p>
-                      <p className="text-xs text-muted-foreground">Sin vencimientos próximos.</p>
-                    </>
-                  )}
+                <div className="-mx-1 overflow-x-auto px-1 pb-1">
+                  <div className="grid min-w-[44rem] gap-1.5" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                    {strip.map((d, n) => {
+                      const weekday = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"][weekdayIndex(d.day)];
+                      const active = dayFilter === d.day;
+                      return (
+                        <button
+                          key={d.day}
+                          type="button"
+                          disabled={d.count === 0}
+                          aria-pressed={active}
+                          aria-label={`${n === 0 ? "Hoy" : weekday} ${Number(d.day.slice(8))}: ${
+                            d.count === 0 ? "sin vencimientos" : formatCurrency(d.amount)
+                          }`}
+                          onClick={() => setDayFilter(active ? null : d.day)}
+                          className={cn(
+                            "flex flex-col items-center gap-0.5 rounded-xl border px-1 py-1.5 text-center transition-colors",
+                            n === 0 ? "border-foreground" : "border-border",
+                            active && "bg-accent ring-1 ring-primary",
+                            d.count > 0 ? "hover:bg-muted" : "cursor-default"
+                          )}
+                        >
+                          <span className="text-sm font-bold leading-none text-foreground">{Number(d.day.slice(8))}</span>
+                          <span className="text-[10px] leading-none text-muted-foreground">{n === 0 ? "hoy" : weekday}</span>
+                          <span
+                            className={cn(
+                              "mt-0.5 w-full truncate rounded-md px-0.5 py-0.5 text-[10px] font-bold leading-tight",
+                              d.count === 0
+                                ? "text-transparent"
+                                : d.tone === "danger"
+                                  ? "bg-danger-bg text-danger"
+                                  : d.tone === "warning"
+                                    ? "bg-warning-bg text-warning"
+                                    : "bg-muted text-foreground"
+                            )}
+                          >
+                            {d.count === 0 ? "·" : compactMoney(d.amount)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       ) : (
         <PlanLockNote plan="esencial">
           Con el Plan Esencial llevás la cuenta corriente con cada proveedor: cuánto les debés, cuándo
@@ -628,6 +620,19 @@ export function ProveedoresClient({
               </Button>
             )}
           </div>
+
+          {accountsEnabled && dayFilter && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2 text-xs">
+              <span className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 font-semibold text-accent-foreground">
+                {dayFilter === todayKey
+                  ? "Vence hoy o ya venció"
+                  : `Vencen el ${shortDate(dayFilter)} (en ${daysBetween(todayKey, dayFilter)} días)`}
+                <button type="button" aria-label="Quitar el filtro de día" onClick={() => setDayFilter(null)}>
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </div>
+          )}
 
           {accountsEnabled && !activeTab && estados.size > 0 && (
             <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2 text-xs">

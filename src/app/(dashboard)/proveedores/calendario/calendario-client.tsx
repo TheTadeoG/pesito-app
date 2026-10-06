@@ -293,15 +293,20 @@ export function CalendarioClient({
                         <span
                           key={`${e.supplierId}-v`}
                           className={cn(
-                            "truncate rounded-md px-1.5 py-0.5 text-[11px] font-semibold",
+                            "min-w-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold leading-tight",
                             STATUS_CHIP[e.status ?? "sin_fecha"]
                           )}
                         >
-                          {`${e.supplierName} ${formatCurrency(e.amount ?? 0)}`}
+                          <span className="block truncate text-xs font-bold">{formatCurrency(e.amount ?? 0)}</span>
+                          <span className="block truncate font-medium opacity-80">{e.supplierName}</span>
                         </span>
                       ))}
                       {venc.length > 2 && (
-                        <span className="text-[11px] text-muted-foreground">{`+${venc.length - 2} más`}</span>
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                          {`+${venc.length - 2} más · ${formatCurrency(
+                            venc.slice(2).reduce((acc, e) => acc + (e.amount ?? 0), 0)
+                          )}`}
+                        </span>
                       )}
                       {entregas.slice(0, room).map((e) => (
                         <span
