@@ -297,16 +297,18 @@ function PaymentForm({
                     <p className="text-xs text-muted-foreground">{`Pendiente ${formatCurrency(item.amount)}`}</p>
                   </div>
                   {on && (
-                    <Input
-                      type="number"
-                      min={0}
-                      max={item.amount}
-                      step="0.01"
-                      value={picked[id]}
-                      onChange={(e) => setPicked((cur) => ({ ...cur, [id]: e.target.value }))}
-                      aria-label="Monto a pagar de esta compra"
-                      className="h-9 w-28 shrink-0 text-right text-sm font-semibold"
-                    />
+                    <div className="w-28 shrink-0">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={item.amount}
+                        step="0.01"
+                        value={picked[id]}
+                        onChange={(e) => setPicked((cur) => ({ ...cur, [id]: e.target.value }))}
+                        aria-label="Monto a pagar de esta compra"
+                        className="h-9 text-right text-sm font-semibold"
+                      />
+                    </div>
                   )}
                 </div>
               );
