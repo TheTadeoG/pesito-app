@@ -34,6 +34,8 @@ import type { Supplier } from "@/lib/types";
 import { SOON_DAYS, addDays, daysBetween, nextDue, totalsOf, urgencyRank, type DebtItem } from "@/lib/supplier-debt";
 import { weekdayIndex } from "@/lib/supplier-debt";
 import type { SupplierOverview, SupplierRow } from "@/lib/supplier-overview";
+import { PurchaseDetailDialog } from "@/app/(dashboard)/compras/purchase-detail-dialog";
+import { getPurchaseDetail, type PurchaseDetail } from "@/app/(dashboard)/compras/actions";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import { deleteSupplier, setPurchaseDueDate } from "@/app/(dashboard)/proveedores/actions";
@@ -119,6 +121,12 @@ export function ProveedoresClient({
     key: accountsEnabled ? "urgency" : "name",
     dir: "asc",
   });
+  const [detail, setDetail] = useState<{
+    open: boolean;
+    loading: boolean;
+    purchase: PurchaseDetail | null;
+    dueDate: string | null;
+  }>({ open: false, loading: false, purchase: null, dueDate: null });
   const [dayFilter, setDayFilter] = useState<string | null>(null);
   const [statsOpen, setStatsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -231,6 +239,12 @@ export function ProveedoresClient({
       setPickerQuery("");
       setPickerOpen(true);
     }
+  }
+
+  async function openPurchase(purchaseId: string, dueDate: string | null) {
+    setDetail({ open: true, loading: true, purchase: null, dueDate });
+    const result = await getPurchaseDetail(purchaseId);
+    setDetail({ open: true, loading: false, purchase: result.purchase ?? null, dueDate });
   }
 
   function toggleOpen(id: string) {
@@ -701,8 +715,14 @@ export function ProveedoresClient({
                 return (
                   <div key={s.id}>
                     <div
+                      onClick={(e) => {
+                        // Tocar en cualquier parte de la fila (menos en sus botones y links).
+                        if ((e.target as HTMLElement).closest("a, button, input, [role=menuitem], [role=button]")) return;
+                        if (accountsEnabled && owes) toggleOpen(s.id);
+                        else router.push(`/proveedores/${s.id}`);
+                      }}
                       className={cn(
-                        "group grid gap-1.5 px-4 py-2.5 hover:bg-muted/30 lg:items-center lg:gap-3",
+                        "group grid cursor-pointer gap-1.5 px-4 py-2.5 hover:bg-muted/30 lg:items-center lg:gap-3",
                         gridCols
                       )}
                     >
@@ -847,6 +867,7 @@ export function ProveedoresClient({
                             key={item.purchaseId ?? `adj-${idx}`}
                             item={item}
                             onPay={() => setPaying({ row: s, purchaseId: item.purchaseId })}
+                            onOpen={() => item.purchaseId && openPurchase(item.purchaseId, item.dueDate)}
                           />
                         ))}
                       </div>
@@ -859,6 +880,13 @@ export function ProveedoresClient({
         </CardContent>
       </Card>
 
+      <PurchaseDetailDialog
+        open={detail.open}
+        onClose={() => setDetail((d) => ({ ...d, open: false }))}
+        loading={detail.loading}
+        purchase={detail.purchase}
+        dueDate={detail.dueDate}
+      />
       <SupplierForm
         key={editing?.id ?? "new"}
         open={formOpen}
@@ -956,7 +984,7 @@ function SortHeader({
 }
 
 /** Una compra que se debe, dentro de la fila desplegada del proveedor. */
-function ItemRow({ item, onPay }: { item: DebtItem; onPay: () => void }) {
+function ItemRow({ item, onPay, onOpen }: { item: DebtItem; onPay: () => void; onOpen: () => void }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(item.dueDate ?? "");
@@ -993,7 +1021,18 @@ function ItemRow({ item, onPay }: { item: DebtItem; onPay: () => void }) {
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 py-2 pr-4">
       <div className="min-w-0 flex-1 basis-44">
         <p className="truncate text-sm text-foreground">
-          <span className="font-medium">{title}</span>
+          {item.purchaseId ? (
+            <button
+              type="button"
+              onClick={onOpen}
+              title="Ver el detalle de esta compra"
+              className="font-medium underline-offset-2 hover:text-primary hover:underline"
+            >
+              {title}
+            </button>
+          ) : (
+            <span className="font-medium">{title}</span>
+          )}
           <span className="text-muted-foreground">{" · "}</span>
           <span className="font-semibold">{formatCurrency(item.amount)}</span>
         </p>
