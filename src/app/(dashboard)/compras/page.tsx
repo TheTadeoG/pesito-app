@@ -59,6 +59,16 @@ export default async function ComprasPage({
     supabase.from("payment_methods").select("name").eq("org_id", organization.id).order("created_at"),
   ]);
 
+  // Plazo de pago de cada proveedor (0057): si la columna todavía no existe la
+  // consulta falla y los vencimientos no se precargan.
+  const { data: termsRaw, error: termsError } = await supabase
+    .from("suppliers")
+    .select("id, payment_terms_days")
+    .eq("org_id", organization.id);
+  const termsById = new Map<string, number | null>(
+    termsError ? [] : (termsRaw ?? []).map((s) => [s.id, s.payment_terms_days ?? null])
+  );
+
   // Stock de la sucursal en la que está trabajando (donde va a entrar la
   // mercadería).
   const { current: branch } = await getBranchContext();
@@ -137,7 +147,11 @@ export default async function ComprasPage({
           price: Number(p.price),
           stock: Number(p.stock),
         }))}
-        suppliers={(suppliers ?? []).map((s) => ({ ...s, balance: Number(s.balance) }))}
+        suppliers={(suppliers ?? []).map((s) => ({
+          ...s,
+          balance: Number(s.balance),
+          payment_terms_days: termsById.get(s.id) ?? null,
+        }))}
         hasOpenCaja={Boolean(openRegister)}
         customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
         supplierAccountsEnabled={canUse(

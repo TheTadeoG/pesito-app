@@ -52,6 +52,8 @@ interface SupplierLite {
   id: string;
   name: string;
   balance: number;
+  /** Plazo de pago en días (0 = contado, null = sin plazo). */
+  payment_terms_days?: number | null;
 }
 
 interface CartLine {
@@ -169,7 +171,8 @@ export function ComprasClient({
     return initial;
   });
   // Vencimiento de lo que queda a cuenta: días desde hoy, fecha elegida o ninguno.
-  const [dueMode, setDueMode] = useState<"none" | "7" | "15" | "30" | "custom">("none");
+  const [dueMode, setDueMode] = useState<"none" | "7" | "15" | "30" | "custom" | "terms">("none");
+  const [dueTouched, setDueTouched] = useState(false);
   const [dueCustom, setDueCustom] = useState("");
   const [todayKey] = useState(() => dayKey(Date.now()));
   const [pending, setPending] = useState(false);
@@ -221,12 +224,19 @@ export function ComprasClient({
       : [];
   const accountAmount = payments.find((p) => p.method === "cuenta_corriente")?.amount ?? 0;
   const paidNow = total - accountAmount;
+  // Si el proveedor tiene plazo de pago, el vencimiento viene puesto (hasta que
+  // se elija otro).
+  const termsDays =
+    selectedSupplier?.payment_terms_days && selectedSupplier.payment_terms_days > 0
+      ? selectedSupplier.payment_terms_days
+      : null;
+  const effectiveDueMode = dueTouched ? dueMode : termsDays ? "terms" : "none";
   const dueDate =
-    accountAmount <= 0 || dueMode === "none"
+    accountAmount <= 0 || effectiveDueMode === "none"
       ? null
-      : dueMode === "custom"
+      : effectiveDueMode === "custom"
         ? dueCustom || null
-        : addDays(todayKey, Number(dueMode));
+        : addDays(todayKey, effectiveDueMode === "terms" ? (termsDays ?? 0) : Number(effectiveDueMode));
   const paymentsValid = splitPayment
     ? mixedEntries.length > 0 && Math.abs(mixedRemaining) < 0.01
     : Boolean(singleMethod);
@@ -466,6 +476,7 @@ export function ComprasClient({
     setSplitPayment(false);
     setSingleMethod(null);
     setDueMode("none");
+    setDueTouched(false);
     setDueCustom("");
     setMixedAmounts({ efectivo: "", tarjeta: "", transferencia: "", qr: "", cuenta_corriente: "" });
   }
@@ -1118,21 +1129,27 @@ export function ComprasClient({
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {(
                         [
-                          ["7", "A 7 días"],
-                          ["15", "A 15 días"],
-                          ["30", "A 30 días"],
+                          ...(termsDays ? [["terms", `A ${termsDays} días · su plazo`]] : []),
+                          ...[
+                            ["7", "A 7 días"],
+                            ["15", "A 15 días"],
+                            ["30", "A 30 días"],
+                          ].filter(([days]) => Number(days) !== termsDays),
                           ["custom", "Elegir fecha"],
                           ["none", "Sin fecha"],
-                        ] as const
+                        ] as [typeof dueMode, string][]
                       ).map(([mode, label]) => (
                         <button
                           key={mode}
                           type="button"
-                          aria-pressed={dueMode === mode}
-                          onClick={() => setDueMode(mode)}
+                          aria-pressed={effectiveDueMode === mode}
+                          onClick={() => {
+                            setDueTouched(true);
+                            setDueMode(mode);
+                          }}
                           className={cn(
                             "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
-                            dueMode === mode
+                            effectiveDueMode === mode
                               ? "border-primary bg-accent text-accent-foreground"
                               : "border-border text-muted-foreground hover:bg-muted"
                           )}
@@ -1141,7 +1158,7 @@ export function ComprasClient({
                         </button>
                       ))}
                     </div>
-                    {dueMode === "custom" && (
+                    {effectiveDueMode === "custom" && (
                       <Input
                         type="date"
                         value={dueCustom}
@@ -1153,7 +1170,9 @@ export function ComprasClient({
                     )}
                     {dueDate && (
                       <p className="mt-1.5 text-xs text-muted-foreground">
-                        {`Vence el ${formatDate(`${dueDate}T12:00:00-03:00`)}`}
+                        {`Vence el ${formatDate(`${dueDate}T12:00:00-03:00`)}${
+                          effectiveDueMode === "terms" ? " (el plazo de pago de este proveedor)" : ""
+                        }`}
                       </p>
                     )}
                   </div>

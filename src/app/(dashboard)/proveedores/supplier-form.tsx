@@ -33,6 +33,11 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
       ? String(supplier.min_order_amount)
       : ""
   );
+  const [paymentTermsDays, setPaymentTermsDays] = useState(
+    supplier?.payment_terms_days !== null && supplier?.payment_terms_days !== undefined
+      ? String(supplier.payment_terms_days)
+      : ""
+  );
   const [deliveryDays, setDeliveryDays] = useState<number[]>(supplier?.delivery_days ?? []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +57,9 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
       hadLeadTime: supplier?.lead_time_days !== null && supplier?.lead_time_days !== undefined,
       minOrderAmount,
       hadMinOrder: supplier?.min_order_amount !== null && supplier?.min_order_amount !== undefined,
+      paymentTermsDays,
+      hadPaymentTerms:
+        supplier?.payment_terms_days !== null && supplier?.payment_terms_days !== undefined,
       deliveryDays,
       hadDeliveryDays: (supplier?.delivery_days?.length ?? 0) > 0,
     };
@@ -96,6 +104,54 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+        </div>
+
+        <div>
+          <Label>Plazo de pago (opcional)</Label>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5" role="group" aria-label="Plazo de pago">
+            {(
+              [
+                ["", "Sin plazo"],
+                ["0", "Contado"],
+                ["7", "7 días"],
+                ["15", "15 días"],
+                ["30", "30 días"],
+              ] as const
+            ).map(([value, label]) => {
+              const on = paymentTermsDays === value;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setPaymentTermsDays(value)}
+                  className={cn(
+                    "h-9 rounded-lg border px-3 text-sm font-medium transition-colors",
+                    on
+                      ? "border-primary bg-accent text-accent-foreground"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+            <Input
+              type="number"
+              min={0}
+              max={365}
+              step={1}
+              value={["", "0", "7", "15", "30"].includes(paymentTermsDays) ? "" : paymentTermsDays}
+              onChange={(e) => setPaymentTermsDays(e.target.value)}
+              placeholder="Otro"
+              aria-label="Otro plazo de pago en días"
+              className="h-9 w-24"
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Cuánto tiempo tenés para pagarle. Al cargar una compra a cuenta, el vencimiento se completa
+            solo con este plazo (lo podés cambiar en cada compra).
+          </p>
         </div>
 
         <div>

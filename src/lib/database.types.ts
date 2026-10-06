@@ -533,6 +533,8 @@ export interface Database {
           min_order_amount?: number | null;
           /** Días de entrega, 0 = lunes ... 6 = domingo (0056). undefined si falta la migración. */
           delivery_days?: number[];
+          /** Plazo de pago en días, 0 = contado (0057). undefined si falta la migración. */
+          payment_terms_days?: number | null;
           created_at: string;
         };
         Insert: {
@@ -546,6 +548,7 @@ export interface Database {
           lead_time_days?: number | null;
           min_order_amount?: number | null;
           delivery_days?: number[];
+          payment_terms_days?: number | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;

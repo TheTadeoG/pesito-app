@@ -27,6 +27,10 @@ export interface SupplierFormInput {
   deliveryDays: number[];
   /** Ya tenía días de entrega cargados (para poder borrarlos). */
   hadDeliveryDays: boolean;
+  /** Plazo de pago en días ("" = sin plazo, "0" = contado). */
+  paymentTermsDays: string;
+  /** Ya tenía un plazo cargado (para poder borrarlo). */
+  hadPaymentTerms: boolean;
 }
 
 export async function saveSupplier(input: SupplierFormInput): Promise<ActionState> {
@@ -59,6 +63,16 @@ export async function saveSupplier(input: SupplierFormInput): Promise<ActionStat
     return { error: "Los días de entrega no son válidos." };
   }
 
+  // Plazo de pago (0057): sólo se manda con un valor o al borrar uno cargado.
+  const termsRaw = input.paymentTermsDays.trim();
+  const paymentTermsDays = termsRaw === "" ? null : Number(termsRaw);
+  if (
+    paymentTermsDays !== null &&
+    (!Number.isInteger(paymentTermsDays) || paymentTermsDays < 0 || paymentTermsDays > 365)
+  ) {
+    return { error: "El plazo de pago tiene que ser un número de días entre 0 y 365." };
+  }
+
   const payload = {
     org_id: organization.id,
     name: input.name.trim(),
@@ -68,6 +82,9 @@ export async function saveSupplier(input: SupplierFormInput): Promise<ActionStat
     ...(leadTimeDays !== null || input.hadLeadTime ? { lead_time_days: leadTimeDays } : {}),
     ...(minOrderAmount !== null || input.hadMinOrder ? { min_order_amount: minOrderAmount } : {}),
     ...(deliveryDays.length > 0 || input.hadDeliveryDays ? { delivery_days: deliveryDays } : {}),
+    ...(paymentTermsDays !== null || input.hadPaymentTerms
+      ? { payment_terms_days: paymentTermsDays }
+      : {}),
   };
 
   if (input.id) {
