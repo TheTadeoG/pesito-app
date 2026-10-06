@@ -1,37 +1,50 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, MoreHorizontal, Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
+import {
+  ArrowUpDown,
+  BarChart3,
+  CalendarDays,
+  ChevronDown,
+  Download,
+  Filter,
+  MessageCircle,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Wallet,
+  X,
+} from "lucide-react";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuItem, FilterPanel } from "@/components/ui/dropdown-menu";
+import { cn, formatCurrency } from "@/lib/utils";
+import { chatWhatsappUrl } from "@/lib/whatsapp";
 import type { Supplier } from "@/lib/types";
-import {
-  SOON_DAYS,
-  addDays,
-  calendarEvents,
-  daysBetween,
-  nextDue,
-  totalsOf,
-  urgencyRank,
-  type DebtItem,
-} from "@/lib/supplier-debt";
+import { SOON_DAYS, nextDue, totalsOf, urgencyRank, type DebtItem } from "@/lib/supplier-debt";
 import type { SupplierOverview, SupplierRow } from "@/lib/supplier-overview";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import { deleteSupplier } from "@/app/(dashboard)/proveedores/actions";
-import { agoLabel, debtSummary, shortDate, type DebtTone } from "@/app/(dashboard)/proveedores/debt-format";
+import { downloadDebtExcel } from "@/app/(dashboard)/proveedores/debt-excel";
+import {
+  agoLabel,
+  debtSummary,
+  shortDate,
+  type DebtTone,
+} from "@/app/(dashboard)/proveedores/debt-format";
 
-type SortKey = "urgency" | "debt" | "name" | "last";
-type TabKey = "all" | "vencida" | "pronto" | "sin_fecha" | "al_dia";
+type SortKey = "urgency" | "name" | "debt" | "last";
+type SortDir = "asc" | "desc";
+type EstadoKey = "vencida" | "pronto" | "no_vencida" | "sin_fecha" | "al_dia";
 type Mode = "vencimiento" | "antiguedad";
 
 const TONE_TEXT: Record<DebtTone, string> = {
@@ -40,6 +53,26 @@ const TONE_TEXT: Record<DebtTone, string> = {
   muted: "text-muted-foreground",
 };
 
+const ESTADO_LABEL: Record<EstadoKey, string> = {
+  vencida: "Vencida",
+  pronto: `Vence pronto (${SOON_DAYS} días)`,
+  no_vencida: "No vencida",
+  sin_fecha: "Sin fecha",
+  al_dia: "Al día (sin deuda)",
+};
+
+const WITH_DEBT: EstadoKey[] = ["vencida", "pronto", "no_vencida", "sin_fecha"];
+
+// Las pestañas son atajos del filtro de la columna "Estado de la deuda".
+const TABS: { key: string; label: string; estados: EstadoKey[] }[] = [
+  { key: "debt", label: "Con deuda", estados: WITH_DEBT },
+  { key: "all", label: "Todos", estados: [] },
+  { key: "vencida", label: "Vencidas", estados: ["vencida"] },
+  { key: "pronto", label: "Vencen pronto", estados: ["pronto"] },
+  { key: "sin_fecha", label: "Sin fecha", estados: ["sin_fecha"] },
+  { key: "al_dia", label: "Al día", estados: ["al_dia"] },
+];
+
 function initialsOf(name: string) {
   const words = name.trim().split(/\s+/);
   return ((words[0]?.[0] ?? "") + (words[1]?.[0] ?? "")).toUpperCase();
@@ -47,6 +80,14 @@ function initialsOf(name: string) {
 
 const hasStatus = (items: readonly DebtItem[], status: DebtItem["status"]) =>
   items.some((i) => i.status === status);
+
+function matchesEstado(row: SupplierRow, estado: EstadoKey): boolean {
+  return estado === "al_dia" ? row.items.length === 0 : hasStatus(row.items, estado);
+}
+
+function sameSet(a: ReadonlySet<EstadoKey>, b: readonly EstadoKey[]) {
+  return a.size === b.length && b.every((k) => a.has(k));
+}
 
 export function ProveedoresClient({
   overview,
@@ -60,47 +101,54 @@ export function ProveedoresClient({
 }) {
   const { rows, todayKey } = overview;
   const router = useRouter();
+  const hasDebtors = rows.some((r) => r.balance > 0);
+
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<TabKey>("all");
-  const [sort, setSort] = useState<SortKey>(accountsEnabled ? "urgency" : "name");
+  const [estados, setEstados] = useState<Set<EstadoKey>>(
+    () => new Set(accountsEnabled && hasDebtors ? WITH_DEBT : [])
+  );
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
+    key: accountsEnabled ? "urgency" : "name",
+    dir: "asc",
+  });
   const [mode, setMode] = useState<Mode>("vencimiento");
+  const [statsOpen, setStatsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
-  const [paying, setPaying] = useState<Supplier | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [paying, setPaying] = useState<SupplierRow | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const allItems = useMemo(() => rows.flatMap((r) => r.items), [rows]);
   const totals = useMemo(() => totalsOf(allItems), [allItems]);
+  const upcoming = useMemo(() => nextDue(allItems), [allItems]);
   const debtors = useMemo(
     () => rows.filter((r) => r.balance > 0).sort((a, b) => b.balance - a.balance),
     [rows]
   );
   const debtorsCount = rows.filter((r) => r.items.length > 0).length;
-  const upcoming = useMemo(() => nextDue(allItems), [allItems]);
   const overdueSuppliers = useMemo(
     () => rows.filter((r) => hasStatus(r.items, "vencida")),
     [rows]
   );
 
-  const counts = useMemo(
-    () => ({
-      all: rows.length,
-      vencida: rows.filter((r) => hasStatus(r.items, "vencida")).length,
-      pronto: rows.filter((r) => hasStatus(r.items, "pronto")).length,
-      sin_fecha: rows.filter((r) => hasStatus(r.items, "sin_fecha")).length,
-      al_dia: rows.filter((r) => r.items.length === 0).length,
-    }),
-    [rows]
-  );
+  const counts = useMemo(() => {
+    const result: Record<string, number> = {};
+    for (const tab of TABS) {
+      result[tab.key] =
+        tab.estados.length === 0
+          ? rows.length
+          : rows.filter((r) => tab.estados.some((e) => matchesEstado(r, e))).length;
+    }
+    return result;
+  }, [rows]);
+
+  const activeTab = TABS.find((t) => sameSet(estados, t.estados))?.key ?? null;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = rows.filter((s) => {
-      if (tab === "vencida" && !hasStatus(s.items, "vencida")) return false;
-      if (tab === "pronto" && !hasStatus(s.items, "pronto")) return false;
-      if (tab === "sin_fecha" && !hasStatus(s.items, "sin_fecha")) return false;
-      if (tab === "al_dia" && s.items.length > 0) return false;
+      if (estados.size > 0 && !Array.from(estados).some((e) => matchesEstado(s, e))) return false;
       if (!q) return true;
       return (
         s.name.toLowerCase().includes(q) ||
@@ -109,45 +157,24 @@ export function ProveedoresClient({
       );
     });
     const byName = (a: SupplierRow, b: SupplierRow) => a.name.localeCompare(b.name, "es");
-    if (sort === "name") return list.sort(byName);
-    if (sort === "debt") return list.sort((a, b) => b.balance - a.balance || byName(a, b));
-    if (sort === "last") {
-      return list.sort((a, b) => (b.lastPurchaseAt ?? "").localeCompare(a.lastPurchaseAt ?? ""));
-    }
-    // Por urgencia: lo vencido primero, después lo que vence antes.
     const firstDue = (r: SupplierRow) =>
       r.items.reduce((min, i) => (i.dueDate && i.dueDate < min ? i.dueDate : min), "9999-12-31");
-    return list.sort(
-      (a, b) =>
+    const compare = (a: SupplierRow, b: SupplierRow) => {
+      if (sort.key === "name") return byName(a, b);
+      if (sort.key === "debt") return a.balance - b.balance || byName(a, b);
+      if (sort.key === "last") {
+        return (a.lastPurchaseAt ?? "").localeCompare(b.lastPurchaseAt ?? "") || byName(a, b);
+      }
+      return (
         urgencyRank(a.items) - urgencyRank(b.items) ||
         firstDue(a).localeCompare(firstDue(b)) ||
         b.balance - a.balance ||
         byName(a, b)
-    );
-  }, [rows, query, tab, sort]);
-
-  // Calendario corto: lo que viene en los próximos 7 días.
-  const events = useMemo(
-    () =>
-      calendarEvents(
-        rows.map((r) => ({
-          id: r.id,
-          name: r.name,
-          deliveryDays: r.delivery_days ?? [],
-          items: r.items,
-        })),
-        todayKey,
-        addDays(todayKey, 7)
-      ).slice(0, 5),
-    [rows, todayKey]
-  );
-
-  // "Registrar pago" de la barra de arriba: con un solo deudor va directo, con
-  // varios se elige a quién.
-  function startPayment() {
-    if (debtors.length === 1) setPaying(debtors[0]);
-    else setPickerOpen(true);
-  }
+      );
+    };
+    const sign = sort.dir === "asc" ? 1 : -1;
+    return list.sort((a, b) => sign * compare(a, b));
+  }, [rows, query, estados, sort]);
 
   async function handleDelete(supplier: Supplier) {
     if (!confirm(`¿Borrar a "${supplier.name}"?`)) return;
@@ -156,13 +183,29 @@ export function ProveedoresClient({
     setBusyId(null);
   }
 
+  // "Registrar pago" de la barra de arriba: con un solo deudor va directo, con
+  // varios se elige a quién.
+  function startPayment() {
+    if (debtors.length === 1) setPaying(debtors[0]);
+    else setPickerOpen(true);
+  }
+
+  function toggleEstado(key: EstadoKey) {
+    setEstados((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   const segments =
     mode === "vencimiento"
       ? [
           { key: "vencida", label: "vencida", value: totals.vencida, bar: "bg-danger", text: "text-danger" },
           {
             key: "pronto",
-            label: `vence pronto (${SOON_DAYS} días)`,
+            label: "vence pronto",
             value: totals.pronto,
             bar: "bg-warning",
             text: "text-warning",
@@ -182,17 +225,17 @@ export function ProveedoresClient({
           { key: "m30", label: "más de 30 días", value: totals.mas30, bar: "bg-danger", text: "text-danger" },
         ];
 
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: "all", label: "Todos" },
-    { key: "vencida", label: "Vencidas" },
-    { key: "pronto", label: "Vencen pronto" },
-    { key: "sin_fecha", label: "Sin fecha" },
-    { key: "al_dia", label: "Al día" },
-  ];
-
   const gridCols = accountsEnabled
-    ? "lg:grid-cols-[2.25rem_minmax(0,1.2fr)_6.5rem_minmax(0,2fr)_6.5rem_9.5rem_1.75rem]"
-    : "lg:grid-cols-[2.25rem_minmax(0,1.6fr)_7rem_8rem_9.5rem_1.75rem]";
+    ? "lg:grid-cols-[2.25rem_minmax(0,1.3fr)_6.5rem_minmax(0,2fr)_7rem_12.5rem_1.75rem]"
+    : "lg:grid-cols-[2.25rem_minmax(0,1.6fr)_7rem_8rem_10rem_1.75rem]";
+
+  const upcomingWhen = upcoming
+    ? upcoming.daysToDue === 0
+      ? "Hoy"
+      : upcoming.daysToDue === 1
+        ? "Mañana"
+        : `En ${upcoming.daysToDue} días`
+    : "";
 
   return (
     <div className="space-y-3">
@@ -207,18 +250,15 @@ export function ProveedoresClient({
             className="pl-10"
           />
         </div>
-        <Select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
-          aria-label="Ordenar proveedores"
-          className="lg:w-52"
-        >
-          {accountsEnabled && <option value="urgency">Ordenar por vencimiento</option>}
-          {accountsEnabled && <option value="debt">Mayor deuda primero</option>}
-          <option value="name">Ordenar por nombre</option>
-          <option value="last">Última compra</option>
-        </Select>
         <div className="flex flex-col gap-2 sm:flex-row lg:ml-auto">
+          {accountsEnabled && (
+            <Link href="/proveedores/calendario">
+              <Button variant="outline" className="w-full">
+                <CalendarDays className="h-4 w-4" />
+                Calendario
+              </Button>
+            </Link>
+          )}
           {accountsEnabled && debtors.length > 0 && (
             <Button variant="outline" onClick={startPayment}>
               <Wallet className="h-4 w-4" />
@@ -238,9 +278,9 @@ export function ProveedoresClient({
       </div>
 
       {accountsEnabled ? (
-        <div className="grid gap-3 lg:grid-cols-[1.7fr_1fr_1fr]">
-          <Card>
-            <CardContent className="space-y-2.5 py-4">
+        <Card>
+          <CardContent className="grid gap-4 py-4 lg:grid-cols-[1.6fr_1fr_1fr] lg:gap-0">
+            <div className="space-y-2.5 lg:pr-6">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-xs text-muted-foreground">Les debés en total</p>
@@ -307,64 +347,81 @@ export function ProveedoresClient({
               ) : (
                 <p className="text-sm text-muted-foreground">No les debés nada a tus proveedores.</p>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card className={cn(totals.vencida > 0 && "border-danger/40 bg-danger-bg/30")}>
-            <CardContent className="space-y-1 py-4">
-              <p
-                className={cn(
-                  "text-xs font-semibold",
-                  totals.vencida > 0 ? "text-danger" : "text-muted-foreground"
+            {totals.vencida === 0 && !upcoming ? (
+              <div className="border-border lg:col-span-2 lg:border-l lg:pl-6">
+                <p className="text-sm font-semibold text-foreground">
+                  {totals.total > 0 ? "Nada vencido" : "Todo al día"}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {totals.sin_fecha > 0
+                    ? "Asignale fecha a las compras sin vencimiento para ver cuánto vence pronto."
+                    : "Cuando cargues una compra a cuenta con vencimiento, lo ves acá."}
+                </p>
+                {totals.sin_fecha > 0 && (
+                  <Link
+                    href="/proveedores/calendario"
+                    className="mt-1.5 inline-block text-xs font-semibold text-primary hover:underline"
+                  >
+                    Asignar fechas →
+                  </Link>
                 )}
-              >
-                Vencidas · hay que pagar
-              </p>
-              <p className={cn("text-2xl font-bold", totals.vencida > 0 ? "text-danger" : "text-foreground")}>
-                {formatCurrency(totals.vencida)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {overdueSuppliers.length === 0
-                  ? "No tenés deudas vencidas."
-                  : overdueSuppliers.length <= 2
-                    ? overdueSuppliers.map((s) => s.name).join(" · ")
-                    : `${overdueSuppliers
-                        .slice(0, 2)
-                        .map((s) => s.name)
-                        .join(" · ")} y ${overdueSuppliers.length - 2} más`}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="space-y-1 py-4">
-              <p className="text-xs text-muted-foreground">Próximo vencimiento</p>
-              {upcoming ? (
-                <>
-                  <p className="text-2xl font-bold text-foreground">
-                    {formatDate(`${upcoming.dueDate}T12:00:00-03:00`)}
+              </div>
+            ) : (
+              <>
+                <div className="border-border lg:border-l lg:px-6">
+                  <p
+                    className={cn(
+                      "text-xs font-semibold",
+                      totals.vencida > 0 ? "text-danger" : "text-muted-foreground"
+                    )}
+                  >
+                    Vencidas · hay que pagar
+                  </p>
+                  <p
+                    className={cn(
+                      "mt-0.5 text-2xl font-bold",
+                      totals.vencida > 0 ? "text-danger" : "text-foreground"
+                    )}
+                  >
+                    {formatCurrency(totals.vencida)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {`${rows.find((r) => r.id === upcoming.supplierId)?.name ?? "Proveedor"} · ${formatCurrency(upcoming.amount)} · ${
-                      upcoming.daysToDue === 0
-                        ? "hoy"
-                        : upcoming.daysToDue === 1
-                          ? "mañana"
-                          : `en ${upcoming.daysToDue} días`
-                    }`}
+                    {overdueSuppliers.length === 0
+                      ? "No tenés deudas vencidas."
+                      : overdueSuppliers.length <= 2
+                        ? overdueSuppliers.map((s) => s.name).join(" · ")
+                        : `${overdueSuppliers
+                            .slice(0, 2)
+                            .map((s) => s.name)
+                            .join(" · ")} y ${overdueSuppliers.length - 2} más`}
                   </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold text-foreground">—</p>
-                  <p className="text-xs text-muted-foreground">
-                    Cargá el vencimiento al registrar una compra a cuenta.
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                </div>
+                <div className="border-border lg:border-l lg:pl-6">
+                  <p className="text-xs text-muted-foreground">Próximo vencimiento</p>
+                  {upcoming ? (
+                    <>
+                      <p className="mt-0.5 text-2xl font-bold text-foreground">{upcomingWhen}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {`${rows.find((r) => r.id === upcoming.supplierId)?.name ?? "Proveedor"} · ${formatCurrency(upcoming.amount)}${
+                          upcoming.daysToDue !== null && upcoming.daysToDue > 1
+                            ? ` · ${shortDate(upcoming.dueDate as string)}`
+                            : ""
+                        }`}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-0.5 text-2xl font-bold text-foreground">—</p>
+                      <p className="text-xs text-muted-foreground">Sin vencimientos próximos.</p>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       ) : (
         <PlanLockNote plan="esencial">
           Con el Plan Esencial llevás la cuenta corriente con cada proveedor: cuánto les debés, cuándo
@@ -372,134 +429,100 @@ export function ProveedoresClient({
         </PlanLockNote>
       )}
 
-      <div className={cn("grid gap-3", accountsEnabled ? "lg:grid-cols-3" : "lg:grid-cols-2")}>
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-foreground">Compras y pagos por mes</p>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <i className="inline-block h-2 w-2 rounded-sm bg-primary" />
-                  Compras
-                </span>
-                <span className="flex items-center gap-1">
-                  <i className="inline-block h-2 w-2 rounded-sm bg-primary/40" />
-                  Pagos
-                </span>
-              </div>
-            </div>
-            <MonthlyBars data={overview.monthly} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="py-4">
-            <p className="text-sm font-semibold text-foreground">A quién le comprás más</p>
-            <p className="text-xs text-muted-foreground">
-              {`Últimos 30 días · ${formatCurrency(overview.topTotal)}`}
-            </p>
-            {overview.top.length === 0 ? (
-              <p className="mt-3 text-sm text-muted-foreground">
-                Todavía no hay compras en este período.
-              </p>
-            ) : (
-              <div className="mt-2 space-y-2.5">
-                {overview.top.map((t) => (
-                  <div key={t.name}>
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="truncate font-medium text-foreground">{t.name}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {`${t.pct}% · ${formatCurrency(t.amount)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 h-1.5 rounded-full bg-muted">
-                      <div
-                        className="h-1.5 rounded-full bg-primary"
-                        style={{ width: `${Math.max(3, t.pct)}%` }}
-                      />
-                    </div>
+      <Card>
+        <button
+          type="button"
+          aria-expanded={statsOpen}
+          onClick={() => setStatsOpen((v) => !v)}
+          className={cn(
+            "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
+            statsOpen && "border-b border-border"
+          )}
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+            <BarChart3 className="h-[18px] w-[18px]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-foreground">Estadísticas</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              Compras y pagos por mes · a quién le comprás más
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground">
+            {statsOpen ? "Ocultar" : "Ver"}
+            <ChevronDown className={cn("h-4 w-4 transition-transform", statsOpen && "rotate-180")} />
+          </span>
+        </button>
+        {statsOpen && (
+          <div className="grid gap-3 bg-muted/30 p-4 lg:grid-cols-2">
+            <Card>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">Compras y pagos por mes</p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <i className="inline-block h-2 w-2 rounded-sm bg-primary" />
+                      Compras
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <i className="inline-block h-2 w-2 rounded-sm bg-primary/40" />
+                      Pagos
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {accountsEnabled && (
-          <Card>
-            <CardContent className="py-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-foreground">Calendario</p>
-                <Link
-                  href="/proveedores/calendario"
-                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                >
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  Ver calendario completo
-                </Link>
-              </div>
-              {events.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  No hay vencimientos ni entregas en los próximos 7 días. Cargá los días de entrega
-                  desde la ficha de cada proveedor.
-                </p>
-              ) : (
-                <div className="mt-2 space-y-0.5">
-                  {events.map((e, idx) => {
-                    const diff = daysBetween(todayKey, e.day);
-                    const label = diff === 0 ? "Hoy" : diff === 1 ? "Mañana" : shortDate(e.day);
-                    return (
-                      <div
-                        key={`${e.supplierId}-${e.kind}-${e.day}-${idx}`}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm",
-                          diff === 0 && "bg-accent"
-                        )}
-                      >
-                        <span className="w-14 shrink-0 text-xs font-semibold text-muted-foreground">
-                          {label}
-                        </span>
-                        <i
-                          className={cn(
-                            "inline-block h-2 w-2 shrink-0 rounded-full",
-                            e.kind === "entrega"
-                              ? "bg-muted-foreground/50"
-                              : e.status === "vencida"
-                                ? "bg-danger"
-                                : e.status === "pronto"
-                                  ? "bg-warning"
-                                  : "bg-success"
-                          )}
-                        />
-                        <span className="min-w-0 flex-1 truncate text-foreground">
-                          {e.kind === "entrega"
-                            ? `Entrega ${e.supplierName}`
-                            : `Vence ${formatCurrency(e.amount ?? 0)} · ${e.supplierName}`}
-                        </span>
-                      </div>
-                    );
-                  })}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <MonthlyBars data={overview.monthly} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="py-4">
+                <p className="text-sm font-semibold text-foreground">A quién le comprás más</p>
+                <p className="text-xs text-muted-foreground">
+                  {`Últimos 30 días · ${formatCurrency(overview.topTotal)}`}
+                </p>
+                {overview.top.length === 0 ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Todavía no hay compras en este período.
+                  </p>
+                ) : (
+                  <div className="mt-2 space-y-2.5">
+                    {overview.top.map((t) => (
+                      <div key={t.name}>
+                        <div className="flex items-center justify-between gap-2 text-sm">
+                          <span className="truncate font-medium text-foreground">{t.name}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {`${t.pct}% · ${formatCurrency(t.amount)}`}
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1.5 rounded-full bg-muted">
+                          <div
+                            className="h-1.5 rounded-full bg-primary"
+                            style={{ width: `${Math.max(3, t.pct)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
-      </div>
+      </Card>
 
-      <div>
-        <Card>
-          <CardContent className="p-0">
-            {accountsEnabled && (
-              <div className="flex flex-wrap gap-1 border-b border-border px-3 py-2.5">
-                {tabs.map((t) => (
+      <Card>
+        <CardContent className="p-0">
+          {accountsEnabled && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5">
+              <div className="flex flex-1 flex-wrap gap-1">
+                {TABS.map((t) => (
                   <button
                     key={t.key}
                     type="button"
-                    aria-pressed={tab === t.key}
-                    onClick={() => setTab(t.key)}
+                    aria-pressed={activeTab === t.key}
+                    onClick={() => setEstados(new Set(t.estados))}
                     className={cn(
                       "rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
-                      tab === t.key
+                      activeTab === t.key
                         ? "bg-foreground text-background"
                         : "text-muted-foreground hover:bg-muted"
                     )}
@@ -509,161 +532,322 @@ export function ProveedoresClient({
                   </button>
                 ))}
               </div>
-            )}
-            {filtered.length === 0 ? (
-              <p className="px-5 py-14 text-center text-sm text-muted-foreground">
-                {rows.length === 0
-                  ? "Todavía no cargaste proveedores."
-                  : "No hay proveedores con esos filtros."}
-              </p>
-            ) : (
-              <div className="divide-y divide-border">
-                <div
-                  className={cn(
-                    "hidden gap-3 bg-muted/60 px-4 py-2 text-xs font-medium text-muted-foreground lg:grid",
-                    gridCols
-                  )}
+              {debtors.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => downloadDebtExcel(rows, todayKey)}
+                  title="Baja la deuda, compra por compra, a una planilla de Excel"
                 >
-                  <span />
-                  <span>Proveedor</span>
-                  <span>{accountsEnabled ? "Le debés" : "Última compra"}</span>
-                  <span>{accountsEnabled ? "Estado de la deuda" : "Total comprado"}</span>
-                  {accountsEnabled && <span>Última compra</span>}
-                  <span />
-                  <span />
-                </div>
-                {filtered.map((s) => {
-                  const summary = debtSummary(s.items);
-                  const owes = s.balance > 0;
-                  return (
-                    <div
-                      key={s.id}
-                      className={cn("grid gap-2 px-4 py-2.5 lg:items-center lg:gap-3", gridCols)}
-                    >
-                      <div
-                        className={cn(
-                          "hidden h-9 w-9 items-center justify-center rounded-xl text-xs font-bold lg:flex",
-                          owes ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {initialsOf(s.name)}
-                      </div>
-                      <Link
-                        href={`/proveedores/${s.id}`}
-                        title="Ver ficha del proveedor"
-                        className="-mx-2 min-w-0 rounded-lg px-2 py-0.5 transition-colors hover:bg-muted"
-                      >
-                        <p className="truncate text-sm font-semibold text-foreground">{s.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {[s.phone, s.email].filter(Boolean).join(" · ") || "Sin datos de contacto"}
-                        </p>
-                      </Link>
+                  <Download className="h-3.5 w-3.5" />
+                  Descargar deuda (Excel)
+                </Button>
+              )}
+            </div>
+          )}
 
-                      {accountsEnabled ? (
-                        <>
-                          <p className="text-sm">
-                            {owes ? (
-                              <span className="text-base font-bold text-warning">
-                                {formatCurrency(s.balance)}
-                              </span>
-                            ) : (
-                              <Badge tone="success">Al día</Badge>
-                            )}
-                          </p>
-                          <div className="min-w-0">
-                            {summary ? (
-                              <>
-                                <p
-                                  className={cn(
-                                    "truncate text-sm font-semibold",
-                                    TONE_TEXT[summary.tone]
-                                  )}
-                                >
-                                  {summary.headline}
-                                </p>
-                                {summary.sub && (
-                                  <p className="truncate text-xs text-muted-foreground">{summary.sub}</p>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">—</span>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            <span className="lg:hidden">Última compra: </span>
-                            {agoLabel(s.lastPurchaseAt, todayKey)}
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm text-muted-foreground">
-                            <span className="lg:hidden">Última compra: </span>
-                            {agoLabel(s.lastPurchaseAt, todayKey)}
-                          </p>
-                          <p className="text-sm text-foreground">
-                            <span className="text-muted-foreground lg:hidden">Total comprado: </span>
-                            {formatCurrency(s.totalPurchased)}
-                          </p>
-                        </>
-                      )}
+          {accountsEnabled && !activeTab && estados.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2 text-xs">
+              <span className="text-muted-foreground">Filtros:</span>
+              <span className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 font-semibold text-accent-foreground">
+                {`Estado: ${Array.from(estados)
+                  .map((e) => ESTADO_LABEL[e].replace(/ \(.*\)/, ""))
+                  .join(", ")}`}
+                <button
+                  type="button"
+                  aria-label="Quitar el filtro de estado"
+                  onClick={() => setEstados(new Set())}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+              <button
+                type="button"
+                onClick={() => setEstados(new Set())}
+                className="font-semibold text-primary hover:underline"
+              >
+                Limpiar todo
+              </button>
+            </div>
+          )}
 
-                      <div className="flex items-center gap-1.5 lg:justify-end">
-                        {accountsEnabled && owes ? (
-                          <Button size="sm" onClick={() => setPaying(s)}>
-                            <Wallet className="h-3.5 w-3.5" />
-                            Registrar pago
-                          </Button>
-                        ) : (
-                          <Link href="/compras">
-                            <Button size="sm" variant="outline">
-                              Cargar compra
-                            </Button>
-                          </Link>
-                        )}
-                      </div>
+          <div className="border-b border-border p-3 lg:hidden">
+            <Select
+              value={`${sort.key}:${sort.dir}`}
+              onChange={(e) => {
+                const [key, dir] = e.target.value.split(":") as [SortKey, SortDir];
+                setSort({ key, dir });
+              }}
+              aria-label="Ordenar proveedores"
+            >
+              {accountsEnabled && <option value="urgency:asc">Ordenar por vencimiento</option>}
+              {accountsEnabled && <option value="debt:desc">Mayor deuda primero</option>}
+              <option value="name:asc">Ordenar por nombre</option>
+              <option value="last:desc">Compra más reciente</option>
+            </Select>
+          </div>
 
-                      <div className="flex justify-end lg:justify-center">
-                        <DropdownMenu
-                          trigger={
-                            <button
-                              type="button"
-                              aria-label={`Más opciones de ${s.name}`}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-                          }
+          {filtered.length === 0 ? (
+            <p className="px-5 py-14 text-center text-sm text-muted-foreground">
+              {rows.length === 0
+                ? "Todavía no cargaste proveedores."
+                : "No hay proveedores con esos filtros."}
+            </p>
+          ) : (
+            <div className="divide-y divide-border">
+              <div
+                className={cn(
+                  "hidden items-center gap-3 bg-muted/60 px-4 py-1.5 text-xs font-medium text-muted-foreground lg:grid",
+                  gridCols
+                )}
+              >
+                <span />
+                <SortMenu
+                  label="Proveedor"
+                  active={sort.key === "name"}
+                  onPick={(dir) => setSort({ key: "name", dir })}
+                  options={[
+                    ["asc", "De la A a la Z"],
+                    ["desc", "De la Z a la A"],
+                  ]}
+                  dir={sort.dir}
+                />
+                {accountsEnabled ? (
+                  <SortMenu
+                    label="Le debés"
+                    active={sort.key === "debt"}
+                    onPick={(dir) => setSort({ key: "debt", dir })}
+                    options={[
+                      ["desc", "De mayor a menor"],
+                      ["asc", "De menor a mayor"],
+                    ]}
+                    dir={sort.dir}
+                  />
+                ) : (
+                  <SortMenu
+                    label="Última compra"
+                    active={sort.key === "last"}
+                    onPick={(dir) => setSort({ key: "last", dir })}
+                    options={[
+                      ["desc", "La más reciente primero"],
+                      ["asc", "La más vieja primero"],
+                    ]}
+                    dir={sort.dir}
+                  />
+                )}
+                {accountsEnabled ? (
+                  <FilterPanel
+                    align="left"
+                    trigger={
+                      <HeaderButton active={estados.size > 0 && !activeTab} icon={Filter}>
+                        Estado de la deuda
+                      </HeaderButton>
+                    }
+                  >
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                      Mostrar proveedores con…
+                    </p>
+                    <div className="space-y-0.5">
+                      {(Object.keys(ESTADO_LABEL) as EstadoKey[]).map((key) => (
+                        <label
+                          key={key}
+                          className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
                         >
-                          <DropdownMenuItem onClick={() => router.push(`/proveedores/${s.id}`)}>
-                            Ver ficha
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditing(s);
-                              setFormOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Editar datos
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            danger
-                            disabled={busyId === s.id}
-                            onClick={() => handleDelete(s)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Borrar proveedor
-                          </DropdownMenuItem>
-                        </DropdownMenu>
-                      </div>
+                          <input
+                            type="checkbox"
+                            checked={estados.has(key)}
+                            onChange={() => toggleEstado(key)}
+                            className="h-4 w-4 accent-[var(--color-primary)]"
+                          />
+                          <span className="flex-1 font-medium text-foreground">{ESTADO_LABEL[key]}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {rows.filter((r) => matchesEstado(r, key)).length}
+                          </span>
+                        </label>
+                      ))}
                     </div>
-                  );
-                })}
+                    <button
+                      type="button"
+                      onClick={() => setEstados(new Set())}
+                      className="mt-2 text-xs font-semibold text-primary hover:underline"
+                    >
+                      Limpiar
+                    </button>
+                  </FilterPanel>
+                ) : (
+                  <span>Total comprado</span>
+                )}
+                {accountsEnabled ? (
+                  <SortMenu
+                    label="Última compra"
+                    active={sort.key === "last"}
+                    onPick={(dir) => setSort({ key: "last", dir })}
+                    options={[
+                      ["desc", "La más reciente primero"],
+                      ["asc", "La más vieja primero"],
+                    ]}
+                    dir={sort.dir}
+                  />
+                ) : null}
+                <span />
+                <span />
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              {filtered.map((s) => {
+                const summary = debtSummary(s.items);
+                const owes = s.balance > 0;
+                const whatsapp = chatWhatsappUrl(s.phone);
+                return (
+                  <div
+                    key={s.id}
+                    className={cn(
+                      "group grid gap-2 px-4 py-2.5 hover:bg-muted/30 lg:items-center lg:gap-3",
+                      gridCols
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "hidden h-9 w-9 items-center justify-center rounded-xl text-xs font-bold lg:flex",
+                        owes ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {initialsOf(s.name)}
+                    </div>
+                    <Link
+                      href={`/proveedores/${s.id}`}
+                      title="Ver ficha del proveedor"
+                      className="-mx-2 min-w-0 rounded-lg px-2 py-0.5 transition-colors hover:bg-muted"
+                    >
+                      <p className="truncate text-sm font-semibold text-foreground">{s.name}</p>
+                      {(s.phone || s.email) && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {[s.phone, s.email].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                    </Link>
+
+                    {accountsEnabled ? (
+                      <>
+                        <p className="text-sm">
+                          {owes ? (
+                            <span className="text-base font-bold text-warning">
+                              {formatCurrency(s.balance)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Al día</span>
+                          )}
+                        </p>
+                        <div className="min-w-0">
+                          {summary ? (
+                            <>
+                              <p
+                                className={cn(
+                                  "truncate text-sm font-semibold",
+                                  TONE_TEXT[summary.tone]
+                                )}
+                              >
+                                {summary.headline}
+                              </p>
+                              {summary.sub && (
+                                <p className="truncate text-xs text-muted-foreground">{summary.sub}</p>
+                              )}
+                            </>
+                          ) : (
+                            <span className="hidden text-sm text-muted-foreground lg:inline">—</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="lg:hidden">Última compra: </span>
+                          {agoLabel(s.lastPurchaseAt, todayKey)}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="lg:hidden">Última compra: </span>
+                          {agoLabel(s.lastPurchaseAt, todayKey)}
+                        </p>
+                        <p className="text-sm text-foreground">
+                          <span className="text-muted-foreground lg:hidden">Total comprado: </span>
+                          {formatCurrency(s.totalPurchased)}
+                        </p>
+                      </>
+                    )}
+
+                    <div
+                      className={cn(
+                        "flex items-center gap-1.5 lg:justify-end",
+                        !(accountsEnabled && owes) &&
+                          "lg:opacity-0 lg:transition-opacity lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+                      )}
+                    >
+                      {whatsapp && (
+                        <a
+                          href={whatsapp}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Escribirle a ${s.name} por WhatsApp`}
+                          title="Escribirle por WhatsApp"
+                        >
+                          <Button size="sm" variant="outline" className="w-8 px-0" tabIndex={-1}>
+                            <MessageCircle className="h-4 w-4 shrink-0" />
+                          </Button>
+                        </a>
+                      )}
+                      {accountsEnabled && owes ? (
+                        <Button size="sm" onClick={() => setPaying(s)}>
+                          <Wallet className="h-3.5 w-3.5" />
+                          Registrar pago
+                        </Button>
+                      ) : (
+                        <Link href="/compras">
+                          <Button size="sm" variant="outline">
+                            Cargar compra
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end lg:justify-center">
+                      <DropdownMenu
+                        trigger={
+                          <button
+                            type="button"
+                            aria-label={`Más opciones de ${s.name}`}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        }
+                      >
+                        <DropdownMenuItem onClick={() => router.push(`/proveedores/${s.id}`)}>
+                          Ver ficha
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditing(s);
+                            setFormOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Editar datos
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          danger
+                          disabled={busyId === s.id}
+                          onClick={() => handleDelete(s)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Borrar proveedor
+                        </DropdownMenuItem>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <SupplierForm
         key={editing?.id ?? "new"}
@@ -712,6 +896,65 @@ export function ProveedoresClient({
         customPaymentMethods={customPaymentMethods}
       />
     </div>
+  );
+}
+
+/** Título de columna que se puede tocar (orden o filtro). */
+function HeaderButton({
+  active,
+  icon: Icon,
+  children,
+}: {
+  active: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      className={cn(
+        "-ml-2 inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1 transition-colors hover:bg-muted",
+        active ? "bg-accent font-semibold text-accent-foreground" : "text-muted-foreground"
+      )}
+    >
+      {children}
+      <Icon className="h-3 w-3" />
+    </span>
+  );
+}
+
+/** Título de columna con menú de orden. */
+function SortMenu({
+  label,
+  active,
+  dir,
+  options,
+  onPick,
+}: {
+  label: string;
+  active: boolean;
+  dir: SortDir;
+  options: [SortDir, string][];
+  onPick: (dir: SortDir) => void;
+}) {
+  return (
+    <DropdownMenu
+      align="left"
+      trigger={
+        <HeaderButton active={active} icon={ArrowUpDown}>
+          {label}
+        </HeaderButton>
+      }
+    >
+      {options.map(([value, text]) => (
+        <DropdownMenuItem key={value} onClick={() => onPick(value)}>
+          <span className={cn(active && dir === value && "font-semibold text-primary")}>
+            {active && dir === value ? `✓ ${text}` : text}
+          </span>
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenu>
   );
 }
 

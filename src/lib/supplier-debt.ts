@@ -251,3 +251,37 @@ export function calendarEvents(
       a.supplierName.localeCompare(b.supplierName, "es")
   );
 }
+
+export interface PaymentSplit {
+  item: DebtItem;
+  /** Lo que este pago le descuenta a la compra. */
+  paid: number;
+  /** Lo que queda de la compra después del pago. */
+  remaining: number;
+}
+
+/**
+ * Cómo se reparte un pago entre las compras que se deben: primero la que
+ * vence antes (los items ya vienen en ese orden, ver outstandingItems).
+ * Sólo devuelve las compras que el pago toca.
+ */
+export function applyPayment(items: readonly DebtItem[], amount: number): PaymentSplit[] {
+  let left = Math.max(0, amount);
+  const out: PaymentSplit[] = [];
+  for (const item of items) {
+    if (left <= 0.004) break;
+    const paid = Math.min(item.amount, left);
+    left -= paid;
+    out.push({
+      item,
+      paid: Math.round(paid * 100) / 100,
+      remaining: Math.round((item.amount - paid) * 100) / 100,
+    });
+  }
+  return out;
+}
+
+/** Lo ya vencido (para el botón "Lo vencido" del pago). */
+export function overdueAmount(items: readonly DebtItem[]): number {
+  return Math.round(items.filter((i) => i.status === "vencida").reduce((acc, i) => acc + i.amount, 0) * 100) / 100;
+}
