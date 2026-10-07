@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import {
   ArrowDown,
   ArrowUp,
+  ChevronDown,
+  Download,
+  FileSpreadsheet,
   ListFilter,
   MessageCircle,
   MoreHorizontal,
@@ -17,6 +20,10 @@ import {
   X,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog } from "@/components/ui/dialog";
+import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
+import { featureMinPlan } from "@/lib/plan-access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -29,6 +36,8 @@ import type { Customer } from "@/lib/types";
 import { CustomerForm } from "@/app/(dashboard)/clientes/customer-form";
 import { PaymentDialog } from "@/app/(dashboard)/clientes/payment-dialog";
 import { deleteCustomer } from "@/app/(dashboard)/clientes/actions";
+import { CustomerImportDialog } from "@/app/(dashboard)/clientes/customer-import-dialog";
+import { downloadCustomersExcel, downloadCustomerTemplate } from "@/app/(dashboard)/clientes/customer-excel";
 
 export interface ClienteRow extends Customer {
   /** Desde cuándo debe (la compra a fiado más vieja que sigue sin pagarse). */
@@ -81,9 +90,15 @@ function whatsappMessage(row: ClienteRow) {
 export function ClientesClient({
   customers,
   customPaymentMethods = [],
+  canUseExcel = false,
+  importLocked = false,
 }: {
   customers: ClienteRow[];
   customPaymentMethods?: string[];
+  /** Importar y exportar en masa: sólo quien administra el negocio. */
+  canUseExcel?: boolean;
+  /** La carga masiva no está en el plan (el ítem abre el aviso del plan). */
+  importLocked?: boolean;
 }) {
   const router = useRouter();
   const todayKey = todayInArgentina();
@@ -99,6 +114,8 @@ export function ClientesClient({
   const [editing, setEditing] = useState<Customer | null>(null);
   const [paying, setPaying] = useState<Customer | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importLockedOpen, setImportLockedOpen] = useState(false);
 
   const debtors = useMemo(() => customers.filter((c) => c.balance > 0), [customers]);
   const total = debtors.reduce((acc, c) => acc + c.balance, 0);
@@ -195,15 +212,49 @@ export function ClientesClient({
             className="pl-10"
           />
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          {canUseExcel && (
+            <DropdownMenu
+              trigger={
+                <Button variant="outline" className="whitespace-nowrap">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Excel
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              }
+            >
+              <DropdownMenuItem onClick={() => (importLocked ? setImportLockedOpen(true) : setImportOpen(true))}>
+                <FileSpreadsheet className="h-4 w-4" />
+                Cargar desde Excel
+                {importLocked && <Badge tone="accent">Esencial</Badge>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void downloadCustomersExcel(customers, todayKey)}>
+                <Download className="h-4 w-4" />
+                Exportar todos los clientes
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!hasDebtors}
+                onClick={() => void downloadCustomersExcel(customers, todayKey, true)}
+              >
+                <Download className="h-4 w-4" />
+                Exportar solo los que deben
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void downloadCustomerTemplate()}>
+                <Download className="h-4 w-4" />
+                Descargar planilla modelo
+              </DropdownMenuItem>
+            </DropdownMenu>
+          )}
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo cliente
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -499,6 +550,24 @@ export function ClientesClient({
         onClose={() => setFormOpen(false)}
         customer={editing}
       />
+      <CustomerImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        existing={customers.map((c) => ({
+          id: c.id,
+          name: c.name,
+          document: c.document,
+          email: c.email,
+          phone: c.phone,
+        }))}
+      />
+      <Dialog open={importLockedOpen} onClose={() => setImportLockedOpen(false)} title="Carga masiva con Excel">
+        <ProLockedCard
+          title="Carga masiva de clientes con Excel"
+          plan={featureMinPlan.customerImport}
+          description="Subí una planilla con tus clientes y cargalos todos juntos, en vez de uno por uno. Exportar tu lista a Excel está en todos los planes."
+        />
+      </Dialog>
       <PaymentDialog
         customer={paying}
         onClose={() => setPaying(null)}

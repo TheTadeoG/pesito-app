@@ -91,7 +91,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Control de stock, alertas y reposición",
       "Cuentas corrientes de clientes y proveedores, con vencimientos y calendario de pagos",
       "Control de caja por empleado",
-      "Carga masiva de productos con Excel",
+      "Carga masiva de productos y clientes con Excel",
       "Códigos de barras propios y etiquetas para imprimir",
       `Hasta ${products("esencial")}, 2 usuarios y 2 cajas`,
     ],
@@ -249,6 +249,10 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Stock que se actualiza con cada venta y compra", values: everyPlan },
       {
         label: "Carga masiva de productos desde Excel, con costos y precios",
+        values: fromEsencial,
+      },
+      {
+        label: "Carga masiva de clientes desde Excel (y bajar tu lista de clientes con lo que te deben)",
         values: fromEsencial,
       },
       { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromEsencial },

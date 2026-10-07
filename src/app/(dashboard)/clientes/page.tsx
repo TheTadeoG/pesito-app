@@ -2,11 +2,15 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
+import { isOrgAdmin } from "@/lib/roles";
+import { getSubscription } from "@/lib/subscription";
+import { canUse } from "@/lib/plan-access";
 import { ClientesClient, type ClienteRow } from "@/app/(dashboard)/clientes/clientes-client";
 
 export default async function ClientesPage() {
-  const { organization } = await requireOrgContext();
+  const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
+  const subscription = await getSubscription(supabase, organization.id);
 
   const [customers, { data: customPaymentMethods }] = await Promise.all([
     fetchAll((from, to) =>
@@ -93,6 +97,8 @@ export default async function ClientesPage() {
   return (
     <ClientesClient
       customers={rows}
+      canUseExcel={isOrgAdmin(membership.role)}
+      importLocked={!canUse(subscription, "customerImport")}
       customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
     />
   );
