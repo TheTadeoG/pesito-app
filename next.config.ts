@@ -13,6 +13,36 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(), payment=()" },
 ];
 
+// Todo lo que empieza con NEXT_PUBLIC_ se mete en el JavaScript que baja cada
+// visitante: una clave secreta ahí queda a la vista de cualquiera. Si alguna
+// variable pública tiene una clave secreta de Supabase (sb_secret_... o un JWT
+// con rol service_role), el build falla con un mensaje claro. No muestra la clave.
+function assertNoSecretInPublicEnv() {
+  for (const [name, value] of Object.entries(process.env)) {
+    if (!name.startsWith("NEXT_PUBLIC_") || !value) continue;
+    let secret = value.trim().startsWith("sb_secret_");
+    if (!secret) {
+      const parts = value.trim().split(".");
+      if (parts.length === 3 && parts[0].startsWith("eyJ")) {
+        try {
+          const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as { role?: string };
+          secret = payload.role === "service_role";
+        } catch {
+          // No es un JWT legible: no es una clave de Supabase.
+        }
+      }
+    }
+    if (secret) {
+      throw new Error(
+        `La variable ${name} tiene una clave SECRETA de Supabase. Las variables NEXT_PUBLIC_ se publican en el navegador de cada visitante. ` +
+          "Usá la clave pública (Publishable key, sb_publishable_..., o la anon) y dejá la secreta sólo en SUPABASE_SERVICE_ROLE_KEY (sin NEXT_PUBLIC_). Si ya estuvo publicada, rotala en Supabase."
+      );
+    }
+  }
+}
+
+assertNoSecretInPublicEnv();
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {

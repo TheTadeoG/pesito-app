@@ -127,6 +127,13 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Pruebas: 16 pruebas de la mezcla (incluye 5.000 rondas de cambios al azar); prueba de convergencia en la base con ventas simultáneas, cambios de precio, activar/desactivar y productos nuevos (3.291 ventas y 606 ediciones en dos corridas, 0 diferencias de stock, precio o cantidad, 0 sincronizaciones inconsistentes); el almacenamiento probado en Chromium real (localStorage, cuota llena → IndexedDB, sin IndexedDB, datos dañados, cookie sólo si se guardó). No probado: contra tu Supabase real ni la pantalla completa en un navegador.
 - Con 20.000 productos: la entrada al POS pasa de ~1 MB (o ~5 MB si la copia no entraba) a ~0,1 a 10 KB (un delta vacío son 109 bytes).
 
+## Seguridad: clave secreta en una variable pública (7/10/2026)
+
+- La consola del POS mostró `Forbidden use of secret API key in browser` (401): `NEXT_PUBLIC_SUPABASE_ANON_KEY` en Vercel tenía una clave `sb_secret_...`, que se publica en el navegador de cada visitante. Supabase la rechazaba en el navegador (por eso `pos_catalog` fallaba en producción), pero la clave estaba expuesta.
+- Resuelto: se puso la publishable en esa variable, se creó una secret key nueva (`pesito_vercel_servidor`) en `SUPABASE_SERVICE_ROLE_KEY` (sólo servidor), se probó login, contraseña mala, alta de usuario y `/admin`, y se borró la clave vieja en Supabase.
+- Protección: `next.config.ts` hace fallar el build si una variable `NEXT_PUBLIC_*` trae `sb_secret_...` o un JWT con rol `service_role` (probado con los cuatro casos).
+- Pendiente (opcional): mirar los logs de API de Supabase y los usuarios nuevos por si alguien usó la clave mientras estuvo expuesta; desactivar las claves antiguas (legacy anon/service_role) cuando ninguna variable las use.
+
 ## Hecho: tanda rápida
 
 - Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).
