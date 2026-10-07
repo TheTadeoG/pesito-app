@@ -15,6 +15,7 @@ import {
   type OpenRegisterRow,
   type RecurringDiscrepancyRow,
 } from "@/app/(dashboard)/caja/team-overview";
+import { BranchFilter } from "@/app/(dashboard)/caja/branch-filter";
 import { countOverdueSuppliers } from "@/lib/supplier-overview";
 import { getBranchContext } from "@/lib/branches";
 
@@ -28,10 +29,24 @@ const RECENT_CLOSES_PER_USER = 5;
 // Sin historial completo de caja (Plan Pro) se ven sólo los últimos cierres.
 const LIMITED_HISTORY = 5;
 
-export default async function CajaPage() {
+export default async function CajaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sucursal?: string }>;
+}) {
   const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const isManager = membership.role === "owner" || membership.role === "admin";
+  // Con más de una sucursal, dueños y administradores pueden filtrar lo de
+  // abajo (equipo, faltantes e historial) por sucursal.
+  const branchContext = await getBranchContext();
+  const params = await searchParams;
+  const canFilterBranch = isManager && branchContext.branches.length > 1;
+  const filterBranchId =
+    canFilterBranch && branchContext.branches.some((b) => b.id === params.sucursal)
+      ? (params.sucursal as string)
+      : null;
+  const branchMatch = filterBranchId ? { branch_id: filterBranchId } : {};
   const subscription = await getSubscription(supabase, organization.id);
   const fullHistory = canUse(subscription, "cashHistory");
   const canTeam = canUse(subscription, "teamReports");
@@ -60,6 +75,7 @@ export default async function CajaPage() {
       .select("id, user_id, opened_at, closed_at, opening_amount, expected_amount, closing_amount, branch_id")
       .eq("org_id", organization.id)
       .eq("status", "cerrada")
+      .match(branchMatch)
       .order("closed_at", { ascending: false })
       .limit(fullHistory ? 20 : LIMITED_HISTORY),
     getMemberLabelsById(supabase, organization.id),
@@ -69,6 +85,7 @@ export default async function CajaPage() {
           .select("id, user_id, opening_amount, opened_at, branch_id")
           .eq("org_id", organization.id)
           .eq("status", "abierta")
+          .match(branchMatch)
       : Promise.resolve({ data: null }),
     isManager
       ? supabase
@@ -95,13 +112,13 @@ export default async function CajaPage() {
           .select("id, user_id, expected_amount, closing_amount, closed_at")
           .eq("org_id", organization.id)
           .eq("status", "cerrada")
+          .match(branchMatch)
           .order("closed_at", { ascending: false })
           .limit(150)
       : Promise.resolve({ data: null }),
   ]);
 
   // Con más de una sucursal, cada caja dice de cuál es.
-  const branchContext = await getBranchContext();
   const branchNames =
     branchContext.branches.length > 1
       ? new Map(branchContext.branches.map((b) => [b.id, b.name]))
@@ -189,8 +206,15 @@ export default async function CajaPage() {
 
     teamOverview = (
       <>
+        {canFilterBranch && (
+          <BranchFilter
+            branches={branchContext.branches.map((b) => ({ id: b.id, name: b.name }))}
+            value={filterBranchId}
+          />
+        )}
         <CajaResumen
           ownOpen={Boolean(register)}
+          filteredBranchName={filterBranchId ? (branchNames.get(filterBranchId) ?? null) : null}
           others={openRegisterRows.filter((r) => r.id !== register?.id)}
           closeTime={organization.cash_close_time ?? null}
           fiado={{ total: totalDebt, count: (debtorCustomers ?? []).length }}

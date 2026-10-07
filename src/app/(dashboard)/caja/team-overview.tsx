@@ -66,7 +66,10 @@ export function CajaResumen({
   proveedores,
   supplierPlan,
   ownOpen,
+  filteredBranchName = null,
 }: {
+  /** Sucursal filtrada (si hay): cambia el texto cuando no hay cajas para mostrar. */
+  filteredBranchName?: string | null;
   /** La caja propia está abierta (para decir "solo vos" sólo si es cierto). */
   ownOpen: boolean;
   /** Cajas abiertas de otras personas. */
@@ -82,7 +85,13 @@ export function CajaResumen({
       <CardContent className="divide-y divide-border py-1">
         <Line title="Equipo" action={others.length > 0 ? { href: "/usuarios", label: "Mi equipo" } : undefined}>
           {others.length === 0 ? (
-            <span>{ownOpen ? "Solo vos tenés caja abierta" : "No hay ninguna caja abierta"}</span>
+            <span>
+              {filteredBranchName
+                ? `No hay cajas abiertas en ${filteredBranchName}`
+                : ownOpen
+                  ? "Solo vos tenés caja abierta"
+                  : "No hay ninguna caja abierta"}
+            </span>
           ) : (
             <div className="w-full space-y-2">
               {others.map((row) => {
