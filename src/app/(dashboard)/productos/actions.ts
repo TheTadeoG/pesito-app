@@ -384,7 +384,7 @@ export async function bulkIncreaseField(
   if (!canUse(await getSubscription(supabase, organization.id), "bulkPriceChanges")) {
     return { error: featureLockedMessage("bulkPriceChanges") };
   }
-  const rateError = await checkRateLimit(supabase, organization.id, "precios_masivos", 30, 3600);
+  const rateError = await checkRateLimit(supabase, organization.id, "precios_masivos", 300, 3600);
   if (rateError) return { error: rateError };
 
   if (field === "cost" && alsoPrice) {
