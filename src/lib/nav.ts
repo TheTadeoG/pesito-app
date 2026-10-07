@@ -38,22 +38,24 @@ export interface NavItem {
 
 export interface NavSection {
   title: string;
+  /** Va al pie del menú, separado del resto. */
+  footer?: boolean;
   items: NavItem[];
 }
 
 export const navSections: NavSection[] = [
   {
-    title: "Operación",
+    title: "Mostrador",
     items: [
       { href: "/pos", label: "Punto de Venta", icon: ShoppingCart },
       { href: "/caja", label: "Caja", icon: Wallet },
-      { href: "/compras", label: "Compras", icon: ShoppingBag },
     ],
   },
   {
-    title: "Catálogo",
+    title: "Mercadería",
     items: [
       { href: "/productos", label: "Productos", icon: LayoutGrid },
+      { href: "/compras", label: "Compras", icon: ShoppingBag },
     ],
   },
   {
@@ -61,30 +63,32 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/clientes", label: "Clientes", icon: Users },
       { href: "/proveedores", label: "Proveedores", icon: Truck },
-      { href: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
+      { href: "/usuarios", label: "Mi equipo", icon: UserCog, adminOnly: true },
     ],
   },
   {
     title: "Análisis",
     items: [
-      { href: "/en-vivo", label: "En vivo", icon: Radio, adminOnly: true, feature: "liveView" },
       { href: "/reportes", label: "Reportes", icon: BarChart3 },
+      { href: "/en-vivo", label: "En vivo", icon: Radio, adminOnly: true, feature: "liveView" },
     ],
   },
   {
-    title: "IA",
+    title: "Asistente IA",
     items: [
-      { href: "/recomendaciones", label: "Recomendaciones", icon: Sparkles, feature: "restockRecommendations" },
+      { href: "/recomendaciones", label: "Qué comprar", icon: Sparkles, feature: "restockRecommendations" },
       { href: "/baja-rotacion", label: "Baja rotación", icon: TrendingDown, feature: "lowRotation" },
       { href: "/mercado", label: "Mercado", icon: Globe, feature: "marketAnalysis" },
     ],
   },
   {
     title: "Sistema",
+    // Lo de uso ocasional va abajo del menú, separado.
+    footer: true,
     items: [
-      { href: "/configuracion", label: "Configuración", icon: Settings },
-      { href: "/planes", label: "Planes", icon: CreditCard },
-      { href: "/soporte", label: "Soporte", icon: LifeBuoy },
+      { href: "/configuracion", label: "Ajustes", icon: Settings },
+      { href: "/planes", label: "Mi plan", icon: CreditCard },
+      { href: "/soporte", label: "Ayuda", icon: LifeBuoy },
     ],
   },
 ];
@@ -115,14 +119,14 @@ export const pageTitles: Record<string, { title: string; description: string }> 
     title: "Calendario de proveedores",
     description: "Vencimientos de tus compras a cuenta y entregas de cada proveedor.",
   },
-  "/usuarios": { title: "Usuarios", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
+  "/usuarios": { title: "Mi equipo", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
   "/en-vivo": { title: "En vivo", description: "Cómo viene el día, vendedor por vendedor." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
-  "/recomendaciones": { title: "Recomendaciones", description: "Qué comprar y qué precios revisar." },
+  "/recomendaciones": { title: "Qué comprar", description: "Qué pedir y qué precios revisar." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },
   "/mercado": { title: "Mercado", description: "Novedades y precios de referencia de tu rubro." },
-  "/configuracion": { title: "Configuración", description: "Datos de tu negocio." },
-  "/planes": { title: "Planes", description: "Tu plan, los demás planes y cómo pagás." },
-  "/soporte": { title: "Soporte", description: "¿Necesitás ayuda?" },
+  "/configuracion": { title: "Ajustes", description: "Datos de tu negocio." },
+  "/planes": { title: "Mi plan", description: "Tu plan, los demás planes y cómo pagás." },
+  "/soporte": { title: "Ayuda", description: "¿Necesitás ayuda?" },
   "/caja": { title: "Mi Caja", description: "Apertura y cierre de caja." },
 };
