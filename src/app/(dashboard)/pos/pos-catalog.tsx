@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PosScreen } from "@/app/(dashboard)/pos/pos-screen";
-import { loadCatalogFallback } from "@/app/(dashboard)/pos/actions";
+import { loadCatalogFallback, type CatalogProduct } from "@/app/(dashboard)/pos/actions";
 import type { ProductLite } from "@/app/(dashboard)/pos/pos-client";
 
 // Catálogo del POS con copia en el navegador (migración 0064). El servidor ya
@@ -31,6 +31,9 @@ interface CatalogResponse {
 }
 
 const RESYNC_MS = 2 * 60_000;
+// Tiempo máximo de espera de la consulta directa y del respaldo del servidor.
+const RPC_TIMEOUT_MS = 6_000;
+const FALLBACK_TIMEOUT_MS = 25_000;
 // Margen para no perder productos modificados mientras corría la consulta anterior.
 const OVERLAP_MS = 10_000;
 
@@ -73,11 +76,23 @@ export function PosCatalog({
     let lastError = "";
 
     async function fetchCatalog(since: string | null): Promise<CatalogResponse | null> {
-      const { data, error } = await supabase.rpc("pos_catalog", {
-        p_org_id: orgId,
-        p_branch_id: branchId,
-        p_since: since,
-      });
+      // Si la consulta directa a la base no responde en unos segundos (red,
+      // bloqueo del navegador, sesión trabada), se sigue por el respaldo del
+      // servidor en vez de quedar esperando.
+      const answer = await Promise.race([
+        supabase.rpc("pos_catalog", {
+          p_org_id: orgId,
+          p_branch_id: branchId,
+          p_since: since,
+        }),
+        new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), RPC_TIMEOUT_MS)),
+      ]);
+      if (answer === "timeout") {
+        console.error("pos_catalog: sin respuesta en", RPC_TIMEOUT_MS, "ms");
+        lastError = "la base no respondió a tiempo";
+        return null;
+      }
+      const { data, error } = answer;
       if (error || !data) {
         console.error("pos_catalog falló:", error?.message ?? "sin datos");
         lastError = error?.message ?? "sin datos";
@@ -150,7 +165,12 @@ export function PosCatalog({
           return;
         }
         // Sin copia y sin respuesta de pos_catalog: se baja por el servidor.
-        const fallback = await loadCatalogFallback(branchId);
+        const fallback = await Promise.race([
+          loadCatalogFallback(branchId),
+          new Promise<{ products?: CatalogProduct[]; error?: string }>((resolve) =>
+            setTimeout(() => resolve({ error: "El servidor tardó demasiado en responder." }), FALLBACK_TIMEOUT_MS)
+          ),
+        ]);
         if (cancelled) return;
         if (fallback.products) {
           setFailure(null);
