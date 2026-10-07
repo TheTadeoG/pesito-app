@@ -155,16 +155,16 @@ export default async function ReportesPage({
 
   // Ventas por vendedor (dueños/administradores): cantidad, ingresos y
   // ganancia estimada de cada uno, con el mismo costo que los indicadores.
+  const costBySale = new Map<string, number>();
+  for (const item of items) {
+    if (!item.product_id) continue;
+    costBySale.set(
+      item.sale_id,
+      (costBySale.get(item.sale_id) ?? 0) + item.quantity * (costById.get(item.product_id) ?? 0)
+    );
+  }
   let sellerRows: SellerRow[] | null = null;
   if (memberLabelsById) {
-    const costBySale = new Map<string, number>();
-    for (const item of items) {
-      if (!item.product_id) continue;
-      costBySale.set(
-        item.sale_id,
-        (costBySale.get(item.sale_id) ?? 0) + item.quantity * (costById.get(item.product_id) ?? 0)
-      );
-    }
     const totalsBySeller = new Map<string, { ventas: number; ingresos: number; costo: number }>();
     for (const sale of sales) {
       const current = totalsBySeller.get(sale.user_id) ?? { ventas: 0, ingresos: 0, costo: 0 };
@@ -572,17 +572,19 @@ export default async function ReportesPage({
 
   // Ventas por sucursal del período (sólo sin filtro de sucursal).
   const salesByBranch = (() => {
-    if (!hasBranches || branchId) return [] as { id: string; name: string; count: number; total: number; pct: number }[];
+    if (!hasBranches || branchId) return [] as { id: string; name: string; count: number; total: number; ganancia: number; pct: number }[];
     const grand = sales.reduce((acc, sale) => acc + sale.total, 0);
     return branchContext.branches
       .map((b) => {
         const mine = sales.filter((sale) => sale.branch_id === b.id);
         const total = mine.reduce((acc, sale) => acc + sale.total, 0);
+        const costo = mine.reduce((acc, sale) => acc + (costBySale.get(sale.id) ?? 0), 0);
         return {
           id: b.id,
           name: b.name,
           count: mine.length,
           total,
+          ganancia: total - costo,
           pct: grand > 0 ? Math.round((total / grand) * 100) : 0,
         };
       })
@@ -649,7 +651,7 @@ export default async function ReportesPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Ventas por sucursal</CardTitle>
-            <p className="text-xs text-muted-foreground">Tocá una sucursal para ver solo sus reportes.</p>
+            <p className="text-xs text-muted-foreground">Tocá una sucursal para ver solo sus reportes. La ganancia es estimada, con el costo actual de cada producto.</p>
           </CardHeader>
           <div className="overflow-x-auto pb-2 pt-2">
             <table className="w-full text-sm">
@@ -658,6 +660,7 @@ export default async function ReportesPage({
                   <th className="px-5 py-2">Sucursal</th>
                   <th className="px-3 py-2 text-right">Ventas</th>
                   <th className="px-3 py-2 text-right">Vendido</th>
+                  <th className="px-3 py-2 text-right">Ganancia</th>
                   <th className="px-5 py-2 text-right">Parte del total</th>
                 </tr>
               </thead>
@@ -671,6 +674,15 @@ export default async function ReportesPage({
                     </td>
                     <td className="px-3 py-2.5 text-right text-foreground">{row.count}</td>
                     <td className="px-3 py-2.5 text-right text-foreground">{formatCurrency(row.total)}</td>
+                    <td className="px-3 py-2.5 text-right">
+                      {canProfit ? (
+                        <span className="font-medium text-success">{formatCurrency(row.ganancia)}</span>
+                      ) : (
+                        <Link href="/planes" prefetch={false} className="text-xs font-semibold text-primary hover:underline">
+                          Plan Pro
+                        </Link>
+                      )}
+                    </td>
                     <td className="px-5 py-2.5 text-right text-muted-foreground">{row.pct}%</td>
                   </tr>
                 ))}
