@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import type { ReactNode } from "react";
 import { requireOrgContext } from "@/lib/org";
@@ -11,15 +10,12 @@ import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
 import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/historial";
 import {
-  TeamCajasOverview,
-  DeudasFiadoOverview,
-  CuentasPorPagarOverview,
-  RecurringDiscrepanciesOverview,
+  CajaResumen,
+  FaltantesAviso,
   type OpenRegisterRow,
-  type DebtorRow,
-  type CreditorRow,
   type RecurringDiscrepancyRow,
 } from "@/app/(dashboard)/caja/team-overview";
+import { countOverdueSuppliers } from "@/lib/supplier-overview";
 
 // Un cierre cuenta como "faltante" recién a partir de esta diferencia, para
 // no marcar diferencias chicas de vuelto/redondeo como si fuera un patrón.
@@ -147,19 +143,11 @@ export default async function CajaPage() {
       cashOnHand: getCashOnHand(r.id, Number(r.opening_amount)),
     }));
 
-    const debtors: DebtorRow[] = (debtorCustomers ?? []).map((c) => ({
-      id: c.id,
-      name: c.name,
-      balance: Number(c.balance),
-    }));
-    const totalDebt = debtors.reduce((acc, d) => acc + d.balance, 0);
-
-    const creditors: CreditorRow[] = (creditorSuppliers ?? []).map((s) => ({
-      id: s.id,
-      name: s.name,
-      balance: Number(s.balance),
-    }));
-    const totalOwed = creditors.reduce((acc, c) => acc + c.balance, 0);
+    const totalDebt = (debtorCustomers ?? []).reduce((acc, c) => acc + Number(c.balance), 0);
+    const totalOwed = (creditorSuppliers ?? []).reduce((acc, c) => acc + Number(c.balance), 0);
+    const overdueSuppliers = canSupplierAccounts
+      ? await countOverdueSuppliers(supabase, organization.id)
+      : 0;
 
     const closesByUser = new Map<string, { expected: number; closing: number }[]>();
     for (const r of recentClosedRegisters ?? []) {
@@ -190,30 +178,20 @@ export default async function CajaPage() {
 
     teamOverview = (
       <>
-        <TeamCajasOverview
-          rows={openRegisterRows}
+        <CajaResumen
+          ownOpen={Boolean(register)}
+          others={openRegisterRows.filter((r) => r.id !== register?.id)}
           closeTime={organization.cash_close_time ?? null}
+          fiado={{ total: totalDebt, count: (debtorCustomers ?? []).length }}
+          proveedores={
+            canSupplierAccounts
+              ? { total: totalOwed, count: (creditorSuppliers ?? []).length, overdueSuppliers }
+              : null
+          }
+          supplierPlan={featureMinPlan.supplierAccounts}
         />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <DeudasFiadoOverview totalDebt={totalDebt} debtors={debtors} />
-          {canSupplierAccounts ? (
-            <CuentasPorPagarOverview totalDebt={totalOwed} creditors={creditors} />
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Cuentas por pagar a proveedores</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PlanLockNote plan={featureMinPlan.supplierAccounts}>
-                  Con el Plan Esencial ves cuánto le debés a cada proveedor, con compras a cuenta y
-                  pagos parciales.
-                </PlanLockNote>
-              </CardContent>
-            </Card>
-          )}
-        </div>
         {canTeam ? (
-          <RecurringDiscrepanciesOverview rows={recurringDiscrepancies} />
+          <FaltantesAviso rows={recurringDiscrepancies} />
         ) : (
           <PlanLockNote plan={featureMinPlan.teamReports}>
             Con el Plan Esencial ves las diferencias de caja de cada empleado: quién cierra con

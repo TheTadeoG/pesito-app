@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { AlertCircle, AlertTriangle, HandCoins, LockOpen, Users } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle, ArrowUpRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { getCashReminder } from "@/lib/cash-reminder";
+import type { Plan } from "@/lib/subscription";
 
 export interface OpenRegisterRow {
   id: string;
@@ -11,18 +13,6 @@ export interface OpenRegisterRow {
   openedAt: string;
   openingAmount: number;
   cashOnHand: number;
-}
-
-export interface DebtorRow {
-  id: string;
-  name: string;
-  balance: number;
-}
-
-export interface CreditorRow {
-  id: string;
-  name: string;
-  balance: number;
 }
 
 export interface RecurringDiscrepancyRow {
@@ -33,97 +23,126 @@ export interface RecurringDiscrepancyRow {
   totalFaltante: number;
 }
 
-// Un faltante suelto pasa — el problema es cuando se repite. Se muestra
-// sólo a owner/admin (ver caja/page.tsx), igual que el resto de esta
-// vista de equipo, para no señalar a nadie frente al resto del personal.
-export function RecurringDiscrepanciesOverview({ rows }: { rows: RecurringDiscrepancyRow[] }) {
+function Line({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children: React.ReactNode;
+  action?: { href: string; label: string };
+}) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <AlertTriangle className="h-4 w-4 text-danger" />
-          Faltantes recurrentes
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {rows.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-            Nadie tiene faltantes seguidos en sus últimos cierres.
-          </p>
-        ) : (
-          <div className="divide-y divide-border">
-            {rows.map((row) => (
-              <div key={row.userId} className="flex items-center justify-between gap-3 px-5 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{row.userLabel}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {row.faltanteCount} de sus últimos {row.consideredCount} cierres tuvieron
-                    faltante
-                  </p>
-                </div>
-                <span className="shrink-0 font-semibold text-danger">
-                  -{formatCurrency(row.totalFaltante)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
+      <span className="w-24 shrink-0 text-xs font-semibold text-muted-foreground">{title}</span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground">
+        {children}
+      </div>
+      {action && (
+        <Link
+          href={action.href}
+          prefetch={false}
+          className="ml-auto flex shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline"
+        >
+          {action.label}
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
+      )}
+    </div>
   );
 }
 
-export function TeamCajasOverview({
-  rows,
+/**
+ * Lo de afuera de la caja propia, en tres líneas: el equipo, el fiado y los
+ * proveedores. El detalle de cada uno vive en Clientes y Proveedores; acá
+ * sólo el total y, si lo hay, el aviso de algo urgente.
+ */
+export function CajaResumen({
+  others,
   closeTime,
+  fiado,
+  proveedores,
+  supplierPlan,
+  ownOpen,
 }: {
-  rows: OpenRegisterRow[];
+  /** La caja propia está abierta (para decir "solo vos" sólo si es cierto). */
+  ownOpen: boolean;
+  /** Cajas abiertas de otras personas. */
+  others: OpenRegisterRow[];
   closeTime: string | null;
+  fiado: { total: number; count: number };
+  /** null: el plan no incluye cuentas con proveedores. */
+  proveedores: { total: number; count: number; overdueSuppliers: number } | null;
+  supplierPlan: Plan;
 }) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Users className="h-4 w-4" />
-          Cajas abiertas del equipo
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {rows.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-            No hay ninguna caja abierta en este momento.
-          </p>
+      <CardContent className="divide-y divide-border py-1">
+        <Line title="Equipo" action={others.length > 0 ? { href: "/usuarios", label: "Mi equipo" } : undefined}>
+          {others.length === 0 ? (
+            <span>{ownOpen ? "Solo vos tenés caja abierta" : "No hay ninguna caja abierta"}</span>
+          ) : (
+            <div className="w-full space-y-2">
+              {others.map((row) => {
+                const reminder = getCashReminder(row.openedAt, closeTime);
+                return (
+                  <div key={row.id} className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{row.userLabel}</span>
+                      <span className="text-xs text-muted-foreground">
+                        desde el {formatDateTime(row.openedAt)}
+                      </span>
+                      {reminder?.kind === "stale" && <Badge tone="danger">Abierta desde otro día</Badge>}
+                      {reminder?.kind === "closing" && <Badge tone="warning">Pasó la hora de cierre</Badge>}
+                    </span>
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">En caja </span>
+                      <b>{formatCurrency(row.cashOnHand)}</b>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Line>
+
+        <Line title="Fiado" action={{ href: "/clientes", label: "Ver clientes" }}>
+          {fiado.count === 0 ? (
+            <span className="text-muted-foreground">Nadie te debe</span>
+          ) : (
+            <span>
+              Te deben <b>{formatCurrency(fiado.total)}</b>
+              <span className="text-muted-foreground">{` · ${fiado.count} ${fiado.count === 1 ? "cliente" : "clientes"}`}</span>
+            </span>
+          )}
+        </Line>
+
+        {proveedores ? (
+          <Line title="Proveedores" action={{ href: "/proveedores", label: "Ver proveedores" }}>
+            {proveedores.count === 0 ? (
+              <span className="text-muted-foreground">No le debés a ningún proveedor</span>
+            ) : (
+              <>
+                <span>
+                  Debés <b>{formatCurrency(proveedores.total)}</b>
+                  <span className="text-muted-foreground">{` · ${proveedores.count} ${proveedores.count === 1 ? "proveedor" : "proveedores"}`}</span>
+                </span>
+                {proveedores.overdueSuppliers > 0 && (
+                  <Badge tone="danger">
+                    {proveedores.overdueSuppliers === 1
+                      ? "1 con deuda vencida"
+                      : `${proveedores.overdueSuppliers} con deuda vencida`}
+                  </Badge>
+                )}
+              </>
+            )}
+          </Line>
         ) : (
-          <div className="divide-y divide-border">
-            {rows.map((row) => {
-              const reminder = getCashReminder(row.openedAt, closeTime);
-              return (
-                <div key={row.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-success-bg text-success">
-                    <LockOpen className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
-                      {row.userLabel}
-                      {reminder?.kind === "stale" && (
-                        <Badge tone="danger">Abierta desde otro día</Badge>
-                      )}
-                      {reminder?.kind === "closing" && (
-                        <Badge tone="warning">Pasó la hora de cierre</Badge>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Abierta el {formatDateTime(row.openedAt)} · Inicial:{" "}
-                      {formatCurrency(row.openingAmount)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Efectivo disponible</p>
-                    <p className="font-semibold text-foreground">{formatCurrency(row.cashOnHand)}</p>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="py-3">
+            <PlanLockNote plan={supplierPlan}>
+              Con el Plan Esencial ves cuánto le debés a cada proveedor, con compras a cuenta y pagos
+              parciales.
+            </PlanLockNote>
           </div>
         )}
       </CardContent>
@@ -131,91 +150,25 @@ export function TeamCajasOverview({
   );
 }
 
-export function DeudasFiadoOverview({
-  totalDebt,
-  debtors,
-}: {
-  totalDebt: number;
-  debtors: DebtorRow[];
-}) {
+// Un faltante suelto pasa — el problema es cuando se repite. Se muestra sólo a
+// owner/admin (ver caja/page.tsx) y sólo cuando hay algo para decir, para no
+// señalar a nadie frente al resto del personal ni llenar la pantalla de "nada".
+export function FaltantesAviso({ rows }: { rows: RecurringDiscrepancyRow[] }) {
+  if (rows.length === 0) return null;
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <AlertCircle className="h-4 w-4" />
-          Deudas en fiado
-        </CardTitle>
-        <Badge tone={totalDebt > 0 ? "warning" : "default"}>
-          Total: {formatCurrency(totalDebt)}
-        </Badge>
-      </CardHeader>
-      <CardContent className="p-0">
-        {debtors.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-            Ningún cliente tiene saldo pendiente.
-          </p>
-        ) : (
-          <div className="divide-y divide-border">
-            {debtors.map((debtor) => (
-              <Link
-                key={debtor.id}
-                href={`/clientes/${debtor.id}`}
-                prefetch={false}
-                className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm hover:bg-muted"
-              >
-                <span className="truncate font-medium text-foreground">{debtor.name}</span>
-                <span className="shrink-0 font-semibold text-warning">
-                  {formatCurrency(debtor.balance)}
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export function CuentasPorPagarOverview({
-  totalDebt,
-  creditors,
-}: {
-  totalDebt: number;
-  creditors: CreditorRow[];
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <HandCoins className="h-4 w-4" />
-          Cuentas por pagar a proveedores
-        </CardTitle>
-        <Badge tone={totalDebt > 0 ? "warning" : "default"}>
-          Total: {formatCurrency(totalDebt)}
-        </Badge>
-      </CardHeader>
-      <CardContent className="p-0">
-        {creditors.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-            No le debés saldo a ningún proveedor.
-          </p>
-        ) : (
-          <div className="divide-y divide-border">
-            {creditors.map((creditor) => (
-              <Link
-                key={creditor.id}
-                href="/proveedores"
-                className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm hover:bg-muted"
-              >
-                <span className="truncate font-medium text-foreground">{creditor.name}</span>
-                <span className="shrink-0 font-semibold text-warning">
-                  {formatCurrency(creditor.balance)}
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-2">
+      {rows.map((row) => (
+        <div
+          key={row.userId}
+          className="flex items-center gap-3 rounded-2xl border border-danger/30 bg-danger-bg px-4 py-3 text-sm text-danger"
+        >
+          <AlertTriangle className="h-[18px] w-[18px] shrink-0" />
+          <span>
+            <b>{row.userLabel}</b>
+            {` cerró con faltante en ${row.faltanteCount} de sus últimos ${row.consideredCount} cierres (− ${formatCurrency(row.totalFaltante)} en total).`}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
