@@ -10,8 +10,7 @@ import {
 } from "@/lib/subscription";
 import type { Json } from "@/lib/database.types";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
-import { fetchAll } from "@/lib/supabase/fetch-all";
-import { withBranchStock } from "@/lib/branches";
+import { fetchCatalogForPos, type CatalogProduct } from "@/lib/pos-catalog-server";
 
 export interface CheckoutItemInput {
   product_id: string | null;
@@ -167,43 +166,18 @@ export async function createCustomerQuick(
   return { id: data.id };
 }
 
-export interface CatalogProduct {
-  id: string;
-  name: string;
-  barcode: string | null;
-  sku: string | null;
-  price: number;
-  stock: number;
-  min_stock: number;
-  unit: string;
-  image_url: string | null;
-}
+export type { CatalogProduct } from "@/lib/pos-catalog-server";
 
 // Respaldo del catálogo del POS: si la base no responde pos_catalog (0064) desde
 // el navegador, se baja por el servidor, como se hacía antes. Sólo se usa
 // cuando falla el camino normal.
-export async function loadCatalogFallback(branchId: string | null): Promise<{ products?: CatalogProduct[]; error?: string }> {
+export async function loadCatalogFallback(
+  branchId: string | null
+): Promise<{ products?: CatalogProduct[]; error?: string }> {
   try {
     const { organization } = await requireOrgContext();
     const supabase = await createClient();
-    const all = await fetchAll((from, to) =>
-      supabase
-        .from("products")
-        .select("id, name, barcode, sku, price, stock, min_stock, unit, image_url")
-        .eq("org_id", organization.id)
-        .eq("active", true)
-        .order("name")
-        .order("id")
-        .range(from, to)
-    );
-    const withStock = await withBranchStock(
-      supabase,
-      branchId ? { id: branchId, name: "", is_main: false } : null,
-      all
-    );
-    return {
-      products: withStock.map((p) => ({ ...p, price: Number(p.price), stock: Number(p.stock), min_stock: Number(p.min_stock) })),
-    };
+    return { products: await fetchCatalogForPos(supabase, organization.id, branchId) };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "No pudimos cargar los productos." };
   }

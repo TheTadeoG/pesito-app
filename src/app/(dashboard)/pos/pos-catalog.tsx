@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PosScreen } from "@/app/(dashboard)/pos/pos-screen";
 import { loadCatalogFallback, type CatalogProduct } from "@/app/(dashboard)/pos/actions";
+import { POS_CACHE_COOKIE, posCacheCookieValue } from "@/lib/pos-cache-cookie";
 import type { ProductLite } from "@/app/(dashboard)/pos/pos-client";
 
 // Catálogo del POS con copia en el navegador (migración 0064). El servidor ya
@@ -12,7 +13,7 @@ import type { ProductLite } from "@/app/(dashboard)/pos/pos-client";
 // cambió desde entonces, más el stock de todos al día. Un producto que ya no
 // figura en la lista de stock (se desactivó o se borró) se saca de la copia.
 
-// Con el stock de la última vez: sólo se muestra si no hay conexión con la base.
+// Con el stock de la última vez: se muestra al instante y se actualiza en segundo plano.
 type CachedProduct = ProductLite;
 
 interface Cache {
@@ -37,10 +38,9 @@ const FALLBACK_TIMEOUT_MS = 25_000;
 // Margen para no perder productos modificados mientras corría la consulta anterior.
 const OVERLAP_MS = 10_000;
 
-function readCache(key: string): Cache | null {
+function parseCache(raw: string | null): Cache | null {
+  if (!raw) return null;
   try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return null;
     const parsed = JSON.parse(raw) as Cache;
     return parsed && Array.isArray(parsed.products) && typeof parsed.syncedAt === "string" ? parsed : null;
   } catch {
@@ -48,9 +48,29 @@ function readCache(key: string): Cache | null {
   }
 }
 
-function writeCache(key: string, cache: Cache) {
+function readRaw(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function readCache(key: string): Cache | null {
+  return parseCache(readRaw(key));
+}
+
+function subscribeStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function writeCache(key: string, cache: Cache, cookieValue: string) {
   try {
     window.localStorage.setItem(key, JSON.stringify(cache));
+    // Avisa al servidor que este navegador ya tiene la copia: la próxima vez la
+    // página no manda los productos adentro.
+    document.cookie = `${POS_CACHE_COOKIE}=${cookieValue}; path=/pos; max-age=31536000; samesite=lax`;
   } catch {
     // Sin espacio o sin almacenamiento: se baja completo cada vez, como antes.
   }
@@ -61,24 +81,39 @@ const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompar
 export function PosCatalog({
   orgId,
   branchId,
+  initialProducts,
   ...screenProps
-}: Omit<ComponentProps<typeof PosScreen>, "products"> & { branchId: string | null }) {
-  const [products, setProducts] = useState<ProductLite[] | null>(null);
+}: Omit<ComponentProps<typeof PosScreen>, "products"> & {
+  branchId: string | null;
+  /** Catálogo que manda el servidor la primera vez en este navegador (sin copia local). */
+  initialProducts: ProductLite[] | null;
+}) {
+  const cacheKey = `pesito-pos-catalog:v1:${orgId}:${branchId ?? "all"}`;
+  // Lo que el navegador ya tenía guardado se muestra al instante (el servidor
+  // renderiza sin copia y, al hidratar, se pasa a la copia sin esperar a la red).
+  const rawCache = useSyncExternalStore(
+    subscribeStorage,
+    () => readRaw(cacheKey),
+    () => null
+  );
+  const cachedProducts = useMemo(() => parseCache(rawCache)?.products ?? null, [rawCache]);
+  // Lo que llegó de la base (o del servidor) en esta visita, con el stock al día.
+  const [fresh, setFresh] = useState<ProductLite[] | null>(initialProducts);
   const [failure, setFailure] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const products = fresh ?? cachedProducts;
   const supabase = useMemo(() => createClient(), []);
   const lastSync = useRef(0);
-  const cacheKey = `pesito-pos-catalog:v1:${orgId}:${branchId ?? "all"}`;
 
   useEffect(() => {
     let cancelled = false;
     let syncing = false;
     let lastError = "";
+    const cookieValue = posCacheCookieValue(orgId, branchId);
 
     async function fetchCatalog(since: string | null): Promise<CatalogResponse | null> {
       // Si la consulta directa a la base no responde en unos segundos (red,
-      // bloqueo del navegador, sesión trabada), se sigue por el respaldo del
-      // servidor en vez de quedar esperando.
+      // bloqueo del navegador, sesión trabada), se la da por perdida.
       const answer = await Promise.race([
         supabase.rpc("pos_catalog", {
           p_org_id: orgId,
@@ -107,7 +142,7 @@ export function PosCatalog({
       return res;
     }
 
-    function build(base: CachedProduct[], res: CatalogResponse): { cache: CachedProduct[]; view: ProductLite[] } | null {
+    function build(base: CachedProduct[], res: CatalogResponse): ProductLite[] | null {
       const details = new Map(base.map((p) => [p.id, p]));
       for (const c of res.changed) {
         if (!c.active) {
@@ -134,7 +169,40 @@ export function PosCatalog({
         view.push({ ...d, stock: Number(stock) });
       }
       view.sort(byName);
-      return { cache: view, view };
+      return view;
+    }
+
+    type Result = { view: ProductLite[]; syncedAt: string };
+
+    // Camino normal: la base, directo desde el navegador (sólo lo que cambió si hay copia).
+    async function viaDatabase(cached: Cache | null): Promise<Result | null> {
+      let res = cached
+        ? await fetchCatalog(new Date(new Date(cached.syncedAt).getTime() - OVERLAP_MS).toISOString())
+        : await fetchCatalog(null);
+      let view = res ? build(cached?.products ?? [], res) : null;
+      if (res && !view && cached) {
+        // La copia quedó incompleta: bajarla entera.
+        res = await fetchCatalog(null);
+        view = res ? build([], res) : null;
+      }
+      return res && view ? { view, syncedAt: res.now } : null;
+    }
+
+    // Respaldo: el servidor. Sólo si no hay copia y la base tarda o falla.
+    async function viaServer(): Promise<Result | null> {
+      const fallback = await Promise.race([
+        loadCatalogFallback(branchId),
+        new Promise<{ products?: CatalogProduct[]; error?: string }>((resolve) =>
+          setTimeout(() => resolve({ error: "El servidor tardó demasiado en responder." }), FALLBACK_TIMEOUT_MS)
+        ),
+      ]);
+      if (!fallback.products) {
+        lastError = fallback.error ?? lastError;
+        return null;
+      }
+      const view = [...fallback.products].sort(byName);
+      // Un minuto de margen por si el reloj de este equipo está adelantado.
+      return { view, syncedAt: new Date(Date.now() - 60_000).toISOString() };
     }
 
     async function sync() {
@@ -142,51 +210,63 @@ export function PosCatalog({
       syncing = true;
       try {
         const cached = readCache(cacheKey);
-        let res = cached
-          ? await fetchCatalog(new Date(new Date(cached.syncedAt).getTime() - OVERLAP_MS).toISOString())
-          : await fetchCatalog(null);
-        let built = res ? build(cached?.products ?? [], res) : null;
-        if (res && !built && cached) {
-          // La copia quedó incompleta: bajarla entera.
-          res = await fetchCatalog(null);
-          built = res ? build([], res) : null;
+        let result: Result | null;
+        if (cached) {
+          // Con copia ya se está mostrando: se actualiza en segundo plano y,
+          // si la base no responde, se queda lo que había.
+          result = await viaDatabase(cached);
+        } else {
+          // Sin copia (primera vez en este equipo): la base y, si tarda más de
+          // 2,5 s, también el servidor; gana el primero que responda.
+          result = await new Promise<Result | null>((resolve) => {
+            let pending = 2;
+            let done = false;
+            const finish = (r: Result | null) => {
+              if (done) return;
+              if (r) {
+                done = true;
+                resolve(r);
+              } else if (--pending === 0) {
+                resolve(null);
+              }
+            };
+            void viaDatabase(null).then(finish, () => finish(null));
+            setTimeout(() => {
+              if (!done) void viaServer().then(finish, () => finish(null));
+              else finish(null);
+            }, 2_500);
+          });
         }
         if (cancelled) return;
-        if (res && built) {
-          writeCache(cacheKey, { syncedAt: res.now, products: built.cache });
+        if (result) {
+          writeCache(cacheKey, { syncedAt: result.syncedAt, products: result.view }, cookieValue);
           lastSync.current = Date.now();
           setFailure(null);
-          setProducts(built.view);
-          return;
-        }
-        // Sin conexión con la base: se usa la copia (con el stock de la última vez).
-        if (cached) {
-          setProducts((current) => current ?? cached.products);
-          return;
-        }
-        // Sin copia y sin respuesta de pos_catalog: se baja por el servidor.
-        const fallback = await Promise.race([
-          loadCatalogFallback(branchId),
-          new Promise<{ products?: CatalogProduct[]; error?: string }>((resolve) =>
-            setTimeout(() => resolve({ error: "El servidor tardó demasiado en responder." }), FALLBACK_TIMEOUT_MS)
-          ),
-        ]);
-        if (cancelled) return;
-        if (fallback.products) {
-          setFailure(null);
-          setProducts(fallback.products);
-        } else {
-          setFailure(fallback.error ?? lastError ?? "No pudimos cargar los productos.");
+          setFresh(result.view);
+        } else if (!cached) {
+          setFailure(lastError || "No pudimos cargar los productos.");
         }
       } catch (e) {
         console.error("Catálogo del POS:", e);
-        if (!cancelled) setFailure(e instanceof Error ? e.message : "No pudimos cargar los productos.");
+        if (!cancelled && !readCache(cacheKey)) {
+          setFailure(e instanceof Error ? e.message : "No pudimos cargar los productos.");
+        }
       } finally {
         syncing = false;
       }
     }
 
-    void sync();
+    if (initialProducts && !readCache(cacheKey)) {
+      // Llegó con la página: se guarda como copia (un minuto de margen por el reloj).
+      writeCache(
+        cacheKey,
+        { syncedAt: new Date(Date.now() - 60_000).toISOString(), products: initialProducts },
+        cookieValue
+      );
+      lastSync.current = Date.now();
+    } else {
+      void sync();
+    }
     function onVisible() {
       if (document.visibilityState === "visible" && Date.now() - lastSync.current > RESYNC_MS) void sync();
     }
@@ -195,7 +275,7 @@ export function PosCatalog({
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [supabase, orgId, branchId, cacheKey, attempt]);
+  }, [supabase, orgId, branchId, cacheKey, attempt, initialProducts]);
 
   if (!products && failure) {
     return (
