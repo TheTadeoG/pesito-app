@@ -638,6 +638,28 @@ export default async function ReportesPage({
       </Card>
     ) : null;
 
+  const summaryBlock = (
+    aiSummary ? (
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2">
+          <Sparkles className="h-4 w-4 text-violet-500" />
+          <CardTitle className="text-base">Resumen del período</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="list-disc space-y-1.5 pl-5 text-sm text-foreground">
+            {aiSummary.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    ) : (
+      <PlanLockNote plan={featureMinPlan.aiReports}>
+        El Plan IA te escribe un resumen de cada período: cómo vendiste, tu mejor día y horario, qué te deja más plata y qué vendés a pérdida.
+      </PlanLockNote>
+    )
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -693,26 +715,16 @@ export default async function ReportesPage({
           </Link>
         </p>
       )}
-      {aiSummary ? (
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <Sparkles className="h-4 w-4 text-violet-500" />
-            <CardTitle className="text-base">Resumen del período</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc space-y-1.5 pl-5 text-sm text-foreground">
-              {aiSummary.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : (
-        <PlanLockNote plan={featureMinPlan.aiReports}>
-          El Plan IA te escribe un resumen de cada período: cómo vendiste, tu mejor día y horario, qué te deja más plata y qué vendés a pérdida.
-        </PlanLockNote>
-      )}
-      <ReportesDashboard data={data} query={query} afterTiles={branchTable} />
+      <ReportesDashboard
+        data={data}
+        query={query}
+        afterTiles={
+          <>
+            {branchTable}
+            {summaryBlock}
+          </>
+        }
+      />
     </div>
   );
 }
