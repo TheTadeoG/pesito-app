@@ -194,6 +194,31 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Catálogo online (1 por negocio) — Plan Pro (`onlineCatalog`).
 - [ ] Factura electrónica ARCA/AFIP: la web dice que no existe (no está anunciada como "Pronto").
 
+Ideas aprobadas por el usuario (7/10/2026), sin hacer. Al hacer cada una: definir plan (`featureMinPlan`), alinear textos públicos y sacar el "Pronto".
+
+Para el cliente:
+- [ ] Factura electrónica ARCA, por etapas (primero factura C para monotributistas). Hoy la web dice que no existe. Candidata a Esencial o Pro.
+- [ ] Cobro con QR de Mercado Pago o MODO integrado al POS, con la venta marcada como pagada sola.
+- [ ] POS sin internet: guarda las ventas y las sube al reconectar.
+- [ ] Catálogo online y pedidos por WhatsApp (ya figura como "Pronto" en el Pro).
+- [ ] Resumen diario por WhatsApp o mail: ventas, caja, deuda nueva y qué reponer.
+- [ ] Recordatorio automático de deuda en fechas elegidas (hoy sólo el botón manual de WhatsApp).
+- [ ] Impresión en impresoras térmicas y etiquetas, con plantillas con el logo del negocio.
+- [ ] Inventario físico con el celular escaneando códigos (junto con "Inventarios físicos").
+- [ ] Plan IA: preguntarle al sistema en lenguaje natural ("¿cuánto vendí de bebidas este mes?").
+- [ ] Plan IA: alertas proactivas (producto que dejó de venderse, costo que subió, cliente que dejó de venir).
+
+Para Pesito (negocio):
+- [ ] Panel interno de métricas: altas por día, paso de prueba Pro a pago, plan elegido, caídas en el registro, uso por función. **Prioridad 1.**
+- [ ] Correos automáticos del ciclo de vida: bienvenida, "cargá tus primeros productos", "te quedan 3 días de Pro", pagos fallidos. **Prioridad 2.**
+- [ ] Onboarding guiado dentro del panel: lista de pasos y negocio de ejemplo.
+- [ ] Programa de referidos (un mes gratis por traer otro negocio).
+- [ ] Más SEO/GEO: páginas por rubro y ciudad, "alternativas a X" por competidor, glosario.
+- [ ] Copias y exportación completa de datos, visible para el cliente.
+- [ ] Alertas internas de errores y de cobros (Sentry o similar; aviso si falla el webhook de Mercado Pago).
+- [ ] Rutina mensual de Claude (a definir con el usuario): revisar competencia de `blog-rankings.ts` y auditar coherencia de textos públicos, en rama con aviso.
+- Orden sugerido: métricas internas, correos del ciclo de vida, factura electrónica por etapas.
+
 Técnicas pendientes:
 - [ ] Bloqueo por plan también en la base: hoy se controla en las páginas y acciones del servidor; las RPC (`bulk_increase_field`, `live_overview`, etc.) se podrían llamar directo con el token del usuario.
 - [ ] Menú del celular (`mobile-nav.tsx`): no muestra las etiquetas ("Pronto", "Pro") ni oculta los ítems sólo para administradores.
