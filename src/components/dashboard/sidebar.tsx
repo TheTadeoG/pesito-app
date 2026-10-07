@@ -84,7 +84,7 @@ export function Sidebar({
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-2">
         {navSections.map((section) => {
           const items = section.items.filter(
-            (item) => item.href !== "/pos" && item.href !== "/caja" && (!item.adminOnly || canSeeAdminItems)
+            (item) => item.href !== "/pos" && (item.href !== "/caja" || !cashRegister) && (!item.adminOnly || canSeeAdminItems)
           );
           if (items.length === 0) return null;
           return (

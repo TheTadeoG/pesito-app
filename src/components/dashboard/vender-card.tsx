@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Lock, ShoppingCart, Wallet } from "lucide-react";
+import { Eye, EyeOff, Lock, Settings2, ShoppingCart, Wallet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency } from "@/lib/utils";
 import { CLOSE_SOON_MINUTES, getCashReminder, type CashReminder } from "@/lib/cash-reminder";
 import { onCashDelta } from "@/lib/cash-events";
@@ -97,29 +98,23 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
   if (!cashRegister) {
     return (
       <>
-        <div className="rounded-2xl border border-border bg-muted/60 p-3.5">
-          <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-            <Lock className="h-3.5 w-3.5" />
-            Caja cerrada
-          </p>
-          <p className="mt-1.5 text-sm text-foreground">Abrí tu caja para empezar a vender.</p>
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setOpenDialog(true)}
-              className="flex-1 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
-            >
-              Abrir caja
-            </button>
-            <Link
-              href="/caja"
-              className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-            >
-              <Wallet className="h-4 w-4" />
-              Caja
-            </Link>
+        <button
+          type="button"
+          onClick={() => setOpenDialog(true)}
+          className="block w-full rounded-xl border border-border bg-background/60 p-3.5 text-left transition-colors hover:border-primary/50 hover:bg-primary/10"
+        >
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              Vender
+            </span>
+            <Badge tone="default">Cerrada</Badge>
           </div>
-        </div>
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-primary">
+            <Settings2 className="h-3.5 w-3.5" />
+            Abrir caja para vender
+          </p>
+        </button>
         <OpenCajaFormDialog open={openDialog} onClose={() => setOpenDialog(false)} />
       </>
     );
