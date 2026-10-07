@@ -39,7 +39,7 @@ import {
 } from "@/app/(dashboard)/pos/actions";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 
-interface ProductLite {
+export interface ProductLite {
   id: string;
   name: string;
   barcode: string | null;

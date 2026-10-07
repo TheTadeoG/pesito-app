@@ -956,6 +956,10 @@ export interface Database {
         };
         Returns: Json;
       };
+      pos_catalog: {
+        Args: { p_org_id: string; p_branch_id?: string | null; p_since?: string | null };
+        Returns: Json;
+      };
       report_overview: {
         Args: {
           p_org_id: string;
