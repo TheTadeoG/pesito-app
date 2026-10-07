@@ -90,6 +90,19 @@ Cuánto del Pro usa **un** cliente por mes, y cuántos de ese tipo caben (se ago
 
 La memoria del servidor es lo que más pesa en el costo cuando hay clientes medianos y grandes. Con todos los clientes de un mismo tipo, 100 grandes ya piden un Large (US$150 por mes, US$1,50 por cliente). Más de 16 GB de memoria no se estima.
 
+### Probado y descartado: resúmenes diarios para Reportes (7/10/2026)
+
+Idea: guardar por cada día cerrado un resumen (por sucursal/vendedor/medio de pago, por hora, por producto y por cliente) para que Reportes no tenga que leer las ventas y renglones de 30 días, y así bajar la memoria que necesita cada cliente en el servidor. Se escribió (migración 0065, con triggers de invalidación al anular o insertar ventas y un armado perezoso de los días) y se probó en la simulación: mismos resultados que `report_overview_raw` (138 de 140 comparaciones iguales; las 2 distintas eran empates en el 5.º puesto de "más vendidos"), anular una venta rearma el día, 6 reportes simultáneos sin duplicados, y el cobro no se vuelve más lento (4,3 a 4,7 ms con y sin triggers).
+
+Pero el ahorro medido es mucho menor al proyectado (−60% de memoria):
+
+| Cliente | Memoria que toca una visita a Reportes (30 días) | Tiempo en frío | Disco extra |
+|---|---|---|---|
+| 500 ventas/día | 11,2 → 6,2 MB (−45%) | 982 → 331 ms | +5,3 MB (+~10% de las tablas de ventas) |
+| 100 ventas/día | 2,8 → 2,2 MB (−22%) | 263 → 182 ms | +1,2 MB (+21%) |
+
+Motivo: el resumen por producto y por día casi no comprime (en un día se venden casi tantos productos distintos como renglones hay) y pesa más que todo el resto junto. Con los datos de la simulación (catálogo de 1.600 productos con ventas parejas) es el peor caso; con ventas concentradas en pocos productos ahorraría más, pero no lo medimos. No se aplicó; el SQL quedó fuera del repo. Alternativa si más adelante hiciera falta: guardar por día sólo los mejores N productos (los rankings quedarían aproximados).
+
 ## Hecho: tanda rápida
 
 - Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).
