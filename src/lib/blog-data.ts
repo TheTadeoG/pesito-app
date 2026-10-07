@@ -1,7 +1,22 @@
+import { blogFaqs } from "@/lib/blog-faqs";
+import { rankingPosts } from "@/lib/blog-rankings";
+
+export interface BlogTable {
+  headers: string[];
+  rows: string[][];
+}
+
 export interface BlogSection {
   heading?: string;
   paragraphs: string[];
   list?: string[];
+  /** Tabla comparativa (se muestra después de los párrafos y la lista). */
+  table?: BlogTable;
+}
+
+export interface BlogFaq {
+  question: string;
+  answer: string;
 }
 
 // Autor de los artículos. Si algún día escribe otra persona, se agrega un
@@ -15,11 +30,22 @@ export interface BlogPost {
   seoTitle?: string;
   excerpt: string;
   publishedAt: string;
+  /** Última actualización (YYYY-MM-DD). Si falta, es la de publicación. */
+  updatedAt?: string;
   readingMinutes: number;
+  /**
+   * Respuesta corta, autocontenida, que se muestra arriba de todo (y es lo
+   * que un buscador o una IA puede citar sin leer el resto).
+   */
+  quickAnswer?: string;
   sections: BlogSection[];
+  /** Preguntas y respuestas concretas del final (también van como datos estructurados FAQPage). */
+  faqs?: BlogFaq[];
+  /** Si el artículo es un ranking: nombres en orden (van como datos estructurados ItemList). */
+  ranking?: string[];
 }
 
-export const blogPosts: BlogPost[] = [
+const basePostsRaw: BlogPost[] = [
   {
     slug: "como-armar-lista-de-precios",
     seoTitle: "Cómo armar una lista de precios",
@@ -471,3 +497,9 @@ export const blogPosts: BlogPost[] = [
     ],
   },
 ];
+
+// Los rankings (listas ordenadas) viven en su propio archivo para que éste no
+// se haga enorme. Van primero: son lo más nuevo.
+const basePosts: BlogPost[] = basePostsRaw.map((post) => ({ ...post, faqs: post.faqs ?? blogFaqs[post.slug] }));
+
+export const blogPosts: BlogPost[] = [...rankingPosts, ...basePosts];

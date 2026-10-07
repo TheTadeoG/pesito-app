@@ -143,9 +143,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Productos que no rotan y plata parada",
       "Resumen escrito de cada período en Reportes",
       "Novedades y precios de referencia de tu rubro",
-    ],
-    soon: [
-      "Ganancias por sucursal",
+      "Ganancias separadas por sucursal",
     ],
   },
 };
@@ -293,7 +291,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Comparación con el período anterior", values: fromPro },
       {
         label: "Ganancias separadas por sucursal",
-        values: { gratis: false, esencial: false, pro: false, ia: "Pronto" },
+        values: onlyIa,
       },
     ],
   },

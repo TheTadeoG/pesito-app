@@ -9,7 +9,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Blog",
   description:
-    "Guías prácticas para el comercio de barrio: listas de precios, arqueo de caja, facturación y cómo elegir un sistema de punto de venta.",
+    "Guías y rankings para tu negocio: cómo elegir un sistema de punto de venta, controlar caja, stock y fiado, y comparar opciones en Argentina.",
   path: "/blog",
 });
 
@@ -34,7 +34,7 @@ export default function BlogPage() {
             <Newspaper className="h-5 w-5" />
           </span>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Guías para el comercio de barrio
+            Guías y rankings para tu negocio
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
             Precios, caja, facturación y las decisiones del día a día de llevar un negocio — sin

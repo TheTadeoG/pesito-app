@@ -40,7 +40,7 @@ export const comparisonBlocks: ComparisonBlock[] = [
     otros:
       "Activar la facturación suele ser un trámite aparte, con un proveedor distinto y una integración que hay que pedirle a alguien que la configure.",
     pesito:
-      "En Pesito la facturación con CAE es un complemento que activás cuando la necesitás, sin migrar de sistema. Mientras tanto, podés vender y llevar tu negocio al día igual.",
+      "Pesito todavía no emite factura electrónica de ARCA/AFIP. Podés indicar el tipo de comprobante de cada venta e imprimir un ticket interno, y llevar el negocio al día igual; si necesitás facturar con CAE desde el primer día, conviene un sistema que ya lo incluya.",
   },
   {
     slug: "cualquier-rubro",

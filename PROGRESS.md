@@ -186,7 +186,7 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Combos y kits — Plan Esencial (`productBundles`). En la card del Esencial: "Talles, combos y kits".
 - [ ] Talles y colores como variantes de un producto — Plan Esencial (`productVariants`). Mencionado también en /como-funciona, /comparacion y /pesito-para/indumentaria.
 - [ ] Ofertas y promociones — Plan Pro (`promotions`).
-- [ ] Ganancias separadas por sucursal (reportes) — Plan IA.
+- [x] Ganancias separadas por sucursal (reportes) — Plan IA: columna de ganancia estimada en la tabla por sucursal de Reportes.
 - [ ] Control por usuario: una vista por persona con sus movimientos de stock, de caja (retiros, ingresos, aperturas y cierres) y sus diferencias — Plan Pro (`userActivity`). Los datos ya se guardan (`user_id` en `stock_movements` y `cash_movements`); falta la pantalla. En el Esencial ya están los reportes de ventas y diferencias de caja por vendedor.
 - [ ] Inventarios físicos (contar todo el stock y ajustar las diferencias de una vez) — Plan Pro (`physicalInventory`). Hoy sólo existe el ajuste a mano por producto.
 - [ ] Balanzas conectadas — Plan Pro (`scales`). En el POS ya hay un botón "Balanza (próximamente)".
@@ -304,3 +304,10 @@ Frases chicas (eyebrows, etiquetas):
 - "Probalo ahora, sin registrarte"
 
 Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F), celular + impresora + tarjetas conectadas (K), avisos que salen del panel (H), nodos con datos (I), un aviso a la vez (J), feed de avisos (E). Escenas del panel que hoy no corren solas pero se pueden tocar: Caja, Productos, Clientes, Proveedores.
+
+## SEO/GEO: rankings y preguntas frecuentes en el blog (7/10/2026)
+
+- `src/lib/blog-rankings.ts`: 6 listicles "los mejores…" (kioscos, gratis, SaaS POS, stock, fiado, POS general). Pesito va primero y lo decimos de entrada; datos de otros sistemas sólo de sus sitios públicos, con fecha ("consultados el …"), y "consultá en su sitio" cuando no hay dato. Siempre se aclara que Pesito no emite factura electrónica. Al tocar un precio, sale de `planDefinitions`. Revisar fechas y precios de la competencia cada tanto (cambiar `CHECKED`).
+- `src/lib/blog-faqs.ts`: ~3 preguntas concretas por cada nota existente; los rankings traen las suyas. Salen como `FAQPage`, y los rankings también como `ItemList`.
+- El blog muestra "Respuesta corta", tablas y "Preguntas frecuentes"; sitemap y `llms.txt` salen de `blogPosts`.
+- Corregido: `comparacion-data.ts` ya no promete factura electrónica como complemento.
