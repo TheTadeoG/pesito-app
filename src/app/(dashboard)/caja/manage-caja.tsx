@@ -14,13 +14,13 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
-import type { PaymentBreakdownRow } from "@/lib/caja";
+import { sumCashBreakdown, type CashBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
 import { addCashMovement, closeCaja, getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
 import { CajaDetailDialog } from "@/app/(dashboard)/caja/caja-detail-dialog";
 import { CashCalculator } from "@/components/dashboard/cash-calculator";
@@ -35,6 +35,8 @@ interface ManageCajaProps {
   openedAt: string;
   openedByLabel: string;
   paymentBreakdown: PaymentBreakdownRow[];
+  /** De dónde sale el efectivo (para el extracto "En caja ahora"). */
+  cash: CashBreakdown;
 }
 
 export function ManageCaja({
@@ -44,6 +46,7 @@ export function ManageCaja({
   openedAt,
   openedByLabel,
   paymentBreakdown,
+  cash,
 }: ManageCajaProps) {
   const router = useRouter();
   const { showSuccess } = useToast();
@@ -124,59 +127,143 @@ export function ManageCaja({
   }
 
   const diff = countedAmount === "" ? null : Number(countedAmount) - cashOnHand;
+  const soldTotal = paymentBreakdown.reduce((acc, r) => acc + r.total, 0);
 
   return (
     <>
-      <Card className="mx-auto max-w-md">
-        <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-success-bg text-success">
-            <LockOpen className="h-7 w-7" />
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-3 py-3.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-success-bg text-success">
+            <LockOpen className="h-[18px] w-[18px]" />
           </span>
-          <Badge tone="success">Caja abierta</Badge>
-          <h2 className="text-sm text-muted-foreground">Efectivo disponible</h2>
-          <p className="text-3xl font-bold text-foreground">{formatCurrency(cashOnHand)}</p>
-          <p className="text-xs text-muted-foreground">
-            Abierta el {formatDateTime(openedAt)} · {openedByLabel}
-          </p>
-          <div className="mt-2 grid w-full max-w-sm grid-cols-2 gap-2">
+          <div className="min-w-0 flex-1 basis-56">
+            <p className="text-sm font-semibold text-foreground">Caja abierta</p>
+            <p className="truncate text-xs text-muted-foreground">
+              Desde el {formatDateTime(openedAt)} · {openedByLabel}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Button onClick={() => router.push("/pos")}>
               <ShoppingCart className="h-4 w-4" />
               Vender (Enter)
             </Button>
             <Button variant="outline" onClick={() => setView("gestionar")}>
               <SlidersHorizontal className="h-4 w-4" />
-              Gestionar Caja
-            </Button>
-            <Button variant="danger" onClick={() => setView("cerrar")}>
-              <Calculator className="h-4 w-4" />
-              Cerrar caja
+              Ingresar / Retirar
             </Button>
             <Button variant="outline" onClick={openDetail}>
               <Eye className="h-4 w-4" />
               Ver detalle
             </Button>
+            <Button variant="danger" onClick={() => setView("cerrar")}>
+              <Calculator className="h-4 w-4" />
+              Cerrar caja
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {paymentBreakdown.length > 0 && (
-        <Card className="mx-auto max-w-md">
-          <CardHeader>
-            <CardTitle className="text-base">Cobros de esta caja por medio de pago</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {paymentBreakdown.map((row) => (
-              <div key={row.method} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {paymentLabels[row.method] ?? row.method}
-                  {row.method === "fiado" && " (pendiente de cobro)"}
-                </span>
-                <span className="font-semibold text-foreground">{formatCurrency(row.total)}</span>
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+        <Card>
+          <CardContent className="py-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              En caja ahora
+            </p>
+            <p className="mt-1 text-4xl font-bold tracking-tight text-foreground">
+              {formatCurrency(cashOnHand)}
+            </p>
+            <p className="text-sm text-muted-foreground">Es lo que tendría que haber en el cajón.</p>
+            <div className="mt-4 divide-y divide-border text-sm">
+              <ExtractRow label="Con lo que abriste" value={formatCurrency(cash.openingAmount)} />
+              <ExtractRow
+                label="+ Ventas en efectivo"
+                value={`+ ${formatCurrency(cash.salesCashTotal)}`}
+                tone="plus"
+              />
+              {cash.debtPaymentsTotal > 0 && (
+                <ExtractRow
+                  label="+ Cobros de fiado"
+                  value={`+ ${formatCurrency(cash.debtPaymentsTotal)}`}
+                  tone="plus"
+                />
+              )}
+              {cash.ingresosTotal > 0 && (
+                <ExtractRow
+                  label="+ Ingresos de efectivo"
+                  value={`+ ${formatCurrency(cash.ingresosTotal)}`}
+                  tone="plus"
+                />
+              )}
+              {cash.retirosTotal > 0 && (
+                <ExtractRow
+                  label="− Retiros"
+                  value={`− ${formatCurrency(cash.retirosTotal)}`}
+                  tone="minus"
+                />
+              )}
+              {cash.supplierPaymentsTotal > 0 && (
+                <ExtractRow
+                  label="− Pagos a proveedores"
+                  value={`− ${formatCurrency(cash.supplierPaymentsTotal)}`}
+                  tone="minus"
+                />
+              )}
+              {cash.cashPurchasesTotal > 0 && (
+                <ExtractRow
+                  label="− Compras pagadas en efectivo"
+                  value={`− ${formatCurrency(cash.cashPurchasesTotal)}`}
+                  tone="minus"
+                />
+              )}
+              <div className="flex items-center justify-between border-t-2 border-foreground py-2.5 font-bold text-foreground">
+                <span>= En caja</span>
+                <span>{formatCurrency(sumCashBreakdown(cash))}</span>
               </div>
-            ))}
+            </div>
           </CardContent>
         </Card>
-      )}
+
+        <Card>
+          <CardContent className="py-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Vendido en este turno
+            </p>
+            <p className="mt-1 text-4xl font-bold tracking-tight text-foreground">
+              {formatCurrency(soldTotal)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {paymentBreakdown.some((r) => r.method === "fiado")
+                ? "Incluye lo vendido a fiado (pendiente de cobro)."
+                : "Todo lo cobrado desde que abriste."}
+            </p>
+            {paymentBreakdown.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">Todavía no hay ventas en este turno.</p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {paymentBreakdown.map((row) => (
+                  <div key={row.method}>
+                    <div className="flex items-center justify-between text-sm font-medium text-foreground">
+                      <span>
+                        {paymentLabels[row.method] ?? row.method}
+                        {row.method === "fiado" && (
+                          <span className="font-normal text-muted-foreground"> · pendiente de cobro</span>
+                        )}
+                      </span>
+                      <span>{formatCurrency(row.total)}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-muted">
+                      <div
+                        className={row.method === "fiado" ? "h-1.5 rounded-full bg-warning" : "h-1.5 rounded-full bg-primary"}
+                        style={{ width: `${soldTotal > 0 ? Math.max(3, (row.total / soldTotal) * 100) : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog
         open={view === "gestionar"}
@@ -361,5 +448,32 @@ export function ManageCaja({
         detail={detail}
       />
     </>
+  );
+}
+
+function ExtractRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "plus" | "minus";
+}) {
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <span className="text-foreground">{label}</span>
+      <span
+        className={
+          tone === "plus"
+            ? "font-semibold text-success"
+            : tone === "minus"
+              ? "font-semibold text-danger"
+              : "font-semibold text-foreground"
+        }
+      >
+        {value}
+      </span>
+    </div>
   );
 }

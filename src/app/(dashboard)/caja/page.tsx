@@ -246,6 +246,17 @@ export default async function CajaPage() {
         openedAt={register.opened_at}
         openedByLabel={membership.username ?? email ?? "Vos"}
         paymentBreakdown={getBreakdown(register.id)}
+        cash={
+          summaries.get(register.id)?.cash ?? {
+            openingAmount,
+            salesCashTotal: 0,
+            debtPaymentsTotal: 0,
+            ingresosTotal: 0,
+            retirosTotal: 0,
+            supplierPaymentsTotal: 0,
+            cashPurchasesTotal: 0,
+          }
+        }
       />
       {teamOverview}
       <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
