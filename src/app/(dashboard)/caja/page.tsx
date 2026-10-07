@@ -7,7 +7,7 @@ import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan } from "@/lib/plan-access";
 import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
-import { ManageCaja } from "@/app/(dashboard)/caja/manage-caja";
+import { ManageCaja, type TurnoMovement } from "@/app/(dashboard)/caja/manage-caja";
 import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/historial";
 import {
   CajaResumen,
@@ -214,6 +214,99 @@ export default async function CajaPage() {
 
   const openingAmount = Number(register.opening_amount);
   const cashOnHand = getCashOnHand(register.id, openingAmount);
+  const ownCash = summaries.get(register.id)?.cash;
+
+  // Movimientos del turno: los sueltos (ingresos, retiros, pagos a proveedores)
+  // uno por uno, y lo que son muchos (ventas, cobros de fiado, compras) en una
+  // sola fila cada uno, así la lista no se llena.
+  const [{ data: movementsRaw }, { data: supplierPaymentsRaw }, { count: salesCount }] =
+    await Promise.all([
+      supabase
+        .from("cash_movements")
+        .select("id, type, amount, reason, created_at")
+        .eq("cash_register_id", register.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("supplier_payments")
+        .select("id, supplier_id, amount, created_at")
+        .eq("cash_register_id", register.id)
+        .eq("method", "efectivo")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("sales")
+        .select("id", { count: "exact", head: true })
+        .eq("cash_register_id", register.id)
+        .eq("status", "completada"),
+    ]);
+  const supplierIds = Array.from(new Set((supplierPaymentsRaw ?? []).map((p) => p.supplier_id)));
+  const { data: supplierNames } =
+    supplierIds.length > 0
+      ? await supabase.from("suppliers").select("id, name").in("id", supplierIds)
+      : { data: [] as { id: string; name: string }[] };
+  const nameBySupplier = new Map((supplierNames ?? []).map((x) => [x.id, x.name]));
+
+  const individual: TurnoMovement[] = [
+    ...(movementsRaw ?? []).map((m) => ({
+      id: `m-${m.id}`,
+      kind: m.type === "ingreso" ? ("ingreso" as const) : ("retiro" as const),
+      title: m.type === "ingreso" ? "Ingreso de efectivo" : "Retiro de efectivo",
+      note: m.reason ?? null,
+      at: m.created_at,
+      amount: m.type === "ingreso" ? Number(m.amount) : -Number(m.amount),
+    })),
+    ...(supplierPaymentsRaw ?? []).map((p) => ({
+      id: `p-${p.id}`,
+      kind: "proveedor" as const,
+      title: `Pago a ${nameBySupplier.get(p.supplier_id) ?? "proveedor"}`,
+      note: "proveedor · efectivo",
+      at: p.created_at,
+      amount: -Number(p.amount),
+    })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
+
+  const grouped: TurnoMovement[] = [];
+  if (ownCash && ownCash.salesCashTotal > 0) {
+    grouped.push({
+      id: "g-ventas",
+      kind: "ventas",
+      title: "Ventas en efectivo",
+      note: `${salesCount ?? 0} ${salesCount === 1 ? "venta" : "ventas"} en este turno`,
+      at: null,
+      amount: ownCash.salesCashTotal,
+    });
+  }
+  if (ownCash && ownCash.debtPaymentsTotal > 0) {
+    grouped.push({
+      id: "g-fiado",
+      kind: "fiado",
+      title: "Cobros de fiado",
+      note: "en efectivo",
+      at: null,
+      amount: ownCash.debtPaymentsTotal,
+    });
+  }
+  if (ownCash && ownCash.cashPurchasesTotal > 0) {
+    grouped.push({
+      id: "g-compras",
+      kind: "compras",
+      title: "Compras pagadas en efectivo",
+      note: null,
+      at: null,
+      amount: -ownCash.cashPurchasesTotal,
+    });
+  }
+  const turnoMovements: TurnoMovement[] = [
+    ...individual,
+    ...grouped,
+    {
+      id: "apertura",
+      kind: "apertura",
+      title: "Apertura de caja",
+      note: null,
+      at: register.opened_at,
+      amount: openingAmount,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -224,6 +317,7 @@ export default async function CajaPage() {
         openedAt={register.opened_at}
         openedByLabel={membership.username ?? email ?? "Vos"}
         paymentBreakdown={getBreakdown(register.id)}
+        movements={turnoMovements}
         cash={
           summaries.get(register.id)?.cash ?? {
             openingAmount,

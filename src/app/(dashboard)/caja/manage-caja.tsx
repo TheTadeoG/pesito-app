@@ -4,27 +4,44 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
+  ArrowDown,
   ArrowDownCircle,
+  ArrowUp,
   ArrowUpCircle,
   Calculator,
   DollarSign,
-  Eye,
+  HandCoins,
+  Lock,
   LockOpen,
+  ShoppingBag,
   ShoppingCart,
   SlidersHorizontal,
+  Truck,
+  type LucideIcon,
 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime, formatTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
 import type { CashBreakdown, PaymentBreakdownRow } from "@/lib/caja";
 import { addCashMovement, closeCaja, getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
 import { CajaDetailDialog } from "@/app/(dashboard)/caja/caja-detail-dialog";
 import { CashCalculator } from "@/components/dashboard/cash-calculator";
 import { useToast } from "@/components/toast/toast-provider";
+
+export interface TurnoMovement {
+  id: string;
+  kind: "apertura" | "ingreso" | "retiro" | "proveedor" | "ventas" | "fiado" | "compras";
+  title: string;
+  note: string | null;
+  /** null: fila que junta varios movimientos (ventas, cobros de fiado, compras). */
+  at: string | null;
+  /** Con signo: negativo si sale plata del cajón. */
+  amount: number;
+}
 
 type View = "closed" | "gestionar" | "ingreso" | "retiro" | "cerrar";
 
@@ -37,6 +54,7 @@ interface ManageCajaProps {
   paymentBreakdown: PaymentBreakdownRow[];
   /** De dónde sale el efectivo (para el extracto "En caja ahora"). */
   cash: CashBreakdown;
+  movements: TurnoMovement[];
 }
 
 export function ManageCaja({
@@ -47,6 +65,7 @@ export function ManageCaja({
   openedByLabel,
   paymentBreakdown,
   cash,
+  movements,
 }: ManageCajaProps) {
   const router = useRouter();
   const { showSuccess } = useToast();
@@ -150,10 +169,6 @@ export function ManageCaja({
             <Button variant="outline" onClick={() => setView("gestionar")}>
               <SlidersHorizontal className="h-4 w-4" />
               Ingresar / Retirar
-            </Button>
-            <Button variant="outline" onClick={openDetail}>
-              <Eye className="h-4 w-4" />
-              Ver detalle
             </Button>
             <Button variant="danger" onClick={() => setView("cerrar")}>
               <Calculator className="h-4 w-4" />
@@ -264,6 +279,31 @@ export function ManageCaja({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <div>
+          <div className="flex items-baseline justify-between px-5 pb-1 pt-4">
+            <h2 className="text-base font-semibold text-foreground">Movimientos del turno</h2>
+            <button
+              type="button"
+              onClick={openDetail}
+              className="text-sm font-semibold text-primary hover:underline"
+            >
+              Ver todos →
+            </button>
+          </div>
+          <div className="divide-y divide-border">
+            {movements.slice(0, 5).map((m) => (
+              <MovementRow key={m.id} m={m} />
+            ))}
+          </div>
+          {movements.length > 5 && (
+            <p className="border-t border-border px-5 py-2.5 text-xs text-muted-foreground">
+              {`Y ${movements.length - 5} más en "Ver todos".`}
+            </p>
+          )}
+        </div>
+      </Card>
 
       <Dialog
         open={view === "gestionar"}
@@ -448,6 +488,41 @@ export function ManageCaja({
         detail={detail}
       />
     </>
+  );
+}
+
+const MOVEMENT_STYLE: Record<TurnoMovement["kind"], { icon: LucideIcon; tone: string }> = {
+  apertura: { icon: Lock, tone: "bg-muted text-muted-foreground" },
+  ingreso: { icon: ArrowDown, tone: "bg-success-bg text-success" },
+  retiro: { icon: ArrowUp, tone: "bg-danger-bg text-danger" },
+  proveedor: { icon: Truck, tone: "bg-danger-bg text-danger" },
+  ventas: { icon: ShoppingCart, tone: "bg-success-bg text-success" },
+  fiado: { icon: HandCoins, tone: "bg-success-bg text-success" },
+  compras: { icon: ShoppingBag, tone: "bg-danger-bg text-danger" },
+};
+
+function MovementRow({ m }: { m: TurnoMovement }) {
+  const { icon: Icon, tone } = MOVEMENT_STYLE[m.kind];
+  const sub = [m.at ? formatTime(m.at) : null, m.note ? (m.kind === "ingreso" || m.kind === "retiro" ? `“${m.note}”` : m.note) : null]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <div className="flex items-center gap-3 px-5 py-2.5">
+      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${tone}`}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">{m.title}</p>
+        {sub && <p className="truncate text-xs text-muted-foreground">{sub}</p>}
+      </div>
+      <span
+        className={`shrink-0 text-sm font-bold ${
+          m.kind === "apertura" ? "text-foreground" : m.amount < 0 ? "text-danger" : "text-success"
+        }`}
+      >
+        {m.kind === "apertura" ? formatCurrency(m.amount) : `${m.amount < 0 ? "− " : "+ "}${formatCurrency(Math.abs(m.amount))}`}
+      </span>
+    </div>
   );
 }
 

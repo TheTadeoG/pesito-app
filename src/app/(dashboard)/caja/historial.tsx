@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, formatTime } from "@/lib/utils";
 import { getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
@@ -60,7 +60,7 @@ export function CajaHistorial({
           </p>
         )}
       </CardHeader>
-      <CardContent className="p-0">
+      <div className="pt-3">
         {rows.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-muted-foreground">
             Todavía no cerraste ninguna caja.
@@ -133,7 +133,7 @@ export function CajaHistorial({
             </table>
           </div>
         )}
-      </CardContent>
+      </div>
 
       <CajaDetailDialog
         open={detailOpen}
