@@ -137,57 +137,61 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
   return (
     <div
       className={cn(
-        "rounded-2xl p-2.5 text-white",
+        "rounded-2xl p-3.5 text-white",
         closing
           ? "bg-[radial-gradient(120%_140%_at_0%_0%,#f59e0b_0%,#b45309_60%,#78350f_100%)] shadow-lg shadow-amber-600/25"
           : "bg-[radial-gradient(120%_140%_at_0%_0%,#10b981_0%,#047857_55%,#064e3b_100%)] shadow-lg shadow-emerald-700/30"
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <Link
-          href="/caja"
-          title="Ver la caja"
-          className="text-2xl font-bold leading-tight tracking-tight hover:opacity-90"
+      <div className="flex items-center justify-between text-xs font-semibold">
+        <span className="flex items-center gap-1.5">
+          <i className="inline-block h-1.5 w-1.5 rounded-full bg-white" />
+          {statusText}
+        </span>
+        <button
+          type="button"
+          onClick={toggleHidden}
+          aria-label={hidden ? "Mostrar el monto" : "Ocultar el monto"}
+          title={hidden ? "Mostrar el monto" : "Ocultar el monto"}
+          className="rounded-md p-0.5 opacity-80 transition-opacity hover:opacity-100"
         >
-          {cashTotal === null ? "—" : hidden ? "$ ••••••" : formatCurrency(cashTotal)}
-        </Link>
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold">
-          <span className="flex items-center gap-1.5" title={`Abierta hace ${time}`} suppressHydrationWarning>
-            <i className="inline-block h-1.5 w-1.5 rounded-full bg-white" />
-            {closing ? statusText : "Abierta"}
-          </span>
-          <button
-            type="button"
-            onClick={toggleHidden}
-            aria-label={hidden ? "Mostrar el monto" : "Ocultar el monto"}
-            title={hidden ? "Mostrar el monto" : "Ocultar el monto"}
-            className="rounded-md p-0.5 opacity-80 transition-opacity hover:opacity-100"
-          >
-            {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          </button>
-        </div>
+          {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </button>
       </div>
-      {reminder?.kind === "soon" && (
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/25">
+      <Link
+        href="/caja"
+        title="Ver la caja"
+        className="mt-1 block text-[1.75rem] font-bold leading-tight tracking-tight hover:opacity-90"
+      >
+        {cashTotal === null ? "—" : hidden ? "$ ••••••" : formatCurrency(cashTotal)}
+      </Link>
+      {reminder?.kind === "soon" ? (
+        <div className="mb-3 mt-1.5 h-1 overflow-hidden rounded-full bg-white/25">
           <div className="h-full rounded-full bg-white" style={{ width: `${soonProgress}%` }} />
         </div>
+      ) : (
+        <p className="mb-3 text-[11px] text-white/80">
+          {/* El servidor y el navegador calculan el tiempo con segundos de
+              diferencia; sin esto React tira error de hidratación (#418). */}
+          Abierta hace <span suppressHydrationWarning>{time}</span>
+        </p>
       )}
-      <div className="mt-2 flex gap-2">
+      <div className="flex gap-2">
         <Link
           href="/pos"
           className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-1.5 text-xs font-bold transition-colors hover:bg-white/90",
+            "flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-2 text-xs font-bold transition-colors hover:bg-white/90",
             closing ? "text-amber-800" : "text-emerald-800"
           )}
         >
-          <ShoppingCart className="h-3.5 w-3.5" />
+          <ShoppingCart className="h-4 w-4" />
           Vender
         </Link>
         <Link
           href="/caja"
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/20 px-2 py-1.5 text-xs font-bold transition-colors hover:bg-white/30"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/20 px-2 py-2 text-xs font-bold transition-colors hover:bg-white/30"
         >
-          <Wallet className="h-3.5 w-3.5" />
+          <Wallet className="h-4 w-4" />
           {closing ? "Cerrar caja" : "Caja"}
         </Link>
       </div>
