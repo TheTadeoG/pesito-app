@@ -109,6 +109,15 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Caso base, 90% gratis (resto 60% chicos, 30% medianos, 10% grandes), por mes: 5.000 clientes US$291 (US$0,58 por cliente que paga), 10.000 US$570, 15.000 US$656, 20.000 US$1.294 (US$0,44 a US$0,65 por cliente que paga). Con 95% gratis: ~US$0,70. Año de antigüedad: +2 a 4 centavos por cliente que paga por año (sólo disco). Un pago (Esencial, ~US$10 neto) cubre ~500 gratis.
 - Pendientes: (1) medir memoria real en un Supabase de pruebas (paquete: `seed.sql`, `work.sql`, `mix.pgb` de la simulación; hay que permitir los dominios en la red del entorno y poner las claves como secretos); (2) correr `disco_por_cliente.sql` y mirar Usage de Supabase y Vercel con clientes reales; (3) medidor de uso por cliente dentro de la app; (4) política de historial por plan (con aviso y exportación a Excel); (5) índice duplicado `sales_org_id_idx` (una línea); (6) alternativas de infraestructura (servidor propio) cuando el servidor de Supabase pase de ~US$400–500 por mes (cuidar la región: Hetzner no tiene Sudamérica).
 
+## Hecho: protecciones contra abusos (7/10/2026) — migración 0065 (**falta aplicar en producción**)
+
+- `rate_limit_hit` (tabla UNLOGGED `rate_limits`, ventana fija por negocio y tipo de pedido; error `P0429`). Se usa sólo en lo pesado. Las funciones que llama el navegador directo (`report_overview`, `pos_catalog`, `live_pulse`, `live_overview`) pasan a ser envoltorios que cuentan y llaman a `*_raw` (sin permiso para los usuarios). Límites por minuto y por negocio: Reportes 20, catálogo del POS 30, aviso de En vivo 30, En vivo completo 12.
+- En las acciones del servidor (`src/lib/rate-limit.ts`, `checkRateLimit`): carga masiva de clientes y de productos (120 tandas por hora), aumentos masivos de precios (30 por hora), alta de usuarios y de invitaciones (20 por hora). Si el contador falla o la migración no está aplicada, deja pasar (no frena a nadie).
+- Topes técnicos por negocio con triggers por sentencia: 50.000 clientes, 5.000 proveedores, 5.000 marcas, 2.000 categorías (error `P0430`). Cierra el hueco de insertar filas directo en la API.
+- Reportes muestra "Estás haciendo demasiados pedidos seguidos" con Reintentar si se pasa del límite. Las fotos de productos suben con caché de un año (nombre nuevo cada vez).
+- Medido en la simulación: el contador agrega ~0,2 a 0,4 ms por pedido pesado; un insert masivo de 500 clientes con el tope tarda 27 ms.
+- Pendiente (a configurar en los paneles): reglas de Vercel Firewall (límite por IP en /login, /registro, /auth y /api), límites y ajustes de Supabase Auth, CAPTCHA (Turnstile) en registro y login, `statement_timeout` por rol (revisar los valores actuales).
+
 ## Hecho: tanda rápida
 
 - Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).

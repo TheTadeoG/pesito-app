@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/database.types";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
 import { getSubscription } from "@/lib/subscription";
@@ -63,6 +64,8 @@ export async function importProductsChunk(
     return { ...result, error: featureLockedMessage("productImport") };
   }
   if (!Array.isArray(rows) || rows.length === 0) return result;
+  const rateError = await checkRateLimit(supabase, organization.id, "import_productos", 120, 3600);
+  if (rateError) return { ...result, error: rateError };
   if (rows.length > IMPORT_CHUNK_SIZE) {
     return { ...result, error: "Llegaron demasiados productos juntos. Probá de nuevo." };
   }

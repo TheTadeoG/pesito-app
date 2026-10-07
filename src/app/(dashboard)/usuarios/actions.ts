@@ -1,5 +1,6 @@
 "use server";
 
+import { checkRateLimit } from "@/lib/rate-limit";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -29,6 +30,8 @@ export async function createInvitation(role: "admin" | "vendedor"): Promise<Invi
   }
 
   const supabase = await createClient();
+  const rateError = await checkRateLimit(supabase, organization.id, "invitaciones", 20, 3600);
+  if (rateError) return { error: rateError };
   const limitError = await checkUserLimit(supabase, organization.id);
   if (limitError) return { error: limitError };
 
@@ -153,6 +156,8 @@ export async function createDirectMember(
   }
 
   const supabase = await createClient();
+  const rateError = await checkRateLimit(supabase, organization.id, "alta_usuarios", 20, 3600);
+  if (rateError) return { error: rateError };
   const limitError = await checkUserLimit(supabase, organization.id);
   if (limitError) return { error: limitError };
 

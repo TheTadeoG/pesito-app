@@ -20,6 +20,7 @@ import { getFiadoAmountsBySale } from "@/lib/sale-payments";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { getMemberLabelsById } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
+import { RATE_LIMITED_MESSAGE, isRateLimitError } from "@/lib/rate-limit";
 import { canUse, featureMinPlan } from "@/lib/plan-access";
 import { buildReportInsights } from "@/lib/report-insights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,8 +89,9 @@ async function rpcOverview(
     p_branch: string | null;
     p_group: string;
   }
-): Promise<Overview> {
+): Promise<Overview | "rate_limited"> {
   const { data, error } = await supabase.rpc("report_overview", args);
+  if (isRateLimitError(error)) return "rate_limited";
   if (error) throw new Error(`No se pudieron cargar los reportes: ${error.message}`);
   // numeric llega como número o texto según el valor: normalizar.
   const raw = (data ?? {}) as Record<string, unknown>;
@@ -191,6 +193,23 @@ export default async function ReportesPage({
     p_branch: branchId,
     p_group: groupBy,
   });
+
+  if (ov === "rate_limited") {
+    return (
+      <Card>
+        <CardContent className="space-y-3 p-5 text-center">
+          <p className="text-sm font-medium text-foreground">{RATE_LIMITED_MESSAGE}</p>
+          <Link
+            href={reportesHref(query, sellerId, branchId)}
+            prefetch={false}
+            className="inline-block text-sm font-semibold text-primary hover:underline"
+          >
+            Reintentar
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const ingresos = ov.ingresos;
   const totalVentas = ov.ventas;

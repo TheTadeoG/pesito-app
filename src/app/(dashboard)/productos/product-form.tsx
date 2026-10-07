@@ -300,7 +300,12 @@ export function ProductForm({
 
     const { error: uploadError } = await supabase.storage
       .from("product-images")
-      .upload(path, file, { contentType: file.type, upsert: true });
+      .upload(path, file, {
+        contentType: file.type,
+        upsert: true,
+        // Cada foto sube con un nombre nuevo (uuid): el navegador y la CDN la guardan un año.
+        cacheControl: "31536000",
+      });
 
     setUploadingImage(false);
 

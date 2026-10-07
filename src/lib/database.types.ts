@@ -960,6 +960,10 @@ export interface Database {
         Args: { p_org_id: string; p_branch_id?: string | null; p_since?: string | null };
         Returns: Json;
       };
+      rate_limit_hit: {
+        Args: { p_org_id: string; p_bucket: string; p_max: number; p_window_seconds: number };
+        Returns: undefined;
+      };
       report_overview: {
         Args: {
           p_org_id: string;

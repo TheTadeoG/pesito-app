@@ -1,5 +1,6 @@
 "use server";
 
+import { checkRateLimit } from "@/lib/rate-limit";
 import { checkProductLimit } from "@/lib/plan-limits";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -383,6 +384,8 @@ export async function bulkIncreaseField(
   if (!canUse(await getSubscription(supabase, organization.id), "bulkPriceChanges")) {
     return { error: featureLockedMessage("bulkPriceChanges") };
   }
+  const rateError = await checkRateLimit(supabase, organization.id, "precios_masivos", 30, 3600);
+  if (rateError) return { error: rateError };
 
   if (field === "cost" && alsoPrice) {
     const { data, error } = await supabase.rpc("bulk_increase_cost_with_price", {
