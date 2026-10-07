@@ -464,7 +464,7 @@ export function ProveedoresClient({
                       })
                   )}
                 </div>
-                <div className="-mx-1 hidden overflow-x-auto px-1 pb-1 sm:block">
+                <div className="-mx-1 hidden overflow-x-auto px-1 py-1 sm:block">
                   <div className="grid min-w-[44rem] gap-1.5" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
                     {strip.map((d, n) => {
                       const weekday = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"][weekdayIndex(d.day)];
@@ -481,8 +481,7 @@ export function ProveedoresClient({
                           onClick={() => setDayFilter(active ? null : d.day)}
                           className={cn(
                             "flex flex-col items-center gap-0.5 rounded-xl border px-1 py-1.5 text-center transition-colors",
-                            n === 0 ? "border-foreground" : "border-border",
-                            active && "bg-accent ring-1 ring-primary",
+                            active ? "border-primary bg-accent ring-1 ring-primary" : n === 0 ? "border-foreground" : "border-border",
                             d.count > 0 ? "hover:bg-muted" : "cursor-default"
                           )}
                         >
