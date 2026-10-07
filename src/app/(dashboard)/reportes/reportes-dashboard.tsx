@@ -85,6 +85,8 @@ export interface LossProductRow {
 
 export interface ReportesData {
   periodLabel: string;
+  /** Sucursal filtrada (para que los links internos la conserven). */
+  branchId?: string | null;
   tiles: {
     label: string;
     value: string;
@@ -539,7 +541,7 @@ export function ReportesDashboard({
                 {data.sellerRows.map((row) => (
                   <Link
                     key={row.userId}
-                    href={reportesHref(query, row.userId)}
+                    href={reportesHref(query, row.userId, data.branchId ?? null)}
                     title={`Ver el reporte de ${row.userLabel}`}
                     className="block px-5 py-3 text-sm hover:bg-muted"
                   >

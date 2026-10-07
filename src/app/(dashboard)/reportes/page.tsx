@@ -5,6 +5,10 @@ import { getCompareRange, getReportRange, resolveReportQuery } from "@/lib/repor
 import { ARG_TZ, argDateString, argHour } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { SellerSelector } from "@/app/(dashboard)/reportes/seller-selector";
+import { BranchSelector } from "@/app/(dashboard)/reportes/branch-selector";
+import { getBranchContext } from "@/lib/branches";
+import { reportesHref } from "@/lib/report-periods";
+import Link from "next/link";
 import {
   ReportesDashboard,
   type CashDiffRow,
@@ -49,7 +53,7 @@ function dayLabel(date: Date) {
 export default async function ReportesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; comparar?: string; vendedor?: string }>;
+  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; comparar?: string; vendedor?: string; sucursal?: string }>;
 }) {
   const params = await searchParams;
   const vendedorParam = params.vendedor;
@@ -76,15 +80,25 @@ export default async function ReportesPage({
     isManager && vendedorParam && /^[0-9a-f-]{36}$/i.test(vendedorParam) ? vendedorParam : null;
   const sellerLabel = sellerId ? memberLabelsById?.get(sellerId) ?? "Usuario eliminado" : null;
 
+  // Filtro por sucursal: sólo dueños/administradores con más de una sucursal.
+  const branchContext = await getBranchContext();
+  const hasBranches = isManager && branchContext.branches.length > 1;
+  const branchId =
+    hasBranches && branchContext.branches.some((b) => b.id === params.sucursal)
+      ? (params.sucursal as string)
+      : null;
+  const branchLabel = branchId ? (branchContext.branches.find((b) => b.id === branchId)?.name ?? null) : null;
+
   const salesRaw = await fetchAll((from, to) => {
     let query = supabase
       .from("sales")
-      .select("id, user_id, total, payment_method, invoice_type, created_at, customer_id")
+      .select("id, user_id, total, payment_method, invoice_type, created_at, customer_id, branch_id")
       .eq("org_id", organization.id)
       .eq("status", "completada")
       .gte("created_at", start.toISOString())
       .lt("created_at", end.toISOString());
     if (sellerId) query = query.eq("user_id", sellerId);
+    if (branchId) query = query.eq("branch_id", branchId);
     return query
       .order("created_at", { ascending: false })
       .order("id")
@@ -319,6 +333,7 @@ export default async function ReportesPage({
         .gte("closed_at", start.toISOString())
         .lt("closed_at", end.toISOString());
       if (sellerId) query = query.eq("user_id", sellerId);
+      if (branchId) query = query.eq("branch_id", branchId);
       return query.order("id").range(from, to);
     });
 
@@ -349,7 +364,7 @@ export default async function ReportesPage({
 
   // "Quién te debe": clientes con saldo de fiado, con hace cuánto no pagan.
   // Es de todo el negocio: filtrando por vendedor no se muestra ni se consulta.
-  const debtors = sellerId ? [] : await fetchAll((from, to) =>
+  const debtors = sellerId || branchId ? [] : await fetchAll((from, to) =>
     supabase
       .from("customers")
       .select("id, name, balance")
@@ -391,7 +406,7 @@ export default async function ReportesPage({
 
   // Stock valorizado: cuánta plata hay parada en mercadería, al costo y al
   // precio de venta.
-  const stockProductsRaw = sellerId ? [] : await fetchAll((from, to) =>
+  const stockProductsRaw = sellerId || branchId ? [] : await fetchAll((from, to) =>
     supabase
       .from("products")
       .select("cost, price, stock")
@@ -434,6 +449,7 @@ export default async function ReportesPage({
         .gte("created_at", previousStart.toISOString())
         .lt("created_at", previousEnd.toISOString());
       if (sellerId) query = query.eq("user_id", sellerId);
+      if (branchId) query = query.eq("branch_id", branchId);
       return query.order("id").range(from, to);
     });
 
@@ -507,6 +523,7 @@ export default async function ReportesPage({
 
   const data: ReportesData = {
     periodLabel,
+    branchId,
     tiles: [
       {
         icon: "dollar",
@@ -553,6 +570,26 @@ export default async function ReportesPage({
     lossProducts,
   };
 
+  // Ventas por sucursal del período (sólo sin filtro de sucursal).
+  const salesByBranch = (() => {
+    if (!hasBranches || branchId) return [] as { id: string; name: string; count: number; total: number; pct: number }[];
+    const grand = sales.reduce((acc, sale) => acc + sale.total, 0);
+    return branchContext.branches
+      .map((b) => {
+        const mine = sales.filter((sale) => sale.branch_id === b.id);
+        const total = mine.reduce((acc, sale) => acc + sale.total, 0);
+        return {
+          id: b.id,
+          name: b.name,
+          count: mine.length,
+          total,
+          pct: grand > 0 ? Math.round((total / grand) * 100) : 0,
+        };
+      })
+      .filter((row) => row.count > 0)
+      .sort((a, b) => b.total - a.total);
+  })();
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -563,6 +600,7 @@ export default async function ReportesPage({
           today={argDateString()}
           canCustomRange={canCustomRange}
           canCompare={canProfit}
+          branchId={branchId}
         />
         {memberLabelsById && (
           <SellerSelector
@@ -572,6 +610,15 @@ export default async function ReportesPage({
               .map(([id, label]) => ({ id, label }))
               .sort((a, b) => a.label.localeCompare(b.label, "es"))}
             sellerLabel={sellerLabel}
+            branchId={branchId}
+          />
+        )}
+        {hasBranches && (
+          <BranchSelector
+            query={query}
+            sellerId={sellerId}
+            branchId={branchId}
+            branches={branchContext.branches.map((b) => ({ id: b.id, name: b.name }))}
           />
         )}
       </div>
@@ -581,6 +628,56 @@ export default async function ReportesPage({
           <span className="font-medium text-foreground">{sellerLabel}</span>. Fiado y stock son
           de todo el negocio y no se muestran.
         </p>
+      )}
+      {branchLabel && (
+        <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+          <span>
+            Mostrando sólo las ventas y cajas de la sucursal{" "}
+            <span className="font-medium text-foreground">{branchLabel}</span>. Fiado y stock son de
+            todo el negocio y no se muestran.
+          </span>
+          <Link
+            href={reportesHref(query, sellerId, null)}
+            prefetch={false}
+            className="font-semibold text-primary hover:underline"
+          >
+            Quitar filtro
+          </Link>
+        </p>
+      )}
+      {hasBranches && !branchId && salesByBranch.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Ventas por sucursal</CardTitle>
+            <p className="text-xs text-muted-foreground">Tocá una sucursal para ver solo sus reportes.</p>
+          </CardHeader>
+          <div className="overflow-x-auto pb-2 pt-2">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-y border-border text-left text-xs font-semibold text-muted-foreground">
+                  <th className="px-5 py-2">Sucursal</th>
+                  <th className="px-3 py-2 text-right">Ventas</th>
+                  <th className="px-3 py-2 text-right">Vendido</th>
+                  <th className="px-5 py-2 text-right">Parte del total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {salesByBranch.map((row) => (
+                  <tr key={row.id} className="hover:bg-muted">
+                    <td className="px-5 py-2.5 font-medium text-foreground">
+                      <Link href={reportesHref(query, sellerId, row.id)} prefetch={false} className="block">
+                        {row.name}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-foreground">{row.count}</td>
+                    <td className="px-3 py-2.5 text-right text-foreground">{formatCurrency(row.total)}</td>
+                    <td className="px-5 py-2.5 text-right text-muted-foreground">{row.pct}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
       {aiSummary ? (
         <Card>

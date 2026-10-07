@@ -84,7 +84,11 @@ export function resolveReportQuery(
 }
 
 /** Link a Reportes con el período, la comparación y, si hay, el vendedor. */
-export function reportesHref(query: ReportQuery, sellerId: string | null = null): string {
+export function reportesHref(
+  query: ReportQuery,
+  sellerId: string | null = null,
+  branchId: string | null = null
+): string {
   const params = new URLSearchParams({ period: query.period });
   if (query.period === "custom" && query.from && query.to) {
     params.set("desde", query.from);
@@ -93,6 +97,7 @@ export function reportesHref(query: ReportQuery, sellerId: string | null = null)
   if (query.compare === "year") params.set("comparar", "anio");
   if (query.compare === "none") params.set("comparar", "no");
   if (sellerId) params.set("vendedor", sellerId);
+  if (branchId) params.set("sucursal", branchId);
   return `/reportes?${params.toString()}`;
 }
 

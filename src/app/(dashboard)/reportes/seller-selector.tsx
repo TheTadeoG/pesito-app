@@ -9,11 +9,13 @@ export function SellerSelector({
   sellerId,
   sellers,
   sellerLabel,
+  branchId = null,
 }: {
   query: ReportQuery;
   sellerId: string | null;
   sellers: { id: string; label: string }[];
   sellerLabel: string | null;
+  branchId?: string | null;
 }) {
   const router = useRouter();
   // Un vendedor que ya no está en el negocio no figura en la lista, pero se
@@ -28,7 +30,7 @@ export function SellerSelector({
       <Select
         aria-label="Vendedor"
         value={sellerId ?? ""}
-        onChange={(e) => router.push(reportesHref(query, e.target.value || null))}
+        onChange={(e) => router.push(reportesHref(query, e.target.value || null, branchId))}
       >
         <option value="">Todos los vendedores</option>
         {options.map((s) => (

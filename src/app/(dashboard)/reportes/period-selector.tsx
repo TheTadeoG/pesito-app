@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 export function PeriodSelector({
   query,
   sellerId,
+  branchId = null,
   rangeLabel,
   today,
   canCustomRange,
@@ -31,6 +32,7 @@ export function PeriodSelector({
 }: {
   query: ReportQuery;
   sellerId: string | null;
+  branchId?: string | null;
   /** "del 1/9/26 al 15/9/26": se muestra con un rango a medida. */
   rangeLabel: string;
   /** YYYY-MM-DD de hoy en Argentina (máximo del selector de fechas). */
@@ -44,7 +46,7 @@ export function PeriodSelector({
   const [to, setTo] = useState(query.to ?? today);
   const [error, setError] = useState<string | null>(null);
   const withPeriod = (period: ReportQuery["period"]) =>
-    reportesHref({ ...query, period, from: null, to: null }, sellerId);
+    reportesHref({ ...query, period, from: null, to: null }, sellerId, branchId);
   const inMore = morePeriodOptions.some((o) => o.value === query.period);
 
   function applyCustom(e: React.FormEvent) {
@@ -54,7 +56,7 @@ export function PeriodSelector({
     const days = (new Date(b).getTime() - new Date(a).getTime()) / 86400000 + 1;
     if (days > MAX_CUSTOM_DAYS) return setError("Elegí un rango de hasta un año.");
     setCustomOpen(false);
-    router.push(reportesHref({ ...query, period: "custom", from: a, to: b }, sellerId));
+    router.push(reportesHref({ ...query, period: "custom", from: a, to: b }, sellerId, branchId));
   }
 
   return (
@@ -113,7 +115,7 @@ export function PeriodSelector({
           <select
             value={query.compare}
             onChange={(e) =>
-              router.push(reportesHref({ ...query, compare: e.target.value as CompareMode }, sellerId))
+              router.push(reportesHref({ ...query, compare: e.target.value as CompareMode }, sellerId, branchId))
             }
             className="h-10 rounded-xl border border-border bg-card px-3 text-sm text-foreground"
           >
