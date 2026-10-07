@@ -3,80 +3,71 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PosScreen } from "@/app/(dashboard)/pos/pos-screen";
-import { loadCatalogFallback, type CatalogProduct } from "@/app/(dashboard)/pos/actions";
-import { POS_CACHE_COOKIE, posCacheCookieValue } from "@/lib/pos-cache-cookie";
-import type { ProductLite } from "@/app/(dashboard)/pos/pos-client";
+import { loadCatalogFallback } from "@/app/(dashboard)/pos/actions";
+import { posCacheCookieValue } from "@/lib/pos-cache-cookie";
+import {
+  mergeDelta,
+  mergeFull,
+  type CatalogItem,
+  type ChangedRow,
+  type StockPairs,
+} from "@/lib/pos-catalog-merge";
+import {
+  COPY_VERSION,
+  loadCopy,
+  parseCopy,
+  readLocalRaw,
+  readMeta,
+  saveCopy,
+  touchChecked,
+  type CatalogCopy,
+} from "@/lib/pos-catalog-store";
 
-// Catálogo del POS con copia en el navegador (migración 0064). El servidor ya
-// no manda todos los productos en cada carga: acá se guarda lo último que se
-// bajó y se le pide a la base (directo, sin pasar por Vercel) sólo lo que
-// cambió desde entonces, más el stock de todos al día. Un producto que ya no
-// figura en la lista de stock (se desactivó o se borró) se saca de la copia.
+// Catálogo del POS con copia en el navegador (migraciones 0064 y 0066).
+//
+//   * La copia se muestra al instante (localStorage; si el catálogo es muy grande
+//     y no entra, IndexedDB) y se actualiza en segundo plano.
+//   * Con copia: se pide a la base sólo lo que cambió (pos_catalog_delta) y se
+//     mezcla. Una vez por día, o ante cualquier duda, se baja completo
+//     (pos_catalog). Si nada de eso responde, se queda lo que había.
+//   * Sin copia (primera vez en este navegador): los productos vienen con la
+//     página; si no vinieron, base y servidor en paralelo.
+//   * No se vuelve a preguntar si la última consulta fue hace menos de un minuto.
+//   * Ante cualquier error el camino es siempre el de antes: bajar todo.
+// La mezcla está en pos-catalog-merge.ts (con pruebas); guardar, en pos-catalog-store.ts.
 
-// Con el stock de la última vez: se muestra al instante y se actualiza en segundo plano.
-type CachedProduct = ProductLite;
+type Result = { view: CatalogItem[]; syncedAt: string; full: boolean; changed: boolean };
 
-interface Cache {
-  syncedAt: string;
-  products: CachedProduct[];
-}
-
-interface CatalogResponse {
+interface FullResponse {
   now: string;
-  changed: (Omit<CachedProduct, "stock" | "price" | "min_stock"> & {
-    active: boolean;
-    price: number | string;
-    min_stock: number | string;
-  })[];
-  stock: [string, number | string][];
+  changed: ChangedRow[];
+  stock: StockPairs;
+}
+interface DeltaResponse extends FullResponse {
+  mode: "delta";
+  active_count: number;
 }
 
-const RESYNC_MS = 2 * 60_000;
 // Tiempo máximo de espera de la consulta directa y del respaldo del servidor.
 const RPC_TIMEOUT_MS = 6_000;
 const FALLBACK_TIMEOUT_MS = 25_000;
-// Margen para no perder productos modificados mientras corría la consulta anterior.
-const OVERLAP_MS = 10_000;
+// Superposición al pedir cambios: cubre transacciones que terminaron justo después.
+const OVERLAP_MS = 60_000;
+// Cada cuánto se baja el catálogo completo aunque el delta funcione.
+const FULL_REFRESH_MS = 24 * 60 * 60_000;
+// No se vuelve a consultar si la última consulta fue hace menos de esto.
+const MIN_RECHECK_MS = 60_000;
+// Al volver a la pestaña, se actualiza si pasó más de esto.
+const RESYNC_MS = 2 * 60_000;
 
-function parseCache(raw: string | null): Cache | null {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Cache;
-    return parsed && Array.isArray(parsed.products) && typeof parsed.syncedAt === "string" ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function readRaw(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function readCache(key: string): Cache | null {
-  return parseCache(readRaw(key));
-}
+const collator = new Intl.Collator("es");
 
 function subscribeStorage(callback: () => void) {
   window.addEventListener("storage", callback);
   return () => window.removeEventListener("storage", callback);
 }
 
-function writeCache(key: string, cache: Cache, cookieValue: string) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(cache));
-    // Avisa al servidor que este navegador ya tiene la copia: la próxima vez la
-    // página no manda los productos adentro.
-    document.cookie = `${POS_CACHE_COOKIE}=${cookieValue}; path=/pos; max-age=31536000; samesite=lax`;
-  } catch {
-    // Sin espacio o sin almacenamiento: se baja completo cada vez, como antes.
-  }
-}
-
-const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "es");
+const isArray = Array.isArray;
 
 export function PosCatalog({
   orgId,
@@ -86,22 +77,22 @@ export function PosCatalog({
 }: Omit<ComponentProps<typeof PosScreen>, "products"> & {
   branchId: string | null;
   /** Catálogo que manda el servidor la primera vez en este navegador (sin copia local). */
-  initialProducts: ProductLite[] | null;
+  initialProducts: CatalogItem[] | null;
 }) {
-  const cacheKey = `pesito-pos-catalog:v1:${orgId}:${branchId ?? "all"}`;
-  // Lo que el navegador ya tenía guardado se muestra al instante (el servidor
-  // renderiza sin copia y, al hidratar, se pasa a la copia sin esperar a la red).
-  const rawCache = useSyncExternalStore(
+  const cacheKey = `pesito-pos-catalog:v${COPY_VERSION}:${orgId}:${branchId ?? "all"}`;
+  // La copia de localStorage se muestra al instante (el servidor renderiza sin
+  // copia y, al hidratar, se pasa a la copia sin esperar a la red).
+  const rawCopy = useSyncExternalStore(
     subscribeStorage,
-    () => readRaw(cacheKey),
+    () => readLocalRaw(cacheKey),
     () => null
   );
-  const cachedProducts = useMemo(() => parseCache(rawCache)?.products ?? null, [rawCache]);
-  // Lo que llegó de la base (o del servidor) en esta visita, con el stock al día.
-  const [fresh, setFresh] = useState<ProductLite[] | null>(initialProducts);
+  const localProducts = useMemo(() => parseCopy(rawCopy)?.products ?? null, [rawCopy]);
+  // Lo que llegó en esta visita (con la página, de IndexedDB o de la base).
+  const [loaded, setLoaded] = useState<CatalogItem[] | null>(initialProducts);
   const [failure, setFailure] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const products = fresh ?? cachedProducts;
+  const products = loaded ?? localProducts;
   const supabase = useMemo(() => createClient(), []);
   const lastSync = useRef(0);
 
@@ -111,88 +102,70 @@ export function PosCatalog({
     let lastError = "";
     const cookieValue = posCacheCookieValue(orgId, branchId);
 
-    async function fetchCatalog(since: string | null): Promise<CatalogResponse | null> {
-      // Si la consulta directa a la base no responde en unos segundos (red,
-      // bloqueo del navegador, sesión trabada), se la da por perdida.
+    // Copia de la versión anterior (v1): ya no se usa.
+    try {
+      window.localStorage.removeItem(`pesito-pos-catalog:v1:${orgId}:${branchId ?? "all"}`);
+    } catch {
+      // ignore
+    }
+
+    async function rpc(name: "pos_catalog" | "pos_catalog_delta", since: string | null): Promise<unknown> {
+      const call =
+        name === "pos_catalog"
+          ? supabase.rpc("pos_catalog", { p_org_id: orgId, p_branch_id: branchId, p_since: since })
+          : supabase.rpc("pos_catalog_delta", { p_org_id: orgId, p_branch_id: branchId, p_since: since as string });
       const answer = await Promise.race([
-        supabase.rpc("pos_catalog", {
-          p_org_id: orgId,
-          p_branch_id: branchId,
-          p_since: since,
-        }),
+        call,
         new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), RPC_TIMEOUT_MS)),
       ]);
       if (answer === "timeout") {
-        console.error("pos_catalog: sin respuesta en", RPC_TIMEOUT_MS, "ms");
+        console.error(`${name}: sin respuesta en ${RPC_TIMEOUT_MS} ms`);
         lastError = "la base no respondió a tiempo";
         return null;
       }
-      const { data, error } = answer;
-      if (error || !data) {
-        console.error("pos_catalog falló:", error?.message ?? "sin datos");
-        lastError = error?.message ?? "sin datos";
+      if (answer.error || !answer.data) {
+        console.error(`${name} falló:`, answer.error?.message ?? "sin datos");
+        lastError = answer.error?.message ?? "sin datos";
         return null;
       }
-      const res = data as unknown as CatalogResponse;
-      if (!Array.isArray(res.stock) || !Array.isArray(res.changed)) {
-        console.error("pos_catalog devolvió un formato inesperado");
-        lastError = "formato inesperado";
+      return answer.data;
+    }
+
+    // Catálogo completo desde la base (pos_catalog).
+    async function fullFromDatabase(base: CatalogItem[]): Promise<Result | null> {
+      const data = (await rpc("pos_catalog", null)) as FullResponse | null;
+      if (!data || !isArray(data.changed) || !isArray(data.stock) || typeof data.now !== "string") return null;
+      const view = mergeFull(base, data.changed, data.stock);
+      return view ? { view, syncedAt: data.now, full: true, changed: true } : null;
+    }
+
+    // Sólo lo que cambió desde la última sincronización (pos_catalog_delta).
+    async function deltaFromDatabase(copy: CatalogCopy): Promise<Result | null> {
+      const since = new Date(new Date(copy.syncedAt).getTime() - OVERLAP_MS).toISOString();
+      const data = (await rpc("pos_catalog_delta", since)) as DeltaResponse | null;
+      if (
+        !data ||
+        data.mode !== "delta" ||
+        !isArray(data.changed) ||
+        !isArray(data.stock) ||
+        typeof data.now !== "string" ||
+        typeof data.active_count !== "number"
+      ) {
         return null;
       }
-      return res;
+      // Sin cambios: la copia sigue igual.
+      if (data.changed.length === 0 && data.stock.length === 0 && data.active_count === copy.products.length) {
+        return { view: copy.products, syncedAt: copy.syncedAt, full: false, changed: false };
+      }
+      const view = mergeDelta(copy.products, data.changed, data.stock, data.active_count);
+      return view ? { view, syncedAt: data.now, full: false, changed: true } : null;
     }
 
-    function build(base: CachedProduct[], res: CatalogResponse): ProductLite[] | null {
-      const details = new Map(base.map((p) => [p.id, p]));
-      for (const c of res.changed) {
-        if (!c.active) {
-          details.delete(c.id);
-          continue;
-        }
-        details.set(c.id, {
-          id: c.id,
-          name: c.name,
-          barcode: c.barcode,
-          sku: c.sku,
-          price: Number(c.price),
-          min_stock: Number(c.min_stock),
-          unit: c.unit,
-          image_url: c.image_url,
-          stock: details.get(c.id)?.stock ?? 0,
-        });
-      }
-      const view: ProductLite[] = [];
-      for (const [id, stock] of res.stock) {
-        const d = details.get(id);
-        // Un producto activo del que no hay datos en la copia: copia incompleta.
-        if (!d) return null;
-        view.push({ ...d, stock: Number(stock) });
-      }
-      view.sort(byName);
-      return view;
-    }
-
-    type Result = { view: ProductLite[]; syncedAt: string };
-
-    // Camino normal: la base, directo desde el navegador (sólo lo que cambió si hay copia).
-    async function viaDatabase(cached: Cache | null): Promise<Result | null> {
-      let res = cached
-        ? await fetchCatalog(new Date(new Date(cached.syncedAt).getTime() - OVERLAP_MS).toISOString())
-        : await fetchCatalog(null);
-      let view = res ? build(cached?.products ?? [], res) : null;
-      if (res && !view && cached) {
-        // La copia quedó incompleta: bajarla entera.
-        res = await fetchCatalog(null);
-        view = res ? build([], res) : null;
-      }
-      return res && view ? { view, syncedAt: res.now } : null;
-    }
-
-    // Respaldo: el servidor. Sólo si no hay copia y la base tarda o falla.
+    // Respaldo: el servidor (catálogo completo, como antes de la copia local).
     async function viaServer(): Promise<Result | null> {
       const fallback = await Promise.race([
         loadCatalogFallback(branchId),
-        new Promise<{ products?: CatalogProduct[]; error?: string }>((resolve) =>
+        new Promise<{ products?: CatalogItem[]; error?: string }>((resolve) =>
           setTimeout(() => resolve({ error: "El servidor tardó demasiado en responder." }), FALLBACK_TIMEOUT_MS)
         ),
       ]);
@@ -200,24 +173,32 @@ export function PosCatalog({
         lastError = fallback.error ?? lastError;
         return null;
       }
-      const view = [...fallback.products].sort(byName);
+      const view = [...fallback.products].sort((a, b) => collator.compare(a.name, b.name));
       // Un minuto de margen por si el reloj de este equipo está adelantado.
-      return { view, syncedAt: new Date(Date.now() - 60_000).toISOString() };
+      return { view, syncedAt: new Date(Date.now() - 60_000).toISOString(), full: true, changed: true };
     }
 
     async function sync() {
       if (syncing) return;
       syncing = true;
       try {
-        const cached = readCache(cacheKey);
+        const copy = await loadCopy(cacheKey);
+        if (cancelled) return;
+        if (copy) {
+          // Si la copia estaba en IndexedDB, se muestra ya.
+          setLoaded((current) => current ?? copy.products);
+          const meta = readMeta(cacheKey);
+          if (meta && Date.now() - meta.checkedAt < MIN_RECHECK_MS) return; // se acaba de consultar
+        }
+
         let result: Result | null;
-        if (cached) {
-          // Con copia ya se está mostrando: se actualiza en segundo plano y,
-          // si la base no responde, se queda lo que había.
-          result = await viaDatabase(cached);
+        if (copy) {
+          const fullDue = Date.now() - new Date(copy.fullAt).getTime() > FULL_REFRESH_MS;
+          result = fullDue ? null : await deltaFromDatabase(copy);
+          // Algo no cuadró (o toca el completo del día): se baja todo.
+          if (!result) result = await fullFromDatabase(copy.products);
         } else {
-          // Sin copia (primera vez en este equipo): la base y, si tarda más de
-          // 2,5 s, también el servidor; gana el primero que responda.
+          // Sin copia: la base y, si tarda más de 2,5 s, también el servidor.
           result = await new Promise<Result | null>((resolve) => {
             let pending = 2;
             let done = false;
@@ -230,7 +211,7 @@ export function PosCatalog({
                 resolve(null);
               }
             };
-            void viaDatabase(null).then(finish, () => finish(null));
+            void fullFromDatabase([]).then(finish, () => finish(null));
             setTimeout(() => {
               if (!done) void viaServer().then(finish, () => finish(null));
               else finish(null);
@@ -239,16 +220,30 @@ export function PosCatalog({
         }
         if (cancelled) return;
         if (result) {
-          writeCache(cacheKey, { syncedAt: result.syncedAt, products: result.view }, cookieValue);
           lastSync.current = Date.now();
           setFailure(null);
-          setFresh(result.view);
-        } else if (!cached) {
+          if (result.changed) {
+            setLoaded(result.view);
+            await saveCopy(
+              cacheKey,
+              {
+                v: COPY_VERSION,
+                syncedAt: result.syncedAt,
+                fullAt: result.full || !copy ? new Date().toISOString() : copy.fullAt,
+                products: result.view,
+              },
+              cookieValue
+            );
+          } else {
+            touchChecked(cacheKey);
+          }
+        } else if (!copy) {
           setFailure(lastError || "No pudimos cargar los productos.");
         }
+        // Con copia y sin respuesta: se queda lo que había, sin avisar.
       } catch (e) {
         console.error("Catálogo del POS:", e);
-        if (!cancelled && !readCache(cacheKey)) {
+        if (!cancelled && !readMeta(cacheKey)) {
           setFailure(e instanceof Error ? e.message : "No pudimos cargar los productos.");
         }
       } finally {
@@ -256,11 +251,17 @@ export function PosCatalog({
       }
     }
 
-    if (initialProducts && !readCache(cacheKey)) {
-      // Llegó con la página: se guarda como copia (un minuto de margen por el reloj).
-      writeCache(
+    if (initialProducts && !readMeta(cacheKey)) {
+      // Primera vez en este navegador: los productos llegaron con la página.
+      // Se guardan como copia (un minuto de margen por el reloj de este equipo).
+      void saveCopy(
         cacheKey,
-        { syncedAt: new Date(Date.now() - 60_000).toISOString(), products: initialProducts },
+        {
+          v: COPY_VERSION,
+          syncedAt: new Date(Date.now() - 60_000).toISOString(),
+          fullAt: new Date().toISOString(),
+          products: initialProducts,
+        },
         cookieValue
       );
       lastSync.current = Date.now();

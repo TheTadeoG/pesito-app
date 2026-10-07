@@ -118,6 +118,15 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Medido en la simulación: el contador agrega ~0,2 a 0,4 ms por pedido pesado; un insert masivo de 500 clientes con el tope tarda 27 ms.
 - Pendiente (a configurar en los paneles): reglas de Vercel Firewall (límite por IP en /login, /registro, /auth y /api), límites y ajustes de Supabase Auth, CAPTCHA (Turnstile) en registro y login, `statement_timeout` por rol (revisar los valores actuales).
 
+## Catálogo del POS: copia en IndexedDB, sólo lo que cambió y consulta cada 60 s (7/10/2026) — migración 0066 (**falta aplicar en producción**)
+
+- `pos_catalog_delta` (0066): devuelve sólo los productos modificados y el stock de los que tuvieron movimiento o cambio desde la última sincronización, más `active_count`. Dos fuentes independientes de "qué cambió" (`stock_movements` y `products.updated_at`, que también sube con cada cambio de stock). `pos_catalog` queda igual y es el camino de respaldo. Mismo cupo de límite de ritmo que `pos_catalog` (30 por minuto).
+- `src/lib/pos-catalog-merge.ts` (mezcla pura, con `pos-catalog-merge.test.mts`: `node --experimental-strip-types src/lib/pos-catalog-merge.test.mts`): ante cualquier cosa que no cuadre (cantidad de activos, stock de un producto desconocido, números inválidos) devuelve null y el navegador baja el catálogo completo.
+- `src/lib/pos-catalog-store.ts`: la copia va en localStorage si entra y, si no (catálogos grandes), en IndexedDB; un resumen chico en localStorage. La cookie `pesito-pos-cache2` que le avisa al servidor que ya hay copia se pone sólo después de comprobar que se guardó; si no se pudo guardar, el servidor sigue mandando los productos con la página.
+- `pos-catalog.tsx`: con copia, delta; catálogo completo una vez por día o ante cualquier duda; no vuelve a consultar si la última consulta fue hace menos de 60 s; sin copia, igual que antes (productos con la página, o base y servidor en paralelo).
+- Pruebas: 16 pruebas de la mezcla (incluye 5.000 rondas de cambios al azar); prueba de convergencia en la base con ventas simultáneas, cambios de precio, activar/desactivar y productos nuevos (3.291 ventas y 606 ediciones en dos corridas, 0 diferencias de stock, precio o cantidad, 0 sincronizaciones inconsistentes); el almacenamiento probado en Chromium real (localStorage, cuota llena → IndexedDB, sin IndexedDB, datos dañados, cookie sólo si se guardó). No probado: contra tu Supabase real ni la pantalla completa en un navegador.
+- Con 20.000 productos: la entrada al POS pasa de ~1 MB (o ~5 MB si la copia no entraba) a ~0,1 a 10 KB (un delta vacío son 109 bytes).
+
 ## Hecho: tanda rápida
 
 - Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).
