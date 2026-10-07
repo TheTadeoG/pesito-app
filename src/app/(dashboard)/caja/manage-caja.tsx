@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
-import { sumCashBreakdown, type CashBreakdown, type PaymentBreakdownRow } from "@/lib/caja";
+import type { CashBreakdown, PaymentBreakdownRow } from "@/lib/caja";
 import { addCashMovement, closeCaja, getCajaDetail, type CajaDetail } from "@/app/(dashboard)/caja/actions";
 import { CajaDetailDialog } from "@/app/(dashboard)/caja/caja-detail-dialog";
 import { CashCalculator } from "@/components/dashboard/cash-calculator";
@@ -217,7 +217,7 @@ export function ManageCaja({
               )}
               <div className="flex items-center justify-between border-t-2 border-foreground py-2.5 font-bold text-foreground">
                 <span>= En caja</span>
-                <span>{formatCurrency(sumCashBreakdown(cash))}</span>
+                <span>{formatCurrency(cashOnHand)}</span>
               </div>
             </div>
           </CardContent>
