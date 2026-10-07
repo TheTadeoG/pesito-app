@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PosScreen } from "@/app/(dashboard)/pos/pos-screen";
+import { loadCatalogFallback } from "@/app/(dashboard)/pos/actions";
 import type { ProductLite } from "@/app/(dashboard)/pos/pos-client";
 
 // Catálogo del POS con copia en el navegador (migración 0064). El servidor ya
@@ -60,6 +61,8 @@ export function PosCatalog({
   ...screenProps
 }: Omit<ComponentProps<typeof PosScreen>, "products"> & { branchId: string | null }) {
   const [products, setProducts] = useState<ProductLite[] | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const supabase = useMemo(() => createClient(), []);
   const lastSync = useRef(0);
   const cacheKey = `pesito-pos-catalog:v1:${orgId}:${branchId ?? "all"}`;
@@ -67,6 +70,7 @@ export function PosCatalog({
   useEffect(() => {
     let cancelled = false;
     let syncing = false;
+    let lastError = "";
 
     async function fetchCatalog(since: string | null): Promise<CatalogResponse | null> {
       const { data, error } = await supabase.rpc("pos_catalog", {
@@ -74,8 +78,18 @@ export function PosCatalog({
         p_branch_id: branchId,
         p_since: since,
       });
-      if (error || !data) return null;
-      return data as unknown as CatalogResponse;
+      if (error || !data) {
+        console.error("pos_catalog falló:", error?.message ?? "sin datos");
+        lastError = error?.message ?? "sin datos";
+        return null;
+      }
+      const res = data as unknown as CatalogResponse;
+      if (!Array.isArray(res.stock) || !Array.isArray(res.changed)) {
+        console.error("pos_catalog devolvió un formato inesperado");
+        lastError = "formato inesperado";
+        return null;
+      }
+      return res;
     }
 
     function build(base: CachedProduct[], res: CatalogResponse): { cache: CachedProduct[]; view: ProductLite[] } | null {
@@ -126,13 +140,27 @@ export function PosCatalog({
         if (res && built) {
           writeCache(cacheKey, { syncedAt: res.now, products: built.cache });
           lastSync.current = Date.now();
+          setFailure(null);
           setProducts(built.view);
           return;
         }
         // Sin conexión con la base: se usa la copia (con el stock de la última vez).
-        if (cached && !cancelled) {
+        if (cached) {
           setProducts((current) => current ?? cached.products);
+          return;
         }
+        // Sin copia y sin respuesta de pos_catalog: se baja por el servidor.
+        const fallback = await loadCatalogFallback(branchId);
+        if (cancelled) return;
+        if (fallback.products) {
+          setFailure(null);
+          setProducts(fallback.products);
+        } else {
+          setFailure(fallback.error ?? lastError ?? "No pudimos cargar los productos.");
+        }
+      } catch (e) {
+        console.error("Catálogo del POS:", e);
+        if (!cancelled) setFailure(e instanceof Error ? e.message : "No pudimos cargar los productos.");
       } finally {
         syncing = false;
       }
@@ -147,7 +175,26 @@ export function PosCatalog({
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [supabase, orgId, branchId, cacheKey]);
+  }, [supabase, orgId, branchId, cacheKey, attempt]);
+
+  if (!products && failure) {
+    return (
+      <div className="space-y-3 rounded-lg border border-border p-6 text-center" role="alert">
+        <p className="text-sm font-medium text-foreground">No pudimos cargar los productos.</p>
+        <p className="text-xs text-muted-foreground">{failure}</p>
+        <button
+          type="button"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          onClick={() => {
+            setFailure(null);
+            setAttempt((n) => n + 1);
+          }}
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   if (!products) {
     return (
