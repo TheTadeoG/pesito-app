@@ -10,7 +10,6 @@ import {
 } from "@/lib/subscription";
 import type { Json } from "@/lib/database.types";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
-import { getRecentSaleRows } from "@/app/(dashboard)/pos/recent-sales";
 
 export interface CheckoutItemInput {
   product_id: string | null;
@@ -71,7 +70,10 @@ export async function checkoutSale(input: CheckoutInput): Promise<CheckoutResult
     }
   }
 
-  const { data, error } = await supabase.rpc("checkout_sale", {
+  // Una sola consulta: cobra (checkout_sale) y devuelve lo que cambió (stock de
+  // la sucursal de la caja, saldo del cliente y ventas recientes de la caja).
+  // Antes eran ~8 consultas más por venta (0062).
+  const { data, error } = await supabase.rpc("checkout_sale_full", {
     p_org_id: input.orgId,
     p_cash_register_id: input.cashRegisterId,
     p_customer_id: input.customerId,
@@ -94,47 +96,47 @@ export async function checkoutSale(input: CheckoutInput): Promise<CheckoutResult
   // pantallas del panel son dinámicas: a lo sumo muestran lo de hace 30s
   // (staleTimes en next.config.ts) si se vuelve a ellas enseguida.
 
+  const result = (data ?? {}) as {
+    sale_id?: string;
+    stock?: Record<string, number | string>;
+    customer_balance?: { id: string; balance: number | string } | null;
+    recent?: {
+      id: string;
+      created_at: string;
+      total: number | string;
+      payment_method: string;
+      invoice_type: string | null;
+      customer_id: string | null;
+      customer_name: string | null;
+      fiado: number | string;
+      items: string[];
+    }[];
+  };
+
   const productIds = Array.from(
     new Set(input.items.map((i) => i.product_id).filter((id): id is string => Boolean(id)))
   );
-  // Stock que queda en la sucursal de la caja (o el total, si la base
-  // todavía no tiene sucursales).
-  const { data: register } = await supabase
-    .from("cash_registers")
-    .select("*")
-    .eq("id", input.cashRegisterId)
-    .maybeSingle();
-  const branchId = register?.branch_id ?? null;
-  const [{ data: stockRows }, { data: customerRow }, recentSales] = await Promise.all([
-    productIds.length === 0
-      ? Promise.resolve({ data: [] as { id: string; stock: number }[] })
-      : branchId
-        ? supabase
-            .from("branch_stock")
-            .select("product_id, stock")
-            .eq("branch_id", branchId)
-            .in("product_id", productIds)
-            .then(({ data }) => ({
-              data: (data ?? []).map((r) => ({ id: r.product_id, stock: r.stock })),
-            }))
-        : supabase.from("products").select("id, stock").in("id", productIds),
-    input.customerId
-      ? supabase.from("customers").select("id, balance").eq("id", input.customerId).maybeSingle()
-      : Promise.resolve({ data: null }),
-    getRecentSaleRows(supabase, input.cashRegisterId),
-  ]);
 
   return {
-    saleId: data ?? undefined,
+    saleId: result.sale_id,
     // Un producto sin fila en la sucursal quedó en 0.
     stockByProduct: {
       ...Object.fromEntries(productIds.map((id) => [id, 0])),
-      ...Object.fromEntries((stockRows ?? []).map((p) => [p.id, Number(p.stock)])),
+      ...Object.fromEntries(Object.entries(result.stock ?? {}).map(([id, stock]) => [id, Number(stock)])),
     },
-    customerBalance: customerRow
-      ? { id: customerRow.id, balance: Number(customerRow.balance) }
+    customerBalance: result.customer_balance
+      ? { id: result.customer_balance.id, balance: Number(result.customer_balance.balance) }
       : undefined,
-    recentSales,
+    recentSales: (result.recent ?? []).map((s) => ({
+      id: s.id,
+      created_at: s.created_at,
+      total: Number(s.total),
+      payment_method: s.payment_method,
+      invoice_type: s.invoice_type ?? "consumidor_final",
+      customerName: s.customer_id ? s.customer_name ?? "Cliente eliminado" : "Consumidor Final",
+      itemsSummary: s.items.join(", ") || "Sin detalle",
+      fiadoAmount: Number(s.fiado),
+    })),
   };
 }
 

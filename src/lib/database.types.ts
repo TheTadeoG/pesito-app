@@ -942,6 +942,20 @@ export interface Database {
           payment_breakdown: Json;
         }[];
       };
+      checkout_sale_full: {
+        Args: {
+          p_org_id: string;
+          p_cash_register_id: string;
+          p_customer_id: string | null;
+          p_payment_method: string;
+          p_discount: number;
+          p_items: Json;
+          p_surcharge?: number;
+          p_invoice_type?: string;
+          p_payments?: Json | null;
+        };
+        Returns: Json;
+      };
       report_overview: {
         Args: {
           p_org_id: string;
