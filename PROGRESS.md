@@ -72,6 +72,24 @@ Cuánto del Pro usa **un** cliente por mes, y cuántos de ese tipo caben (se ago
 - **Imágenes (sin medir)**: van al almacenamiento de Supabase (100 GB incluidos, aparte del disco de la base) y a la transferencia. Con fotos de 3 a 5 MB, 1.000 productos con foto pesaban ~4 GB (se llenaban con ~25 clientes). Achicadas, ~0,15 GB: ~650 clientes. Sólo vale para fotos nuevas; las ya subidas siguen pesadas.
 - Para pasar a pesos: multiplicar por la cotización del día.
 
+### Costos con servidor (captura de Supabase del 7/10/2026) y mezcla 80% gratis
+
+- Servidores (por mes, 730 h): Nano US$0 (0,5 GB), Micro US$9,81 (1 GB), Small US$15,04 (2 GB), Medium US$60 (4 GB), Large US$110,74 (8 GB, dedicado), XL US$210 (16 GB). El Pro da US$10 de crédito de cómputo (a confirmar en la factura): Micro sale gratis, Small +US$5, Medium +US$50, Large +US$101, XL +US$200. El proyecto parece estar en **Nano**; pasarlo a Micro no cuesta nada con el crédito.
+- Memoria (estimada, no medida): cada GB aguanta ~50 clientes chicos, ~30 medianos o ~18 grandes (~800 gratis).
+- **Mezcla 80% gratis, 12% chicos, 6% medianos, 2% grandes** (el cliente promedio usa ~33 MB de disco al año, ~4.100 invocaciones y ~47 MB de transferencia por mes). Cupos del Pro: disco ~233 clientes, invocaciones ~241, edge ~1.660, transferencia ~5.400; memoria: Nano ~77, Micro ~154, Small ~307, Medium ~614, Large ~1.230.
+
+| Clientes (pagos) | Servidor | Total por mes | Por cliente | Por cliente pago |
+|---|---|---|---|---|
+| 10 (2) | Nano | US$45 | US$4,50 | US$22,50 |
+| 50 (10) | Nano | US$45 | US$0,90 | US$4,50 |
+| 100 (20) | Micro | US$45 | US$0,45 | US$2,25 |
+| 200 (40) | Small | US$50 | US$0,25 | US$1,25 |
+| 500 (100) | Medium | US$97 | US$0,19 | US$0,97 |
+| 1.000 (200) | Large | US$151 | US$0,15 | US$0,75 |
+| 2.000 (400) | XL | US$261 | US$0,13 | US$0,65 |
+
+La memoria del servidor es lo que más pesa en el costo cuando hay clientes medianos y grandes. Con todos los clientes de un mismo tipo, 100 grandes ya piden un Large (US$150 por mes, US$1,50 por cliente). Más de 16 GB de memoria no se estima.
+
 ## Hecho: tanda rápida
 
 - Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).
