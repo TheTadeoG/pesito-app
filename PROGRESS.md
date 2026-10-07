@@ -140,6 +140,14 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - `src/lib/ip-rate-limit.ts` (`checkIpRateLimit`), usado en: login (20 por minuto por IP), registro (5 cada 10 minutos) y alta desde una invitación (5 cada 10 minutos). Además sigue el bloqueo por cuenta de la migración 0045.
 - Las reglas que se hayan creado en Vercel Firewall (Login, Registro) pueden quedar o borrarse: no se pisan.
 
+## Login sin bloqueo de cuentas: por IP y con CAPTCHA sólo si fuerzan (7/10/2026) — migración 0068 (**falta aplicar en producción**)
+
+- Se sacó el bloqueo por cuenta del login (`check_login_lockout`, `register_login_failure`, `register_login_success` ya no se llaman; las funciones y la tabla `login_lockouts` quedan sin uso). Nadie puede dejar afuera a otra persona.
+- Ahora todo es por IP (huella con HMAC): 20 envíos por minuto (0067); desde el 3.er intento fallido seguido en 15 minutos se pide CAPTCHA (si hay claves); con 30 fallos se corta esa conexión un rato. El contador de fallos no se borra al entrar bien (así nadie lo resetea con una cuenta propia): vence solo a los 15 minutos. Registro: 5 por 10 minutos y CAPTCHA desde el 3.º. El alta desde invitación sigue sólo con el tope de 5 por 10 minutos (sin CAPTCHA).
+- CAPTCHA: Cloudflare Turnstile (gratis). `src/lib/turnstile.ts` verifica el token del lado del servidor; si Cloudflare no responde, deja pasar. `src/components/auth/turnstile-field.tsx` muestra el cuadro sólo cuando el servidor lo pide. Variables: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (navegador) y `TURNSTILE_SECRET_KEY` (servidor). Sin las dos, nunca se pide CAPTCHA y el resto sigue funcionando. NO activar el CAPTCHA integrado de Supabase Auth (Attack Protection): pediría el token en todos los logins.
+- Decisión en `src/lib/login-gate.ts`, con pruebas (`login-gate.test.mts`, `turnstile.test.mts`, con `node --experimental-strip-types`). No probado: el cuadro de Turnstile en un navegador real (el entorno de pruebas no llega a Cloudflare).
+- Opcional, no hecho: pedir CAPTCHA (nunca bloquear) a cualquier intento sobre una cuenta con muchos fallos recientes desde varias IP, contra ataques distribuidos.
+
 ## Hecho: tanda rápida
 
 - Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).

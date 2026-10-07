@@ -3,8 +3,9 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { checkIpRateLimit } from "@/lib/ip-rate-limit";
+import { checkIpRateLimit, getClientIp, ipBump, ipHits } from "@/lib/ip-rate-limit";
+import { captchaConfigured, verifyCaptcha } from "@/lib/turnstile";
+import { LOGIN_FAIL_WINDOW, captchaNextTime, loginGate } from "@/lib/login-gate";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { recordLogin } from "@/lib/login-events";
 import { MFA_COOKIE } from "@/lib/supabase/cookie-options";
@@ -13,6 +14,22 @@ import { isEmailIdentifier, usernameToEmail } from "@/lib/internal-auth";
 export interface AuthActionState {
   error?: string;
   info?: string;
+  /** Hay que resolver el CAPTCHA para seguir (sólo cuando esta IP está forzando algo). */
+  captchaRequired?: boolean;
+}
+
+// Protección sin bloquear cuentas ajenas: todo se cuenta por IP. Después de
+// LOGIN_CAPTCHA_AFTER intentos fallidos seguidos desde la misma conexión (en
+// 15 minutos) se pide un CAPTCHA; con LOGIN_HARD_LIMIT se corta esa conexión un
+// rato. Una cuenta nunca queda bloqueada por lo que haga otra persona.
+const SIGNUP_WINDOW = 10 * 60;
+const SIGNUP_CAPTCHA_AFTER = 3;
+
+async function captchaProblem(formData: FormData): Promise<string | null> {
+  const token = String(formData.get("cf-turnstile-response") ?? "");
+  if (!token) return "Confirmá que no sos un robot para continuar.";
+  const result = await verifyCaptcha(token, await getClientIp());
+  return result === "failed" ? "No pudimos verificar el CAPTCHA. Probá de nuevo." : null;
 }
 
 export async function login(
@@ -31,32 +48,32 @@ export async function login(
   const ipLimit = await checkIpRateLimit("login", 20, 60);
   if (ipLimit) return { error: ipLimit };
 
+  const failures = await ipHits("login_fail", LOGIN_FAIL_WINDOW);
+  const captchaOn = captchaConfigured();
+  const gate = loginGate(failures, captchaOn);
+  if (gate === "blocked") {
+    return { error: "Demasiados intentos fallidos desde tu conexión. Probá de nuevo en unos minutos." };
+  }
+  if (gate === "captcha") {
+    const problem = await captchaProblem(formData);
+    if (problem) return { error: problem, captchaRequired: true };
+  }
+
   const email = isEmailIdentifier(identifier) ? identifier : usernameToEmail(identifier);
   const supabase = await createClient();
-  // El contador de intentos fallidos sólo lo toca el servidor (migración
-  // 0045): si se pudiera llamar con la clave pública, cualquiera podría
-  // resetearlo para probar contraseñas sin límite, o bloquear cuentas ajenas.
-  const admin = createAdminClient();
-
-  const { data: lockoutRows } = await admin.rpc("check_login_lockout", { p_email: email });
-  const lockout = lockoutRows?.[0];
-  if (lockout?.locked) {
-    const minutes = Math.max(1, Math.ceil((lockout.retry_after_seconds ?? 0) / 60));
-    return {
-      error: `Demasiados intentos fallidos. Probá de nuevo en ${minutes} minuto${
-        minutes === 1 ? "" : "s"
-      }.`,
-    };
-  }
 
   const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    await admin.rpc("register_login_failure", { p_email: email });
-    return { error: "Email/usuario o contraseña incorrectos." };
+    await ipBump("login_fail", LOGIN_FAIL_WINDOW);
+    return {
+      error: "Email/usuario o contraseña incorrectos.",
+      captchaRequired: captchaNextTime(failures, captchaOn),
+    };
   }
 
-  await admin.rpc("register_login_success", { p_email: email });
+  // El contador de fallos NO se borra al entrar bien: quien tenga una cuenta
+  // propia no puede resetearlo entre intento e intento. Vence solo a los 15 minutos.
   if (signIn.user) await recordLogin(signIn.user.id);
 
   // Con la verificación en dos pasos activada, falta el código de la app.
@@ -109,9 +126,13 @@ export async function signup(
     return { error: "Las contraseñas no coinciden." };
   }
 
-  // Por IP: 5 altas cada 10 minutos.
-  const ipLimit = await checkIpRateLimit("registro", 5, 600);
+  // Por IP: 5 altas cada 10 minutos; desde la tercera, CAPTCHA.
+  const ipLimit = await checkIpRateLimit("registro", 5, SIGNUP_WINDOW);
   if (ipLimit) return { error: ipLimit };
+  if (captchaConfigured() && (await ipHits("registro", SIGNUP_WINDOW)) >= SIGNUP_CAPTCHA_AFTER) {
+    const problem = await captchaProblem(formData);
+    if (problem) return { error: problem, captchaRequired: true };
+  }
 
   const origin = (await headers()).get("origin");
   const supabase = await createClient();

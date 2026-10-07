@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { TurnstileField } from "@/components/auth/turnstile-field";
 
 const initialState: AuthActionState = {};
 
@@ -42,6 +43,8 @@ export function LoginForm({ next }: { next?: string }) {
           required
         />
       </div>
+
+      {state.captchaRequired && <TurnstileField resetSignal={state} />}
 
       {state.error && (
         <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{state.error}</p>

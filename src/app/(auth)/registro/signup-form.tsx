@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { TurnstileField } from "@/components/auth/turnstile-field";
 import Link from "next/link";
 import { signup, type AuthActionState } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,8 @@ export function SignupForm({
           Las contraseñas no coinciden.
         </p>
       )}
+
+      {state.captchaRequired && <TurnstileField resetSignal={state} />}
 
       {!mismatchError && state.error && (
         <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{state.error}</p>

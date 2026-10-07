@@ -964,6 +964,14 @@ export interface Database {
         Args: { p_org_id: string; p_branch_id?: string | null; p_since?: string | null };
         Returns: Json;
       };
+      ip_hits: {
+        Args: { p_key: string; p_bucket: string; p_window_seconds: number };
+        Returns: number;
+      };
+      ip_clear: {
+        Args: { p_key: string; p_bucket: string };
+        Returns: undefined;
+      };
       rate_limit_ip: {
         Args: { p_key: string; p_bucket: string; p_max: number; p_window_seconds: number };
         Returns: boolean;
