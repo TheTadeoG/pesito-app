@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkIpRateLimit } from "@/lib/ip-rate-limit";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { recordLogin } from "@/lib/login-events";
 import { MFA_COOKIE } from "@/lib/supabase/cookie-options";
@@ -25,6 +26,10 @@ export async function login(
   if (!identifier || !password) {
     return { error: "Completá tu email/usuario y tu contraseña." };
   }
+
+  // Por IP: 20 intentos por minuto (un local con varios cajeros comparte conexión).
+  const ipLimit = await checkIpRateLimit("login", 20, 60);
+  if (ipLimit) return { error: ipLimit };
 
   const email = isEmailIdentifier(identifier) ? identifier : usernameToEmail(identifier);
   const supabase = await createClient();
@@ -103,6 +108,10 @@ export async function signup(
   if (password !== confirmPassword) {
     return { error: "Las contraseñas no coinciden." };
   }
+
+  // Por IP: 5 altas cada 10 minutos.
+  const ipLimit = await checkIpRateLimit("registro", 5, 600);
+  if (ipLimit) return { error: ipLimit };
 
   const origin = (await headers()).get("origin");
   const supabase = await createClient();

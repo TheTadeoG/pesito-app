@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkIpRateLimit } from "@/lib/ip-rate-limit";
 import {
   buildFullUsername,
   generateDiscriminator,
@@ -62,6 +63,10 @@ export async function acceptInvitationAsNewUser(
   if (password.length < 8) {
     return { error: "La contraseña debe tener al menos 8 caracteres." };
   }
+
+  // Por IP: 5 altas cada 10 minutos.
+  const ipLimit = await checkIpRateLimit("alta_invitacion", 5, 600);
+  if (ipLimit) return { error: ipLimit };
 
   const supabase = await createClient();
 

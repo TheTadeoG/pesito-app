@@ -134,6 +134,12 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Protección: `next.config.ts` hace fallar el build si una variable `NEXT_PUBLIC_*` trae `sb_secret_...` o un JWT con rol `service_role` (probado con los cuatro casos).
 - Pendiente (opcional): mirar los logs de API de Supabase y los usuarios nuevos por si alguien usó la clave mientras estuvo expuesta; desactivar las claves antiguas (legacy anon/service_role) cuando ninguna variable las use.
 
+## Límite de ritmo por IP en los formularios públicos (7/10/2026) — migración 0067 (**falta aplicar en producción**)
+
+- Sin servicios de afuera ni costo extra (en vez de las reglas de límite de ritmo de Vercel Firewall, que cobran US$0,50 por millón de pedidos permitidos). `rate_limit_ip` (tabla UNLOGGED `ip_rate_limits`), sólo ejecutable con la clave secreta del servidor; la app guarda una huella de la IP (HMAC con `SUPABASE_SERVICE_ROLE_KEY`), no la IP. Si no se puede saber la IP, o la función falla o no existe, deja pasar.
+- `src/lib/ip-rate-limit.ts` (`checkIpRateLimit`), usado en: login (20 por minuto por IP), registro (5 cada 10 minutos) y alta desde una invitación (5 cada 10 minutos). Además sigue el bloqueo por cuenta de la migración 0045.
+- Las reglas que se hayan creado en Vercel Firewall (Login, Registro) pueden quedar o borrarse: no se pisan.
+
 ## Hecho: tanda rápida
 
 - Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).
