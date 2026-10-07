@@ -16,6 +16,7 @@ import {
   type RecurringDiscrepancyRow,
 } from "@/app/(dashboard)/caja/team-overview";
 import { countOverdueSuppliers } from "@/lib/supplier-overview";
+import { getBranchContext } from "@/lib/branches";
 
 // Un cierre cuenta como "faltante" recién a partir de esta diferencia, para
 // no marcar diferencias chicas de vuelto/redondeo como si fuera un patrón.
@@ -49,14 +50,14 @@ export default async function CajaPage() {
   ] = await Promise.all([
     supabase
       .from("cash_registers")
-      .select("id, opening_amount, opened_at")
+      .select("id, opening_amount, opened_at, branch_id")
       .eq("org_id", organization.id)
       .eq("user_id", userId)
       .eq("status", "abierta")
       .maybeSingle(),
     supabase
       .from("cash_registers")
-      .select("id, user_id, opened_at, closed_at, opening_amount, expected_amount, closing_amount")
+      .select("id, user_id, opened_at, closed_at, opening_amount, expected_amount, closing_amount, branch_id")
       .eq("org_id", organization.id)
       .eq("status", "cerrada")
       .order("closed_at", { ascending: false })
@@ -65,7 +66,7 @@ export default async function CajaPage() {
     isManager
       ? supabase
           .from("cash_registers")
-          .select("id, user_id, opening_amount, opened_at")
+          .select("id, user_id, opening_amount, opened_at, branch_id")
           .eq("org_id", organization.id)
           .eq("status", "abierta")
       : Promise.resolve({ data: null }),
@@ -99,6 +100,14 @@ export default async function CajaPage() {
       : Promise.resolve({ data: null }),
   ]);
 
+  // Con más de una sucursal, cada caja dice de cuál es.
+  const branchContext = await getBranchContext();
+  const branchNames =
+    branchContext.branches.length > 1
+      ? new Map(branchContext.branches.map((b) => [b.id, b.name]))
+      : new Map<string, string>();
+  const branchNameOf = (id: string | null) => (id ? (branchNames.get(id) ?? null) : null);
+
   const summaries = await getCashRegisterSummaries(supabase, [
     ...(register ? [register] : []),
     ...(closedRegisters ?? []),
@@ -130,6 +139,7 @@ export default async function CajaPage() {
         ? cash.retirosTotal + cash.cashPurchasesTotal + cash.supplierPaymentsTotal
         : 0,
       paymentBreakdown: getBreakdown(r.id),
+      branchName: branchNameOf(r.branch_id),
     };
   });
 
@@ -141,6 +151,7 @@ export default async function CajaPage() {
       openedAt: r.opened_at,
       openingAmount: Number(r.opening_amount),
       cashOnHand: getCashOnHand(r.id, Number(r.opening_amount)),
+      branchName: branchNameOf(r.branch_id),
     }));
 
     const totalDebt = (debtorCustomers ?? []).reduce((acc, c) => acc + Number(c.balance), 0);
@@ -318,6 +329,7 @@ export default async function CajaPage() {
         openedByLabel={membership.username ?? email ?? "Vos"}
         paymentBreakdown={getBreakdown(register.id)}
         movements={turnoMovements}
+        branchName={branchNameOf(register.branch_id)}
         cash={
           summaries.get(register.id)?.cash ?? {
             openingAmount,

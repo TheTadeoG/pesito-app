@@ -25,6 +25,7 @@ interface SidebarProps {
     openedAt: string;
     openingAmount: number;
     cashTotal: number | null;
+    branchName?: string | null;
   } | null;
   branch: BranchSwitcherProps | null;
   /** Funciones que el plan no incluye, con el plan que las trae ("Pro"). */

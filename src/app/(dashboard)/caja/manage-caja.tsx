@@ -55,6 +55,8 @@ interface ManageCajaProps {
   /** De dónde sale el efectivo (para el extracto "En caja ahora"). */
   cash: CashBreakdown;
   movements: TurnoMovement[];
+  /** Sucursal de la caja (sólo si el negocio tiene más de una). */
+  branchName?: string | null;
 }
 
 export function ManageCaja({
@@ -66,6 +68,7 @@ export function ManageCaja({
   paymentBreakdown,
   cash,
   movements,
+  branchName = null,
 }: ManageCajaProps) {
   const router = useRouter();
   const { showSuccess } = useToast();
@@ -156,7 +159,10 @@ export function ManageCaja({
             <LockOpen className="h-[18px] w-[18px]" />
           </span>
           <div className="min-w-0 flex-1 basis-56">
-            <p className="text-sm font-semibold text-foreground">Caja abierta</p>
+            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+              Caja abierta
+              {branchName && <Badge tone="default">{`Sucursal ${branchName}`}</Badge>}
+            </p>
             <p className="truncate text-xs text-muted-foreground">
               Desde el {formatDateTime(openedAt)} · {openedByLabel}
             </p>

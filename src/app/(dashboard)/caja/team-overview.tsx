@@ -13,6 +13,8 @@ export interface OpenRegisterRow {
   openedAt: string;
   openingAmount: number;
   cashOnHand: number;
+  /** Sucursal de la caja (sólo si el negocio tiene más de una). */
+  branchName?: string | null;
 }
 
 export interface RecurringDiscrepancyRow {
@@ -89,6 +91,7 @@ export function CajaResumen({
                   <div key={row.id} className="flex flex-wrap items-center justify-between gap-2">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{row.userLabel}</span>
+                      {row.branchName && <Badge tone="default">{row.branchName}</Badge>}
                       <span className="text-xs text-muted-foreground">
                         desde el {formatDateTime(row.openedAt)}
                       </span>

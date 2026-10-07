@@ -48,7 +48,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getSubscription(supabase, organization.id),
     supabase
       .from("cash_registers")
-      .select("id, opening_amount, opened_at")
+      .select("id, opening_amount, opened_at, branch_id")
       .eq("org_id", organization.id)
       .eq("user_id", userId)
       .eq("status", "abierta")
@@ -70,11 +70,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // Proveedores con deuda vencida (numerito del menú).
     countOverdueSuppliers(supabase, organization.id),
   ]);
+  // Sucursal de la caja abierta (la caja es de la sucursal donde se abrió).
+  const registerBranch =
+    branchContext.branches.length > 1 && openRegister?.branch_id
+      ? (branchContext.branches.find((b) => b.id === openRegister.branch_id) ?? null)
+      : null;
   const branch = branchContext.current
     ? {
         branches: branchContext.branches.map((b) => ({ id: b.id, name: b.name })),
         currentId: branchContext.current.id,
         canSwitch: branchContext.canSwitch,
+        registerBranch: registerBranch ? { id: registerBranch.id, name: registerBranch.name } : null,
       }
     : null;
 
@@ -85,6 +91,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       openedAt: openRegister.opened_at,
       openingAmount,
       cashTotal: await getCachedCashOnHand(openRegister.id, openingAmount),
+      branchName: registerBranch?.name ?? null,
     };
   }
 

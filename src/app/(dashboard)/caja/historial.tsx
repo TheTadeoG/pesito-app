@@ -21,6 +21,8 @@ export interface CajaHistorialRow {
   // Retiros manuales + compras y pagos a proveedores pagados en efectivo.
   egresosTotal: number;
   paymentBreakdown: PaymentBreakdownRow[];
+  /** Sucursal de la caja (sólo si el negocio tiene más de una). */
+  branchName?: string | null;
 }
 
 export function CajaHistorial({
@@ -102,7 +104,14 @@ export function CajaHistorial({
                           <span className="text-xs font-normal text-muted-foreground">{` → ${closedDate}`}</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-foreground">{row.userLabel}</td>
+                      <td className="px-3 py-3 text-foreground">
+                        {row.userLabel}
+                        {row.branchName && (
+                          <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            {row.branchName}
+                          </span>
+                        )}
+                      </td>
                       <td className="hidden whitespace-nowrap px-3 py-3 text-muted-foreground sm:table-cell">
                         {`${formatTime(row.openedAt)} → ${formatTime(row.closedAt)}`}
                       </td>

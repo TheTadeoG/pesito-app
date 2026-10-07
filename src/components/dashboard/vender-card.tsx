@@ -26,6 +26,8 @@ interface VenderCardProps {
     openingAmount: number;
     // null si no se pudo calcular el efectivo.
     cashTotal: number | null;
+    /** Sucursal de la caja (sólo si el negocio tiene más de una). */
+    branchName?: string | null;
   } | null;
 }
 
@@ -146,7 +148,7 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
       <div className="flex items-center justify-between text-xs font-semibold">
         <span className="flex items-center gap-1.5">
           <i className="inline-block h-1.5 w-1.5 rounded-full bg-white" />
-          {statusText}
+          {cashRegister.branchName ? `${statusText} · ${cashRegister.branchName}` : statusText}
         </span>
         <button
           type="button"
