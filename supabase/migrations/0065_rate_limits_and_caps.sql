@@ -196,3 +196,9 @@ drop trigger if exists categories_row_cap on public.categories;
 create trigger categories_row_cap after insert on public.categories
   referencing new table as new_rows
   for each statement execute function public.guard_org_row_cap('2000', 'categorías');
+
+-- El tope cuenta las filas del negocio en cada alta: con índice por negocio es
+-- una búsqueda corta (sin él recorre toda la tabla de todos los negocios).
+create index if not exists suppliers_org_id_idx on public.suppliers (org_id);
+create index if not exists brands_org_id_idx on public.brands (org_id);
+create index if not exists categories_org_id_idx on public.categories (org_id);
