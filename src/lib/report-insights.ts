@@ -1,4 +1,3 @@
-import { ARG_TZ, argHour } from "@/lib/timezone";
 import { formatCurrency } from "@/lib/utils";
 
 // "Reportes avanzados con IA" (Plan IA): un resumen en palabras que Pesito
@@ -7,7 +6,11 @@ import { formatCurrency } from "@/lib/utils";
 // instantáneo y no manda datos del negocio a terceros.
 
 export interface ReportInsightsInput {
-  sales: { created_at: string; total: number }[];
+  salesCount: number;
+  /** Ventas por día de la semana (0 = domingo) y cuántos días distintos hubo de cada uno. */
+  weekdays: { dow: number; total: number; days: number }[];
+  /** Ventas por hora del día en Argentina (24 valores). */
+  hours: number[];
   ingresos: number;
   ganancia: number;
   /** Variación de ingresos contra el período anterior (null: sin comparar). */
@@ -22,7 +25,7 @@ export interface ReportInsightsInput {
   singleDay: boolean;
 }
 
-const weekdayFormatter = new Intl.DateTimeFormat("es-AR", { weekday: "long", timeZone: ARG_TZ });
+const WEEKDAY_NAMES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
 function pct(value: number) {
   return `${Math.abs(Math.round(value))}%`;
@@ -30,7 +33,7 @@ function pct(value: number) {
 
 export function buildReportInsights(input: ReportInsightsInput): string[] {
   const out: string[] = [];
-  if (input.sales.length === 0) return ["Todavía no hay ventas en este período para resumir."];
+  if (input.salesCount === 0) return ["Todavía no hay ventas en este período para resumir."];
 
   // Tendencia
   if (input.deltaPct !== null && input.comparisonLabel) {
@@ -53,17 +56,8 @@ export function buildReportInsights(input: ReportInsightsInput): string[] {
 
   // Mejor día y hora pico
   if (!input.singleDay) {
-    const byDay = new Map<string, { total: number; days: Set<string> }>();
-    for (const sale of input.sales) {
-      const date = new Date(sale.created_at);
-      const key = weekdayFormatter.format(date);
-      const entry = byDay.get(key) ?? { total: 0, days: new Set<string>() };
-      entry.total += sale.total;
-      entry.days.add(date.toLocaleDateString("en-CA", { timeZone: ARG_TZ }));
-      byDay.set(key, entry);
-    }
-    const avg = Array.from(byDay.entries())
-      .map(([day, e]) => ({ day, avg: e.total / e.days.size, days: e.days.size }))
+    const avg = input.weekdays
+      .map((e) => ({ day: WEEKDAY_NAMES[e.dow], avg: e.total / e.days, days: e.days }))
       .filter((d) => d.days >= 2)
       .sort((a, b) => b.avg - a.avg);
     if (avg.length >= 2) {
@@ -72,8 +66,7 @@ export function buildReportInsights(input: ReportInsightsInput): string[] {
       );
     }
   }
-  const byHour = Array.from({ length: 24 }, () => 0);
-  for (const sale of input.sales) byHour[argHour(new Date(sale.created_at))] += sale.total;
+  const byHour = input.hours;
   const totalByHour = byHour.reduce((a, b) => a + b, 0);
   // Ventana de 3 horas seguidas con más ventas.
   let bestStart = 0;
@@ -85,7 +78,7 @@ export function buildReportInsights(input: ReportInsightsInput): string[] {
       bestStart = h;
     }
   }
-  if (totalByHour > 0 && input.sales.length >= 10) {
+  if (totalByHour > 0 && input.salesCount >= 10) {
     out.push(
       `Entre las ${bestStart} y las ${bestStart + 3} hs concentrás el ${Math.round((best / totalByHour) * 100)}% de tus ventas: ahí conviene tener la caja y la góndola a punto.`
     );

@@ -2,7 +2,7 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
 import { getCompareRange, getReportRange, resolveReportQuery } from "@/lib/report-periods";
-import { ARG_TZ, argDateString, argHour } from "@/lib/timezone";
+import { ARG_TZ, argDateString } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { SellerSelector } from "@/app/(dashboard)/reportes/seller-selector";
 import { BranchSelector } from "@/app/(dashboard)/reportes/branch-selector";
@@ -50,6 +50,100 @@ function dayLabel(date: Date) {
   }).format(date);
 }
 
+interface Overview {
+  ventas: number;
+  ingresos: number;
+  costo: number;
+  chart: { k: string; v: number }[];
+  payments: { method: string; total: number }[];
+  sellers: { user_id: string; ventas: number; ingresos: number; costo: number }[];
+  branches: { branch_id: string | null; ventas: number; ingresos: number; costo: number }[];
+  top_quantity: { name: string; quantity: number }[];
+  top_margin: { name: string; margin: number }[];
+  loss: { name: string; quantity: number; loss: number }[];
+  customers: { customer_id: string | null; name: string | null; total: number }[];
+  weekdays: { dow: number; total: number; days: number }[];
+  hours: { hour: number; total: number }[];
+  recent: {
+    id: string;
+    created_at: string;
+    total: number;
+    payment_method: string;
+    invoice_type: string | null;
+    customer_id: string | null;
+    customer_name: string | null;
+    items: string[];
+  }[];
+}
+
+// Todo lo que muestra Reportes, ya sumado por la base (report_overview, 0061):
+// una consulta de pocos KB en vez de traer todas las ventas y sus ítems.
+async function rpcOverview(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  args: {
+    p_org_id: string;
+    p_start: string;
+    p_end: string;
+    p_seller: string | null;
+    p_branch: string | null;
+    p_group: string;
+  }
+): Promise<Overview> {
+  const { data, error } = await supabase.rpc("report_overview", args);
+  if (error) throw new Error(`No se pudieron cargar los reportes: ${error.message}`);
+  // numeric llega como número o texto según el valor: normalizar.
+  const raw = (data ?? {}) as Record<string, unknown>;
+  const n = (v: unknown) => Number(v ?? 0);
+  const list = <T,>(v: unknown) => (Array.isArray(v) ? (v as T[]) : []);
+  return {
+    ventas: n(raw.ventas),
+    ingresos: n(raw.ingresos),
+    costo: n(raw.costo),
+    chart: list<{ k: string; v: unknown }>(raw.chart).map((c) => ({ k: c.k, v: n(c.v) })),
+    payments: list<{ method: string; total: unknown }>(raw.payments).map((p) => ({ method: p.method, total: n(p.total) })),
+    sellers: list<{ user_id: string; ventas: unknown; ingresos: unknown; costo: unknown }>(raw.sellers).map((x) => ({
+      user_id: x.user_id,
+      ventas: n(x.ventas),
+      ingresos: n(x.ingresos),
+      costo: n(x.costo),
+    })),
+    branches: list<{ branch_id: string | null; ventas: unknown; ingresos: unknown; costo: unknown }>(raw.branches).map((x) => ({
+      branch_id: x.branch_id,
+      ventas: n(x.ventas),
+      ingresos: n(x.ingresos),
+      costo: n(x.costo),
+    })),
+    top_quantity: list<{ name: string; quantity: unknown }>(raw.top_quantity).map((x) => ({ name: x.name, quantity: n(x.quantity) })),
+    top_margin: list<{ name: string; margin: unknown }>(raw.top_margin).map((x) => ({ name: x.name, margin: n(x.margin) })),
+    loss: list<{ name: string; quantity: unknown; loss: unknown }>(raw.loss).map((x) => ({
+      name: x.name,
+      quantity: n(x.quantity),
+      loss: n(x.loss),
+    })),
+    customers: list<{ customer_id: string | null; name: string | null; total: unknown }>(raw.customers).map((x) => ({
+      customer_id: x.customer_id,
+      name: x.name,
+      total: n(x.total),
+    })),
+    weekdays: list<{ dow: number; total: unknown; days: unknown }>(raw.weekdays).map((x) => ({
+      dow: x.dow,
+      total: n(x.total),
+      days: n(x.days),
+    })),
+    hours: list<{ hour: number; total: unknown }>(raw.hours).map((x) => ({ hour: x.hour, total: n(x.total) })),
+    recent: list<{
+      id: string;
+      created_at: string;
+      total: unknown;
+      payment_method: string;
+      invoice_type: string | null;
+      customer_id: string | null;
+      customer_name: string | null;
+      items: string[];
+    }>(raw.recent).map((x) => ({ ...x, total: n(x.total) })),
+  };
+}
+
 export default async function ReportesPage({
   searchParams,
 }: {
@@ -89,94 +183,29 @@ export default async function ReportesPage({
       : null;
   const branchLabel = branchId ? (branchContext.branches.find((b) => b.id === branchId)?.name ?? null) : null;
 
-  const salesRaw = await fetchAll((from, to) => {
-    let query = supabase
-      .from("sales")
-      .select("id, user_id, total, payment_method, invoice_type, created_at, customer_id, branch_id")
-      .eq("org_id", organization.id)
-      .eq("status", "completada")
-      .gte("created_at", start.toISOString())
-      .lt("created_at", end.toISOString());
-    if (sellerId) query = query.eq("user_id", sellerId);
-    if (branchId) query = query.eq("branch_id", branchId);
-    return query
-      .order("created_at", { ascending: false })
-      .order("id")
-      .range(from, to);
+  const ov = await rpcOverview(supabase, {
+    p_org_id: organization.id,
+    p_start: start.toISOString(),
+    p_end: end.toISOString(),
+    p_seller: sellerId,
+    p_branch: branchId,
+    p_group: groupBy,
   });
 
-  const sales = salesRaw.map((s) => ({ ...s, total: Number(s.total) }));
-  const saleIds = sales.map((s) => s.id);
-
-  const itemsRaw = await fetchAllIn(saleIds, (ids, from, to) =>
-    supabase
-      .from("sale_items")
-      .select("sale_id, product_id, product_name, quantity, unit_price, subtotal")
-      .in("sale_id", ids)
-      .order("id")
-      .range(from, to)
-  );
-
-  const items = itemsRaw.map((i) => ({
-    ...i,
-    quantity: Number(i.quantity),
-    unit_price: Number(i.unit_price),
-    subtotal: Number(i.subtotal),
-  }));
-
-  const productIds = Array.from(
-    new Set(items.map((i) => i.product_id).filter((id): id is string => Boolean(id)))
-  );
-
-  const customerIds = Array.from(
-    new Set(sales.map((s) => s.customer_id).filter((id): id is string => Boolean(id)))
-  );
-
-  const [productsRaw, customersRaw] = await Promise.all([
-    fetchAllIn(productIds, (ids, from, to) =>
-      supabase.from("products").select("id, cost").in("id", ids).order("id").range(from, to)
-    ),
-    fetchAllIn(customerIds, (ids, from, to) =>
-      supabase.from("customers").select("id, name").in("id", ids).order("id").range(from, to)
-    ),
-  ]);
-
-  const costById = new Map(productsRaw.map((p) => [p.id, Number(p.cost ?? 0)]));
-  const customerNameById = new Map(customersRaw.map((c) => [c.id, c.name]));
-
-  const ingresos = sales.reduce((acc, s) => acc + s.total, 0);
-  const totalVentas = sales.length;
+  const ingresos = ov.ingresos;
+  const totalVentas = ov.ventas;
   const ticketPromedio = totalVentas > 0 ? ingresos / totalVentas : 0;
-  const costoTotal = items.reduce(
-    (acc, i) => acc + i.quantity * (i.product_id ? costById.get(i.product_id) ?? 0 : 0),
-    0
-  );
+  const costoTotal = ov.costo;
   const gananciaEstimada = ingresos - costoTotal;
 
   // Ventas por vendedor (dueños/administradores): cantidad, ingresos y
   // ganancia estimada de cada uno, con el mismo costo que los indicadores.
-  const costBySale = new Map<string, number>();
-  for (const item of items) {
-    if (!item.product_id) continue;
-    costBySale.set(
-      item.sale_id,
-      (costBySale.get(item.sale_id) ?? 0) + item.quantity * (costById.get(item.product_id) ?? 0)
-    );
-  }
   let sellerRows: SellerRow[] | null = null;
   if (memberLabelsById) {
-    const totalsBySeller = new Map<string, { ventas: number; ingresos: number; costo: number }>();
-    for (const sale of sales) {
-      const current = totalsBySeller.get(sale.user_id) ?? { ventas: 0, ingresos: 0, costo: 0 };
-      current.ventas += 1;
-      current.ingresos += sale.total;
-      current.costo += costBySale.get(sale.id) ?? 0;
-      totalsBySeller.set(sale.user_id, current);
-    }
-    sellerRows = Array.from(totalsBySeller.entries())
-      .map(([userId, t]) => ({
-        userId,
-        userLabel: memberLabelsById.get(userId) ?? "Usuario eliminado",
+    sellerRows = ov.sellers
+      .map((t) => ({
+        userId: t.user_id,
+        userLabel: memberLabelsById.get(t.user_id) ?? "Usuario eliminado",
         ventas: t.ventas,
         ingresos: t.ingresos,
         ganancia: t.ingresos - t.costo,
@@ -186,89 +215,35 @@ export default async function ReportesPage({
       .sort((a, b) => b.ingresos - a.ingresos);
   }
 
-  const paymentTotals = new Map<string, number>();
-  for (const sale of sales) {
-    paymentTotals.set(
-      sale.payment_method,
-      (paymentTotals.get(sale.payment_method) ?? 0) + sale.total
-    );
-  }
-  const paymentBreakdown = Array.from(paymentTotals.entries())
-    .map(([method, total]) => ({ label: paymentLabels[method] ?? method, value: total }))
+  const paymentBreakdown = ov.payments
+    .map((p) => ({ label: paymentLabels[p.method] ?? p.method, value: p.total }))
     .sort((a, b) => b.value - a.value);
 
-  const byProductQty = new Map<string, { name: string; quantity: number; margin: number }>();
-  for (const item of items) {
-    // Sin product_id es un monto libre (o un producto borrado): no tiene costo
-    // y todos los "Monto libre" se sumarían juntos, así que no va en los rankings.
-    if (!item.product_id) continue;
-    const current = byProductQty.get(item.product_id) ?? {
-      name: item.product_name,
-      quantity: 0,
-      margin: 0,
-    };
-    current.quantity += item.quantity;
-    current.margin += item.subtotal - item.quantity * (costById.get(item.product_id) ?? 0);
-    byProductQty.set(item.product_id, current);
-  }
-  const topByQuantity = Array.from(byProductQty.values())
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5)
-    .map((p) => ({ name: p.name, quantity: p.quantity }));
-  const topByMargin = Array.from(byProductQty.values())
-    // Un producto vendido a pérdida no es "el que más ganancia deja" — no
-    // tiene sentido mostrarlo acá con margen negativo.
-    .filter((p) => p.margin >= 0)
-    .sort((a, b) => b.margin - a.margin)
-    .slice(0, 5)
-    .map((p) => ({ name: p.name, margin: p.margin }));
+  // Sin product_id es un monto libre (o un producto borrado): no tiene costo
+  // y todos los "Monto libre" se sumarían juntos, así que no va en los rankings.
+  // Un producto vendido a pérdida no es "el que más ganancia deja": el ranking
+  // de margen sólo trae los de margen positivo.
+  const topByQuantity = ov.top_quantity;
+  const topByMargin = ov.top_margin;
 
   // Reporte Pro: productos vendidos a pérdida (margen negativo), los que
   // "más ganancia dejan" arriba justamente excluye.
-  const lossProducts = canProfit
-    ? Array.from(byProductQty.values())
-        .filter((p) => p.margin < 0)
-        .sort((a, b) => a.margin - b.margin)
-        .slice(0, 5)
-        .map((p) => ({ name: p.name, quantity: p.quantity, loss: -p.margin }))
-    : null;
+  const lossProducts = canProfit ? ov.loss : null;
 
-  let consumidorFinalTotal = 0;
-  const byCustomer = new Map<string, number>();
-  for (const sale of sales) {
-    if (!sale.customer_id) {
-      consumidorFinalTotal += sale.total;
-      continue;
-    }
-    byCustomer.set(sale.customer_id, (byCustomer.get(sale.customer_id) ?? 0) + sale.total);
-  }
-  const topCustomers = [
-    ...(consumidorFinalTotal > 0
-      ? [{ name: "Consumidor Final", total: consumidorFinalTotal }]
-      : []),
-    ...Array.from(byCustomer.entries()).map(([customerId, total]) => ({
-      name: customerNameById.get(customerId) ?? "Cliente eliminado",
-      total,
-    })),
-  ]
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
+  const topCustomers = ov.customers.map((c) => ({
+    name: c.customer_id === null ? "Consumidor Final" : (c.name ?? "Cliente eliminado"),
+    total: c.total,
+  }));
 
   let revenueChart;
+  const chartByKey = new Map(ov.chart.map((c) => [c.k, c.v]));
   if (groupBy === "hour") {
-    const hourTotals = Array.from({ length: 24 }, () => 0);
-    for (const sale of sales) {
-      const hour = argHour(new Date(sale.created_at));
-      hourTotals[hour] += sale.total;
-    }
-    revenueChart = hourTotals.map((value, hour) => ({ label: `${hour}h`, value }));
+    revenueChart = Array.from({ length: 24 }, (_, hour) => ({
+      label: `${hour}h`,
+      value: chartByKey.get(String(hour).padStart(2, "0")) ?? 0,
+    }));
   } else if (groupBy === "month") {
     // Rangos largos (más de 3 meses): una barra por mes.
-    const monthTotals = new Map<string, number>();
-    for (const sale of sales) {
-      const key = argDateString(new Date(sale.created_at)).slice(0, 7);
-      monthTotals.set(key, (monthTotals.get(key) ?? 0) + sale.total);
-    }
     const months: string[] = [];
     const cursor = new Date(start);
     while (cursor < end) {
@@ -276,49 +251,30 @@ export default async function ReportesPage({
       if (!months.includes(key)) months.push(key);
       cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
-    revenueChart = months.map((key) => ({ label: monthLabel(key), value: monthTotals.get(key) ?? 0 }));
+    revenueChart = months.map((key) => ({ label: monthLabel(key), value: chartByKey.get(key) ?? 0 }));
   } else {
-    const days = Array.from({ length: range.days }, (_, i) => {
+    revenueChart = Array.from({ length: range.days }, (_, i) => {
       const date = new Date(start);
       date.setUTCDate(date.getUTCDate() + i);
-      return date;
-    });
-    revenueChart = days.map((date) => {
-      const next = new Date(date);
-      next.setUTCDate(next.getUTCDate() + 1);
-      const value = sales
-        .filter((s) => {
-          const created = new Date(s.created_at);
-          return created >= date && created < next;
-        })
-        .reduce((acc, s) => acc + s.total, 0);
-      return { label: dayLabel(date), value };
+      return { label: dayLabel(date), value: chartByKey.get(argDateString(date)) ?? 0 };
     });
   }
 
-  const itemsBySale = new Map<string, string[]>();
-  for (const item of items) {
-    const list = itemsBySale.get(item.sale_id) ?? [];
-    list.push(item.quantity > 1 ? `${item.product_name} x${item.quantity}` : item.product_name);
-    itemsBySale.set(item.sale_id, list);
-  }
-
-  const recentSales = sales.slice(0, 15);
   const fiadoBySale = await getFiadoAmountsBySale(
     supabase,
-    recentSales.map((s) => s.id)
+    ov.recent.map((s) => s.id)
   );
 
-  const saleRows: SaleRow[] = recentSales.map((sale) => ({
+  const saleRows: SaleRow[] = ov.recent.map((sale) => ({
     id: sale.id,
     created_at: sale.created_at,
     total: sale.total,
     payment_method: sale.payment_method,
-    invoice_type: sale.invoice_type,
+    invoice_type: sale.invoice_type ?? "consumidor_final",
     customerName: sale.customer_id
-      ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
+      ? sale.customer_name ?? "Cliente eliminado"
       : "Consumidor Final",
-    itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
+    itemsSummary: sale.items.join(", ") || "Sin detalle",
     fiadoAmount: fiadoBySale.get(sale.id) ?? 0,
   }));
 
@@ -406,25 +362,15 @@ export default async function ReportesPage({
 
   // Stock valorizado: cuánta plata hay parada en mercadería, al costo y al
   // precio de venta.
-  const stockProductsRaw = sellerId || branchId ? [] : await fetchAll((from, to) =>
-    supabase
-      .from("products")
-      .select("cost, price, stock")
-      .eq("org_id", organization.id)
-      .eq("active", true)
-      .order("id")
-      .range(from, to)
-  );
-
-  const stockValue = stockProductsRaw.reduce(
-    (acc, p) => {
-      const stock = Number(p.stock);
-      acc.atCost += stock * Number(p.cost ?? 0);
-      acc.atPrice += stock * Number(p.price);
-      return acc;
-    },
-    { atCost: 0, atPrice: 0 }
-  );
+  const stockValue =
+    sellerId || branchId
+      ? { atCost: 0, atPrice: 0 }
+      : await supabase
+          .rpc("report_stock_value", { p_org_id: organization.id })
+          .then(({ data }) => {
+            const v = (data ?? {}) as { at_cost?: number | string; at_price?: number | string };
+            return { atCost: Number(v.at_cost ?? 0), atPrice: Number(v.at_price ?? 0) };
+          });
 
   // Reporte Pro: comparación contra el período anterior de la misma
   // duración (p. ej. últimos 7 días vs los 7 días previos). De acá también
@@ -440,55 +386,18 @@ export default async function ReportesPage({
   if (compareRange) {
     const previousStart = compareRange.start;
     const previousEnd = compareRange.end;
-    const previousSalesRaw = await fetchAll((from, to) => {
-      let query = supabase
-        .from("sales")
-        .select("id, total")
-        .eq("org_id", organization.id)
-        .eq("status", "completada")
-        .gte("created_at", previousStart.toISOString())
-        .lt("created_at", previousEnd.toISOString());
-      if (sellerId) query = query.eq("user_id", sellerId);
-      if (branchId) query = query.eq("branch_id", branchId);
-      return query.order("id").range(from, to);
+    const { data: previousRaw } = await supabase.rpc("report_totals", {
+      p_org_id: organization.id,
+      p_start: previousStart.toISOString(),
+      p_end: previousEnd.toISOString(),
+      p_seller: sellerId,
+      p_branch: branchId,
     });
-
-    const previousSales = previousSalesRaw.map((s) => ({ ...s, total: Number(s.total) }));
-    const previousIngresos = previousSales.reduce((acc, s) => acc + s.total, 0);
-    const previousVentas = previousSales.length;
+    const previous = (previousRaw ?? {}) as { ventas?: number | string; ingresos?: number | string; costo?: number | string };
+    const previousIngresos = Number(previous.ingresos ?? 0);
+    const previousVentas = Number(previous.ventas ?? 0);
     const previousTicket = previousVentas > 0 ? previousIngresos / previousVentas : 0;
-
-    const previousSaleIds = previousSales.map((s) => s.id);
-    const previousItemsRaw = await fetchAllIn(previousSaleIds, (ids, from, to) =>
-      supabase
-        .from("sale_items")
-        .select("product_id, quantity")
-        .in("sale_id", ids)
-        .order("id")
-        .range(from, to)
-    );
-
-    // El período anterior puede haber vendido productos que no aparecen en
-    // el actual — completar el costo de esos para poder estimar su margen.
-    const missingProductIds = Array.from(
-      new Set(
-        previousItemsRaw
-          .map((i) => i.product_id)
-          .filter((id): id is string => id !== null && !costById.has(id))
-      )
-    );
-    const extraProductsRaw = await fetchAllIn(missingProductIds, (ids, from, to) =>
-      supabase.from("products").select("id, cost").in("id", ids).order("id").range(from, to)
-    );
-    for (const p of extraProductsRaw) {
-      costById.set(p.id, Number(p.cost ?? 0));
-    }
-
-    const previousCosto = previousItemsRaw.reduce(
-      (acc, i) => acc + Number(i.quantity) * (i.product_id ? costById.get(i.product_id) ?? 0 : 0),
-      0
-    );
-    const previousGanancia = previousIngresos - previousCosto;
+    const previousGanancia = previousIngresos - Number(previous.costo ?? 0);
 
     const pct = (current: number, previous: number) =>
       previous > 0 ? ((current - previous) / previous) * 100 : null;
@@ -507,7 +416,9 @@ export default async function ReportesPage({
 
   const aiSummary = canUse(subscription, "aiReports")
     ? buildReportInsights({
-        sales,
+        salesCount: totalVentas,
+        weekdays: ov.weekdays,
+        hours: Array.from({ length: 24 }, (_, h) => ov.hours.find((x) => x.hour === h)?.total ?? 0),
         ingresos,
         ganancia: gananciaEstimada,
         deltaPct: periodComparison?.deltaPct ?? null,
@@ -573,19 +484,17 @@ export default async function ReportesPage({
   // Ventas por sucursal del período (sólo sin filtro de sucursal).
   const salesByBranch = (() => {
     if (!hasBranches || branchId) return [] as { id: string; name: string; count: number; total: number; ganancia: number; pct: number }[];
-    const grand = sales.reduce((acc, sale) => acc + sale.total, 0);
     return branchContext.branches
       .map((b) => {
-        const mine = sales.filter((sale) => sale.branch_id === b.id);
-        const total = mine.reduce((acc, sale) => acc + sale.total, 0);
-        const costo = mine.reduce((acc, sale) => acc + (costBySale.get(sale.id) ?? 0), 0);
+        const mine = ov.branches.find((x) => x.branch_id === b.id);
+        const total = mine?.ingresos ?? 0;
         return {
           id: b.id,
           name: b.name,
-          count: mine.length,
+          count: mine?.ventas ?? 0,
           total,
-          ganancia: total - costo,
-          pct: grand > 0 ? Math.round((total / grand) * 100) : 0,
+          ganancia: total - (mine?.costo ?? 0),
+          pct: ingresos > 0 ? Math.round((total / ingresos) * 100) : 0,
         };
       })
       .filter((row) => row.count > 0)

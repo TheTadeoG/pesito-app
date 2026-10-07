@@ -942,6 +942,31 @@ export interface Database {
           payment_breakdown: Json;
         }[];
       };
+      report_overview: {
+        Args: {
+          p_org_id: string;
+          p_start: string;
+          p_end: string;
+          p_seller?: string | null;
+          p_branch?: string | null;
+          p_group?: string;
+        };
+        Returns: Json;
+      };
+      report_totals: {
+        Args: {
+          p_org_id: string;
+          p_start: string;
+          p_end: string;
+          p_seller?: string | null;
+          p_branch?: string | null;
+        };
+        Returns: Json;
+      };
+      report_stock_value: {
+        Args: { p_org_id: string };
+        Returns: Json;
+      };
       void_supplier_payment: {
         Args: { p_payment_id: string };
         Returns: undefined;
