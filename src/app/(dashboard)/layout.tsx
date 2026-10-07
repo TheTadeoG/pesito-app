@@ -156,6 +156,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           branch={branch}
           lockedFeatures={lockedFeatures}
           alerts={navAlerts}
+          closeTime={organization.cash_close_time ?? null}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar

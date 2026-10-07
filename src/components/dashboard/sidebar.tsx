@@ -30,6 +30,8 @@ interface SidebarProps {
   lockedFeatures: Partial<Record<PlanFeature, string>>;
   /** Numerito rojo por ruta (ej. proveedores con deuda vencida). 0 no se muestra. */
   alerts?: Record<string, number>;
+  /** Hora de cierre del negocio, para avisar en el bloque de la caja. */
+  closeTime?: string | null;
 }
 
 export function Sidebar({
@@ -43,6 +45,7 @@ export function Sidebar({
   branch,
   lockedFeatures,
   alerts = {},
+  closeTime = null,
 }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -75,13 +78,13 @@ export function Sidebar({
       </div>
 
       <div className="p-3">
-        <VenderCard cashRegister={cashRegister} />
+        <VenderCard cashRegister={cashRegister} closeTime={closeTime} />
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-2">
         {navSections.map((section) => {
           const items = section.items.filter(
-            (item) => item.href !== "/pos" && (!item.adminOnly || canSeeAdminItems)
+            (item) => item.href !== "/pos" && item.href !== "/caja" && (!item.adminOnly || canSeeAdminItems)
           );
           if (items.length === 0) return null;
           return (
