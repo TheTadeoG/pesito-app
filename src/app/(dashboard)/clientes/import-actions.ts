@@ -57,8 +57,8 @@ export async function importCustomersChunk(
     return { ...result, error: featureLockedMessage("customerImport") };
   }
   if (!Array.isArray(rows) || rows.length === 0) return result;
-  // Un archivo de 20.000 filas son ~40 tandas: 120 por hora deja varias cargas seguidas.
-  const rateError = await checkRateLimit(supabase, organization.id, "import_clientes", 120, 3600);
+  // Una tanda son 250 filas: un archivo de 20.000 son 80 tandas, así que 240 por hora dejan tres archivos completos.
+  const rateError = await checkRateLimit(supabase, organization.id, "import_clientes", 240, 3600);
   if (rateError) return { ...result, error: rateError };
   if (rows.length > CUSTOMER_IMPORT_CHUNK_SIZE) {
     return { ...result, error: "Llegaron demasiados clientes juntos. Probá de nuevo." };
