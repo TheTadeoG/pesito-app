@@ -593,7 +593,7 @@ export function ProveedoresClient({
       </Card>
 
       <Card>
-        <CardContent className="p-0">
+        <div>
           <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5">
             {accountsEnabled && (
               <div className="flex flex-1 flex-wrap gap-1">
@@ -916,7 +916,7 @@ export function ProveedoresClient({
               })}
             </div>
           )}
-        </CardContent>
+        </div>
       </Card>
 
       <PurchaseDetailDialog
