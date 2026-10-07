@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-09-25.
+Última actualización: 2026-10-07.
 
 ## Hecho (PR #2, mergeado)
 
@@ -27,6 +27,50 @@ Simulación del 2026-09-25 con "Almacén La Esquina" (dueña + 2 vendedores, 1.6
 - Precios (septiembre 2026): Supabase Pro US$25 (250 GB de transferencia, 8 GB de disco, servidor Micro incluido; después US$0,09/GB, US$0,125/GB de disco). Vercel Pro US$20 por desarrollador con US$20 de crédito (1 TB de transferencia y 10 M de edge requests aparte; después US$2 por millón de edge requests).
 - Límites: el disco de 8 GB se llena primero (~95 clientes con un año de historial; cada GB extra cuesta US$0,125). Los 10 M de edge requests de Vercel alcanzan para ~870 clientes. La transferencia de Supabase, para ~1.600. El servidor Micro no está medido con carga real: estimamos que hay que agrandarlo entre 300 y 500 clientes.
 - Total estimado: 100 clientes ~US$45/mes; 300 clientes ~US$47-52 (con servidor Small); 1.000 clientes ~US$110 (con servidor Medium). Cada cliente extra cuesta entre US$0,05 y US$0,10 por mes.
+
+## Hecho: bajar el costo por cliente (7/10/2026) — migraciones 0061 a 0064 (**faltan aplicar en producción, ANTES de pasar el código a `main`**)
+
+Salió de la medición del 7/10 (Postgres 16 local con las 60 migraciones, 1.600 productos y hasta 15.000 ventas en 30 días). Se aplicaron las sugerencias 1, 2, 3, 5 y 7:
+
+1. **Reportes en SQL** (0061: `report_overview`, `report_totals`, `report_stock_value`; `security definer` con `is_org_member`). Antes: ~360 consultas HTTP y ~28 MB por visita a 500 ventas/día. Ahora: 1 consulta de ~11 KB para todo lo que se ve (más unas 8 chicas: suscripción, vendedores, cajas, deudores). La base la resuelve en ~0,3 s con 15.000 ventas. Las políticas RLS de `sale_items` buscaban la venta fila por fila y la misma cuenta tardaba 13 s, por eso no es `security invoker`. `report-insights.ts` ahora recibe `salesCount`, `weekdays` y `hours` ya sumados.
+2. **Cobrar en una consulta** (0062: `checkout_sale_full`, nombre nuevo para no crear un overload de `checkout_sale`). Antes ~7,5 consultas por venta desde el servidor; ahora 2 (plan + cobrar). La base tarda +1,6 ms por venta (3,8 → 5,5 ms con 5 cobrando a la vez) y devuelve stock de la sucursal de la caja, saldo del cliente y las 8 ventas recientes (~4 KB).
+3. **En vivo** (0063: `live_pulse`, ~140 bytes y ~1 ms contra ~10 KB y ~40 ms de `live_overview`). Pregunta cada 60 s (antes 30 s) y trae el resumen sólo si el aviso cambió o cada 5 minutos. Texto público actualizado ("cada minuto").
+5. **Catálogo del POS con copia en el navegador** (0064: `pos_catalog`). Un producto nuevo o cambiado llega por `updated_at`; la lista `[id, stock]` de los activos es la lista oficial (lo que no está se borra de la copia). La llama el navegador directo a Supabase (no gasta Vercel). Carga en frío ~460 KB, con copia ~85 KB. Sin conexión usa la copia. `src/app/(dashboard)/pos/pos-catalog.tsx`.
+7. **Fotos de productos** (`src/lib/compress-image.ts`): se achican en el navegador a WebP de máx. 800 px (una foto de celular de 3 a 5 MB queda en ~50 a 150 KB). Se aceptan originales de hasta 20 MB y se sube el achicado (máx. 5 MB). No se probó con el almacenamiento real de Supabase.
+
+Sin hacer (de la lista): 4 (comprar RAM sólo si se mide), 6 (índice duplicado de `sales`, ahorra ~2%), 8.
+
+Antes de pasar a `main`: aplicar 0061, 0062, 0063 y 0064 en Supabase. Sin 0061 falla Reportes, sin 0062 falla el cobro y sin 0064 el POS no carga productos (En vivo sí funciona sin 0063, trae el resumen completo cada vez).
+
+## Costos: re-medición del 7/10/2026 (reemplaza la de arriba)
+
+Modelo y supuestos: `scratchpad/cost.py` (no está en el repo). Lo medido es la base (ms, KB y disco por venta: 1,9 KB de disco y ~5,3 KB de log por venta). Lo calculado a partir del código: consultas, edge requests, invocaciones y transferencia. No está medido: Vercel y Supabase reales, el servidor Micro con carga, las imágenes.
+
+Costo fijo de plataforma: **US$45 por mes** (Supabase Pro 25 + Vercel Pro 20). Mientras no se agoten los cupos incluidos del Pro, no hay costo variable: cada cliente cuesta **45 ÷ cantidad de clientes**.
+
+| Clientes | Costo por cliente |
+|---|---|
+| 1 | US$45 |
+| 5 | US$9 |
+| 10 | US$4,50 |
+| 25 | US$1,80 |
+| 50 | US$0,90 |
+| 100 | US$0,45 |
+
+Cuánto del Pro usa **un** cliente por mes, y cuántos de ese tipo caben (se agota lo que primero llegue a 100%):
+
+| Tipo de cliente | Consultas/mes (antes → ahora) | Transferencia/mes (antes → ahora) | Disco al año | Cupo por disco (7,5 GB) | Cupo por invocaciones (1 M) | Cupo por transferencia (250 GB) |
+|---|---|---|---|---|---|---|
+| Gratis (150 ventas/mes) | 3.400 → 2.400 | 48 → 33 MB | 7 MB | ~1.100 | ~515 | ~7.600 |
+| Chico (100 ventas/día, 3 usuarios) | 60.000 → 30.000 | 519 → 78 MB | 70 MB | **~109** | ~119 | ~3.300 (antes ~490) |
+| Mediano (300/día, 5 usuarios) | 113.000 → 48.000 | 904 → 126 MB | 204 MB | **~38** | ~56 | ~2.000 (antes ~280) |
+| Grande (500/día, 6 usuarios) | 164.000 → 64.000 | 1.275 → 174 MB | 338 MB | **~23** | ~39 | ~1.470 (antes ~200) |
+
+- **Lo que se agota primero con el Pro es el disco**, para todos los clientes que venden. Las optimizaciones no lo tocan (sale de los datos de venta): bajaron consultas (−50 a −60%) y transferencia (−85%), que dejó de ser un límite.
+- **Ejemplo de mezcla** (50% gratis, 30% chicos, 15% medianos, 5% grandes; es una suposición): el Pro se llena a ~107 clientes por disco y ~134 por invocaciones. Hasta ahí, US$45 ÷ clientes (a 100 clientes, US$0,45 cada uno).
+- **Pasado el Pro** (variable, precios de lista): cada cliente extra suma ~US$0,01 (gratis), ~US$0,04 (chico), ~US$0,08 (mediano) o ~US$0,12 (grande) por mes en disco, invocaciones, edge y transferencia; mezcla ~US$0,04. Aparte, escalones de servidor de base: Small (~+US$5 netos) cuando el Micro se quede corto de memoria y Medium (~+US$50) más adelante. **No está medido**: estimamos Micro hasta ~15 a 20 clientes grandes o ~50 chicos con los datos de 30 días en memoria.
+- **Imágenes (sin medir)**: van al almacenamiento de Supabase (100 GB incluidos, aparte del disco de la base) y a la transferencia. Con fotos de 3 a 5 MB, 1.000 productos con foto pesaban ~4 GB (se llenaban con ~25 clientes). Achicadas, ~0,15 GB: ~650 clientes. Sólo vale para fotos nuevas; las ya subidas siguen pesadas.
+- Para pasar a pesos: multiplicar por la cotización del día.
 
 ## Hecho: tanda rápida
 
