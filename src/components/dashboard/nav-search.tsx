@@ -59,7 +59,7 @@ export function NavSearch({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 rounded-xl bg-muted px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary"
+        className="flex w-full items-center gap-2 rounded-xl bg-muted px-3 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary"
       >
         <Search className="h-3.5 w-3.5" />
         <span className="flex-1">Buscar o ir a…</span>
