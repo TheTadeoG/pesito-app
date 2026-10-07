@@ -123,7 +123,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo ver cómo va el negocio sin estar en el local?",
         answer:
-          "Sí, con la pantalla En vivo del Plan Pro, desde el celular o la compu: cuánto se vendió hoy, la comparación con ayer a la misma hora, cada sucursal, cada vendedor con su caja y las últimas ventas. Se actualiza sola cada 30 segundos mientras la mirás.",
+          "Sí, con la pantalla En vivo del Plan Pro, desde el celular o la compu: cuánto se vendió hoy, la comparación con ayer a la misma hora, cada sucursal, cada vendedor con su caja y las últimas ventas. Se actualiza sola cada minuto mientras la mirás.",
       },
       {
         question: "¿Sirve si tengo varias sucursales?",

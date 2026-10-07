@@ -998,6 +998,10 @@ export interface Database {
         Args: { p_purchase_id: string; p_due_date: string | null };
         Returns: undefined;
       };
+      live_pulse: {
+        Args: { p_org_id: string };
+        Returns: Json;
+      };
       live_overview: {
         Args: { p_org_id: string };
         Returns: Json;

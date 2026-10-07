@@ -452,7 +452,7 @@ const basePostsRaw: BlogPost[] = [
           "Cada sucursal tiene su propio stock y sus cajas; vender descuenta del local de la caja.",
           "A cada vendedor le asignás su sucursal; vos cambiás de sucursal desde el menú.",
           "Transferencias de mercadería entre sucursales, con el registro en el historial de cada una.",
-          "La pantalla En vivo muestra primero el negocio, después cada sucursal y adentro cada vendedor con su caja, actualizada cada 30 segundos.",
+          "La pantalla En vivo muestra primero el negocio, después cada sucursal y adentro cada vendedor con su caja, actualizada cada minuto.",
           "Si recién empezás, arrancá con una sucursal en el Plan Gratis y sumá las demás cuando las necesites.",
         ],
       },

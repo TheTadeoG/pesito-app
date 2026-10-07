@@ -16,7 +16,10 @@ import {
   type LiveOverview,
 } from "@/lib/live-overview";
 
-const REFRESH_MS = 30_000;
+// Cada cuánto se pregunta si hay algo nuevo, y cada cuánto se trae el resumen
+// completo aunque el aviso no haya cambiado.
+const REFRESH_MS = 60_000;
+const FULL_REFRESH_MS = 5 * 60_000;
 // Un vendedor con la caja abierta que lleva más que esto sin vender se
 // marca, para que el dueño lo vea de un vistazo.
 const IDLE_WARNING_MS = 30 * 60_000;
@@ -113,28 +116,57 @@ export function LiveClient({
   const loading = useRef(false);
 
   useEffect(() => {
-    async function refresh() {
-      if (loading.current) return;
-      loading.current = true;
+    // Pregunta primero un aviso chico (live_pulse, ~150 bytes) y sólo trae el
+    // resumen completo (~10 KB) si algo cambió o pasaron FULL_REFRESH_MS: así
+    // una pantalla abierta todo el día casi no gasta base ni transferencia.
+    let lastPulse: string | null = null;
+    let lastFull = Date.now();
+
+    async function loadFull() {
       const { data: next, error: rpcError } = await supabase.rpc("live_overview", {
         p_org_id: orgId,
       });
-      loading.current = false;
       if (rpcError || !next) {
         setError(true);
         return;
       }
+      lastFull = Date.now();
       setError(false);
       setData(parseLiveOverview(next));
     }
 
-    // Se actualiza cada 30 s sólo mientras la pantalla está a la vista. Si
+    async function refresh(force = false) {
+      if (loading.current) return;
+      loading.current = true;
+      try {
+        const { data: pulse, error: pulseError } = await supabase.rpc("live_pulse", {
+          p_org_id: orgId,
+        });
+        if (pulseError || !pulse) {
+          // Sin el aviso (migración 0063 sin aplicar): trae el resumen completo.
+          await loadFull();
+          return;
+        }
+        const signature = JSON.stringify(pulse);
+        const changed = signature !== lastPulse;
+        lastPulse = signature;
+        if (force || changed || Date.now() - lastFull >= FULL_REFRESH_MS) {
+          await loadFull();
+        } else {
+          setError(false);
+        }
+      } finally {
+        loading.current = false;
+      }
+    }
+
+    // Se actualiza cada 60 s sólo mientras la pantalla está a la vista. Si
     // la pestaña queda en segundo plano no se consulta nada; al volver se
-    // actualiza en el momento y retoma cada 30 s.
+    // actualiza en el momento y retoma cada 60 s.
     let timer: ReturnType<typeof setInterval> | null = null;
     function start() {
       if (timer) return;
-      timer = setInterval(refresh, REFRESH_MS);
+      timer = setInterval(() => void refresh(), REFRESH_MS);
     }
     function stop() {
       if (timer) clearInterval(timer);
@@ -142,7 +174,7 @@ export function LiveClient({
     }
     function onVisibilityChange() {
       if (document.visibilityState === "visible") {
-        void refresh();
+        void refresh(true);
         start();
       } else {
         stop();
@@ -262,7 +294,7 @@ export function LiveClient({
           Hoy, en vivo · actualizado {agoLabel(data.generated_at, now)}
         </p>
         {error && (
-          <p className="text-sm text-danger">No pudimos actualizar. Reintentamos en 30 segundos.</p>
+          <p className="text-sm text-danger">No pudimos actualizar. Reintentamos en un minuto.</p>
         )}
       </div>
 
