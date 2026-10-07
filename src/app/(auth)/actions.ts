@@ -3,7 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { checkIpRateLimit, getClientIp, ipBump, ipHits } from "@/lib/ip-rate-limit";
+import { accountBump, accountHits, checkIpRateLimit, getClientIp, ipBump, ipHits } from "@/lib/ip-rate-limit";
 import { captchaConfigured, verifyCaptcha } from "@/lib/turnstile";
 import { LOGIN_FAIL_WINDOW, captchaNextTime, loginGate } from "@/lib/login-gate";
 import { safeNextPath } from "@/lib/safe-redirect";
@@ -48,9 +48,11 @@ export async function login(
   const ipLimit = await checkIpRateLimit("login", 20, 60);
   if (ipLimit) return { error: ipLimit };
 
+  const email = isEmailIdentifier(identifier) ? identifier : usernameToEmail(identifier);
   const failures = await ipHits("login_fail", LOGIN_FAIL_WINDOW);
+  const accountFailures = await accountHits(email, "login_fail_acct", LOGIN_FAIL_WINDOW);
   const captchaOn = captchaConfigured();
-  const gate = loginGate(failures, captchaOn);
+  const gate = loginGate(failures, accountFailures, captchaOn);
   if (gate === "blocked") {
     return { error: "Demasiados intentos fallidos desde tu conexión. Probá de nuevo en unos minutos." };
   }
@@ -59,21 +61,22 @@ export async function login(
     if (problem) return { error: problem, captchaRequired: true };
   }
 
-  const email = isEmailIdentifier(identifier) ? identifier : usernameToEmail(identifier);
   const supabase = await createClient();
 
   const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     await ipBump("login_fail", LOGIN_FAIL_WINDOW);
+    await accountBump(email, "login_fail_acct", LOGIN_FAIL_WINDOW);
     return {
       error: "Email/usuario o contraseña incorrectos.",
-      captchaRequired: captchaNextTime(failures, captchaOn),
+      captchaRequired: captchaNextTime(failures, accountFailures, captchaOn),
     };
   }
 
-  // El contador de fallos NO se borra al entrar bien: quien tenga una cuenta
-  // propia no puede resetearlo entre intento e intento. Vence solo a los 15 minutos.
+  // Los contadores de fallos (de la IP y de la cuenta) NO se borran al entrar bien:
+  // quien tenga una cuenta propia no puede resetearlos entre intento e intento.
+  // Vencen solos a los 15 minutos. Nunca bloquean la cuenta: a lo sumo piden CAPTCHA.
   if (signIn.user) await recordLogin(signIn.user.id);
 
   // Con la verificación en dos pasos activada, falta el código de la app.

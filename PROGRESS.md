@@ -146,7 +146,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Ahora todo es por IP (huella con HMAC): 20 envíos por minuto (0067); desde el 3.er intento fallido seguido en 15 minutos se pide CAPTCHA (si hay claves); con 30 fallos se corta esa conexión un rato. El contador de fallos no se borra al entrar bien (así nadie lo resetea con una cuenta propia): vence solo a los 15 minutos. Registro: 5 por 10 minutos y CAPTCHA desde el 3.º. El alta desde invitación sigue sólo con el tope de 5 por 10 minutos (sin CAPTCHA).
 - CAPTCHA: Cloudflare Turnstile (gratis). `src/lib/turnstile.ts` verifica el token del lado del servidor; si Cloudflare no responde, deja pasar. `src/components/auth/turnstile-field.tsx` muestra el cuadro sólo cuando el servidor lo pide. Variables: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (navegador) y `TURNSTILE_SECRET_KEY` (servidor). Sin las dos, nunca se pide CAPTCHA y el resto sigue funcionando. NO activar el CAPTCHA integrado de Supabase Auth (Attack Protection): pediría el token en todos los logins.
 - Decisión en `src/lib/login-gate.ts`, con pruebas (`login-gate.test.mts`, `turnstile.test.mts`, con `node --experimental-strip-types`). No probado: el cuadro de Turnstile en un navegador real (el entorno de pruebas no llega a Cloudflare).
-- Opcional, no hecho: pedir CAPTCHA (nunca bloquear) a cualquier intento sobre una cuenta con muchos fallos recientes desde varias IP, contra ataques distribuidos.
+- Listo: si una cuenta suma 10 o más fallos en 15 minutos (desde cualquier IP), se pide CAPTCHA a quien intente entrar a esa cuenta. Nunca se bloquea: quien tiene la contraseña entra resolviendo el CAPTCHA. Los contadores no se borran al entrar bien.
 
 ## Hecho: tanda rápida
 
