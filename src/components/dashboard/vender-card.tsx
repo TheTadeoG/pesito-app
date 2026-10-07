@@ -163,9 +163,13 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
           {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
         </button>
       </div>
-      <p className="mt-1 text-[1.75rem] font-bold leading-tight tracking-tight">
+      <Link
+        href="/caja"
+        title="Ver la caja"
+        className="mt-1 block text-[1.75rem] font-bold leading-tight tracking-tight hover:opacity-90"
+      >
         {cashTotal === null ? "—" : hidden ? "$ ••••••" : formatCurrency(cashTotal)}
-      </p>
+      </Link>
       {reminder?.kind === "soon" ? (
         <div className="mb-3 mt-1.5 h-1 overflow-hidden rounded-full bg-white/25">
           <div className="h-full rounded-full bg-white" style={{ width: `${soonProgress}%` }} />
