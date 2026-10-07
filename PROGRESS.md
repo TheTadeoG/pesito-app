@@ -103,6 +103,12 @@ Pero el ahorro medido es mucho menor al proyectado (−60% de memoria):
 
 Motivo: el resumen por producto y por día casi no comprime (en un día se venden casi tantos productos distintos como renglones hay) y pesa más que todo el resto junto. Con los datos de la simulación (catálogo de 1.600 productos con ventas parejas) es el peor caso; con ventas concentradas en pocos productos ahorraría más, pero no lo medimos. No se aplicó; el SQL quedó fuera del repo. Alternativa si más adelante hiciera falta: guardar por día sólo los mejores N productos (los rankings quedarían aproximados).
 
+### Costos: resumen y pendientes (7/10/2026)
+
+- Simulación local de memoria (600 clientes de la mezcla, 30 días, 60 ops/s, memoria limitada con cgroup): 1 GB sin degradación visible, 512 MB empieza a degradarse (cache hit 96,8%). Disco local más rápido que el de Supabase: por eso el caso base usa un margen ×2 (la mitad de clientes por GB que lo medido: ~300 por GB contra ~600).
+- Caso base, 90% gratis (resto 60% chicos, 30% medianos, 10% grandes), por mes: 5.000 clientes US$291 (US$0,58 por cliente que paga), 10.000 US$570, 15.000 US$656, 20.000 US$1.294 (US$0,44 a US$0,65 por cliente que paga). Con 95% gratis: ~US$0,70. Año de antigüedad: +2 a 4 centavos por cliente que paga por año (sólo disco). Un pago (Esencial, ~US$10 neto) cubre ~500 gratis.
+- Pendientes: (1) medir memoria real en un Supabase de pruebas (paquete: `seed.sql`, `work.sql`, `mix.pgb` de la simulación; hay que permitir los dominios en la red del entorno y poner las claves como secretos); (2) correr `disco_por_cliente.sql` y mirar Usage de Supabase y Vercel con clientes reales; (3) medidor de uso por cliente dentro de la app; (4) política de historial por plan (con aviso y exportación a Excel); (5) índice duplicado `sales_org_id_idx` (una línea); (6) alternativas de infraestructura (servidor propio) cuando el servidor de Supabase pase de ~US$400–500 por mes (cuidar la región: Hetzner no tiene Sudamérica).
+
 ## Hecho: tanda rápida
 
 - Precarga: `prefetch={false}` en los links a la ficha de cada cliente (/clientes y deudores en Caja) y a /configuracion (banner de prueba Pro, tarjetas Pro bloqueadas, pestañas de Configuración).
