@@ -592,6 +592,52 @@ export default async function ReportesPage({
       .sort((a, b) => b.total - a.total);
   })();
 
+  const branchTable =
+    hasBranches && !branchId && salesByBranch.length > 0 ? (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ventas por sucursal</CardTitle>
+          <p className="text-xs text-muted-foreground">Tocá una sucursal para ver solo sus reportes. La ganancia es estimada, con el costo actual de cada producto.</p>
+        </CardHeader>
+        <div className="overflow-x-auto pb-2 pt-2">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-y border-border text-left text-xs font-semibold text-muted-foreground">
+                <th className="px-5 py-2">Sucursal</th>
+                <th className="px-3 py-2 text-right">Ventas</th>
+                <th className="px-3 py-2 text-right">Vendido</th>
+                <th className="px-3 py-2 text-right">Ganancia</th>
+                <th className="px-5 py-2 text-right">Parte del total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {salesByBranch.map((row) => (
+                <tr key={row.id} className="hover:bg-muted">
+                  <td className="px-5 py-2.5 font-medium text-foreground">
+                    <Link href={reportesHref(query, sellerId, row.id)} prefetch={false} className="block">
+                      {row.name}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-foreground">{row.count}</td>
+                  <td className="px-3 py-2.5 text-right text-foreground">{formatCurrency(row.total)}</td>
+                  <td className="px-3 py-2.5 text-right">
+                    {canProfit ? (
+                      <span className="font-medium text-success">{formatCurrency(row.ganancia)}</span>
+                    ) : (
+                      <Link href="/planes" prefetch={false} className="text-xs font-semibold text-primary hover:underline">
+                        Plan Pro
+                      </Link>
+                    )}
+                  </td>
+                  <td className="px-5 py-2.5 text-right text-muted-foreground">{row.pct}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    ) : null;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -647,50 +693,6 @@ export default async function ReportesPage({
           </Link>
         </p>
       )}
-      {hasBranches && !branchId && salesByBranch.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ventas por sucursal</CardTitle>
-            <p className="text-xs text-muted-foreground">Tocá una sucursal para ver solo sus reportes. La ganancia es estimada, con el costo actual de cada producto.</p>
-          </CardHeader>
-          <div className="overflow-x-auto pb-2 pt-2">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-y border-border text-left text-xs font-semibold text-muted-foreground">
-                  <th className="px-5 py-2">Sucursal</th>
-                  <th className="px-3 py-2 text-right">Ventas</th>
-                  <th className="px-3 py-2 text-right">Vendido</th>
-                  <th className="px-3 py-2 text-right">Ganancia</th>
-                  <th className="px-5 py-2 text-right">Parte del total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {salesByBranch.map((row) => (
-                  <tr key={row.id} className="hover:bg-muted">
-                    <td className="px-5 py-2.5 font-medium text-foreground">
-                      <Link href={reportesHref(query, sellerId, row.id)} prefetch={false} className="block">
-                        {row.name}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-foreground">{row.count}</td>
-                    <td className="px-3 py-2.5 text-right text-foreground">{formatCurrency(row.total)}</td>
-                    <td className="px-3 py-2.5 text-right">
-                      {canProfit ? (
-                        <span className="font-medium text-success">{formatCurrency(row.ganancia)}</span>
-                      ) : (
-                        <Link href="/planes" prefetch={false} className="text-xs font-semibold text-primary hover:underline">
-                          Plan Pro
-                        </Link>
-                      )}
-                    </td>
-                    <td className="px-5 py-2.5 text-right text-muted-foreground">{row.pct}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
       {aiSummary ? (
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
@@ -710,7 +712,7 @@ export default async function ReportesPage({
           El Plan IA te escribe un resumen de cada período: cómo vendiste, tu mejor día y horario, qué te deja más plata y qué vendés a pérdida.
         </PlanLockNote>
       )}
-      <ReportesDashboard data={data} query={query} />
+      <ReportesDashboard data={data} query={query} afterTiles={branchTable} />
     </div>
   );
 }

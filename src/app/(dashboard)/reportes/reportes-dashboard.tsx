@@ -154,9 +154,12 @@ function TrendBadge({ deltaPct, size = "md" }: { deltaPct: number; size?: "sm" |
 export function ReportesDashboard({
   data,
   query,
+  afterTiles = null,
 }: {
   data: ReportesData;
   query: ReportQuery;
+  /** Algo que va justo debajo de los indicadores (ej. ventas por sucursal). */
+  afterTiles?: React.ReactNode;
 }) {
   const [visible, setVisible] = useState<Set<WidgetId>>(new Set(ALL_WIDGET_IDS));
   // "Quién te debe" puede ser muy largo: paginado, con el total arriba.
@@ -297,6 +300,8 @@ export function ReportesDashboard({
           })}
         </div>
       )}
+
+      {afterTiles}
 
       {(isVisible("revenue") || isVisible("payments")) && (
         <div className="grid gap-6 lg:grid-cols-2">
