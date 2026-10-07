@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/compress-image";
 import {
   saveProduct,
   createBrandQuick,
@@ -30,7 +31,10 @@ const units = [
   { value: "caja", label: "Caja" },
 ];
 
+// Lo que se sube (ya achicado en el navegador) y lo que se acepta de entrada
+// (una foto de celular pesa varios MB y se achica antes de subir).
 const MAX_IMAGE_MB = 5;
+const MAX_ORIGINAL_IMAGE_MB = 20;
 
 // Alícuotas de IVA vigentes en Argentina — sólo para la calculadora de
 // abajo, no se persiste en el producto: lo único que se guarda siempre es
@@ -269,18 +273,26 @@ export function ProductForm({
     onClose();
   }
 
-  async function uploadFile(file: File) {
+  async function uploadFile(picked: File) {
+    let file = picked;
     if (!file.type.startsWith("image/")) {
       setImageError("Elegí un archivo de imagen.");
       return;
     }
-    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
-      setImageError(`La imagen no puede pesar más de ${MAX_IMAGE_MB}MB.`);
+    if (file.size > MAX_ORIGINAL_IMAGE_MB * 1024 * 1024) {
+      setImageError(`La imagen no puede pesar más de ${MAX_ORIGINAL_IMAGE_MB}MB.`);
       return;
     }
 
     setImageError(null);
     setUploadingImage(true);
+
+    file = await compressImage(file);
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setUploadingImage(false);
+      setImageError(`La imagen no puede pesar más de ${MAX_IMAGE_MB}MB.`);
+      return;
+    }
 
     const supabase = createClient();
     const extension = file.name.split(".").pop() || "jpg";
