@@ -480,9 +480,9 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - `src/components/ui/phone-country-select.tsx`: desplegable propio con banderas SVG (`country-flag-icons`, sólo los 11 países de `phone-countries.ts`). Los emoji de bandera se ven como letras en Windows y un `<select>` nativo no muestra imágenes. Lo usan el registro (`PhoneInput`) y el formulario de clientes. Teclado: flechas, Enter, Esc.
 - Si se agrega un país a `phone-countries.ts`, también va su bandera en el mapa `flags` del componente.
 
-## Ingresar con Google (sólo dueños)
+## Ingresar con Google (para crear el negocio)
 - Botón "Continuar con Google" en `/login` y "Registrarme con Google" en `/registro` (`src/components/auth/google-button.tsx`, acción `signInWithGoogle`). Permisos básicos (email, perfil): sin verificación de Google ni tope de usuarios. Requiere el proveedor Google activado en Supabase con las credenciales de Google Cloud.
-- Vuelve por `/auth/confirm`: si la cuenta es de equipo (usuario interno, o miembro sin ser dueño de ningún negocio) se cierra la sesión y se manda a `/login?error=google_solo_duenos`; quien no tiene negocio sigue a `/onboarding`. Con verificación en dos pasos pasa por `/login/verificar`. El plan pago elegido en precios viaja como `plan`/`cycle` y se guarda como en el registro con email.
+- Sin leyendas de "sólo dueños" en pantalla. Vuelve por `/auth/confirm`: si la cuenta es de equipo (usuario interno, o miembro sin ser dueño de ningún negocio) se cierra la sesión y se manda a `/login?error=google_solo_duenos`; quien no tiene negocio sigue a `/onboarding`. Con verificación en dos pasos pasa por `/login/verificar`. El plan pago elegido en precios viaja como `plan`/`cycle` y se guarda como en el registro con email.
 - La invitación no se puede aceptar con una sesión de Google. El botón no está en `/invitacion`.
 - Textos al día: FAQ ("¿Puedo crear mi cuenta o ingresar con Google?"), `llms.txt`, política de privacidad.
 - El login con Google no pasa por el CAPTCHA ni por los contadores del login (lo valida Google); tiene su propio límite por IP (20 por minuto).

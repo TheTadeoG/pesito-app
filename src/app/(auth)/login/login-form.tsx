@@ -14,7 +14,7 @@ const initialState: AuthActionState = {};
 
 const URL_ERRORS: Record<string, string> = {
   google_solo_duenos:
-    "Ingresar con Google es sólo para dueños de un negocio. Si sos parte de un equipo, entrá con tu usuario (o email) y contraseña.",
+    "Esta cuenta entra con usuario (o email) y contraseña. Ingresá con tus datos.",
   google: "No pudimos abrir Google. Probá de nuevo o entrá con tu email y contraseña.",
   confirmacion: "El link venció o ya se usó. Pedí uno nuevo o ingresá con tu email y contraseña.",
   demasiados: "Hiciste demasiados intentos seguidos. Esperá un minuto y probá de nuevo.",

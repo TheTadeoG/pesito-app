@@ -42,7 +42,7 @@ Funciones destacadas: punto de venta con lector de códigos, stock que se actual
 
 Al crear la cuenta, cada negocio tiene 14 días del Plan Pro gratis; después sigue en el Plan Gratis si no elige un plan pago.
 
-El dueño del negocio puede crear su cuenta e ingresar con email y contraseña o con su cuenta de Google. Los empleados entran con el usuario y la contraseña que les da el negocio, no con Google.
+Al crear la cuenta del negocio se puede usar una cuenta de Google o email y contraseña. Los empleados que se suman al equipo entran con el usuario y la contraseña que les da el negocio, o con un link de invitación.
 
 ${plans}
 

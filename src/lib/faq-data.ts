@@ -46,7 +46,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo crear mi cuenta o ingresar con Google?",
         answer:
-          "Sí. El dueño del negocio puede crear su cuenta e ingresar con su cuenta de Google o con su email y contraseña. Los empleados que el dueño suma al equipo entran con el usuario y la contraseña que les da el negocio (o con el link de invitación), no con Google.",
+          "Sí. Al crear la cuenta de tu negocio podés registrarte con tu cuenta de Google o con tu email y contraseña, y después ingresás de la misma forma. Los empleados que se suman al equipo entran con el usuario y la contraseña que les da el negocio, o con el link de invitación.",
       },
       {
         question: "¿Necesito internet para usar Pesito?",

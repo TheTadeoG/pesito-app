@@ -10,9 +10,9 @@ import { MFA_COOKIE } from "@/lib/supabase/cookie-options";
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 /**
- * Ingresar con Google es sólo para dueños de un negocio (o para quien todavía
- * no tiene negocio y va a crear el suyo). Si la cuenta es de un equipo (usuario
- * interno o miembro sin ser dueño de ningún negocio), se cierra la sesión.
+ * Google sirve para crear la cuenta de un negocio y volver a entrar (o para quien
+ * todavía no tiene negocio y va a crear el suyo). Si la cuenta es de un equipo
+ * (usuario interno o miembro sin ser dueño de ningún negocio), se cierra la sesión.
  */
 async function googleAllowed(supabase: Supabase, user: User): Promise<boolean> {
   if (typeof user.user_metadata?.internal_username === "string") return false;

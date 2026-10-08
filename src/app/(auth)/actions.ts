@@ -271,8 +271,8 @@ export async function resetPassword(
   redirect("/login?restablecida=1");
 }
 
-// Ingresar o crear la cuenta con Google: sólo para dueños de un negocio. El
-// equipo (usuarios invitados e internos) entra con usuario y contraseña; eso se
+// Crear la cuenta del negocio (o volver a entrar) con Google. El equipo
+// (usuarios invitados e internos) entra con usuario y contraseña; eso se
 // controla al volver de Google, en /auth/confirm.
 export async function signInWithGoogle(formData: FormData): Promise<void> {
   const ipLimit = await checkIpRateLimit("google", 20, 60);
