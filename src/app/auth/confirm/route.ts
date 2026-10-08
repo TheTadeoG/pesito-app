@@ -53,6 +53,15 @@ export async function GET(request: NextRequest) {
           });
         }
 
+        // Entró con Google una persona que ya tenía cuenta con email y contraseña (mismo
+        // email): Supabase unió las dos. Se le avisa una sola vez, en una pantalla aparte.
+        const googleIdentity = user.identities.find((i) => i.provider === "google");
+        const otherIdentity = user.identities.find((i) => i.provider !== "google");
+        const justLinked =
+          Boolean(googleIdentity?.created_at && otherIdentity) &&
+          Date.now() - new Date(googleIdentity!.created_at!).getTime() < 2 * 60_000;
+        const landing = justLinked ? `/cuenta-vinculada?next=${encodeURIComponent(next)}` : next;
+
         // Con la verificación en dos pasos activada falta el código de la app.
         const { data: factors } = await supabase.auth.mfa.listFactors();
         const hasTotp = Boolean(factors?.totp.some((f) => f.status === "verified"));
@@ -65,9 +74,10 @@ export async function GET(request: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             maxAge: 60 * 60 * 24 * 365,
           });
-          redirect(`/login/verificar?next=${encodeURIComponent(next)}`);
+          redirect(`/login/verificar?next=${encodeURIComponent(landing)}`);
         }
         cookieStore.delete(MFA_COOKIE);
+        redirect(landing);
       }
       redirect(next);
     }
