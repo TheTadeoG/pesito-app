@@ -3,16 +3,16 @@
 import { useSyncExternalStore } from "react";
 
 // Mostrar o no las teclas de atajo en los botones (insignias "1", "P", "Ctrl K",
-// "(Enter)"). Se guarda por dispositivo: la caja con teclado las quiere ver, una
+// "(Enter)"). Por defecto ocultas. Se guarda por dispositivo: la caja con teclado las quiere ver, una
 // tablet o un celular no. Los atajos funcionan igual con las insignias ocultas.
 const KEY = "pesito-shortcut-hints";
 const EVENT = "pesito-shortcut-hints-change";
 
 function read(): boolean {
   try {
-    return window.localStorage.getItem(KEY) !== "off";
+    return window.localStorage.getItem(KEY) === "on";
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -34,7 +34,7 @@ export function setShortcutHints(show: boolean) {
   window.dispatchEvent(new Event(EVENT));
 }
 
-/** true = mostrar las insignias (valor inicial). */
+/** true = mostrar las insignias (por defecto están ocultas). */
 export function useShortcutHints(): boolean {
-  return useSyncExternalStore(subscribe, read, () => true);
+  return useSyncExternalStore(subscribe, read, () => false);
 }
