@@ -5,6 +5,8 @@ import { HelpCircle, LogOut } from "lucide-react";
 import { pageTitles } from "@/lib/nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
+import { PlanLine } from "@/components/dashboard/plan-line";
+import type { Plan } from "@/lib/subscription";
 import type { BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
 import { signOut } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
@@ -16,9 +18,14 @@ interface TopbarProps {
   branch?: BranchSwitcherProps | null;
   /** Numerito rojo por ruta (menú del celular). */
   alerts?: Record<string, number>;
+  /** Rol y plan que vale hoy: en el celular se ven bajo el título. */
+  roleLabel: string;
+  plan: Plan;
+  trial: boolean;
+  role: string;
 }
 
-export function Topbar({ orgName, userLabel, greetingName, branch, alerts }: TopbarProps) {
+export function Topbar({ orgName, userLabel, greetingName, branch, alerts, roleLabel, plan, trial, role }: TopbarProps) {
   const pathname = usePathname();
   const page = pageTitles[pathname] ?? { title: orgName, description: "" };
 
@@ -28,6 +35,7 @@ export function Topbar({ orgName, userLabel, greetingName, branch, alerts }: Top
         <MobileNav orgName={orgName} branch={branch} alerts={alerts} />
         <div className="min-w-0">
           <h1 className="truncate text-lg font-semibold text-foreground">{page.title}</h1>
+          <PlanLine roleLabel={roleLabel} plan={plan} trial={trial} role={role} className="sm:hidden" />
           {page.description && (
             <p className="hidden truncate text-xs text-muted-foreground sm:block">
               {page.description}
@@ -37,9 +45,12 @@ export function Topbar({ orgName, userLabel, greetingName, branch, alerts }: Top
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <Button variant="outline" size="icon" className="hidden sm:inline-flex" aria-label="Ayuda">
-          <HelpCircle className="h-4 w-4" />
-        </Button>
+        {/* El Button ya trae inline-flex y le gana a "hidden": se oculta con un contenedor. */}
+        <div className="hidden sm:block">
+          <Button variant="outline" size="icon" aria-label="Ayuda">
+            <HelpCircle className="h-4 w-4" />
+          </Button>
+        </div>
         <ThemeToggle />
         <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
         <span className="hidden text-sm text-muted-foreground sm:inline">

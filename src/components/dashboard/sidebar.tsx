@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { navSections, isNavItemActive, type NavItem, type NavSection } from "@/lib/nav";
-import { planIcons } from "@/lib/plan-visuals";
-import { planLabels, type Plan } from "@/lib/subscription";
+import type { Plan } from "@/lib/subscription";
+import { PlanLine } from "@/components/dashboard/plan-line";
 import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/marketing/wordmark";
@@ -116,17 +116,7 @@ export function Sidebar({
           <p className="line-clamp-2 break-words text-sm font-semibold leading-snug text-foreground" title={orgName}>
             {orgName}
           </p>
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            {roleLabel}
-            <span aria-hidden>·</span>
-            {canSeeAdminItems ? (
-              <Link href="/planes" className="hover:underline">
-                <PlanTag plan={plan} trial={trial} />
-              </Link>
-            ) : (
-              <PlanTag plan={plan} trial={trial} />
-            )}
-          </p>
+          <PlanLine roleLabel={roleLabel} plan={plan} trial={trial} role={role} />
           {branch && <BranchSwitcher {...branch} />}
         </div>
       </div>
@@ -164,24 +154,5 @@ export function Sidebar({
           </div>
         ))}
     </aside>
-  );
-}
-
-// Color del texto de cada plan (el mismo acento que en precios).
-const planTagColors: Record<Plan, string> = {
-  gratis: "text-muted-foreground",
-  esencial: "text-primary",
-  pro: "text-amber-600",
-  ia: "text-violet-500",
-};
-
-/** Plan actual, discreto: ícono y nombre con el color del plan. */
-function PlanTag({ plan, trial }: { plan: Plan; trial: boolean }) {
-  const Icon = planIcons[plan];
-  return (
-    <span className={cn("inline-flex items-center gap-1 font-semibold", planTagColors[plan])}>
-      <Icon className="h-3 w-3" />
-      {trial ? "Prueba Pro" : planLabels[plan]}
-    </span>
   );
 }

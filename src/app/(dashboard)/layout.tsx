@@ -168,6 +168,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar
             alerts={navAlerts}
+            roleLabel={roleLabel}
+            plan={subscription.trialActive ? "pro" : subscription.plan}
+            trial={subscription.trialActive}
+            role={membership.role}
             orgName={organization.name}
             userLabel={membership.username ?? email ?? ""}
             greetingName={greetingName}

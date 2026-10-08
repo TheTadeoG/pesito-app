@@ -30,7 +30,7 @@ export function MobileNav({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border text-foreground lg:hidden"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border text-foreground lg:hidden"
         aria-label={hasAlerts ? "Abrir menú (hay avisos)" : "Abrir menú"}
       >
         <Menu className="h-5 w-5" />
