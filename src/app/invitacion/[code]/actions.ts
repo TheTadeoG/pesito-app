@@ -1,9 +1,11 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkIpRateLimit } from "@/lib/ip-rate-limit";
+import { MFA_COOKIE } from "@/lib/supabase/cookie-options";
 import {
   buildFullUsername,
   generateDiscriminator,
@@ -14,6 +16,15 @@ import {
 export interface AcceptInvitationState {
   error?: string;
   username?: string;
+}
+
+// "No soy yo": cierra la sesión que había en este navegador y vuelve a la
+// invitación, que ahora muestra el formulario para crear el usuario del equipo.
+export async function signOutForInvitation(code: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  (await cookies()).delete(MFA_COOKIE);
+  redirect(`/invitacion/${encodeURIComponent(code)}`);
 }
 
 export async function acceptInvitation(code: string): Promise<AcceptInvitationState> {

@@ -500,3 +500,7 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Opcional en el DNS de pesito.com.ar (Vercel): registro MX `vendedores` con valor `.` y prioridad 0 (MX nulo) para que ese subdominio rechace correo de entrada.
 - Sin probar contra una base real.
 - Login: el error de credenciales incorrectas ahora orienta ("Si te registraste con Google, tocá Continuar con Google; si no recordás tu contraseña, usá Olvidé mi contraseña"). Es el mismo texto para todos los casos (no revela qué cuentas existen). Una cuenta creada con Google puede ponerse contraseña con "Olvidé mi contraseña".
+
+## Invitación con una sesión abierta
+- `/invitacion/[code]` con sesión abierta ya no ofrece sólo "Aceptar y entrar": avisa con qué cuenta se está ("Tenés la sesión abierta con …"), deja "Aceptar con esta cuenta" y "No soy yo: cerrar sesión y crear mi usuario" (`signOutForInvitation`, vuelve al formulario de la invitación). Con una cuenta de Google sólo queda cerrar sesión (no se suma a un equipo).
+- Sin probar con una invitación real en el navegador.

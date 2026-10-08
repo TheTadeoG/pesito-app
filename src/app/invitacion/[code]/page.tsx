@@ -116,7 +116,11 @@ export default async function InvitacionPage({
         </CardHeader>
         <CardContent>
           {user ? (
-            <AcceptInvitationButton code={code} />
+            <AcceptInvitationButton
+              code={code}
+              email={user.email ?? null}
+              isGoogle={Boolean(user.identities?.some((i) => i.provider === "google"))}
+            />
           ) : (
             <div className="space-y-4">
               <InvitationSignupForm code={code} />

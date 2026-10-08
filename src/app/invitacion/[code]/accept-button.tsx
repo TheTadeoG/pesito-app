@@ -1,10 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { acceptInvitation } from "@/app/invitacion/[code]/actions";
+import { acceptInvitation, signOutForInvitation } from "@/app/invitacion/[code]/actions";
 
-export function AcceptInvitationButton({ code }: { code: string }) {
+function SignOutButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="outline" className="w-full" disabled={pending}>
+      {pending ? "Cerrando sesión…" : "No soy yo: cerrar sesión y crear mi usuario"}
+    </Button>
+  );
+}
+
+/**
+ * Hay una sesión abierta en este navegador. Se avisa con qué cuenta y se deja
+ * elegir: sumarla al equipo, o cerrar sesión y crear el usuario del equipo
+ * (para un empleado que abre el link en un equipo donde quedó otra sesión).
+ * Una cuenta de Google no se suma a un equipo: sólo queda cerrar sesión.
+ */
+export function AcceptInvitationButton({
+  code,
+  email,
+  isGoogle,
+}: {
+  code: string;
+  email: string | null;
+  isGoogle: boolean;
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,10 +41,24 @@ export function AcceptInvitationButton({ code }: { code: string }) {
   }
 
   return (
-    <div className="space-y-3">
-      <Button className="w-full" onClick={handleAccept} disabled={pending}>
-        {pending ? "Uniéndote…" : "Aceptar y entrar"}
-      </Button>
+    <div className="space-y-4">
+      <p className="rounded-xl bg-muted/60 px-3.5 py-3 text-sm text-muted-foreground">
+        {email ? `Tenés la sesión abierta con ${email}.` : "Tenés una sesión abierta en este navegador."}
+        {isGoogle
+          ? " Es una cuenta de Google, que no se usa para sumarse a un equipo."
+          : " Si es tu cuenta, podés sumarla al equipo; si no, cerrá sesión y creá tu usuario."}
+      </p>
+
+      {!isGoogle && (
+        <Button className="w-full" onClick={handleAccept} disabled={pending}>
+          {pending ? "Uniéndote…" : "Aceptar con esta cuenta"}
+        </Button>
+      )}
+
+      <form action={signOutForInvitation.bind(null, code)}>
+        <SignOutButton />
+      </form>
+
       {error && (
         <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
       )}
