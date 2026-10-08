@@ -456,3 +456,7 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - `src/lib/blog-faqs.ts`: ~3 preguntas concretas por cada nota existente; los rankings traen las suyas. Salen como `FAQPage`, y los rankings también como `ItemList`.
 - El blog muestra "Respuesta corta", tablas y "Preguntas frecuentes"; sitemap y `llms.txt` salen de `blogPosts`.
 - Corregido: `comparacion-data.ts` ya no promete factura electrónica como complemento.
+
+## Webhook de Mercado Pago: sin secreto, en producción se rechaza
+- `verifyWebhookSignature` ya no acepta avisos cuando falta `MP_WEBHOOK_SECRET` en producción (antes seguía sin verificar). En desarrollo sigue permitido. Revisado: el aviso sólo dispara una consulta a la API con nuestro token, los pagos únicos validan monto y son idempotentes.
+- No se controla la antigüedad de `ts` a propósito: Mercado Pago reintenta avisos viejos y rechazarlos perdería cobros; el manejo es idempotente.

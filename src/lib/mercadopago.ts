@@ -251,9 +251,9 @@ export async function cancelPreapproval(id: string): Promise<void> {
 /**
  * Verifica la firma de un aviso (webhook) de Mercado Pago:
  * HMAC-SHA256(secret, "id:<data.id>;request-id:<x-request-id>;ts:<ts>;").
- * Sin MP_WEBHOOK_SECRET configurado devuelve null (no se puede verificar);
- * igual, el aviso sólo dispara una consulta a la API con nuestro token,
- * que es la fuente de verdad.
+ * Sin MP_WEBHOOK_SECRET: en producción se rechaza (false); en desarrollo
+ * devuelve null (no se puede verificar). Igual, el aviso sólo dispara una
+ * consulta a la API con nuestro token, que es la fuente de verdad.
  */
 export function verifyWebhookSignature(input: {
   xSignature: string | null;
@@ -261,7 +261,7 @@ export function verifyWebhookSignature(input: {
   dataId: string | null;
 }): boolean | null {
   const secret = process.env.MP_WEBHOOK_SECRET;
-  if (!secret) return null;
+  if (!secret) return process.env.NODE_ENV === "production" ? false : null;
   if (!input.xSignature) return false;
 
   const parts = Object.fromEntries(
