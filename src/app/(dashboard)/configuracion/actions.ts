@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
 import { normalizeCloseTime } from "@/lib/cash-reminder";
+import { BUSINESS_NAME_MAX, BUSINESS_NAME_TOO_LONG } from "@/lib/business-name";
 
 export interface ActionState {
   error?: string;
@@ -15,6 +16,10 @@ export async function updateOrganizationName(name: string): Promise<ActionState>
   if (!name.trim()) return { error: "El nombre no puede estar vacío." };
 
   const { organization } = await requireOrgContext();
+  // Un nombre más largo que ya existía se puede dejar igual; uno nuevo, no.
+  if (name.trim().length > BUSINESS_NAME_MAX && name.trim() !== organization.name) {
+    return { error: BUSINESS_NAME_TOO_LONG };
+  }
   const supabase = await createClient();
 
   const { error } = await supabase

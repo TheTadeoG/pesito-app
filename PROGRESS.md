@@ -489,3 +489,7 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Sin probar con Google real (no se llega desde el entorno de desarrollo).
 - Cuenta vinculada: si alguien con cuenta de email y contraseña entra con Google usando el mismo email, Supabase une las dos; se le muestra una vez `/cuenta-vinculada` ("Vinculamos tu cuenta de Google", con link para cambiar la contraseña si no fue ella). Se detecta porque la identidad de Google se creó hace menos de 2 minutos y ya había otra.
 - Alta con Google: `/onboarding` pide además el teléfono (mismo selector con banderas) cuando la cuenta no lo tiene; `createKiosco` lo valida (8 dígitos o más) y lo guarda en el negocio. El nombre para el saludo sale de `first_name`, `given_name` o la primera palabra de `full_name`/`name` (`lib/org.ts`).
+
+## Nombre del negocio: 2 líneas y tope de 30 caracteres
+- Menú lateral (`sidebar.tsx`): el nombre ocupa hasta 2 líneas (`line-clamp-2`) y muestra el nombre entero al pasar el mouse. El menú del celular no se tocó (sigue con "…").
+- Tope `BUSINESS_NAME_MAX = 30` (`lib/business-name.ts`) al registrarse, al crear el negocio y al cambiarlo en Configuración (formulario y servidor). Los nombres más largos que ya existían se siguen mostrando y se pueden dejar tal cual.

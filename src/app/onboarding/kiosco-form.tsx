@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { BUSINESS_NAME_MAX } from "@/lib/business-name";
 
 export function KioscoForm({
   initialName = "",
@@ -63,7 +64,7 @@ export function KioscoForm({
           <Label htmlFor="name" required>
             Nombre de tu negocio
           </Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Kiosco Don José" autoFocus required />
+          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Kiosco Don José" maxLength={BUSINESS_NAME_MAX} autoFocus required />
         </div>
 
         {needsPhone && (

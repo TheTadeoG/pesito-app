@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
+import { BUSINESS_NAME_MAX, BUSINESS_NAME_TOO_LONG } from "@/lib/business-name";
 
 export interface OnboardingState {
   error?: string;
@@ -17,6 +18,10 @@ export async function createKiosco(
 
   if (!trimmedName) {
     return { error: "Ponele un nombre a tu negocio." };
+  }
+
+  if (trimmedName.length > BUSINESS_NAME_MAX) {
+    return { error: BUSINESS_NAME_TOO_LONG };
   }
 
   const supabase = await createClient();

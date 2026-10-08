@@ -113,7 +113,9 @@ export function Sidebar({
       <div className="flex items-start gap-2 border-b border-border px-5 py-3">
         <Wordmark className="mt-0.5 shrink-0 text-xl" />
         <div className="min-w-0 space-y-0.5 border-l border-border pl-2.5">
-          <p className="truncate text-sm font-semibold text-foreground">{orgName}</p>
+          <p className="line-clamp-2 break-words text-sm font-semibold leading-snug text-foreground" title={orgName}>
+            {orgName}
+          </p>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             {roleLabel}
             <span aria-hidden>·</span>

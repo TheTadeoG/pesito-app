@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { accountBump, accountHits, checkIpRateLimit, getClientIp, ipBump, ipHits } from "@/lib/ip-rate-limit";
 import { captchaConfigured, verifyCaptcha } from "@/lib/turnstile";
 import { emailRegistered } from "@/lib/email-registered";
+import { BUSINESS_NAME_MAX, BUSINESS_NAME_TOO_LONG } from "@/lib/business-name";
 import { LOGIN_FAIL_WINDOW, captchaNextTime, loginGate } from "@/lib/login-gate";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { recordLogin } from "@/lib/login-events";
@@ -122,6 +123,10 @@ export async function signup(
 
   if (!email || !password || !firstName || !lastName || !phone || !businessName) {
     return { error: "Completá todos los campos." };
+  }
+
+  if (businessName.length > BUSINESS_NAME_MAX) {
+    return { error: BUSINESS_NAME_TOO_LONG };
   }
 
   if (password.length < 8) {

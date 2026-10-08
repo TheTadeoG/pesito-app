@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { BUSINESS_NAME_MAX } from "@/lib/business-name";
 
 const initialState: AuthActionState = {};
 
@@ -69,7 +70,7 @@ export function SignupForm({
         <Label htmlFor="businessName" required>
           Nombre de tu kiosco o almacén
         </Label>
-        <Input id="businessName" name="businessName" placeholder="Kiosco Don José" required />
+        <Input id="businessName" name="businessName" placeholder="Kiosco Don José" maxLength={BUSINESS_NAME_MAX} required />
         <p className="mt-1 text-xs text-muted-foreground">
           Podés cambiarlo más adelante desde Configuración.
         </p>

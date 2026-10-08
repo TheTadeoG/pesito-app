@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BUSINESS_NAME_MAX } from "@/lib/business-name";
 import { updateOrganizationName } from "@/app/(dashboard)/configuracion/actions";
 
 export function OrgNameForm({ initialName }: { initialName: string }) {
@@ -26,7 +27,12 @@ export function OrgNameForm({ initialName }: { initialName: string }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <div className="flex-1">
         <Label htmlFor="org-name">Nombre del negocio</Label>
-        <Input id="org-name" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input
+          id="org-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={Math.max(BUSINESS_NAME_MAX, initialName.length)}
+        />
       </div>
       <div className="flex items-center gap-2">
         <Button type="submit" disabled={pending}>
