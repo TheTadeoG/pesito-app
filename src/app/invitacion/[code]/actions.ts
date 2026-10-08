@@ -45,6 +45,12 @@ export async function acceptInvitation(code: string): Promise<AcceptInvitationSt
     if (error.message.toLowerCase().includes("expiró")) {
       return { error: "Esta invitación expiró. Pedí un link nuevo." };
     }
+    if (error.message.toLowerCase().includes("otro negocio")) {
+      return {
+        error:
+          "Tu cuenta ya pertenece a otro negocio. Para sumarte a este equipo, cerrá sesión y creá tu usuario.",
+      };
+    }
     if (error.message.toLowerCase().includes("usada")) {
       return { error: "Esta invitación ya fue usada." };
     }

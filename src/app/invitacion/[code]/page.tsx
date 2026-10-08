@@ -107,6 +107,13 @@ export default async function InvitacionPage({
 
   const roleLabel = roleLabels[preview.role as "admin" | "vendedor"];
 
+  // Una cuenta pertenece a un solo negocio: si ya está en otro, no se puede sumar a éste.
+  let hasOtherBusiness = false;
+  if (user) {
+    const { data: ownMemberships } = await supabase.from("memberships").select("org_id").eq("user_id", user.id);
+    hasOtherBusiness = (ownMemberships ?? []).some((m) => m.org_id !== preview.org_id);
+  }
+
   return (
     <Shell>
       <Card>
@@ -120,6 +127,7 @@ export default async function InvitacionPage({
               code={code}
               email={user.email ?? null}
               isGoogle={Boolean(user.identities?.some((i) => i.provider === "google"))}
+              hasOtherBusiness={hasOtherBusiness}
             />
           ) : (
             <div className="space-y-4">

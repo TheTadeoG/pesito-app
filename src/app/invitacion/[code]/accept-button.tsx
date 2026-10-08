@@ -24,11 +24,15 @@ export function AcceptInvitationButton({
   code,
   email,
   isGoogle,
+  hasOtherBusiness,
 }: {
   code: string;
   email: string | null;
   isGoogle: boolean;
+  /** La cuenta ya pertenece a otro negocio (una cuenta, un negocio). */
+  hasOtherBusiness: boolean;
 }) {
+  const canAccept = !isGoogle && !hasOtherBusiness;
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,10 +50,12 @@ export function AcceptInvitationButton({
         {email ? `Tenés la sesión abierta con ${email}.` : "Tenés una sesión abierta en este navegador."}
         {isGoogle
           ? " Es una cuenta de Google, que no se usa para sumarse a un equipo."
-          : " Si es tu cuenta, podés sumarla al equipo; si no, cerrá sesión y creá tu usuario."}
+          : hasOtherBusiness
+            ? " Esa cuenta ya pertenece a otro negocio, y una cuenta no puede estar en dos. Para sumarte a este equipo, cerrá sesión y creá tu usuario."
+            : " Si es tu cuenta, podés sumarla al equipo; si no, cerrá sesión y creá tu usuario."}
       </p>
 
-      {!isGoogle && (
+      {canAccept && (
         <Button className="w-full" onClick={handleAccept} disabled={pending}>
           {pending ? "Uniéndote…" : "Aceptar con esta cuenta"}
         </Button>

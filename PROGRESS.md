@@ -504,3 +504,8 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 ## Invitación con una sesión abierta
 - `/invitacion/[code]` con sesión abierta ya no ofrece sólo "Aceptar y entrar": avisa con qué cuenta se está ("Tenés la sesión abierta con …"), deja "Aceptar con esta cuenta" y "No soy yo: cerrar sesión y crear mi usuario" (`signOutForInvitation`, vuelve al formulario de la invitación). Con una cuenta de Google sólo queda cerrar sesión (no se suma a un equipo).
 - Sin probar con una invitación real en el navegador.
+
+## Una cuenta, un negocio (migración 0072, sin aplicar)
+- `accept_invitation` (0072, misma firma que la 0020) rechaza con "tu cuenta ya pertenece a otro negocio" si la cuenta ya tiene alguna membresía (el reintento del link de la misma organización sigue andando). Motivo: la app abre siempre el primer negocio y no hay selector, así que sumarse a un segundo negocio gastaba la invitación, ocupaba un lugar del plan y no se veía.
+- `/invitacion/[code]`: con sesión de una cuenta que ya está en otro negocio no se ofrece "Aceptar con esta cuenta"; se explica y queda "No soy yo: cerrar sesión y crear mi usuario".
+- Pendiente a futuro: selector de negocios, si algún día una misma persona tiene varios.
