@@ -11,6 +11,8 @@ const PUBLIC_PATHS = [
   "/",
   "/login",
   "/registro",
+  "/olvide-mi-contrasena",
+  "/restablecer-contrasena",
   "/auth",
   "/invitacion",
   "/blog",

@@ -11,12 +11,18 @@ import { TurnstileField } from "@/components/auth/turnstile-field";
 
 const initialState: AuthActionState = {};
 
-export function LoginForm({ next }: { next?: string }) {
+export function LoginForm({ next, restablecida }: { next?: string; restablecida?: boolean }) {
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="next" value={next ?? ""} />
+
+      {restablecida && (
+        <p className="rounded-xl bg-muted px-3 py-2 text-sm text-foreground" role="status">
+          Listo, cambiaste tu contraseña. Ingresá con la nueva.
+        </p>
+      )}
 
       <div>
         <Label htmlFor="identifier" required>
@@ -43,6 +49,12 @@ export function LoginForm({ next }: { next?: string }) {
           required
         />
       </div>
+
+      <p className="-mt-2 text-right text-sm">
+        <Link href="/olvide-mi-contrasena" className="text-muted-foreground hover:text-primary hover:underline">
+          Olvidé mi contraseña
+        </Link>
+      </p>
 
       {state.captchaRequired && <TurnstileField resetSignal={state} />}
 

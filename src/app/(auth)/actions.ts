@@ -9,7 +9,7 @@ import { LOGIN_FAIL_WINDOW, captchaNextTime, loginGate } from "@/lib/login-gate"
 import { safeNextPath } from "@/lib/safe-redirect";
 import { recordLogin } from "@/lib/login-events";
 import { MFA_COOKIE } from "@/lib/supabase/cookie-options";
-import { isEmailIdentifier, usernameToEmail } from "@/lib/internal-auth";
+import { isEmailIdentifier, isInternalEmail, usernameToEmail } from "@/lib/internal-auth";
 
 export interface AuthActionState {
   error?: string;
@@ -183,6 +183,83 @@ export async function signup(
   }
 
   redirect("/onboarding");
+}
+
+// Recuperar la contraseña. Responde siempre lo mismo exista o no el email (no
+// revela qué cuentas hay). Límites: por IP (5 cada 10 minutos, CAPTCHA desde el
+// segundo pedido) y por email (3 por hora, en silencio) para que nadie use el
+// formulario para llenarle la casilla a otra persona.
+const RESET_WINDOW = 10 * 60;
+const RESET_CAPTCHA_AFTER = 2;
+const RESET_EMAIL_MAX = 3;
+const RESET_EMAIL_WINDOW = 60 * 60;
+const RESET_INFO =
+  "Si ese email tiene una cuenta, te mandamos un link para elegir una contraseña nueva. Revisá también la carpeta de spam.";
+
+export async function requestPasswordReset(
+  _prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email || !email.includes("@") || email.length > 254) {
+    return { error: "Escribí el email de tu cuenta." };
+  }
+
+  const ipLimit = await checkIpRateLimit("recuperar", 5, RESET_WINDOW);
+  if (ipLimit) return { error: ipLimit };
+  if (captchaConfigured() && (await ipHits("recuperar", RESET_WINDOW)) >= RESET_CAPTCHA_AFTER) {
+    const problem = await captchaProblem(formData);
+    if (problem) return { error: problem, captchaRequired: true };
+  }
+  await ipBump("recuperar", RESET_WINDOW);
+  const captchaNext = captchaConfigured() && (await ipHits("recuperar", RESET_WINDOW)) >= RESET_CAPTCHA_AFTER;
+
+  // Usuarios internos (usuario#1234): no tienen casilla. Misma respuesta.
+  if (isInternalEmail(email)) return { info: RESET_INFO, captchaRequired: captchaNext };
+  if ((await accountHits(email, "recuperar_acct", RESET_EMAIL_WINDOW)) >= RESET_EMAIL_MAX) {
+    return { info: RESET_INFO, captchaRequired: captchaNext };
+  }
+  await accountBump(email, "recuperar_acct", RESET_EMAIL_WINDOW);
+
+  const origin = (await headers()).get("origin");
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent("/restablecer-contrasena")}`,
+  });
+  if (error) console.error("resetPasswordForEmail", (error as { code?: string }).code ?? "", error.message);
+  // Sin distinguir si falló: no se le dice a quien pregunta qué emails existen.
+  return { info: RESET_INFO, captchaRequired: captchaNext };
+}
+
+export async function resetPassword(
+  _prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  if (password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres." };
+  if (password !== confirmPassword) return { error: "Las contraseñas no coinciden." };
+
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) {
+    return { error: "El link venció. Pedí uno nuevo desde \"Olvidé mi contraseña\"." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    const code = (error as { code?: string }).code ?? "";
+    console.error("resetPassword", code, error.message);
+    if (code === "same_password") return { error: "Elegí una contraseña distinta a la anterior." };
+    if (code === "weak_password") return { error: "La contraseña es muy fácil de adivinar. Probá con otra más larga." };
+    return { error: "No pudimos cambiar la contraseña. Pedí un link nuevo e intentá de nuevo." };
+  }
+
+  // Se cierra la sesión del link y se entra de nuevo con la clave nueva (así,
+  // si la cuenta tiene verificación en dos pasos, pasa por su pantalla).
+  await supabase.auth.signOut({ scope: "global" });
+  (await cookies()).delete(MFA_COOKIE);
+  redirect("/login?restablecida=1");
 }
 
 export async function signOut() {

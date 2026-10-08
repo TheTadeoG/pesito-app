@@ -465,3 +465,9 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - `supabase/migrations/0069_hardening_advisor.sql`: fija `search_path` en 7 funciones, saca a `anon` y `PUBLIC` la ejecución de las funciones de `public` (excepto `get_invitation_preview`, `username_available`, `accept_invitation`, usadas en la página de invitación) y reemplaza la lectura pública de `storage.objects` del bucket `product-images` por lectura de la carpeta del propio negocio (la URL pública de las fotos sigue andando).
 - Sin probar contra una base real: aplicar y revisar que el login, el POS, las invitaciones y la subida de fotos sigan andando.
 - Pendiente del lado del usuario: "Leaked password protection" (Auth → Password security; en Supabase es de plan Pro).
+
+## Olvidé mi contraseña (sin push hasta aprobación)
+- `/olvide-mi-contrasena` (pide el email) → mail de Supabase (SMTP de Resend) → `/auth/confirm?next=/restablecer-contrasena` → `/restablecer-contrasena` (clave nueva, mínimo 8) → se cierra la sesión del link y se vuelve a `/login?restablecida=1`.
+- Siempre responde lo mismo exista o no el email. Límites: por IP 5 cada 10 min (CAPTCHA desde el 2.º pedido) y por email 3 por hora, en silencio.
+- Usuarios internos (`usuario#1234`) no tienen casilla: se avisa que el dueño les cambia la clave desde Usuarios.
+- Pendiente del usuario: probar con un email real; opcional, pasar la plantilla "Reset password" de Supabase (Emails → Templates) a español.

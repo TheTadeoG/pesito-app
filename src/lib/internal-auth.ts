@@ -17,6 +17,11 @@ export function usernameToEmail(fullUsername: string): string {
   return `${local}@${INTERNAL_LOGIN_DOMAIN}`;
 }
 
+/** Email inventado de un usuario interno: no recibe correos. */
+export function isInternalEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith(`@${INTERNAL_LOGIN_DOMAIN}`);
+}
+
 export function isEmailIdentifier(identifier: string): boolean {
   return identifier.includes("@");
 }
