@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BookOpen, Check, HelpCircle, Keyboard, MessageCircle } from "lucide-react";
+import { BookOpen, HelpCircle, Keyboard, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -44,7 +44,7 @@ function HintsSwitch() {
           Mostrar los atajos en los botones
         </p>
         <p className="text-xs text-muted-foreground">
-          Las teclas que se ven en los botones (1, P, Ctrl K…). Los atajos funcionan igual si las ocultás. Se guarda en este dispositivo.
+          Las teclas que se ven en los botones (1, P, Alt 3, Ctrl K…). Los atajos funcionan igual si las ocultás. Se guarda en este dispositivo.
         </p>
       </div>
       <button
@@ -183,7 +183,6 @@ const itemClass =
 export function HelpMenu({ orgName }: { orgName: string }) {
   const [open, setOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
-  const showHints = useShortcutHints();
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -236,18 +235,6 @@ export function HelpMenu({ orgName }: { orgName: string }) {
           >
             <Keyboard className="h-4 w-4 text-primary" />
             Atajos del teclado
-          </button>
-          <button
-            type="button"
-            role="menuitemcheckbox"
-            aria-checked={showHints}
-            className={cn(itemClass, "hidden sm:flex")}
-            onClick={() => setShortcutHints(!showHints)}
-          >
-            <span className="flex h-4 w-4 items-center justify-center rounded border border-primary text-primary">
-              {showHints && <Check className="h-3 w-3" />}
-            </span>
-            Atajos en los botones
           </button>
           <a
             role="menuitem"

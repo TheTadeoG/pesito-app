@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { navSections, isNavItemActive, type NavItem, type NavSection } from "@/lib/nav";
 import type { Plan } from "@/lib/subscription";
+import { AltHint } from "@/components/dashboard/alt-hint";
 import { PlanLine } from "@/components/dashboard/plan-line";
 import { isOrgAdmin } from "@/lib/roles";
 import { cn } from "@/lib/utils";
@@ -82,20 +83,23 @@ export function Sidebar({
           <item.icon className="h-4 w-4" />
           {item.label}
         </span>
-        {badge && (
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-            {badge}
-          </span>
-        )}
-        {(alerts[item.href] ?? 0) > 0 && (
-          <span
-            className="min-w-5 rounded-full bg-danger px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
-            title="Con deuda vencida"
-            aria-label={`${alerts[item.href]} con deuda vencida`}
-          >
-            {alerts[item.href]}
-          </span>
-        )}
+        <span className="flex items-center gap-1.5">
+          {badge && (
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              {badge}
+            </span>
+          )}
+          {(alerts[item.href] ?? 0) > 0 && (
+            <span
+              className="min-w-5 rounded-full bg-danger px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
+              title="Con deuda vencida"
+              aria-label={`${alerts[item.href]} con deuda vencida`}
+            >
+              {alerts[item.href]}
+            </span>
+          )}
+          <AltHint href={item.href} />
+        </span>
       </Link>
     );
   }

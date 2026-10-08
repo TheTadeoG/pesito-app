@@ -6,7 +6,9 @@ import { Eye, EyeOff, Lock, Settings2, ShoppingCart, Wallet } from "lucide-react
 import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency } from "@/lib/utils";
 import { CLOSE_SOON_MINUTES, getCashReminder, type CashReminder } from "@/lib/cash-reminder";
+import { useShortcutHints } from "@/lib/shortcut-hints";
 import { onCashDelta } from "@/lib/cash-events";
+import { AltHint } from "@/components/dashboard/alt-hint";
 import { OpenCajaFormDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 
 function elapsed(openedAt: string) {
@@ -40,6 +42,7 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
   const [time, setTime] = useState(() =>
     cashRegister ? elapsed(cashRegister.openedAt) : "0:00:00"
   );
+  const showHints = useShortcutHints();
   const [openDialog, setOpenDialog] = useState(false);
   const [reminder, setReminder] = useState<CashReminder | null>(null);
   const [hidden, setHidden] = useState(false);
@@ -182,19 +185,21 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
         <Link
           href="/pos"
           className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-2 text-xs font-bold transition-colors hover:bg-white/90",
+            "flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-white px-1.5 py-2 text-xs font-bold transition-colors hover:bg-white/90",
             closing ? "text-amber-800" : "text-emerald-800"
           )}
         >
-          <ShoppingCart className="h-4 w-4" />
+          {!showHints && <ShoppingCart className="h-4 w-4 shrink-0" />}
           Vender
+          <AltHint href="/pos" className="border-emerald-800/30 bg-transparent text-current opacity-70" />
         </Link>
         <Link
           href="/caja"
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/20 px-2 py-2 text-xs font-bold transition-colors hover:bg-white/30"
+          className="flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-white/20 px-1.5 py-2 text-xs font-bold transition-colors hover:bg-white/30"
         >
-          <Wallet className="h-4 w-4" />
+          {!(showHints && !closing) && <Wallet className="h-4 w-4 shrink-0" />}
           {closing ? "Cerrar caja" : "Caja"}
+          {!closing && <AltHint href="/caja" className="border-white/40 bg-transparent text-white opacity-80" />}
         </Link>
       </div>
     </div>
