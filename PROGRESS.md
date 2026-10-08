@@ -541,3 +541,12 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Atajos: se sacó el ítem "Atajos en los botones" del menú ? (el interruptor queda sólo dentro de "Atajos del teclado"). El menú lateral de la computadora muestra la insignia "Alt N" en cada pantalla con atajo (`alt-hint.tsx`, mismo interruptor), y "Alt 1" / "Alt 2" en los botones Vender y Caja de la tarjeta de caja (sin los íconos mientras se ven las insignias, para que entren).
 - Atajos en los botones: por defecto ocultos (se activan con el interruptor de "Atajos del teclado"; se guarda "on" en el navegador de cada dispositivo).
 - Atajos en los botones: las insignias de la pantalla de cobro (números del medio de pago, "P" de imprimir, "(Enter)" de nueva venta) se ven siempre, no dependen del interruptor. El interruptor controla sólo el menú lateral (Alt N, también Vender/Caja) y el "Ctrl K" del buscador.
+
+## Sugerencias y reportes de problemas (parte 2 del menú de ayuda)
+- Menú de ayuda (?): "Contanos qué te falta" (sugerencia) y "Reportar un problema" abren `feedback-dialog.tsx` (mensaje de 5 a 2000 caracteres; manda también la pantalla en la que estaba). Todos los planes y roles, sin `featureMinPlan`.
+- Migración 0073 (pendiente de aplicar): tabla `feedback` sin policies (nadie la lee con su sesión) y `submit_feedback(p_org_id, p_kind, p_message, p_page)` `security definer`: exige ser miembro, valida el largo, guarda el email del token y limita a 10 por día por negocio con `rate_limit_hit` (P0429 → "Hoy ya mandaste varios mensajes…").
+- Acción `submitFeedback` (`(dashboard)/feedback/actions.ts`); topes en `lib/feedback.ts`. Aviso por email opcional (`lib/email.ts`, API de Resend): variables `RESEND_API_KEY` (clave con permiso de envío) y `FEEDBACK_NOTIFY_EMAIL` (a quién llega). Sin ellas no se manda nada y el mensaje igual queda en la bandeja.
+- Bandeja `/admin/mensajes` (sólo platform admin): filtros Sin resolver / Problemas / Sugerencias / Todos, marcar visto o resuelto, reabrir, borrar y link `mailto:` al negocio. `/admin` muestra el contador de "sin leer".
+- Textos públicos: pregunta nueva en `faq-data.ts` (Empezar y planes; sale en `llms.txt`) y párrafo en la política de privacidad (fecha: octubre de 2026).
+- Probado en navegador (menú, formulario, contador, Esc, celular). El envío real falta probarlo después de aplicar la 0073.
+- Pendiente (partes 3 y 4): campana con alertas del negocio y novedades de Pesito.

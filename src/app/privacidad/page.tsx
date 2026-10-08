@@ -15,7 +15,7 @@ export default function PrivacidadPage() {
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
           <h1 className="text-3xl font-bold text-foreground">Política de privacidad</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Última actualización: septiembre de 2026</p>
+          <p className="mt-2 text-sm text-muted-foreground">Última actualización: octubre de 2026</p>
 
           <div className="prose-pesito mt-10 space-y-8 text-sm leading-relaxed text-foreground">
             <section>
@@ -24,7 +24,9 @@ export default function PrivacidadPage() {
                 Para crear tu cuenta guardamos tu email y la contraseña (encriptada). Si elegís ingresar con Google, recibimos de Google tu nombre y tu email (no tu contraseña de Google) y no accedemos a tus datos de Gmail ni de otros servicios de Google. Para operar tu
                 negocio, guardamos los datos que vos cargás: productos, ventas, compras, clientes,
                 proveedores y movimientos de caja. Estos datos pertenecen a tu organización y no se
-                comparten con otras cuentas de Pesito.
+                comparten con otras cuentas de Pesito. Si nos mandás una sugerencia o un reporte de problema
+                desde el menú de ayuda, guardamos el mensaje junto con el nombre de tu negocio, tu email y la
+                pantalla en la que estabas, para poder responderte.
               </p>
             </section>
 

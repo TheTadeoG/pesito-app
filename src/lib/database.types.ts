@@ -750,6 +750,32 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["payment_methods"]["Insert"]>;
         Relationships: [];
       };
+      feedback: {
+        Row: {
+          id: string;
+          org_id: string;
+          user_id: string | null;
+          contact_email: string | null;
+          kind: "suggestion" | "problem";
+          message: string;
+          page: string | null;
+          status: "new" | "seen" | "done";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          user_id?: string | null;
+          contact_email?: string | null;
+          kind: "suggestion" | "problem";
+          message: string;
+          page?: string | null;
+          status?: "new" | "seen" | "done";
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["feedback"]["Insert"]>;
+        Relationships: [];
+      };
       testimonials: {
         Row: {
           id: string;
@@ -979,6 +1005,10 @@ export interface Database {
       rate_limit_ip: {
         Args: { p_key: string; p_bucket: string; p_max: number; p_window_seconds: number };
         Returns: boolean;
+      };
+      submit_feedback: {
+        Args: { p_org_id: string; p_kind: string; p_message: string; p_page?: string | null };
+        Returns: string;
       };
       rate_limit_hit: {
         Args: { p_org_id: string; p_bucket: string; p_max: number; p_window_seconds: number };

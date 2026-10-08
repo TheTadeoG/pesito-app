@@ -7,6 +7,7 @@ import {
   Download,
   DollarSign,
   MessageSquareQuote,
+  MessageSquareText,
   Package,
   Receipt,
   ShoppingBag,
@@ -127,6 +128,7 @@ export default async function AdminPage() {
     { count: openRegistersCount },
     { count: testimonialsCount },
     { count: publishedTestimonialsCount },
+    { count: newFeedbackCount },
     { data: landingStatsRow },
   ] = await Promise.all([
     admin.from("organizations").select("id, name, business_type, created_at"),
@@ -155,6 +157,7 @@ export default async function AdminPage() {
       .from("testimonials")
       .select("id", { count: "exact", head: true })
       .eq("published", true),
+    admin.from("feedback").select("id", { count: "exact", head: true }).eq("status", "new"),
     admin.from("landing_stats").select("*").eq("id", "main").maybeSingle(),
   ]);
 
@@ -711,6 +714,28 @@ export default async function AdminPage() {
             <div className="-mx-5 -mb-5 border-t border-border">
               <OrgPlanManager orgs={orgsForPlanManager} />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                <MessageSquareText className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-muted-foreground">Sugerencias y problemas</p>
+                <p className="text-lg font-bold text-foreground">
+                  {newFeedbackCount ?? 0}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">sin leer</span>
+                </p>
+              </div>
+            </div>
+            <Link href="/admin/mensajes">
+              <Button variant="outline" size="sm">
+                Ver mensajes
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 

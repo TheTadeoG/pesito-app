@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BookOpen, HelpCircle, Keyboard, MessageCircle } from "lucide-react";
+import { BookOpen, Bug, HelpCircle, Keyboard, Lightbulb, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { FeedbackDialog } from "@/components/dashboard/feedback-dialog";
+import type { FeedbackKind } from "@/lib/feedback";
 import { whatsappLink } from "@/lib/whatsapp";
 import { NAV_SHORTCUTS } from "@/lib/shortcuts";
 import { setShortcutHints, useShortcutHints } from "@/lib/shortcut-hints";
@@ -177,12 +179,13 @@ const itemClass =
 
 /**
  * Botón de ayuda (?) de la barra de arriba: un menú con los atajos del teclado,
- * el soporte por WhatsApp y las preguntas frecuentes. En el celular no hay
+ * el soporte por WhatsApp, las sugerencias y reportes de problemas y las preguntas frecuentes. En el celular no hay
  * atajos (no hay teclado), así que esa opción no se muestra.
  */
 export function HelpMenu({ orgName }: { orgName: string }) {
   const [open, setOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackKind | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -247,6 +250,30 @@ export function HelpMenu({ orgName }: { orgName: string }) {
             <MessageCircle className="h-4 w-4 text-primary" />
             Hablar con soporte
           </a>
+          <button
+            type="button"
+            role="menuitem"
+            className={itemClass}
+            onClick={() => {
+              setOpen(false);
+              setFeedback("suggestion");
+            }}
+          >
+            <Lightbulb className="h-4 w-4 text-primary" />
+            Contanos qué te falta
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={itemClass}
+            onClick={() => {
+              setOpen(false);
+              setFeedback("problem");
+            }}
+          >
+            <Bug className="h-4 w-4 text-primary" />
+            Reportar un problema
+          </button>
           <a
             role="menuitem"
             className={itemClass}
@@ -262,6 +289,7 @@ export function HelpMenu({ orgName }: { orgName: string }) {
       )}
 
       <ShortcutsDialog open={shortcuts} onClose={() => setShortcuts(false)} />
+      <FeedbackDialog kind={feedback} orgName={orgName} onClose={() => setFeedback(null)} />
     </div>
   );
 }
