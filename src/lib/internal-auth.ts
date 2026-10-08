@@ -1,8 +1,13 @@
-// Dominio inventado para las cuentas de "usuario interno" (usuario +
-// contraseña, dadas de alta directamente por el dueño/admin para sus
-// vendedores, sin depender de un email real). Supabase Auth necesita algo
-// con forma de email; nunca se le manda un correo de verdad a este dominio.
-const INTERNAL_LOGIN_DOMAIN = "vendedores.pesito.app";
+// Dominio de las cuentas de "usuario interno" (usuario + contraseña, dadas de
+// alta directamente por el dueño/admin para sus vendedores, sin depender de un
+// email real ni de invitación). Supabase Auth necesita algo con forma de email;
+// nunca se le manda un correo de verdad a este dominio. Tiene que ser un
+// subdominio NUESTRO (pesito.com.ar): si fuera un dominio de otra persona, quien
+// lo controle podría recibir los mails de recuperación de esas cuentas.
+const INTERNAL_LOGIN_DOMAIN = "vendedores.pesito.com.ar";
+// Dominio anterior (que no es nuestro): la migración 0071 renombra las cuentas;
+// se sigue reconociendo por si queda alguna sin renombrar.
+const LEGACY_INTERNAL_LOGIN_DOMAIN = "vendedores.pesito.app";
 
 // El usuario final (el que se usa para loguearse) tiene forma "juan#4821":
 // un código de 4 dígitos que el sistema agrega solo, al estilo Discord. Así
@@ -19,7 +24,10 @@ export function usernameToEmail(fullUsername: string): string {
 
 /** Email inventado de un usuario interno: no recibe correos. */
 export function isInternalEmail(email: string): boolean {
-  return email.trim().toLowerCase().endsWith(`@${INTERNAL_LOGIN_DOMAIN}`);
+  const normalized = email.trim().toLowerCase();
+  return (
+    normalized.endsWith(`@${INTERNAL_LOGIN_DOMAIN}`) || normalized.endsWith(`@${LEGACY_INTERNAL_LOGIN_DOMAIN}`)
+  );
 }
 
 export function isEmailIdentifier(identifier: string): boolean {

@@ -493,3 +493,9 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 ## Nombre del negocio: 2 líneas y tope de 30 caracteres
 - Menú lateral (`sidebar.tsx`): el nombre ocupa hasta 2 líneas (`line-clamp-2`) y muestra el nombre entero al pasar el mouse. El menú del celular no se tocó (sigue con "…").
 - Tope `BUSINESS_NAME_MAX = 30` (`lib/business-name.ts`) al registrarse, al crear el negocio y al cambiarlo en Configuración (formulario y servidor). Los nombres más largos que ya existían se siguen mostrando y se pueden dejar tal cual.
+
+## Dominio de las cuentas internas (migración 0071, sin aplicar)
+- Los usuarios internos tenían el email inventado `@vendedores.pesito.app`, un dominio que NO es nuestro (quien lo controle podría recibir mails de recuperación). Pasan a `@vendedores.pesito.com.ar` (constante en `lib/internal-auth.ts`, `isInternalEmail` reconoce los dos).
+- `0071_internal_users_domain.sql` renombra `auth.users`, `auth.identities` y `memberships.email`. Orden: aplicar la 0071 y desplegar enseguida (entre una y otra falla el login con usuario de los empleados).
+- Opcional en el DNS de pesito.com.ar (Vercel): registro MX `vendedores` con valor `.` y prioridad 0 (MX nulo) para que ese subdominio rechace correo de entrada.
+- Sin probar contra una base real.
