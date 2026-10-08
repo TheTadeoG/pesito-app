@@ -475,3 +475,7 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 ## Registro: avisar si el email ya tiene cuenta (migración 0070)
 - Con "Confirm email" activado Supabase no avisa cuando el email existe. `email_registered(p_email)` (0070, sólo `service_role`) lo consulta en `auth.users`; el registro la llama después del límite por IP y del CAPTCHA, y muestra "Ya existe una cuenta con ese email" con links a ingresar y recuperar la contraseña. Si la función no existe todavía, el registro sigue como antes (falla abierto).
 - Costo: se puede averiguar si un email tiene cuenta (limitado a 5 intentos cada 10 min por IP, CAPTCHA desde el 3.º). Login y "Olvidé mi contraseña" siguen sin revelarlo.
+
+## Selector de país del teléfono con banderas
+- `src/components/ui/phone-country-select.tsx`: desplegable propio con banderas SVG (`country-flag-icons`, sólo los 11 países de `phone-countries.ts`). Los emoji de bandera se ven como letras en Windows y un `<select>` nativo no muestra imágenes. Lo usan el registro (`PhoneInput`) y el formulario de clientes. Teclado: flechas, Enter, Esc.
+- Si se agrega un país a `phone-countries.ts`, también va su bandera en el mapa `flags` del componente.

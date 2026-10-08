@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { phoneCountries, defaultPhoneCountry, type PhoneCountry } from "@/lib/phone-countries";
+import { PhoneCountrySelect } from "@/components/ui/phone-country-select";
+import { defaultPhoneCountry, type PhoneCountry } from "@/lib/phone-countries";
 
 export function PhoneInput({
   id,
@@ -22,21 +23,7 @@ export function PhoneInput({
 
   return (
     <div className="flex gap-2">
-      <select
-        value={country.code}
-        onChange={(e) => {
-          const next = phoneCountries.find((c) => c.code === e.target.value);
-          if (next) setCountry(next);
-        }}
-        aria-label="Código de país"
-        className="h-10 w-28 shrink-0 rounded-xl border border-border bg-card px-2 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-      >
-        {phoneCountries.map((c) => (
-          <option key={c.code} value={c.code}>
-            {c.flag} {c.dialCode}
-          </option>
-        ))}
-      </select>
+      <PhoneCountrySelect value={country} onChange={setCountry} />
       <Input
         id={id}
         type="tel"

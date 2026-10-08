@@ -5,11 +5,10 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { saveCustomer, type CustomerFormInput } from "@/app/(dashboard)/clientes/actions";
 import { invoiceTypes, type InvoiceType } from "@/lib/invoice-labels";
+import { PhoneCountrySelect } from "@/components/ui/phone-country-select";
 import {
-  phoneCountries,
   splitPhoneCountry,
   type PhoneCountry,
 } from "@/lib/phone-countries";
@@ -102,27 +101,7 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
           <div>
             <Label htmlFor="c-phone">Teléfono</Label>
             <div className="flex gap-1.5">
-              {/* Select/Input siempre traen w-full de base (cn() acá es
-                  clsx puro, sin tailwind-merge, así que una clase w-* propia
-                  no le gana) — se lo acota envolviéndolo en un contenedor de
-                  ancho fijo en vez de pisar la clase en el propio elemento. */}
-              <div className="w-28 shrink-0">
-                <Select
-                  value={phoneCountry.code}
-                  onChange={(e) => {
-                    const next = phoneCountries.find((c) => c.code === e.target.value);
-                    if (next) setPhoneCountry(next);
-                  }}
-                  className="px-2"
-                  aria-label="Código de país"
-                >
-                  {phoneCountries.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.flag} {c.dialCode}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+              <PhoneCountrySelect value={phoneCountry} onChange={setPhoneCountry} />
               <Input
                 id="c-phone"
                 value={phoneNumber}
