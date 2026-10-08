@@ -972,6 +972,10 @@ export interface Database {
         Args: { p_key: string; p_bucket: string };
         Returns: undefined;
       };
+      email_registered: {
+        Args: { p_email: string };
+        Returns: boolean;
+      };
       rate_limit_ip: {
         Args: { p_key: string; p_bucket: string; p_max: number; p_window_seconds: number };
         Returns: boolean;

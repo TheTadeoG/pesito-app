@@ -124,7 +124,20 @@ export function SignupForm({
       {state.captchaRequired && <TurnstileField resetSignal={state} />}
 
       {!mismatchError && state.error && (
-        <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{state.error}</p>
+        <div className="space-y-1 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">
+          <p>{state.error}</p>
+          {state.existingAccount && (
+            <p>
+              <Link href="/login" className="font-medium underline">
+                Ingresar
+              </Link>
+              {" · "}
+              <Link href="/olvide-mi-contrasena" className="font-medium underline">
+                Recuperar mi contraseña
+              </Link>
+            </p>
+          )}
+        </div>
       )}
 
       <Button type="submit" className="w-full" disabled={pending}>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { accountBump, accountHits, checkIpRateLimit, getClientIp, ipBump, ipHits } from "@/lib/ip-rate-limit";
 import { captchaConfigured, verifyCaptcha } from "@/lib/turnstile";
+import { emailRegistered } from "@/lib/email-registered";
 import { LOGIN_FAIL_WINDOW, captchaNextTime, loginGate } from "@/lib/login-gate";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { recordLogin } from "@/lib/login-events";
@@ -16,6 +17,8 @@ export interface AuthActionState {
   info?: string;
   /** Hay que resolver el CAPTCHA para seguir (sólo cuando esta IP está forzando algo). */
   captchaRequired?: boolean;
+  /** El email ya tiene una cuenta (el formulario ofrece ingresar o recuperar la clave). */
+  existingAccount?: boolean;
 }
 
 // Protección sin bloquear cuentas ajenas: todo se cuenta por IP. Después de
@@ -135,6 +138,12 @@ export async function signup(
   if (captchaConfigured() && (await ipHits("registro", SIGNUP_WINDOW)) >= SIGNUP_CAPTCHA_AFTER) {
     const problem = await captchaProblem(formData);
     if (problem) return { error: problem, captchaRequired: true };
+  }
+
+  // Con "Confirm email" activado Supabase no avisa si el email ya existe: se
+  // consulta acá, después de los límites por IP y del CAPTCHA (no sirve para barrer emails).
+  if (await emailRegistered(email)) {
+    return { error: "Ya existe una cuenta con ese email.", existingAccount: true };
   }
 
   const origin = (await headers()).get("origin");

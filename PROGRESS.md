@@ -471,3 +471,7 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Siempre responde lo mismo exista o no el email. Límites: por IP 5 cada 10 min (CAPTCHA desde el 2.º pedido) y por email 3 por hora, en silencio.
 - Usuarios internos (`usuario#1234`) no tienen casilla: se avisa que el dueño les cambia la clave desde Usuarios.
 - Pendiente del usuario: probar con un email real; opcional, pasar la plantilla "Reset password" de Supabase (Emails → Templates) a español.
+
+## Registro: avisar si el email ya tiene cuenta (migración 0070)
+- Con "Confirm email" activado Supabase no avisa cuando el email existe. `email_registered(p_email)` (0070, sólo `service_role`) lo consulta en `auth.users`; el registro la llama después del límite por IP y del CAPTCHA, y muestra "Ya existe una cuenta con ese email" con links a ingresar y recuperar la contraseña. Si la función no existe todavía, el registro sigue como antes (falla abierto).
+- Costo: se puede averiguar si un email tiene cuenta (limitado a 5 intentos cada 10 min por IP, CAPTCHA desde el 3.º). Login y "Olvidé mi contraseña" siguen sin revelarlo.
