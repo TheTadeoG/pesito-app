@@ -73,7 +73,8 @@ export async function login(
     await ipBump("login_fail", LOGIN_FAIL_WINDOW);
     await accountBump(email, "login_fail_acct", LOGIN_FAIL_WINDOW);
     return {
-      error: "Email/usuario o contraseña incorrectos.",
+      error:
+        "Email/usuario o contraseña incorrectos. Si te registraste con Google, tocá \"Continuar con Google\"; si no recordás tu contraseña, usá \"Olvidé mi contraseña\".",
       captchaRequired: captchaNextTime(failures, accountFailures, captchaOn),
     };
   }

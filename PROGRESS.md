@@ -499,3 +499,4 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - `0071_internal_users_domain.sql` renombra `auth.users`, `auth.identities` y `memberships.email`. Orden: aplicar la 0071 y desplegar enseguida (entre una y otra falla el login con usuario de los empleados).
 - Opcional en el DNS de pesito.com.ar (Vercel): registro MX `vendedores` con valor `.` y prioridad 0 (MX nulo) para que ese subdominio rechace correo de entrada.
 - Sin probar contra una base real.
+- Login: el error de credenciales incorrectas ahora orienta ("Si te registraste con Google, tocá Continuar con Google; si no recordás tu contraseña, usá Olvidé mi contraseña"). Es el mismo texto para todos los casos (no revela qué cuentas existen). Una cuenta creada con Google puede ponerse contraseña con "Olvidé mi contraseña".
