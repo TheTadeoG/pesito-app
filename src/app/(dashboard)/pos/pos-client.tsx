@@ -422,6 +422,11 @@ export function PosClient({
     setShowMixedStep(false);
     setMixedAmounts({ efectivo: "", tarjeta: "", transferencia: "", qr: "", fiado: "" });
     setShowFiadoStep(false);
+    // Al cobrar, la búsqueda ya no hace falta: si quedaron dígitos sueltos (se tipean al
+    // buscador desde cualquier lado), se limpian, y se suelta el foco para que los números
+    // del cobro no se escriban en el buscador que queda detrás de la ventana.
+    setQuery("");
+    (document.activeElement as HTMLElement | null)?.blur();
     setShowPaymentPicker(true);
   }
 

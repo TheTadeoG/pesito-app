@@ -108,6 +108,19 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
               ),
               label: "Elegir cómo paga (1 Efectivo, 2 Tarjeta…)",
             },
+            {
+              keys: (
+                <>
+                  <Kbd>Ctrl</Kbd>
+                  <span className="text-xs text-muted-foreground">o</span>
+                  <Kbd>⌘</Kbd>
+                  <span className="text-xs text-muted-foreground">+</span>
+                  <Kbd>P</Kbd>
+                </>
+              ),
+              label: "Imprimir el ticket (después de cobrar)",
+            },
+            { keys: <Kbd>Enter</Kbd>, label: "Nueva venta (después de cobrar)" },
           ]}
         />
         <ShortcutGroup
