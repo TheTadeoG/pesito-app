@@ -178,7 +178,7 @@ export async function signup(
 
   if (!data.session) {
     return {
-      info: "Te enviamos un email para confirmar tu cuenta. Revisá tu bandeja de entrada.",
+      info: "Te enviamos un email para confirmar tu cuenta. El link dura 1 hora. Revisá tu bandeja de entrada y la carpeta de spam.",
     };
   }
 
@@ -194,7 +194,7 @@ const RESET_CAPTCHA_AFTER = 2;
 const RESET_EMAIL_MAX = 3;
 const RESET_EMAIL_WINDOW = 60 * 60;
 const RESET_INFO =
-  "Si ese email tiene una cuenta, te mandamos un link para elegir una contraseña nueva. Revisá también la carpeta de spam.";
+  "Si ese email tiene una cuenta, te mandamos un link para elegir una contraseña nueva. El link dura 1 hora. Revisá también la carpeta de spam.";
 
 export async function requestPasswordReset(
   _prevState: AuthActionState,

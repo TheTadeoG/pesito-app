@@ -19,7 +19,7 @@ export default async function ResetPasswordPage() {
       <Card className="mx-auto w-full max-w-sm">
         <CardHeader>
           <CardTitle>El link venció</CardTitle>
-          <CardDescription>Los links para cambiar la contraseña duran poco y sirven una sola vez.</CardDescription>
+          <CardDescription>Los links para cambiar la contraseña duran 1 hora y sirven una sola vez.</CardDescription>
         </CardHeader>
         <CardContent>
           <Link href="/olvide-mi-contrasena" className="font-medium text-primary hover:underline">

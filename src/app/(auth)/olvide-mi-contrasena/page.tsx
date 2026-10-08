@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
       <CardHeader>
         <CardTitle>Recuperá tu contraseña</CardTitle>
         <CardDescription>
-          Escribí el email de tu cuenta y te mandamos un link para elegir una nueva.
+          Escribí el email de tu cuenta y te mandamos un link (dura 1 hora) para elegir una nueva.
         </CardDescription>
       </CardHeader>
       <CardContent>
