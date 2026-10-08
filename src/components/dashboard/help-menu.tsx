@@ -5,6 +5,7 @@ import { BookOpen, HelpCircle, Keyboard, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { whatsappLink } from "@/lib/whatsapp";
+import { NAV_SHORTCUTS } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 
 function Kbd({ children }: { children: ReactNode }) {
@@ -57,8 +58,23 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
               ),
               label: "Buscar y saltar a cualquier pantalla",
             },
+            { keys: <Kbd>Esc</Kbd>, label: "Cerrar la ventana abierta" },
           ]}
         />
+        <ShortcutGroup
+          title="Ir a una pantalla"
+          rows={NAV_SHORTCUTS.map((s) => ({
+            keys: (
+              <>
+                <Kbd>Alt</Kbd>
+                <span className="text-xs text-muted-foreground">+</span>
+                <Kbd>{String(s.digit)}</Kbd>
+              </>
+            ),
+            label: s.label,
+          }))}
+        />
+        <p className="-mt-2 text-xs text-muted-foreground">En Mac, Alt es la tecla Option (⌥).</p>
         <ShortcutGroup
           title="Punto de venta"
           rows={[
@@ -81,6 +97,16 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
                 </>
               ),
               label: "Cobrar la venta",
+            },
+            {
+              keys: (
+                <>
+                  <Kbd>1</Kbd>
+                  <span className="text-xs text-muted-foreground">…</span>
+                  <Kbd>9</Kbd>
+                </>
+              ),
+              label: "Elegir cómo paga (1 Efectivo, 2 Tarjeta…)",
             },
           ]}
         />

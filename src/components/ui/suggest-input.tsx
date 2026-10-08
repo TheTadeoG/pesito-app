@@ -75,6 +75,8 @@ export function SuggestInput({
       e.preventDefault();
       choose(suggestions[active]);
     } else if (e.key === "Escape") {
+      // Si la lista estaba abierta, la tecla se usa para cerrarla (no cierra la ventana).
+      if (open) e.stopPropagation();
       setOpen(false);
     }
   }

@@ -526,3 +526,10 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - No se hizo la tecla `?` para abrir los atajos: en el POS cualquier carácter va al buscador y se pisaría.
 - Celular: la barra muestra el menú de las tres rayitas, el título con el rol y el plan y el botón de ayuda. El tema y cerrar sesión pasaron al pie del menú de las tres rayitas (`ThemeMenuItem`, `useTheme` en `theme-toggle.tsx`). En la computadora se ven como antes.
 - Pendiente (partes 2 a 4): sugerencias y reportes de problemas (tabla + bandeja en `/admin` + aviso por email), campana con las alertas del negocio y novedades de Pesito. "Contanos qué te falta" y "Reportar un problema" se suman al menú de ayuda con la parte 2.
+
+## Atajos simples (Alt + número, número en el cobro, Esc)
+- `Alt` (⌥ en Mac) + 1…7: Punto de Venta, Caja, Productos, Compras, Clientes, Proveedores, Reportes (`lib/shortcuts.ts`, escuchados en `NavSearch`). Fijos, no dependen del rol. Con `Alt` el POS no los confunde con el escaneo (ignora las teclas con modificadores). No navegan con una ventana abierta. En Linux, Chrome y Firefox usan Alt+número para cambiar de pestaña.
+- `Esc` cierra la ventana de arriba (`dialog.tsx`, con una pila de ventanas abiertas). Los campos que usan Esc para cerrar su lista (`suggest-input`, selector de país) cortan la propagación para no cerrar además la ventana.
+- En "¿Cómo paga?" del POS, los números 1…9 eligen el medio de pago en el orden de los botones (cada botón muestra su número; ocultos en pantallas chicas). Sólo en el paso inicial, sin campos enfocados y sin modificadores.
+- `ShortcutsDialog` (`help-menu.tsx`) lista todo. Si se agrega o cambia un atajo, se actualiza ahí y en `shortcuts.ts`.
+- Probado en navegador con el POS real y datos de prueba (10 comprobaciones).

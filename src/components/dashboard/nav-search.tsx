@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { navSections } from "@/lib/nav";
+import { NAV_SHORTCUTS, digitFromCode } from "@/lib/shortcuts";
 
 // Buscador del menú ("Buscar o ir a…", Ctrl/⌘ + K): lleva a cualquier
 // pantalla escribiendo parte del nombre. Enter abre la primera coincidencia.
@@ -42,11 +43,21 @@ export function NavSearch({
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen(true);
+        return;
+      }
+      // Alt (⌥ en Mac) + número: ir a una pantalla. No con una ventana abierta
+      // (se perdería lo que se está cargando).
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.repeat) {
+        const digit = digitFromCode(e.code);
+        const target = digit ? NAV_SHORTCUTS.find((s) => s.digit === digit) : undefined;
+        if (!target || document.querySelector('[data-dialog="open"]')) return;
+        e.preventDefault();
+        router.push(target.href);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [router]);
 
   function go(href: string) {
     setOpen(false);

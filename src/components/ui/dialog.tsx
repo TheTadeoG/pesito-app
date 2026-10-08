@@ -1,11 +1,14 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type DialogSize = "md" | "lg";
+
+// Ventanas abiertas, en orden: con Esc se cierra sólo la de arriba.
+const openDialogs: symbol[] = [];
 
 const sizeClasses: Record<DialogSize, string> = {
   md: "max-w-lg",
@@ -37,10 +40,37 @@ export function Dialog({
   // aunque tenga menor z-index — se ve como si el header no se oscureciera.
   // open sólo se vuelve true por una interacción del usuario (nunca en el
   // render inicial del servidor), así que document ya existe acá.
+  const idRef = useRef<symbol | null>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  // Esc cierra la ventana de arriba. Si un campo ya usó la tecla (cerrar una lista
+  // de sugerencias), no se cierra además la ventana.
+  useEffect(() => {
+    if (!open) return;
+    const id = Symbol("dialog");
+    idRef.current = id;
+    openDialogs.push(id);
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (openDialogs[openDialogs.length - 1] !== id) return;
+      e.preventDefault();
+      onCloseRef.current();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      const i = openDialogs.indexOf(id);
+      if (i >= 0) openDialogs.splice(i, 1);
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div data-dialog="open" className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div
         className={cn(

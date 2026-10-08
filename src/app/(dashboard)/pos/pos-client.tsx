@@ -799,9 +799,26 @@ export function PosClient({
     if (!showPaymentPicker) return;
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Enter" || e.repeat || pending) return;
+      if (e.repeat || pending) return;
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      // Con la ventana "¿Cómo paga?" abierta, el número elige el medio de pago
+      // (1 Efectivo, 2 Tarjeta…, en el orden de los botones).
+      if (
+        /^[1-9]$/.test(e.key) &&
+        !e.ctrlKey && !e.metaKey && !e.altKey &&
+        !showCashStep && !showMixedStep && !showFiadoStep
+      ) {
+        const method = paymentMethods[Number(e.key) - 1];
+        if (method) {
+          e.preventDefault();
+          pickMethod(method.value);
+        }
+        return;
+      }
+
+      if (e.key !== "Enter") return;
 
       if (showFiadoStep) {
         if (!customerId) return;
@@ -847,6 +864,7 @@ export function PosClient({
     mixedFiadoAmount,
     cashReceived,
     total,
+    paymentMethods,
   ]);
 
   // Tocar afuera del selector de cliente lo cierra, igual que "Cancelar" —
@@ -1721,14 +1739,19 @@ export function PosClient({
         ) : (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              {paymentMethods.map((method) => (
+              {paymentMethods.map((method, index) => (
                 <button
                   key={method.value}
                   type="button"
                   disabled={pending}
                   onClick={() => pickMethod(method.value)}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
+                  className="relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
                 >
+                  {index < 9 && (
+                    <kbd className="absolute right-2 top-2 hidden h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
+                      {index + 1}
+                    </kbd>
+                  )}
                   <method.icon className="h-5 w-5 text-accent-foreground" />
                   {method.label}
                   {method.value === "fiado" && !customerId && (

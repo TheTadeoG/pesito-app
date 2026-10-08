@@ -75,6 +75,8 @@ export function PhoneCountrySelect({
       e.preventDefault();
       choose(phoneCountries[active]);
     } else if (e.key === "Escape" || e.key === "Tab") {
+      // Esc cierra la lista, no la ventana que la contiene.
+      if (e.key === "Escape") e.stopPropagation();
       setOpen(false);
       rootRef.current?.querySelector("button")?.focus();
     }
