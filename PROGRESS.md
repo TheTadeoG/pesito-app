@@ -460,3 +460,8 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 ## Webhook de Mercado Pago: sin secreto, en producción se rechaza
 - `verifyWebhookSignature` ya no acepta avisos cuando falta `MP_WEBHOOK_SECRET` en producción (antes seguía sin verificar). En desarrollo sigue permitido. Revisado: el aviso sólo dispara una consulta a la API con nuestro token, los pagos únicos validan monto y son idempotentes.
 - No se controla la antigüedad de `ts` a propósito: Mercado Pago reintenta avisos viejos y rechazarlos perdería cobros; el manejo es idempotente.
+
+## Security Advisor: migración 0069 (sin aplicar)
+- `supabase/migrations/0069_hardening_advisor.sql`: fija `search_path` en 7 funciones, saca a `anon` y `PUBLIC` la ejecución de las funciones de `public` (excepto `get_invitation_preview`, `username_available`, `accept_invitation`, usadas en la página de invitación) y reemplaza la lectura pública de `storage.objects` del bucket `product-images` por lectura de la carpeta del propio negocio (la URL pública de las fotos sigue andando).
+- Sin probar contra una base real: aplicar y revisar que el login, el POS, las invitaciones y la subida de fotos sigan andando.
+- Pendiente del lado del usuario: "Leaked password protection" (Auth → Password security; en Supabase es de plan Pro).
