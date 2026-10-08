@@ -51,6 +51,9 @@ export default async function OnboardingPage() {
 
   const initialName =
     typeof user.user_metadata?.business_name === "string" ? user.user_metadata.business_name : "";
+  // El registro con email ya pidió el teléfono; con Google se pide acá.
+  const needsPhone =
+    typeof user.user_metadata?.phone !== "string" || user.user_metadata.phone.trim() === "";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -63,7 +66,7 @@ export default async function OnboardingPage() {
         </CardHeader>
         <CardContent>
           <TrackEvent event="sign_up" params={{ method: user.identities?.some((i) => i.provider === "google") ? "google" : "email" }} dedupeKey="sign_up" />
-          <KioscoForm initialName={initialName} />
+          <KioscoForm initialName={initialName} needsPhone={needsPhone} />
         </CardContent>
       </Card>
     </div>

@@ -488,3 +488,4 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - El login con Google no pasa por el CAPTCHA ni por los contadores del login (lo valida Google); tiene su propio límite por IP (20 por minuto).
 - Sin probar con Google real (no se llega desde el entorno de desarrollo).
 - Cuenta vinculada: si alguien con cuenta de email y contraseña entra con Google usando el mismo email, Supabase une las dos; se le muestra una vez `/cuenta-vinculada` ("Vinculamos tu cuenta de Google", con link para cambiar la contraseña si no fue ella). Se detecta porque la identidad de Google se creó hace menos de 2 minutos y ya había otra.
+- Alta con Google: `/onboarding` pide además el teléfono (mismo selector con banderas) cuando la cuenta no lo tiene; `createKiosco` lo valida (8 dígitos o más) y lo guarda en el negocio. El nombre para el saludo sale de `first_name`, `given_name` o la primera palabra de `full_name`/`name` (`lib/org.ts`).

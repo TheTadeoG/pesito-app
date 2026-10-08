@@ -10,7 +10,8 @@ export interface OnboardingState {
 
 export async function createKiosco(
   name: string,
-  businessType: string
+  businessType: string,
+  phoneInput?: string
 ): Promise<OnboardingState> {
   const trimmedName = name.trim();
 
@@ -41,7 +42,12 @@ export async function createKiosco(
 
   const baseSlug = slugify(trimmedName) || "negocio";
   const slug = `${baseSlug}-${user.id.slice(0, 6)}`;
-  const phone = typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone : null;
+  // El teléfono viene del registro con email; con Google se pide en este paso.
+  const metaPhone = typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone.trim() : "";
+  const phone = (phoneInput ?? "").trim().slice(0, 40) || metaPhone;
+  if (phone.replace(/\D/g, "").length < 8) {
+    return { error: "Ingresá un teléfono de contacto." };
+  }
 
   const { error } = await supabase.rpc("create_organization", {
     p_name: trimmedName,

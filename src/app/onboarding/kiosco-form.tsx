@@ -7,13 +7,22 @@ import { businessTypes } from "@/lib/business-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
 
-export function KioscoForm({ initialName = "" }: { initialName?: string }) {
+export function KioscoForm({
+  initialName = "",
+  needsPhone = false,
+}: {
+  initialName?: string;
+  /** Cuenta sin teléfono (por ejemplo, creada con Google): se pide junto al nombre. */
+  needsPhone?: boolean;
+}) {
   // El nombre ya se pidió una vez en /registro (queda guardado en el
   // usuario hasta confirmar el email). Si ya lo tenemos, no lo volvemos a
   // pedir acá: arrancamos directo en el paso del rubro.
-  const [step, setStep] = useState<"nombre" | "rubro">(initialName.trim() ? "rubro" : "nombre");
+  const [step, setStep] = useState<"nombre" | "rubro">(initialName.trim() && !needsPhone ? "rubro" : "nombre");
   const [name, setName] = useState(initialName);
+  const [phone, setPhone] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +30,7 @@ export function KioscoForm({ initialName = "" }: { initialName?: string }) {
     if (pending) return;
     setPending(true);
     setError(null);
-    const result = await createKiosco(name, value);
+    const result = await createKiosco(name, value, needsPhone ? phone : undefined);
     if (result.error) {
       setError(result.error);
       setPending(false);
@@ -38,6 +47,14 @@ export function KioscoForm({ initialName = "" }: { initialName?: string }) {
             setError("Ponele un nombre a tu negocio.");
             return;
           }
+          if (needsPhone) {
+            const typed = String(new FormData(e.currentTarget).get("phone") ?? "");
+            if (typed.replace(/\D/g, "").length < 8) {
+              setError("Ingresá un teléfono de contacto.");
+              return;
+            }
+            setPhone(typed);
+          }
           setError(null);
           setStep("rubro");
         }}
@@ -48,6 +65,15 @@ export function KioscoForm({ initialName = "" }: { initialName?: string }) {
           </Label>
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Kiosco Don José" autoFocus required />
         </div>
+
+        {needsPhone && (
+          <div>
+            <Label htmlFor="phone" required>
+              Teléfono
+            </Label>
+            <PhoneInput id="phone" name="phone" required />
+          </div>
+        )}
 
         {error && (
           <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>

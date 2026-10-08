@@ -51,8 +51,13 @@ export const requireOrgContext = cache(async (): Promise<CurrentOrgContext> => {
 
   const { organizations, ...membershipRow } = membership;
 
+  // Registro con email: first_name. Con Google: given_name o la primera palabra del nombre.
+  const meta = claims.user_metadata ?? {};
+  const fullName = [meta.full_name, meta.name].find((v): v is string => typeof v === "string" && v.trim() !== "");
   const firstName =
-    typeof claims.user_metadata?.first_name === "string" ? claims.user_metadata.first_name : null;
+    [meta.first_name, meta.given_name].find((v): v is string => typeof v === "string" && v.trim() !== "") ??
+    fullName?.trim().split(/\s+/)[0] ??
+    null;
 
   // Usuario de más para el plan del negocio (bajó de plan y terminó la
   // gracia): no entra hasta que el dueño haga lugar. El dueño nunca.
