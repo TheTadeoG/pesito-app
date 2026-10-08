@@ -178,7 +178,7 @@ export async function signup(
 
   if (!data.session) {
     return {
-      info: "Te enviamos un email para confirmar tu cuenta. El link dura 1 hora. Revisá tu bandeja de entrada y la carpeta de spam.",
+      info: "Te enviamos un email para confirmar tu cuenta. El link dura 1 hora. Revisá tu bandeja de entrada y la carpeta de spam. Si ya tenías una cuenta con ese email, ingresá o recuperá tu contraseña.",
     };
   }
 
