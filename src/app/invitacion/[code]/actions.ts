@@ -125,6 +125,7 @@ export async function acceptInvitationAsNewUser(
   });
 
   if (createError || !created.user) {
+    console.error("acceptInvitationAsNewUser: auth.admin.createUser", createError?.status, createError?.code, createError?.message);
     return { error: "No pudimos crear tu cuenta. Probá de nuevo." };
   }
 

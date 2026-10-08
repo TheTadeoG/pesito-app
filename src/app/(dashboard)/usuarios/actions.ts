@@ -199,6 +199,7 @@ export async function createDirectMember(
   });
 
   if (createError || !created.user) {
+    console.error("createDirectMember: auth.admin.createUser", createError?.status, createError?.code, createError?.message);
     return { error: "No pudimos crear el usuario. Probá de nuevo." };
   }
 
@@ -290,7 +291,10 @@ export async function updateMemberCredentials(
     const { error: emailError } = await admin.auth.admin.updateUserById(memberRow.user_id, {
       email: usernameToEmail(fullUsername),
     });
-    if (emailError) return { error: "No pudimos actualizar el usuario." };
+    if (emailError) {
+      console.error("updateMemberCredentials: updateUserById(email)", emailError.status, emailError.code, emailError.message);
+      return { error: "No pudimos actualizar el usuario." };
+    }
 
     const { error: usernameError } = await supabase.rpc("update_member_username", {
       p_membership_id: membershipId,
@@ -303,7 +307,10 @@ export async function updateMemberCredentials(
     const { error: passwordError } = await admin.auth.admin.updateUserById(memberRow.user_id, {
       password: newPassword,
     });
-    if (passwordError) return { error: "No pudimos actualizar la contraseña." };
+    if (passwordError) {
+      console.error("updateMemberCredentials: updateUserById(password)", passwordError.status, passwordError.code, passwordError.message);
+      return { error: "No pudimos actualizar la contraseña." };
+    }
   }
 
   revalidatePath("/usuarios");
