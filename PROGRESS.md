@@ -510,3 +510,6 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - `/invitacion/[code]`: con sesión de una cuenta que ya está en otro negocio no se ofrece "Aceptar con esta cuenta"; se explica y queda "No soy yo: cerrar sesión y crear mi usuario".
 - Pendiente a futuro: selector de negocios, si algún día una misma persona tiene varios.
 - Textos de la invitación con sesión abierta: dicen que los empleados entran con **usuario y contraseña** propios, que las cuentas de Google sirven sólo para registrar un negocio (no para el equipo) y que una cuenta no puede estar en dos negocios. Sin "No soy yo": el botón es "Cerrar sesión y crear mi usuario y contraseña". La invitación sin sesión también aclara que no hace falta email ni Google. Visto en el navegador con una página de prueba (borrada).
+
+## Animación al cambiar de tema
+- `ThemeToggle`: el sol y la luna giran y se funden (200 ms) y toda la pantalla hace un fundido de 240 ms con View Transitions (`globals.css`). Sin movimiento (`prefers-reduced-motion`) o sin soporte del navegador, el cambio es directo. Se ve en la landing, el panel y el admin (mismo componente).

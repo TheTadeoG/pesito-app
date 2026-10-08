@@ -423,6 +423,21 @@ body {
   transition-delay: var(--d, 0ms);
 }
 
+/* Cambio de tema claro/oscuro (ThemeToggle): fundido corto de toda la pantalla. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 240ms;
+  animation-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 /* Movimiento reducido: sin pulsos, sin scroll suave y sin desplazamientos.
    Se mantienen los cambios de color y opacidad, que ayudan a entender. */
 @media (prefers-reduced-motion: reduce) {
