@@ -8,15 +8,43 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { TurnstileField } from "@/components/auth/turnstile-field";
+import { GoogleButton, OrDivider } from "@/components/auth/google-button";
 
 const initialState: AuthActionState = {};
 
-export function LoginForm({ next, restablecida }: { next?: string; restablecida?: boolean }) {
+const URL_ERRORS: Record<string, string> = {
+  google_solo_duenos:
+    "Ingresar con Google es sólo para dueños de un negocio. Si sos parte de un equipo, entrá con tu usuario (o email) y contraseña.",
+  google: "No pudimos abrir Google. Probá de nuevo o entrá con tu email y contraseña.",
+  confirmacion: "El link venció o ya se usó. Pedí uno nuevo o ingresá con tu email y contraseña.",
+  demasiados: "Hiciste demasiados intentos seguidos. Esperá un minuto y probá de nuevo.",
+};
+
+export function LoginForm({
+  next,
+  restablecida,
+  errorCode,
+}: {
+  next?: string;
+  restablecida?: boolean;
+  errorCode?: string;
+}) {
   const [state, formAction, pending] = useActionState(login, initialState);
 
+  const urlError = errorCode ? URL_ERRORS[errorCode] : undefined;
+
   return (
+    <div className="space-y-4">
+      <GoogleButton next={next} />
+      <OrDivider />
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="next" value={next ?? ""} />
+
+      {urlError && (
+        <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger" role="alert">
+          {urlError}
+        </p>
+      )}
 
       {restablecida && (
         <p className="rounded-xl bg-muted px-3 py-2 text-sm text-foreground" role="status">
@@ -73,5 +101,6 @@ export function LoginForm({ next, restablecida }: { next?: string; restablecida?
         </Link>
       </p>
     </form>
+    </div>
   );
 }

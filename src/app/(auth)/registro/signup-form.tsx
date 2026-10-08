@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { TurnstileField } from "@/components/auth/turnstile-field";
+import { GoogleButton, OrDivider } from "@/components/auth/google-button";
 import Link from "next/link";
 import { signup, type AuthActionState } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,9 @@ export function SignupForm({
   }
 
   return (
+    <div className="space-y-4">
+      <GoogleButton label="Registrarme con Google" next="/onboarding" plan={plan} cycle={cycle} />
+      <OrDivider />
     <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
       {plan && <input type="hidden" name="plan" value={plan} />}
       {plan && cycle && <input type="hidden" name="cycle" value={cycle} />}
@@ -151,5 +155,6 @@ export function SignupForm({
         </Link>
       </p>
     </form>
+    </div>
   );
 }

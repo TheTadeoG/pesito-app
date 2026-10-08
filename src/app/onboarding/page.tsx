@@ -62,7 +62,7 @@ export default async function OnboardingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <TrackEvent event="sign_up" params={{ method: "email" }} dedupeKey="sign_up" />
+          <TrackEvent event="sign_up" params={{ method: user.identities?.some((i) => i.provider === "google") ? "google" : "email" }} dedupeKey="sign_up" />
           <KioscoForm initialName={initialName} />
         </CardContent>
       </Card>

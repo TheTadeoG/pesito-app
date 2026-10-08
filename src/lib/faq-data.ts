@@ -44,6 +44,11 @@ export const faqCategories: FaqCategory[] = [
           "No. Pesito funciona desde el navegador en la computadora, la tablet o el celular. Creás tu cuenta y en unos minutos ya podés vender.",
       },
       {
+        question: "¿Puedo crear mi cuenta o ingresar con Google?",
+        answer:
+          "Sí. El dueño del negocio puede crear su cuenta e ingresar con su cuenta de Google o con su email y contraseña. Los empleados que el dueño suma al equipo entran con el usuario y la contraseña que les da el negocio (o con el link de invitación), no con Google.",
+      },
+      {
         question: "¿Necesito internet para usar Pesito?",
         answer:
           "Sí, Pesito funciona en la nube: necesitás conexión a internet (wifi o datos) para cobrar, actualizar el stock y ver tus reportes. A cambio, tus datos no dependen de tu computadora: si se rompe o la cambiás, entrás desde otra y está todo.",

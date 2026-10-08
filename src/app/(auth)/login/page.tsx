@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; restablecida?: string }>;
+  searchParams: Promise<{ next?: string; restablecida?: string; error?: string }>;
 }) {
-  const { next, restablecida } = await searchParams;
+  const { next, restablecida, error } = await searchParams;
 
   return (
     <Card className="mx-auto w-full max-w-sm">
@@ -23,7 +23,7 @@ export default async function LoginPage({
         <CardDescription>Accedé con el email y la contraseña de tu cuenta.</CardDescription>
       </CardHeader>
       <CardContent>
-        <LoginForm next={next} restablecida={restablecida === "1"} />
+        <LoginForm next={next} restablecida={restablecida === "1"} errorCode={error} />
       </CardContent>
     </Card>
   );

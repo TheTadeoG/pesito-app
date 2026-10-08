@@ -21,7 +21,7 @@ export default function PrivacidadPage() {
             <section>
               <h2 className="text-lg font-semibold text-foreground">1. Qué datos recopilamos</h2>
               <p className="mt-2 text-muted-foreground">
-                Para crear tu cuenta guardamos tu email y la contraseña (encriptada). Para operar tu
+                Para crear tu cuenta guardamos tu email y la contraseña (encriptada). Si elegís ingresar con Google, recibimos de Google tu nombre y tu email (no tu contraseña de Google) y no accedemos a tus datos de Gmail ni de otros servicios de Google. Para operar tu
                 negocio, guardamos los datos que vos cargás: productos, ventas, compras, clientes,
                 proveedores y movimientos de caja. Estos datos pertenecen a tu organización y no se
                 comparten con otras cuentas de Pesito.

@@ -271,6 +271,38 @@ export async function resetPassword(
   redirect("/login?restablecida=1");
 }
 
+// Ingresar o crear la cuenta con Google: sólo para dueños de un negocio. El
+// equipo (usuarios invitados e internos) entra con usuario y contraseña; eso se
+// controla al volver de Google, en /auth/confirm.
+export async function signInWithGoogle(formData: FormData): Promise<void> {
+  const ipLimit = await checkIpRateLimit("google", 20, 60);
+  if (ipLimit) redirect("/login?error=demasiados");
+
+  const next = safeNextPath(String(formData.get("next") ?? ""), "/pos");
+  const plan = String(formData.get("plan") ?? "");
+  const cycle = formData.get("cycle") === "anual" ? "anual" : "mensual";
+  const params = new URLSearchParams({ next });
+  if (["esencial", "pro", "ia"].includes(plan)) {
+    params.set("plan", plan);
+    params.set("cycle", cycle);
+  }
+
+  const origin = (await headers()).get("origin");
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/confirm?${params.toString()}`,
+      queryParams: { prompt: "select_account" },
+    },
+  });
+  if (error || !data.url) {
+    console.error("signInWithGoogle", error?.message);
+    redirect("/login?error=google");
+  }
+  redirect(data.url);
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

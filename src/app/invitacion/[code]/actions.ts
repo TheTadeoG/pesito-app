@@ -18,6 +18,16 @@ export interface AcceptInvitationState {
 
 export async function acceptInvitation(code: string): Promise<AcceptInvitationState> {
   const supabase = await createClient();
+  // Entrar con Google es sólo para dueños: las invitaciones se aceptan con usuario y contraseña.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user?.identities?.some((i) => i.provider === "google")) {
+    return {
+      error:
+        "Las invitaciones se aceptan con un usuario y contraseña de equipo, no con una cuenta de Google. Cerrá sesión y abrí el link de nuevo.",
+    };
+  }
   const { error } = await supabase.rpc("accept_invitation", { p_code: code });
 
   if (error) {
