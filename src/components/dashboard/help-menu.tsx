@@ -44,7 +44,7 @@ function HintsSwitch() {
           Mostrar los atajos en los botones
         </p>
         <p className="text-xs text-muted-foreground">
-          Las teclas que se ven en los botones (1, P, Alt 3, Ctrl K…). Los atajos funcionan igual si las ocultás. Se guarda en este dispositivo.
+          Las teclas Alt 1…7 del menú y Ctrl K del buscador. En la pantalla de cobro siempre se ven. Los atajos funcionan igual si las ocultás. Se guarda en este dispositivo.
         </p>
       </div>
       <button

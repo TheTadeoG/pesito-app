@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { CheckCircle2, Printer } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useShortcutHints } from "@/lib/shortcut-hints";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export interface SaleReceipt {
@@ -101,7 +100,6 @@ export function SaleDoneDialog({
   onClose: () => void;
 }) {
   const newSaleRef = useRef<HTMLButtonElement>(null);
-  const showHints = useShortcutHints();
 
   // Enter o Escape cierran y siguen vendiendo. Cualquier otra tecla (el
   // lector de códigos "tipea") también cierra: el POS manda esa tecla al
@@ -166,14 +164,12 @@ export function SaleDoneDialog({
             <Button type="button" variant="outline" onClick={() => window.print()}>
               <Printer className="h-4 w-4" />
               Imprimir ticket
-              {showHints && (
-                <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">
-                  P
-                </kbd>
-              )}
+              <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">
+                P
+              </kbd>
             </Button>
             <Button ref={newSaleRef} type="button" onClick={onClose}>
-              {showHints ? "Nueva venta (Enter)" : "Nueva venta"}
+              Nueva venta (Enter)
             </Button>
           </div>
 
