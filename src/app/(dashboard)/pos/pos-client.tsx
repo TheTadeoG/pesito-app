@@ -911,7 +911,7 @@ export function PosClient({
 
   return (
     <div className="grid gap-6 xl:grid-cols-3">
-      <div className="rounded-card border border-border bg-card p-5 xl:col-span-2">
+      <div className="min-w-0 rounded-card border border-border bg-card p-5 xl:col-span-2">
         <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">
                 <button
@@ -1093,7 +1093,7 @@ export function PosClient({
               </p>
             ) : (
               <div className="space-y-2">
-                <div className="flex items-center justify-between gap-3 px-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="hidden items-center justify-between gap-3 px-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:flex">
                   <span>Producto (precio c/u)</span>
                   <div className="flex shrink-0 items-center gap-3">
                     <span className="w-20 text-right">Subtotal</span>
@@ -1104,9 +1104,9 @@ export function PosClient({
                 {cart.map((item, index) => (
                   <div
                     key={item.kind === "product" ? item.product.id : item.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border px-3.5 py-2.5"
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-border px-3.5 py-2.5"
                   >
-                    <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="flex min-w-0 flex-1 basis-44 items-center gap-2.5">
                       {item.kind === "product" && (
                         <button
                           type="button"
@@ -1154,7 +1154,7 @@ export function PosClient({
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-3">
+                    <div className="ml-auto flex shrink-0 items-center gap-3">
                       <span className="w-20 text-right text-sm font-semibold text-foreground">
                         {formatCurrency(
                           item.kind === "product"
@@ -1205,7 +1205,7 @@ export function PosClient({
         </div>
       </div>
 
-      <div className="flex flex-col overflow-hidden rounded-card border border-border bg-card xl:sticky xl:top-6 xl:self-start">
+      <div className="flex min-w-0 flex-col overflow-hidden rounded-card border border-border bg-card xl:sticky xl:top-6 xl:self-start">
         <div ref={customerPanelRef} className="p-4">
             {!showCustomerSearch ? (
               <button

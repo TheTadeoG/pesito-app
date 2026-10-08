@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -36,7 +37,11 @@ export function MobileNav({
         {hasAlerts && <i className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-danger ring-2 ring-background" />}
       </button>
 
-      {open && (
+      {/* Portal a document.body: el encabezado tiene backdrop-blur, y eso hace que un
+          "fixed" adentro se mida contra el encabezado (el menú quedaba cortado a su
+          altura). `open` sólo es true después de un clic, así que document ya existe. */}
+      {open &&
+        createPortal(
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div
             className="absolute inset-0 bg-black/40"
@@ -107,7 +112,8 @@ export function MobileNav({
               ))}
             </nav>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

@@ -97,8 +97,8 @@ export function VentasList({
             className="flex cursor-pointer flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted"
           >
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{sale.customerName}</span>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="min-w-0 break-words text-sm font-medium text-foreground">{sale.customerName}</span>
                 <Badge>{paymentLabels[sale.payment_method] ?? sale.payment_method}</Badge>
                 {sale.payment_method === "mixto" && !!sale.fiadoAmount && sale.fiadoAmount > 0 && (
                   <Badge tone="danger">Fiado {formatCurrency(sale.fiadoAmount)}</Badge>
@@ -113,7 +113,7 @@ export function VentasList({
                 {formatDateTime(sale.created_at)} · {sale.itemsSummary}
               </p>
             </div>
-            <span className="font-semibold text-foreground">{formatCurrency(sale.total)}</span>
+            <span className="shrink-0 whitespace-nowrap font-semibold text-foreground">{formatCurrency(sale.total)}</span>
             <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"

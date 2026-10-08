@@ -513,3 +513,9 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 
 ## Animación al cambiar de tema
 - `ThemeToggle`: el sol y la luna giran y se funden (200 ms) y toda la pantalla hace un fundido de 240 ms con View Transitions (`globals.css`). Sin movimiento (`prefers-reduced-motion`) o sin soporte del navegador, el cambio es directo. Se ve en la landing, el panel y el admin (mismo componente).
+
+## Celular: menú lateral, POS y ventas recientes
+- Menú del celular (`mobile-nav.tsx`): ahora se dibuja con un portal a `document.body`. El encabezado tiene `backdrop-blur` y un `fixed` adentro se medía contra el encabezado (el menú quedaba cortado a su altura).
+- POS (`pos-client.tsx`): las dos tarjetas de la grilla llevan `min-w-0` y la fila de títulos del carrito se oculta en pantallas chicas. Antes el ancho mínimo (492 px) obligaba a Safari a achicar toda la página. Cada producto del carrito pasa los controles al renglón de abajo en el celular.
+- Ventas recientes (`ventas-list.tsx`): el nombre y las etiquetas (Efectivo, Mixto, Fiado, Factura) pasan a varios renglones y el monto no se parte. Antes la etiqueta se montaba sobre el monto.
+- Verificado a 390, 360 y 320 px con el POS real y datos de prueba (sin desborde horizontal) y el menú dentro de un encabezado con desenfoque.
