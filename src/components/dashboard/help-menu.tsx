@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BookOpen, HelpCircle, Keyboard, MessageCircle } from "lucide-react";
+import { BookOpen, Check, HelpCircle, Keyboard, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { whatsappLink } from "@/lib/whatsapp";
 import { NAV_SHORTCUTS } from "@/lib/shortcuts";
+import { setShortcutHints, useShortcutHints } from "@/lib/shortcut-hints";
 import { cn } from "@/lib/utils";
 
 function Kbd({ children }: { children: ReactNode }) {
@@ -34,6 +35,40 @@ function ShortcutGroup({ title, rows }: { title: string; rows: { keys: ReactNode
 
 // Los atajos que existen hoy en el sistema (nav-search, POS, Caja y Compras).
 // Si se agrega o se cambia uno, se actualiza esta lista.
+function HintsSwitch() {
+  const show = useShortcutHints();
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/40 px-3.5 py-2.5">
+      <div>
+        <p id="hints-label" className="text-sm font-medium text-foreground">
+          Mostrar los atajos en los botones
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Las teclas que se ven en los botones (1, P, Ctrl K…). Los atajos funcionan igual si las ocultás. Se guarda en este dispositivo.
+        </p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={show}
+        aria-labelledby="hints-label"
+        onClick={() => setShortcutHints(!show)}
+        className={cn(
+          "relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+          show ? "bg-primary" : "bg-border"
+        )}
+      >
+        <span
+          className={cn(
+            "absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+            show && "translate-x-5"
+          )}
+        />
+      </button>
+    </div>
+  );
+}
+
 function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Dialog
@@ -43,6 +78,7 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
       description="Para vender más rápido, sin sacar la mano del teclado."
     >
       <div className="space-y-4">
+        <HintsSwitch />
         <ShortcutGroup
           title="En todo el sistema"
           rows={[
@@ -147,6 +183,7 @@ const itemClass =
 export function HelpMenu({ orgName }: { orgName: string }) {
   const [open, setOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
+  const showHints = useShortcutHints();
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -199,6 +236,18 @@ export function HelpMenu({ orgName }: { orgName: string }) {
           >
             <Keyboard className="h-4 w-4 text-primary" />
             Atajos del teclado
+          </button>
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={showHints}
+            className={cn(itemClass, "hidden sm:flex")}
+            onClick={() => setShortcutHints(!showHints)}
+          >
+            <span className="flex h-4 w-4 items-center justify-center rounded border border-primary text-primary">
+              {showHints && <Check className="h-3 w-3" />}
+            </span>
+            Atajos en los botones
           </button>
           <a
             role="menuitem"

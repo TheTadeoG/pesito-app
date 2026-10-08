@@ -7,6 +7,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { navSections } from "@/lib/nav";
 import { NAV_SHORTCUTS, digitFromCode } from "@/lib/shortcuts";
+import { useShortcutHints } from "@/lib/shortcut-hints";
 
 // Buscador del menú ("Buscar o ir a…", Ctrl/⌘ + K): lleva a cualquier
 // pantalla escribiendo parte del nombre. Enter abre la primera coincidencia.
@@ -18,6 +19,7 @@ export function NavSearch({
   hasCashRegister: boolean;
 }) {
   const router = useRouter();
+  const showHints = useShortcutHints();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -86,7 +88,9 @@ export function NavSearch({
       >
         <Search className="h-3.5 w-3.5" />
         <span className="flex-1">Buscar o ir a…</span>
-        <kbd className="rounded-md border border-border bg-card px-1.5 text-[10px] font-medium">Ctrl K</kbd>
+        {showHints && (
+          <kbd className="rounded-md border border-border bg-card px-1.5 text-[10px] font-medium">Ctrl K</kbd>
+        )}
       </button>
       <Dialog
         open={open}

@@ -28,6 +28,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import { resolveInvoiceType } from "@/lib/invoice-labels";
 import { suggestBilletes } from "@/lib/billetes";
+import { useShortcutHints } from "@/lib/shortcut-hints";
 import { useToast } from "@/components/toast/toast-provider";
 import { emitCashDelta, markSaleCompleted } from "@/lib/cash-events";
 import { SaleDoneDialog, type SaleReceipt } from "@/app/(dashboard)/pos/sale-done-dialog";
@@ -237,6 +238,7 @@ export function PosClient({
   const [surchargeInput, setSurchargeInput] = useState("");
   const [showExtras, setShowExtras] = useState(false);
   const [showManualAmount, setShowManualAmount] = useState(false);
+  const showHints = useShortcutHints();
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
   const [showCashStep, setShowCashStep] = useState(false);
   const [cashReceived, setCashReceived] = useState("");
@@ -1757,7 +1759,7 @@ export function PosClient({
                   onClick={() => pickMethod(method.value)}
                   className="relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"
                 >
-                  {index < 9 && (
+                  {showHints && index < 9 && (
                     <kbd className="absolute right-2 top-2 hidden h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
                       {index + 1}
                     </kbd>
