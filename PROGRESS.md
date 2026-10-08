@@ -533,3 +533,4 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - En "¿Cómo paga?" del POS, los números 1…9 eligen el medio de pago en el orden de los botones (cada botón muestra su número; ocultos en pantallas chicas). Sólo en el paso inicial, sin campos enfocados y sin modificadores.
 - `ShortcutsDialog` (`help-menu.tsx`) lista todo. Si se agrega o cambia un atajo, se actualiza ahí y en `shortcuts.ts`.
 - Probado en navegador con el POS real y datos de prueba (10 comprobaciones).
+- `Alt` solo (apretar y soltar): `NavSearch` cancela el evento (keydown y keyup) para que Windows (Chrome, Brave, Edge) no pase el foco al menú del navegador y lo abra, cosa que en el cobro "sacaba" del sistema. Alt + otra tecla no se afecta. Verificado a nivel de eventos en Chromium; falta confirmarlo en Brave/Windows.

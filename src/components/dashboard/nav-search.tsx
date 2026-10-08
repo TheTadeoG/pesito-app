@@ -55,8 +55,20 @@ export function NavSearch({
         router.push(target.href);
       }
     }
+    // Apretar y soltar Alt solo hace que Windows (Chrome, Brave, Edge) pase el foco al
+    // menú del navegador y lo abra: en el cobro, esa tecla "se iba" del sistema.
+    // Cancelar el Alt solo evita eso. Alt + otra tecla (los atajos) no se afecta.
+    function onAltAlone(e: KeyboardEvent) {
+      if (e.key === "Alt" && !e.ctrlKey && !e.metaKey && !e.shiftKey) e.preventDefault();
+    }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onAltAlone);
+    window.addEventListener("keyup", onAltAlone);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onAltAlone);
+      window.removeEventListener("keyup", onAltAlone);
+    };
   }, [router]);
 
   function go(href: string) {
