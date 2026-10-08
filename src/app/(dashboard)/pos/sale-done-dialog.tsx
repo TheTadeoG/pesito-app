@@ -104,11 +104,11 @@ export function SaleDoneDialog({
   // Enter o Escape cierran y siguen vendiendo. Cualquier otra tecla (el
   // lector de códigos "tipea") también cierra: el POS manda esa tecla al
   // buscador, así que escanear el próximo producto no se pierde.
-  // Ctrl/⌘ + P imprime el ticket (la ventana sigue abierta).
+  // P (o Ctrl/⌘ + P) imprime el ticket (la ventana sigue abierta).
   useEffect(() => {
     if (!receipt) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "p") {
+      if (!e.altKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
         e.stopPropagation();
         if (!e.repeat) window.print();
@@ -165,7 +165,7 @@ export function SaleDoneDialog({
               <Printer className="h-4 w-4" />
               Imprimir ticket
               <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">
-                Ctrl P
+                P
               </kbd>
             </Button>
             <Button ref={newSaleRef} type="button" onClick={onClose}>

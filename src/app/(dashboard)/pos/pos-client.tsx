@@ -805,8 +805,13 @@ export function PosClient({
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.repeat || pending) return;
-      const tag = document.activeElement?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      const activeEl = document.activeElement;
+      const tag = activeEl?.tagName;
+      // El buscador de productos no cuenta: con el cobro abierto no se usa, y si
+      // el foco quedó ahí los números tienen que elegir el medio de pago igual.
+      const inOtherField =
+        activeEl !== searchRef.current && (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT");
+      if (inOtherField) return;
 
       // Con la ventana "¿Cómo paga?" abierta, el número elige el medio de pago
       // (1 Efectivo, 2 Tarjeta…, en el orden de los botones).
