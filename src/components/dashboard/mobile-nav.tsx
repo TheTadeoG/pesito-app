@@ -4,10 +4,12 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { navSections, isNavItemActive } from "@/lib/nav";
 import { Wordmark } from "@/components/marketing/wordmark";
 import { cn } from "@/lib/utils";
+import { ThemeMenuItem } from "@/components/theme-toggle";
+import { signOut } from "@/app/(auth)/actions";
 import { BranchSwitcher, type BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
 
 export function MobileNav({
@@ -111,6 +113,20 @@ export function MobileNav({
                 </div>
               ))}
             </nav>
+
+            {/* En el celular, el tema y salir van acá (en la barra de arriba no entran). */}
+            <div className="space-y-0.5 border-t border-border px-3 py-3">
+              <ThemeMenuItem className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-sidebar-foreground hover:bg-muted" />
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-sidebar-foreground hover:bg-muted"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="flex-1 text-left">Cerrar sesión</span>
+                </button>
+              </form>
+            </div>
           </div>
         </div>,
         document.body

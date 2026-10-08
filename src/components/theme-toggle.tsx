@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 // hace un fundido suave (View Transitions; ver globals.css). Se usa a lo sumo
 // unas pocas veces por sesión, así que una animación corta no estorba. Con
 // movimiento reducido o en navegadores sin View Transitions, el cambio es directo.
-export function ThemeToggle() {
+export function useTheme() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -34,6 +34,12 @@ export function ThemeToggle() {
     setIsDark(!isDark);
   }
 
+  return { isDark, toggle };
+}
+
+export function ThemeToggle() {
+  const { isDark, toggle } = useTheme();
+
   const icon =
     "absolute inset-0 h-4 w-4 transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]";
 
@@ -44,5 +50,17 @@ export function ThemeToggle() {
         <Moon className={`${icon} ${isDark ? "rotate-90 scale-75 opacity-0" : "rotate-0 scale-100 opacity-100"}`} />
       </span>
     </Button>
+  );
+}
+
+/** El mismo cambio de tema, como una fila del menú del celular. */
+export function ThemeMenuItem({ className }: { className?: string }) {
+  const { isDark, toggle } = useTheme();
+  const Icon = isDark ? Sun : Moon;
+  return (
+    <button type="button" onClick={toggle} className={className}>
+      <Icon className="h-4 w-4" />
+      <span className="flex-1 text-left">{isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}</span>
+    </button>
   );
 }

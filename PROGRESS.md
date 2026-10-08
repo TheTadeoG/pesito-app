@@ -520,3 +520,9 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Ventas recientes (`ventas-list.tsx`): el nombre y las etiquetas (Efectivo, Mixto, Fiado, Factura) pasan a varios renglones y el monto no se parte. Antes la etiqueta se montaba sobre el monto.
 - Verificado a 390, 360 y 320 px con el POS real y datos de prueba (sin desborde horizontal) y el menú dentro de un encabezado con desenfoque.
 - Plan en el celular: la barra de arriba muestra "Dueño · Prueba Pro" bajo el título (`PlanLine`, en `plan-line.tsx`, que también usa el menú lateral de la computadora). Si no entra, se recorta el rol y no el plan; el nombre largo se recorta con "…". El botón de ayuda (?) ya no se ve en el celular (el `Button` trae `inline-flex` y le ganaba a `hidden`; ahora va en un contenedor que se oculta) y el botón del menú no se angosta con nombres largos.
+
+## Menú de ayuda, atajos y botones del celular (parte 1)
+- Botón de ayuda (?) de la barra de arriba (`help-menu.tsx`): menú con "Atajos del teclado" (sólo desde 640 px; en el celular no hay teclado), "Hablar con soporte" (WhatsApp con el nombre del negocio) y "Preguntas frecuentes". La ventana de atajos lista los que existen hoy (Ctrl/⌘+K, POS, Caja, Compras): si se agrega o cambia uno, se actualiza `ShortcutsDialog`.
+- No se hizo la tecla `?` para abrir los atajos: en el POS cualquier carácter va al buscador y se pisaría.
+- Celular: la barra muestra el menú de las tres rayitas, el título con el rol y el plan y el botón de ayuda. El tema y cerrar sesión pasaron al pie del menú de las tres rayitas (`ThemeMenuItem`, `useTheme` en `theme-toggle.tsx`). En la computadora se ven como antes.
+- Pendiente (partes 2 a 4): sugerencias y reportes de problemas (tabla + bandeja en `/admin` + aviso por email), campana con las alertas del negocio y novedades de Pesito. "Contanos qué te falta" y "Reportar un problema" se suman al menú de ayuda con la parte 2.

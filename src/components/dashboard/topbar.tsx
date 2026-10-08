@@ -1,11 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { HelpCircle, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { pageTitles } from "@/lib/nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { PlanLine } from "@/components/dashboard/plan-line";
+import { HelpMenu } from "@/components/dashboard/help-menu";
 import type { Plan } from "@/lib/subscription";
 import type { BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
 import { signOut } from "@/app/(auth)/actions";
@@ -45,28 +46,27 @@ export function Topbar({ orgName, userLabel, greetingName, branch, alerts, roleL
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {/* El Button ya trae inline-flex y le gana a "hidden": se oculta con un contenedor. */}
-        <div className="hidden sm:block">
-          <Button variant="outline" size="icon" aria-label="Ayuda">
-            <HelpCircle className="h-4 w-4" />
-          </Button>
+        <HelpMenu orgName={orgName} />
+        {/* En el celular, el tema y salir viven al pie del menú de las tres rayitas.
+            (El Button trae inline-flex y le gana a "hidden": se ocultan con un contenedor.) */}
+        <div className="hidden items-center gap-2 sm:flex">
+          <ThemeToggle />
+          <div className="mx-1 h-6 w-px bg-border" />
+          <span className="text-sm text-muted-foreground">
+            {greetingName ? (
+              <>
+                Hola, <span className="font-medium text-foreground">{greetingName}</span>
+              </>
+            ) : (
+              userLabel
+            )}
+          </span>
+          <form action={signOut}>
+            <Button variant="outline" size="icon" aria-label="Cerrar sesión" type="submit">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </form>
         </div>
-        <ThemeToggle />
-        <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
-        <span className="hidden text-sm text-muted-foreground sm:inline">
-          {greetingName ? (
-            <>
-              Hola, <span className="font-medium text-foreground">{greetingName}</span>
-            </>
-          ) : (
-            userLabel
-          )}
-        </span>
-        <form action={signOut}>
-          <Button variant="outline" size="icon" aria-label="Cerrar sesión" type="submit">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </form>
       </div>
     </header>
   );
