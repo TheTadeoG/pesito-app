@@ -126,11 +126,16 @@ export default async function InvitacionPage({
             <AcceptInvitationButton
               code={code}
               email={user.email ?? null}
+              orgName={preview.org_name}
               isGoogle={Boolean(user.identities?.some((i) => i.provider === "google"))}
               hasOtherBusiness={hasOtherBusiness}
             />
           ) : (
             <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Para entrar vas a usar un <strong>usuario y una contraseña</strong> propios: no hace falta un
+                email ni una cuenta de Google.
+              </p>
               <InvitationSignupForm code={code} />
               <p className="text-center text-sm text-muted-foreground">
                 ¿Ya tenés cuenta?{" "}

@@ -36,7 +36,7 @@ export async function acceptInvitation(code: string): Promise<AcceptInvitationSt
   if (user?.identities?.some((i) => i.provider === "google")) {
     return {
       error:
-        "Las invitaciones se aceptan con un usuario y contraseña de equipo, no con una cuenta de Google. Cerrá sesión y abrí el link de nuevo.",
+        "Las cuentas de Google sirven sólo para registrar un negocio. Para sumarte a un equipo entrá con un usuario y una contraseña propios: cerrá sesión y abrí el link de nuevo.",
     };
   }
   const { error } = await supabase.rpc("accept_invitation", { p_code: code });
@@ -48,7 +48,7 @@ export async function acceptInvitation(code: string): Promise<AcceptInvitationSt
     if (error.message.toLowerCase().includes("otro negocio")) {
       return {
         error:
-          "Tu cuenta ya pertenece a otro negocio. Para sumarte a este equipo, cerrá sesión y creá tu usuario.",
+          "Tu cuenta ya está registrada en otro negocio distinto y cada cuenta puede pertenecer a uno solo. Para sumarte a este equipo, cerrá sesión y creá tu usuario y contraseña.",
       };
     }
     if (error.message.toLowerCase().includes("usada")) {

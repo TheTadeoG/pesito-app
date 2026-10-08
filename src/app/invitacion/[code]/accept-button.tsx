@@ -5,36 +5,38 @@ import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { acceptInvitation, signOutForInvitation } from "@/app/invitacion/[code]/actions";
 
-function SignOutButton() {
+function SignOutButton({ primary }: { primary: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="outline" className="w-full" disabled={pending}>
-      {pending ? "Cerrando sesión…" : "No soy yo: cerrar sesión y crear mi usuario"}
+    <Button type="submit" variant={primary ? "primary" : "outline"} className="w-full" disabled={pending}>
+      {pending ? "Cerrando sesión…" : "Cerrar sesión y crear mi usuario y contraseña"}
     </Button>
   );
 }
 
 /**
- * Hay una sesión abierta en este navegador. Se avisa con qué cuenta y se deja
- * elegir: sumarla al equipo, o cerrar sesión y crear el usuario del equipo
- * (para un empleado que abre el link en un equipo donde quedó otra sesión).
- * Una cuenta de Google no se suma a un equipo: sólo queda cerrar sesión.
+ * Hay una sesión abierta en este navegador. Los empleados entran con usuario y
+ * contraseña propios (no con Google). Se avisa con qué cuenta se está y se deja
+ * elegir: sumarla al equipo (sólo una cuenta con email y sin otro negocio), o
+ * cerrar sesión y crear el usuario con contraseña.
  */
 export function AcceptInvitationButton({
   code,
   email,
+  orgName,
   isGoogle,
   hasOtherBusiness,
 }: {
   code: string;
   email: string | null;
+  orgName: string;
   isGoogle: boolean;
   /** La cuenta ya pertenece a otro negocio (una cuenta, un negocio). */
   hasOtherBusiness: boolean;
 }) {
-  const canAccept = !isGoogle && !hasOtherBusiness;
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const canAccept = !isGoogle && !hasOtherBusiness;
 
   async function handleAccept() {
     setPending(true);
@@ -46,14 +48,27 @@ export function AcceptInvitationButton({
 
   return (
     <div className="space-y-4">
-      <p className="rounded-xl bg-muted/60 px-3.5 py-3 text-sm text-muted-foreground">
-        {email ? `Tenés la sesión abierta con ${email}.` : "Tenés una sesión abierta en este navegador."}
-        {isGoogle
-          ? " Es una cuenta de Google, que no se usa para sumarse a un equipo."
-          : hasOtherBusiness
-            ? " Esa cuenta ya pertenece a otro negocio, y una cuenta no puede estar en dos. Para sumarte a este equipo, cerrá sesión y creá tu usuario."
-            : " Si es tu cuenta, podés sumarla al equipo; si no, cerrá sesión y creá tu usuario."}
-      </p>
+      <div className="space-y-2 rounded-xl bg-muted/60 px-3.5 py-3 text-sm text-muted-foreground">
+        <p>{email ? `Tenés la sesión abierta con ${email}.` : "Tenés una sesión abierta en este navegador."}</p>
+        {isGoogle ? (
+          <p>
+            Las cuentas de Google sirven sólo para registrar un negocio, no para los usuarios que forman
+            parte de un equipo. Para sumarte a {orgName} tenés que entrar con un <strong>usuario y una
+            contraseña</strong> propios.
+          </p>
+        ) : hasOtherBusiness ? (
+          <p>
+            Esa cuenta ya está registrada en <strong>otro negocio distinto</strong> de {orgName}, y cada
+            cuenta puede pertenecer a un solo negocio. Para sumarte a {orgName} tenés que entrar con un{" "}
+            <strong>usuario y una contraseña</strong> propios.
+          </p>
+        ) : (
+          <p>
+            Esta cuenta todavía no pertenece a ningún negocio. Podés sumarla al equipo de {orgName}, o
+            cerrar sesión y crear un <strong>usuario y una contraseña</strong> propios.
+          </p>
+        )}
+      </div>
 
       {canAccept && (
         <Button className="w-full" onClick={handleAccept} disabled={pending}>
@@ -62,7 +77,7 @@ export function AcceptInvitationButton({
       )}
 
       <form action={signOutForInvitation.bind(null, code)}>
-        <SignOutButton />
+        <SignOutButton primary={!canAccept} />
       </form>
 
       {error && (
