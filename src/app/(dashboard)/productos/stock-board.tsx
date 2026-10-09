@@ -11,6 +11,7 @@ import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { cn, formatCurrency } from "@/lib/utils";
 import { planLabels, type Plan } from "@/lib/subscription";
 import { IDLE_DAYS_OPTIONS } from "@/lib/idle-days";
+import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/pagination-bar";
 import { ExcelExportDialog, type ExportScope } from "@/app/(dashboard)/productos/excel-export-dialog";
 import type { StockRow, StockStatus } from "@/lib/stock-rows";
 
@@ -18,7 +19,7 @@ import type { StockRow, StockStatus } from "@/lib/stock-rows";
 type Filter = "all" | "restock" | "out" | "low" | "ok" | "excess";
 type Sort = "urgency" | "name" | "stock" | "value";
 
-const PAGE = 30;
+const DEFAULT_PAGE_SIZE = 25;
 
 const statusLabel: Record<StockStatus, string> = {
   out: "Sin stock",
@@ -94,7 +95,8 @@ export function StockBoard({
   const [brand, setBrand] = useState("");
   const [supplier, setSupplier] = useState("");
   const [sort, setSort] = useState<Sort>("urgency");
-  const [limit, setLimit] = useState({ key: "", n: PAGE });
+  const [pageSize, setPageSize] = usePageSize("pesito-stock-page-size", DEFAULT_PAGE_SIZE);
+  const [page, setPage] = useState(0);
   const [exportOpen, setExportOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -145,8 +147,14 @@ export function StockBoard({
     });
   }, [rows, filter, query, brand, supplier, sort]);
 
+  // Al cambiar de lista, buscar o filtrar se vuelve a la primera página.
   const listKey = `${filter}|${query}|${brand}|${supplier}|${sort}`;
-  const shown = limit.key === listKey ? limit.n : PAGE;
+  const [pageListKey, setPageListKey] = useState(listKey);
+  if (pageListKey !== listKey) {
+    setPageListKey(listKey);
+    setPage(0);
+  }
+  const { safePage, start, end } = pageBounds(list.length, page, pageSize);
 
   function jump(next: Filter) {
     setFilter(next);
@@ -472,7 +480,7 @@ export function StockBoard({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {list.slice(0, shown).map((r) => (
+                  {list.slice(start, end).map((r) => (
                     <tr key={r.id} className="hover:bg-muted/40">
                       <td className="max-w-[8rem] py-2.5 pl-3 pr-1 sm:max-w-[16rem] sm:px-4">
                         <p className="truncate font-medium text-foreground">{r.name}</p>
@@ -532,15 +540,19 @@ export function StockBoard({
               </table>
             </div>
           )}
-          {list.length > shown && (
-            <button
-              type="button"
-              onClick={() => setLimit({ key: listKey, n: shown + PAGE })}
-              className="w-full border-t border-border px-5 py-3 text-center text-sm font-medium text-primary hover:bg-muted"
-            >
-              {`Ver más (${list.length - shown} restantes)`}
-            </button>
-          )}
+          <PaginationBar
+            total={list.length}
+            page={safePage}
+            pageSize={pageSize}
+            onPageChange={(n) => {
+              setPage(n);
+              listRef.current?.scrollIntoView({ block: "start" });
+            }}
+            onPageSizeChange={(n) => {
+              setPageSize(n);
+              setPage(0);
+            }}
+          />
         </Card>
       </div>
       <ExcelExportDialog open={exportOpen} onClose={() => setExportOpen(false)} scopes={exportScopes} withCover={insightsOn} />

@@ -53,6 +53,7 @@ import { BarcodeLabelsDialog } from "@/app/(dashboard)/productos/barcode-labels-
 import { featureMinPlan } from "@/lib/plan-access";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { InlineNumber } from "@/components/dashboard/inline-number";
+import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/pagination-bar";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { ExcelExportDialog, type ExportScope } from "@/app/(dashboard)/productos/excel-export-dialog";
 import { toStockRow, type StockFilterState } from "@/lib/stock-rows";
@@ -82,10 +83,10 @@ const DEFAULT_COLUMNS: ColumnId[] = ALL_COLUMN_IDS.filter(
 );
 const COLUMNS_STORAGE_KEY = "pesito-productos-columns";
 
-// Dibujar las 1.600 filas de un catálogo mediano de una vez tarda ~2 s: se
-// muestran de a tandas y se agregan más al acercarse al final de la tabla.
-// Buscar, filtrar y ordenar siguen trabajando sobre todos los productos.
-const ROWS_PER_BATCH = 100;
+// Dibujar las 1.600 filas de un catálogo mediano de una vez tarda ~2 s: la tabla va por páginas
+// (25, 50, 100 o 200 por página, a elección). Buscar, filtrar y ordenar siguen trabajando sobre
+// todos los productos.
+const DEFAULT_PAGE_SIZE = 50;
 
 type SortKey = "name" | ColumnId;
 type SortDir = "asc" | "desc";
@@ -433,29 +434,20 @@ export function ProductosClient({
     sortKey,
     sortDir,
   ].join("|");
-  const [visibleCount, setVisibleCount] = useState(ROWS_PER_BATCH);
-  const [visibleListKey, setVisibleListKey] = useState(listKey);
-  if (visibleListKey !== listKey) {
-    setVisibleListKey(listKey);
-    setVisibleCount(ROWS_PER_BATCH);
+  const [pageSize, setPageSize] = usePageSize("pesito-productos-page-size", DEFAULT_PAGE_SIZE);
+  const [page, setPage] = useState(0);
+  const [pageListKey, setPageListKey] = useState(listKey);
+  if (pageListKey !== listKey) {
+    setPageListKey(listKey);
+    setPage(0);
   }
-  const visibleRows = sorted.slice(0, visibleCount);
-  const hiddenCount = sorted.length - visibleRows.length;
-
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = loadMoreRef.current;
-    if (!el || hiddenCount === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting))
-          setVisibleCount((c) => c + ROWS_PER_BATCH);
-      },
-      { rootMargin: "800px 0px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hiddenCount]);
+  const { safePage, start, end } = pageBounds(sorted.length, page, pageSize);
+  const visibleRows = sorted.slice(start, end);
+  const tableTopRef = useRef<HTMLDivElement>(null);
+  function goToPage(next: number) {
+    setPage(next);
+    tableTopRef.current?.scrollIntoView({ block: "start" });
+  }
 
   function handleSort(key: SortKey) {
     if (sortKey !== key) {
@@ -865,6 +857,7 @@ export function ProductosClient({
         </div>
       )}
 
+      <div ref={tableTopRef} className="scroll-mt-20" />
       <Card className="overflow-hidden">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
@@ -1193,24 +1186,18 @@ export function ProductosClient({
                   })}
                 </tbody>
               </table>
-              {hiddenCount > 0 && (
-                <div
-                  ref={loadMoreRef}
-                  className="border-t border-border px-4 py-3 text-center"
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setVisibleCount((c) => c + ROWS_PER_BATCH)
-                    }
-                  >
-                    Mostrar más ({hiddenCount} restantes)
-                  </Button>
-                </div>
-              )}
             </div>
           )}
+          <PaginationBar
+            total={sorted.length}
+            page={safePage}
+            pageSize={pageSize}
+            onPageChange={goToPage}
+            onPageSizeChange={(n) => {
+              setPageSize(n);
+              setPage(0);
+            }}
+          />
         </CardContent>
       </Card>
 
