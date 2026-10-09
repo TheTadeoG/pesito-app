@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ChevronRight, CircleCheck, Download, Lock, Pencil, Search, ShoppingCart, SlidersHorizontal, TrendingDown, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, ChevronRight, ChevronsUpDown, CircleCheck, Download, Lock, Pencil, Search, ShoppingCart, SlidersHorizontal, TrendingDown, Wrench } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,9 @@ import type { StockRow, StockStatus } from "@/lib/stock-rows";
 
 // "restock" = sin stock + por agotarse (lo que hay que reponer). "all" = todos los productos.
 type Filter = "all" | "restock" | "out" | "low" | "ok" | "excess";
-type Sort = "urgency" | "name" | "stock" | "value";
+// Columnas por las que se ordena con un clic en el encabezado (sin elegir: lo que más urge primero).
+type SortKey = "name" | "supplier" | "stock" | "minStock" | "days" | "status" | "value";
+type SortDir = "asc" | "desc";
 
 const DEFAULT_PAGE_SIZE = 25;
 
@@ -52,6 +54,43 @@ function daysLabel(days: number | null | undefined): string {
   if (days > 365) return "Más de 1 año";
   const n = Math.floor(days);
   return n === 1 ? "1 día" : `${n} días`;
+}
+
+function SortTh({
+  label,
+  col,
+  sortKey,
+  sortDir,
+  onSort,
+  right,
+  className,
+}: {
+  label: string;
+  col: SortKey;
+  sortKey: SortKey | null;
+  sortDir: SortDir;
+  onSort: (col: SortKey) => void;
+  right?: boolean;
+  className?: string;
+}) {
+  const active = sortKey === col;
+  return (
+    <th className={cn("px-3 py-2.5", right && "text-right", className)} aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+      <button
+        type="button"
+        onClick={() => onSort(col)}
+        title={`Ordenar por ${label.toLowerCase()}`}
+        className={cn("inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground", right && "flex-row-reverse", active && "text-foreground")}
+      >
+        {label}
+        {active ? (
+          sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+        ) : (
+          <ChevronsUpDown className="h-3 w-3 opacity-40" />
+        )}
+      </button>
+    </th>
+  );
 }
 
 /**
@@ -92,7 +131,8 @@ export function StockBoard({
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("");
   const [supplier, setSupplier] = useState("");
-  const [sort, setSort] = useState<Sort>("urgency");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [pageSize, setPageSize] = usePageSize("pesito-stock-page-size", DEFAULT_PAGE_SIZE);
   const [page, setPage] = useState(0);
   const [exportOpen, setExportOpen] = useState(false);
@@ -132,27 +172,60 @@ export function StockBoard({
     });
     // Por defecto lo que más urge primero: sin stock, por agotarse, y con Plan IA lo que menos dura.
     const order = { out: 0, low: 1, ok: 2, excess: 3 } as const;
+    const urgency = (a: StockRow, b: StockRow) =>
+      order[a.status] - order[b.status] ||
+      (a.daysLeft ?? Infinity) - (b.daysLeft ?? Infinity) ||
+      a.stock - a.minStock - (b.stock - b.minStock) ||
+      a.name.localeCompare(b.name);
+    if (!sortKey) return filtered.sort(urgency);
+    const dir = sortDir === "asc" ? 1 : -1;
+    const value = (r: StockRow): string | number => {
+      switch (sortKey) {
+        case "name":
+          return r.name.toLowerCase();
+        case "supplier":
+          return (r.supplier ?? "").toLowerCase();
+        case "stock":
+          return r.stock;
+        case "minStock":
+          return r.minStock;
+        case "days":
+          return r.daysLeft ?? Infinity;
+        case "status":
+          return order[r.status];
+        case "value":
+          return r.value;
+      }
+    };
     return filtered.sort((a, b) => {
-      if (sort === "name") return a.name.localeCompare(b.name);
-      if (sort === "stock") return a.stock - b.stock || a.name.localeCompare(b.name);
-      if (sort === "value") return b.value - a.value || a.name.localeCompare(b.name);
-      return (
-        order[a.status] - order[b.status] ||
-        (a.daysLeft ?? Infinity) - (b.daysLeft ?? Infinity) ||
-        a.stock - a.minStock - (b.stock - b.minStock) ||
-        a.name.localeCompare(b.name)
-      );
+      const va = value(a);
+      const vb = value(b);
+      const cmp = typeof va === "string" && typeof vb === "string" ? va.localeCompare(vb, "es") : (va as number) - (vb as number);
+      return cmp * dir || urgency(a, b);
     });
-  }, [rows, filter, query, brand, supplier, sort]);
+  }, [rows, filter, query, brand, supplier, sortKey, sortDir]);
 
   // Al cambiar de lista, buscar o filtrar se vuelve a la primera página.
-  const listKey = `${filter}|${query}|${brand}|${supplier}|${sort}`;
+  const listKey = `${filter}|${query}|${brand}|${supplier}|${sortKey}|${sortDir}`;
   const [pageListKey, setPageListKey] = useState(listKey);
   if (pageListKey !== listKey) {
     setPageListKey(listKey);
     setPage(0);
   }
   const { safePage, start, end } = pageBounds(list.length, page, pageSize);
+
+  // Un clic ordena de menor a mayor, otro de mayor a menor y otro vuelve a "lo que más urge primero".
+  function handleSort(key: SortKey) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else {
+      setSortKey(null);
+      setSortDir("asc");
+    }
+  }
 
   function jump(next: Filter) {
     setFilter(next);
@@ -335,12 +408,6 @@ export function StockBoard({
                   <option key={x} value={x}>{x}</option>
                 ))}
               </Select>
-              <Select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Ordenar" className="sm:w-36">
-                <option value="urgency">Más urgentes</option>
-                <option value="name">Nombre</option>
-                <option value="stock">Menor stock</option>
-                <option value="value">Mayor valor</option>
-              </Select>
               <Button
                 type="button"
                 variant="outline"
@@ -396,13 +463,15 @@ export function StockBoard({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <th className="px-4 py-2.5">Producto</th>
-                    <th className="hidden px-3 py-2.5 lg:table-cell">Proveedor</th>
-                    <th className="px-3 py-2.5 text-right">Stock</th>
-                    <th className="hidden px-3 py-2.5 text-right sm:table-cell">Mín.</th>
-                    {insightsOn && <th className="hidden px-3 py-2.5 text-right md:table-cell">Alcanza para</th>}
-                    <th className="hidden px-3 py-2.5 sm:table-cell">Estado</th>
-                    <th className="hidden px-3 py-2.5 text-right lg:table-cell">Valor</th>
+                    <SortTh label="Producto" col="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="px-4" />
+                    <SortTh label="Proveedor" col="supplier" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
+                    <SortTh label="Stock" col="stock" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right />
+                    <SortTh label="Mín." col="minStock" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right className="hidden sm:table-cell" />
+                    {insightsOn && (
+                      <SortTh label="Alcanza para" col="days" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right className="hidden md:table-cell" />
+                    )}
+                    <SortTh label="Estado" col="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
+                    <SortTh label="Valor" col="value" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right className="hidden lg:table-cell" />
                     <th className="px-3 py-2.5"><span className="sr-only">Acción</span></th>
                   </tr>
                 </thead>

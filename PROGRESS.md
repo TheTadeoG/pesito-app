@@ -602,3 +602,4 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - **Inventario** (`stock-board.tsx`): tres fichas de una línea (Reponer ya con "Qué comprar" en Plan IA; Capital parado con el selector de días, o el aviso del Plan IA; Revisar números con los links a Productos ya filtrado) y una sola tarjeta con buscador, marca, proveedor, orden y Excel, los chips por estado, la barra de salud fina y la tabla paginada. La tabla arranca a ~350 px del tope (antes, pasados los 900).
 - **Movimientos** y **Valorización** son vistas completas; Movimientos también va paginado (`pesito-moves-page-size`).
 - Sin cambios de datos ni de planes.
+- Inventario (Stock): los encabezados de la tabla ordenan con un clic (Producto, Proveedor, Stock, Mín., Alcanza para, Estado, Valor; `SortTh` en `stock-board.tsx`): un clic de menor a mayor, otro de mayor a menor y otro vuelve a "lo que más urge primero". El selector "Ordenar" se sacó.
