@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, PackagePlus, Search, X } from "lucide-react";
+import { PackagePlus, Search, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import type { Plan } from "@/lib/subscription";
 import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
+import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/pagination-bar";
 import { StockBoard } from "@/app/(dashboard)/productos/stock-board";
 import { toStockRow, type StockRow } from "@/lib/stock-rows";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
@@ -89,7 +90,7 @@ function ValuationBreakdownCard({ title, rows }: { title: string; rows: Valuatio
   );
 }
 
-const MOVEMENTS_PAGE = 30;
+const MOVEMENTS_PAGE_SIZE = 25;
 // El "reference" de una venta es su id (un uuid): no le dice nada a nadie.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -98,86 +99,39 @@ function shortMoney(value: number): string {
   return value >= 1_000_000 ? `$ ${(value / 1_000_000).toFixed(1).replace(".", ",")} M` : formatCurrency(value);
 }
 
-function Kpi({
+/** Un número de la franja de arriba (en el celular, con el nombre y el monto cortos). */
+function StripNumber({
   label,
   shortLabel,
   value,
   short,
-  alert,
-  onClick,
 }: {
   label: string;
-  /** Nombre corto para el celular. */
   shortLabel?: string;
   value: string;
-  /** Valor corto para el celular. */
   short?: string;
-  alert?: boolean;
-  onClick?: () => void;
 }) {
-  const content = (
-    <>
+  return (
+    <div className="min-w-0">
       <span className="block truncate text-[11px] text-muted-foreground sm:text-xs">
         <span className="sm:hidden">{shortLabel ?? label}</span>
         <span className="hidden sm:inline">{label}</span>
       </span>
-      <span className={cn("block truncate text-base font-bold sm:text-xl lg:text-2xl", alert ? "text-danger" : "text-foreground")}>
+      <span className="block truncate text-base font-bold text-foreground sm:text-lg">
         <span className="sm:hidden">{short ?? value}</span>
         <span className="hidden sm:inline">{value}</span>
       </span>
-    </>
-  );
-  const base = "min-w-0 rounded-2xl border px-3 py-3 text-left sm:px-4";
-  return onClick ? (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(base, "transition-colors", alert ? "border-danger/30 bg-danger-bg/40 hover:bg-danger-bg/70" : "border-border bg-card hover:bg-muted")}
-    >
-      {content}
-    </button>
-  ) : (
-    <div className={cn(base, "border-border bg-card")}>{content}</div>
+    </div>
   );
 }
 
-// Sección plegable: cabecera con un resumen en una línea; el contenido se ve al abrirla.
-function Fold({
-  title,
-  summary,
-  open,
-  onToggle,
-  action,
-  children,
-}: {
-  title: string;
-  summary: string;
-  open: boolean;
-  onToggle: () => void;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-3.5 text-left transition-colors hover:bg-muted"
-        >
-          <span className="flex min-w-0 items-center gap-2">
-            <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", !open && "-rotate-90")} />
-            <span className="text-base font-semibold text-foreground">{title}</span>
-          </span>
-          <span className="hidden truncate text-xs text-muted-foreground sm:block">{summary}</span>
-        </button>
-        {action}
-      </div>
-      {open && children}
-    </section>
-  );
-}
+type StockView = "inventory" | "moves" | "valuation";
+
+const viewTabs: { value: StockView; label: string }[] = [
+  { value: "inventory", label: "Inventario" },
+  { value: "moves", label: "Movimientos" },
+  { value: "valuation", label: "Valorización" },
+];
 
 interface MovementRow {
   id: string;
@@ -247,11 +201,10 @@ export function StockTab({
   const [period, setPeriod] = useState<MovementPeriod>(focusedProduct ? "all" : "30d");
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [movementQuery, setMovementQuery] = useState("");
-  // Stock bajo siempre a la vista (es lo que hay que atender); valorización y movimientos
-  // plegados. Si se viene de "Ver movimientos" de un producto, se abren los movimientos.
-  const [openValuation, setOpenValuation] = useState(false);
-  const [openMoves, setOpenMoves] = useState(Boolean(focusedProduct));
-  const [moveLimit, setMoveLimit] = useState({ key: "", n: MOVEMENTS_PAGE });
+  // Una vista por vez; si se viene de "Ver movimientos" de un producto, arranca en Movimientos.
+  const [view, setView] = useState<StockView>(focusedProduct ? "moves" : "inventory");
+  const [moveSize, setMoveSize] = usePageSize("pesito-moves-page-size", MOVEMENTS_PAGE_SIZE);
+  const [movePage, setMovePage] = useState(0);
   const supplierNameById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s.name])),
     [suppliers]
@@ -366,79 +319,81 @@ export function StockTab({
     });
   }, [movements, focusedProduct, period, typeFilter, movementQuery]);
 
-  // Resumen del día para la cabecera plegada de Movimientos.
-  const movementsSummary = useMemo(() => {
-    const start = getPeriodRange("today").start;
-    const counts = new Map<string, number>();
-    for (const m of movements) {
-      if (new Date(m.created_at) >= start) counts.set(m.type, (counts.get(m.type) ?? 0) + 1);
-    }
-    if (counts.size === 0) return "Hoy: sin movimientos";
-    const parts = movementTypes
-      .filter((t) => counts.has(t))
-      .map((t) => `${counts.get(t)} ${movementTypeLabels[t].toLowerCase()}${counts.get(t) === 1 ? "" : "s"}`);
-    return `Hoy: ${parts.join(" · ")}`;
-  }, [movements]);
-
   const moveKey = `${period}|${typeFilter ?? ""}|${movementQuery}|${focusedProduct?.id ?? ""}`;
-  const moveLimitNow = moveLimit.key === moveKey ? moveLimit.n : MOVEMENTS_PAGE;
+  // Al cambiar el período, el tipo o la búsqueda se vuelve a la primera página.
+  const [moveListKey, setMoveListKey] = useState(moveKey);
+  if (moveListKey !== moveKey) {
+    setMoveListKey(moveKey);
+    setMovePage(0);
+  }
+  const moveBounds = pageBounds(filteredMovements.length, movePage, moveSize);
 
   return (
-    <div className="space-y-5">
-      {/* Cuánto tenés, en tres números; abajo, lo que hay que hacer y la tabla de productos. */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <Kpi label="Unidades en stock" shortLabel="Unidades" value={formatQty(valuation.totalUnits)} />
-        <Kpi label="Valor al costo" shortLabel="Al costo" value={formatCurrency(valuation.totalCost)} short={shortMoney(valuation.totalCost)} />
-        <Kpi
-          label="Valor a precio de venta"
-          shortLabel="A la venta"
-          value={formatCurrency(valuation.totalPrice)}
-          short={shortMoney(valuation.totalPrice)}
-        />
+    <div className="space-y-4">
+      {/* Arriba, siempre: cuánto tenés y qué vista ver (una por vez). */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="grid grid-cols-3 gap-3 rounded-2xl border border-border bg-card px-4 py-2.5 sm:flex sm:items-center sm:gap-8">
+          <StripNumber label="Unidades en stock" shortLabel="Unidades" value={formatQty(valuation.totalUnits)} />
+          <StripNumber label="Valor al costo" shortLabel="Al costo" value={formatCurrency(valuation.totalCost)} short={shortMoney(valuation.totalCost)} />
+          <StripNumber
+            label="Valor a precio de venta"
+            shortLabel="A la venta"
+            value={formatCurrency(valuation.totalPrice)}
+            short={shortMoney(valuation.totalPrice)}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex min-w-0 overflow-x-auto rounded-xl border border-border bg-muted/50 p-1" role="tablist" aria-label="Vistas de stock">
+            {viewTabs.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                role="tab"
+                aria-selected={view === t.value}
+                onClick={() => setView(t.value)}
+                className={cn(
+                  "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                  view === t.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <Button type="button" variant="outline" className="shrink-0" onClick={() => setPickerOpen(true)} aria-label="Nuevo movimiento">
+            <PackagePlus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nuevo movimiento</span>
+          </Button>
+        </div>
       </div>
 
-      <StockBoard
-        rows={rows}
-        insightsOn={insights !== null}
-        lockedPlan={insightsLockedPlan}
-        slow={idle.slow}
-        idleDays={idle.days}
-        idleLoading={idleLoading}
-        idleError={idleError}
-        onIdleDaysChange={changeIdleDays}
-        restockHref={insightsLockedPlan ? null : "/recomendaciones"}
-        onEdit={(id) => {
-          setFormProduct(products.find((p) => p.id === id) ?? null);
-          setFormOpen(true);
-        }}
-        onAdjust={(id) => setAdjusting(products.find((p) => p.id === id) ?? null)}
-        // Movimientos y valorización, plegados pero a la vista: entre las tarjetas y la lista (abajo quedaban escondidos).
-        middle={
-          <div className="space-y-3">
-        <Fold
-          title="Valorización por marca y proveedor"
-          summary={`${valuation.byBrand.length} marca${valuation.byBrand.length === 1 ? "" : "s"} · ${valuation.bySupplier.length} proveedor${valuation.bySupplier.length === 1 ? "" : "es"}`}
-          open={openValuation}
-          onToggle={() => setOpenValuation((v) => !v)}
-        >
-          <div className="grid gap-4 lg:grid-cols-2">
+      {view === "inventory" && (
+        <StockBoard
+          rows={rows}
+          insightsOn={insights !== null}
+          lockedPlan={insightsLockedPlan}
+          slow={idle.slow}
+          idleDays={idle.days}
+          idleLoading={idleLoading}
+          idleError={idleError}
+          onIdleDaysChange={changeIdleDays}
+          restockHref={insightsLockedPlan ? null : "/recomendaciones"}
+          onEdit={(id) => {
+            setFormProduct(products.find((p) => p.id === id) ?? null);
+            setFormOpen(true);
+          }}
+          onAdjust={(id) => setAdjusting(products.find((p) => p.id === id) ?? null)}
+        />
+      )}
+
+      {view === "valuation" && (
+        <div className="grid gap-4 lg:grid-cols-2">
           <ValuationBreakdownCard title="Valorización por marca" rows={valuation.byBrand} />
           <ValuationBreakdownCard title="Valorización por proveedor" rows={valuation.bySupplier} />
-          </div>
-        </Fold>
+        </div>
+      )}
 
-        <Fold
-          title="Movimientos de stock"
-          summary={movementsSummary}
-          open={openMoves}
-          onToggle={() => setOpenMoves((v) => !v)}
-          action={
-            <Button type="button" variant="outline" onClick={() => setPickerOpen(true)}>
-              <PackagePlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nuevo movimiento</span>
-            </Button>
-          }
-        >
+      {view === "moves" && (
         <Card>
           <CardHeader>
             <div className="space-y-3">
@@ -524,7 +479,7 @@ export function StockTab({
               </p>
             ) : (
               <div className="divide-y divide-border">
-                {filteredMovements.slice(0, moveLimitNow).map((m) => (
+                {filteredMovements.slice(moveBounds.start, moveBounds.end).map((m) => (
                   <div key={m.id} className="flex items-center justify-between gap-3 px-5 py-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-foreground">
@@ -547,23 +502,22 @@ export function StockTab({
                     </div>
                   </div>
                 ))}
-                {filteredMovements.length > moveLimitNow && (
-                  <button
-                    type="button"
-                    onClick={() => setMoveLimit({ key: moveKey, n: moveLimitNow + MOVEMENTS_PAGE })}
-                    className="w-full px-5 py-3 text-center text-sm font-medium text-primary hover:bg-muted"
-                  >
-                    {`Ver más (${filteredMovements.length - moveLimitNow} restantes)`}
-                  </button>
-                )}
               </div>
             )}
           </CardContent>
+          <PaginationBar
+            total={filteredMovements.length}
+            page={moveBounds.safePage}
+            pageSize={moveSize}
+            noun="movimientos"
+            onPageChange={setMovePage}
+            onPageSizeChange={(n) => {
+              setMoveSize(n);
+              setMovePage(0);
+            }}
+          />
         </Card>
-        </Fold>
-          </div>
-        }
-      />
+      )}
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
 
