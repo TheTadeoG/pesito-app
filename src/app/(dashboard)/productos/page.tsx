@@ -51,9 +51,7 @@ export default async function ProductosPage({
           .order("id")
           .range(from, to)
       ),
-      tab === "stock"
-        ? Promise.resolve({ data: [] })
-        : supabase.from("brands").select("*").eq("org_id", organization.id).order("name"),
+      supabase.from("brands").select("*").eq("org_id", organization.id).order("name"),
       tab === "productos" || tab === "stock"
         ? supabase.from("suppliers").select("id, name").eq("org_id", organization.id).order("name")
         : Promise.resolve({ data: [] }),
@@ -174,6 +172,9 @@ export default async function ProductosPage({
         movements={normalizedMovements}
         insights={insights}
         insightsLockedPlan={insightsOn ? null : featureMinPlan.lowRotation}
+        orgId={organization.id}
+        brands={brands ?? []}
+        barcodeLocked={!canUse(subscription, "barcodeLabels")}
         suppliers={suppliers ?? []}
         focusedProduct={
           focusedProduct ? { id: focusedProduct.id, name: focusedProduct.name } : null

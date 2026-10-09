@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ChevronRight, CircleCheck, Download, Lock, Search, ShoppingCart, TrendingDown, Wrench } from "lucide-react";
+import { AlertTriangle, ChevronRight, CircleCheck, Download, Lock, Pencil, Search, ShoppingCart, SlidersHorizontal, TrendingDown, Wrench } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,6 +77,109 @@ function urgencyOf(r: StockRow): number {
   return order;
 }
 
+/**
+ * Número editable en la misma celda (costo o stock mínimo): tocás, escribís, Enter para guardar,
+ * Esc para cancelar. Con `open` fijo (cuando se está corrigiendo justo ese dato) ya viene el campo.
+ * Va dentro de un contenedor de ancho fijo: el Input trae w-full y no se achica con className.
+ */
+function InlineNumber({
+  value,
+  display,
+  placeholder,
+  label,
+  open,
+  onSave,
+}: {
+  value: number | null;
+  /** Cómo se ve el valor cuando no se está editando. */
+  display: string;
+  placeholder: string;
+  label: string;
+  open?: boolean;
+  onSave: (value: number) => Promise<string | null>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const showInput = editing || open;
+
+  function cancel() {
+    setEditing(false);
+    setDraft("");
+    setError(null);
+  }
+
+  async function save() {
+    if (saving) return;
+    const text = draft.trim().replace(",", ".");
+    if (text === "") return cancel();
+    const n = Number(text);
+    if (!Number.isFinite(n) || n < 0) {
+      setError("Número inválido");
+      return;
+    }
+    if (n === value) return cancel();
+    setSaving(true);
+    const err = await onSave(n);
+    setSaving(false);
+    if (err) setError(err);
+    else cancel();
+  }
+
+  if (!showInput) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(value === null ? "" : String(value));
+          setEditing(true);
+        }}
+        title={`Cambiar ${label}`}
+        aria-label={`Cambiar ${label}`}
+        className="group inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        {display}
+        <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-70 group-focus-visible:opacity-70" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="ml-auto w-24">
+      <Input
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="any"
+        value={draft}
+        autoFocus={editing}
+        disabled={saving}
+        placeholder={placeholder}
+        aria-label={label}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setError(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void save();
+          } else if (e.key === "Escape") {
+            e.stopPropagation();
+            cancel();
+          }
+        }}
+        onBlur={() => {
+          if (editing && !open) void save();
+        }}
+        className={cn("h-8 px-2 text-right text-sm", error && "border-danger")}
+      />
+      {error && <p className="mt-0.5 text-right text-[11px] text-danger">{error}</p>}
+    </div>
+  );
+}
+
 export function StockBoard({
   rows,
   brands,
@@ -89,6 +192,9 @@ export function StockBoard({
   idleError,
   onIdleDaysChange,
   restockHref,
+  onQuickSave,
+  onEdit,
+  onAdjust,
 }: {
   rows: StockRow[];
   brands: string[];
@@ -105,6 +211,10 @@ export function StockBoard({
   idleError: string | null;
   onIdleDaysChange: (days: number) => void;
   restockHref: string | null;
+  /** Guarda el costo o el mínimo de un producto (devuelve el error, o null si salió bien). */
+  onQuickSave: (id: string, field: "cost" | "minStock", value: number) => Promise<string | null>;
+  onEdit: (id: string) => void;
+  onAdjust: (id: string) => void;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -173,6 +283,15 @@ export function StockBoard({
     { value: "ok", label: "OK", count: counts.ok },
     ...(insightsOn ? [{ value: "excess" as Filter, label: `Sin ventas ${idleDays} d`, count: counts.excess }] : []),
   ];
+
+  const guide =
+    filter === "nocost"
+      ? "Escribí el costo en cada fila y apretá Enter. Con el costo, el valor del stock queda bien calculado."
+      : filter === "nomin"
+        ? "Escribí el stock mínimo en cada fila y apretá Enter: así Pesito te avisa cuando un producto se esté por acabar."
+        : filter === "negative"
+          ? "Con el botón de ajustes de cada fila (el de las barritas) dejás el stock en el número real."
+          : null;
 
   const total = rows.length || 1;
   const segments = (["ok", "low", "out", ...(insightsOn ? ["excess"] : [])] as StockStatus[]).filter((s) => counts[s] > 0);
@@ -416,6 +535,7 @@ export function StockBoard({
                 </button>
               )}
             </div>
+            {guide && <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">{guide}</p>}
           </CardContent>
         </Card>
 
@@ -458,16 +578,17 @@ export function StockBoard({
                     <th className="hidden px-3 py-2.5 lg:table-cell">Proveedor</th>
                     <th className="px-3 py-2.5 text-right">Stock</th>
                     <th className="hidden px-3 py-2.5 text-right sm:table-cell">Mín.</th>
+                    <th className="hidden px-3 py-2.5 text-right md:table-cell">Costo</th>
                     {insightsOn && <th className="hidden px-3 py-2.5 text-right md:table-cell">Alcanza para</th>}
                     <th className="hidden px-3 py-2.5 sm:table-cell">Estado</th>
-                    <th className="hidden px-3 py-2.5 text-right md:table-cell">Valor</th>
+                    <th className="hidden px-3 py-2.5 text-right lg:table-cell">Valor</th>
                     <th className="px-3 py-2.5"><span className="sr-only">Acción</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filtered.slice(0, shown).map((r) => (
                     <tr key={r.id} className="hover:bg-muted/40">
-                      <td className="max-w-[11rem] px-4 py-2.5 sm:max-w-[16rem]">
+                      <td className="max-w-[8rem] py-2.5 pl-3 pr-1 sm:max-w-[16rem] sm:px-4">
                         <p className="truncate font-medium text-foreground">{r.name}</p>
                         <p className="truncate text-xs text-muted-foreground">{[r.brand, r.sku ? `SKU ${r.sku}` : null].filter(Boolean).join(" · ") || " "}</p>
                       </td>
@@ -475,7 +596,26 @@ export function StockBoard({
                       <td className={cn("whitespace-nowrap px-3 py-2.5 text-right font-semibold", r.status === "out" ? "text-danger" : r.status === "low" ? "text-warning" : "text-foreground")}>
                         {`${qty(r.stock)}${r.unit}`}
                       </td>
-                      <td className="hidden whitespace-nowrap px-3 py-2.5 text-right text-muted-foreground sm:table-cell">{`${qty(r.minStock)}${r.unit}`}</td>
+                      <td className="hidden whitespace-nowrap px-3 py-2.5 text-right sm:table-cell">
+                        <InlineNumber
+                          value={r.minStock}
+                          display={`${qty(r.minStock)}${r.unit}`}
+                          placeholder="Mínimo"
+                          label={`stock mínimo de ${r.name}`}
+                          open={filter === "nomin" && r.minStock <= 0}
+                          onSave={(v) => onQuickSave(r.id, "minStock", v)}
+                        />
+                      </td>
+                      <td className="hidden whitespace-nowrap px-3 py-2.5 text-right md:table-cell">
+                        <InlineNumber
+                          value={r.cost}
+                          display={r.cost !== null && r.cost > 0 ? formatCurrency(r.cost) : "Sin costo"}
+                          placeholder="Costo"
+                          label={`costo de ${r.name}`}
+                          open={filter === "nocost" && (r.cost === null || r.cost <= 0)}
+                          onSave={(v) => onQuickSave(r.id, "cost", v)}
+                        />
+                      </td>
                       {insightsOn && (
                         <td className={cn("hidden whitespace-nowrap px-3 py-2.5 text-right md:table-cell", r.daysLeft !== null && r.daysLeft !== undefined && r.daysLeft < 3 ? "font-semibold text-danger" : "text-muted-foreground")}>
                           {daysLabel(r.daysLeft)}
@@ -484,19 +624,40 @@ export function StockBoard({
                       <td className="hidden px-3 py-2.5 sm:table-cell">
                         <span className={cn("inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold", statusTone[r.status])}>{statusLabel[r.status]}</span>
                       </td>
-                      <td className="hidden whitespace-nowrap px-3 py-2.5 text-right text-muted-foreground md:table-cell">{formatCurrency(r.value)}</td>
-                      <td className="px-3 py-2.5 text-right">
-                        {(r.status === "out" || r.status === "low") && (
-                          <Link
-                            href={`/compras?producto=${r.id}`}
-                            prefetch={false}
-                            aria-label={`Comprar ${r.name}`}
-                            className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                      <td className="hidden whitespace-nowrap px-3 py-2.5 text-right text-muted-foreground lg:table-cell">{formatCurrency(r.value)}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center justify-end gap-1 sm:gap-1.5">
+                          {(r.status === "out" || r.status === "low") && (
+                            <Link
+                              href={`/compras?producto=${r.id}`}
+                              prefetch={false}
+                              aria-label={`Comprar ${r.name}`}
+                              title="Comprar"
+                              className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-2 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:px-2.5"
+                            >
+                              <ShoppingCart className="h-3.5 w-3.5" />
+                              <span className="hidden xl:inline">Comprar</span>
+                            </Link>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onAdjust(r.id)}
+                            aria-label={`Ajustar el stock de ${r.name}`}
+                            title="Ajustar stock"
+                            className="inline-flex h-8 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:w-8"
                           >
-                            <ShoppingCart className="h-3.5 w-3.5" />
-                            <span className="hidden xl:inline">Comprar</span>
-                          </Link>
-                        )}
+                            <SlidersHorizontal className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onEdit(r.id)}
+                            aria-label={`Editar ${r.name}`}
+                            title="Editar producto"
+                            className="inline-flex h-8 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:w-8"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

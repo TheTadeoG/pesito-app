@@ -153,6 +153,30 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
   };
 }
 
+/**
+ * Cambia sólo el costo o el stock mínimo de un producto (edición rápida desde la tabla de Stock).
+ * No revalida páginas: la tabla aplica el valor nuevo (un revalidatePath re-renderizaría la pantalla).
+ */
+export async function updateProductQuick(
+  id: string,
+  field: "cost" | "min_stock",
+  value: number
+): Promise<ActionState> {
+  const { organization } = await requireOrgContext();
+  if (field !== "cost" && field !== "min_stock") return { error: "Campo inválido." };
+  if (!Number.isFinite(value) || value < 0 || value > 1_000_000_000) {
+    return { error: field === "cost" ? "El costo tiene que ser un número de cero o más." : "El mínimo tiene que ser un número de cero o más." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("products")
+    .update(field === "cost" ? { cost: value } : { min_stock: value })
+    .eq("id", id)
+    .eq("org_id", organization.id);
+  if (error) return { error: "No pudimos guardar el cambio." };
+  return {};
+}
+
 export async function createBrandQuick(name: string): Promise<{ error?: string; id?: string }> {
   const trimmed = name.trim();
   if (!trimmed) {

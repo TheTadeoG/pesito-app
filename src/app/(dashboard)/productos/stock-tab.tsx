@@ -10,10 +10,12 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import { getPeriodRange, type ReportPeriod } from "@/lib/report-periods";
-import type { Product } from "@/lib/types";
+import type { Brand, Product } from "@/lib/types";
 import type { Plan } from "@/lib/subscription";
 import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
+import { updateProductQuick } from "@/app/(dashboard)/productos/actions";
+import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 import { StockBoard, type StockRow } from "@/app/(dashboard)/productos/stock-board";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 
@@ -214,6 +216,9 @@ export function StockTab({
   suppliers,
   insights,
   insightsLockedPlan,
+  orgId,
+  brands,
+  barcodeLocked,
   focusedProduct,
 }: {
   products: Product[];
@@ -228,6 +233,11 @@ export function StockTab({
   } | null;
   /** Plan que desbloquea los datos anteriores (null si el negocio ya lo tiene). */
   insightsLockedPlan: Plan | null;
+  /** Para editar un producto desde la tabla (formulario completo). */
+  orgId: string;
+  brands: Pick<Brand, "id" | "name">[];
+  /** El plan no incluye generar códigos de barras (botón del formulario). */
+  barcodeLocked: boolean;
   // Viene de "Ver movimientos" en la tabla de productos.
   focusedProduct: { id: string; name: string } | null;
 }) {
@@ -264,12 +274,24 @@ export function StockTab({
       setIdleLoading(false);
     }
   }
+  // Costo y mínimo corregidos desde la tabla (edición rápida, sin recargar la pantalla).
+  const [edits, setEdits] = useState<Record<string, { cost?: number; minStock?: number }>>({});
+  const [formProduct, setFormProduct] = useState<Product | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  async function quickSave(id: string, field: "cost" | "minStock", value: number): Promise<string | null> {
+    const res = await updateProductQuick(id, field === "cost" ? "cost" : "min_stock", value);
+    if (res.error) return res.error;
+    setEdits((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
+    return null;
+  }
   const slowIds = useMemo(() => new Set(idle.slow.map((r) => r.id)), [idle]);
   const rows = useMemo<StockRow[]>(
     () =>
       products.map((p) => {
+        const minStock = edits[p.id]?.minStock ?? p.min_stock;
+        const cost = edits[p.id]?.cost ?? p.cost;
         const status: StockRow["status"] =
-          p.stock <= 0 ? "out" : p.stock <= p.min_stock ? "low" : slowIds.has(p.id) ? "excess" : "ok";
+          p.stock <= 0 ? "out" : p.stock <= minStock ? "low" : slowIds.has(p.id) ? "excess" : "ok";
         return {
           id: p.id,
           name: p.name,
@@ -277,16 +299,16 @@ export function StockTab({
           sku: p.sku,
           unit: p.unit,
           stock: p.stock,
-          minStock: p.min_stock,
-          cost: p.cost,
+          minStock,
+          cost,
           price: p.price,
           supplier: p.default_supplier_id ? (supplierNameById.get(p.default_supplier_id) ?? null) : null,
           status,
           daysLeft: insights ? (insights.cover[p.id] ?? null) : undefined,
-          value: p.stock * (p.cost ?? 0),
+          value: p.stock * (cost ?? 0),
         };
       }),
-    [products, slowIds, insights, supplierNameById]
+    [products, slowIds, insights, supplierNameById, edits]
   );
   const brandOptions = useMemo(
     () => Array.from(new Set(rows.map((r) => r.brand).filter((b): b is string => Boolean(b)))).sort((x, y) => x.localeCompare(y)),
@@ -418,6 +440,12 @@ export function StockTab({
         idleError={idleError}
         onIdleDaysChange={changeIdleDays}
         restockHref={insightsLockedPlan ? null : "/recomendaciones"}
+        onQuickSave={quickSave}
+        onEdit={(id) => {
+          setFormProduct(products.find((p) => p.id === id) ?? null);
+          setFormOpen(true);
+        }}
+        onAdjust={(id) => setAdjusting(products.find((p) => p.id === id) ?? null)}
       />
 
       <Fold
@@ -568,6 +596,17 @@ export function StockTab({
       </Fold>
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
+
+      <ProductForm
+        orgId={orgId}
+        key={formProduct?.id ?? "none"}
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        product={formProduct}
+        brands={brands}
+        suppliers={suppliers}
+        barcodeGenerate={{ locked: barcodeLocked }}
+      />
 
       <Dialog
         open={pickerOpen}
