@@ -48,7 +48,7 @@ export function countsToAlerts(counts: BusinessAlertCounts | null, stockLockedPl
 }
 
 /** Lista de avisos (sin la lógica de carga): el contenido del menú de la campana. */
-export function AlertsPanel({ alerts, onNavigate }: { alerts: BellAlert[]; onNavigate?: () => void }) {
+export function AlertsPanel({ alerts, onNavigate }: { alerts: BellAlert[]; onNavigate?: (alert: BellAlert) => void }) {
   if (alerts.length === 0) {
     return (
       <div className="flex items-center gap-2.5 px-4 py-5 text-sm text-muted-foreground">
@@ -67,7 +67,7 @@ export function AlertsPanel({ alerts, onNavigate }: { alerts: BellAlert[]; onNav
             <Link
               href={href}
               prefetch={false}
-              onClick={onNavigate}
+              onClick={() => onNavigate?.(a)}
               className="flex items-start gap-3 px-4 py-3 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
             >
               <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", toneClass[a.tone])}>
@@ -140,15 +140,44 @@ export function AlertsBell({
     };
   }, [open]);
 
+  // Avisos que se descartan al abrirlos (ver BellAlert.dismiss): se leen del navegador.
+  const [dismissed, setDismissed] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const found: Record<string, string> = {};
+    for (const a of serverAlerts) {
+      if (!a.dismiss) continue;
+      try {
+        const stored = window.localStorage.getItem(a.dismiss.key);
+        if (stored) found[a.id] = stored;
+      } catch {
+        // sin almacenamiento: el aviso se ve siempre
+      }
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDismissed(found);
+  }, [serverAlerts]);
+
+  const dismissAlert = useCallback((a: BellAlert) => {
+    if (!a.dismiss) return;
+    const { key, token } = a.dismiss;
+    try {
+      window.localStorage.setItem(key, token);
+    } catch {
+      // ignore
+    }
+    setDismissed((d) => ({ ...d, [a.id]: token }));
+  }, []);
+
   const alerts = useMemo(() => {
+    const visibleServer = serverAlerts.filter((a) => !a.dismiss || dismissed[a.id] !== a.dismiss.token);
     const cashItem = cash ? cashAlert(cash.openedAt, cash.closeTime) : null;
     const order: Record<BellTone, number> = { danger: 0, warning: 1, info: 2 };
-    return [...serverAlerts, ...(cashItem ? [cashItem] : []), ...countsToAlerts(counts, stockLockedPlan)].sort(
+    return [...visibleServer, ...(cashItem ? [cashItem] : []), ...countsToAlerts(counts, stockLockedPlan)].sort(
       (a, b) => order[a.tone] - order[b.tone]
     );
     // El aviso de la caja depende de la hora: se recalcula cada vez que se abre.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serverAlerts, cash, counts, stockLockedPlan, open]);
+  }, [serverAlerts, dismissed, cash, counts, stockLockedPlan, open]);
 
   const actionable = alerts.filter((a) => !a.lockedPlan).length;
   const urgent = alerts.some((a) => a.tone === "danger" && !a.lockedPlan);
@@ -186,7 +215,13 @@ export function AlertsBell({
           <p className="px-4 pb-2 pt-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Avisos
           </p>
-          <AlertsPanel alerts={alerts} onNavigate={() => setOpen(false)} />
+          <AlertsPanel
+            alerts={alerts}
+            onNavigate={(a) => {
+              dismissAlert(a);
+              setOpen(false);
+            }}
+          />
         </div>
       )}
     </div>

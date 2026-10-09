@@ -24,8 +24,7 @@ import { cookies } from "next/headers";
 import { isOrgAdmin } from "@/lib/roles";
 import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
 import { formatDate, formatDateTime } from "@/lib/utils";
-import { planAlerts, type BellAlert } from "@/lib/bell-alerts";
-import { NewDeviceAlert, type NewDeviceLogin } from "@/components/dashboard/new-device-alert";
+import { newDeviceAlert, planAlerts, type BellAlert, type NewDeviceLogin } from "@/lib/bell-alerts";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -150,16 +149,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = isOrgAdmin(membership.role);
   const bellAlerts: BellAlert[] = [];
   if (isAdmin) bellAlerts.push(...planAlerts(subscription, expiringBilling ? expiringBilling.currentPeriodEnd : null));
-  if (isAdmin && newDeviceLogins.length > 0) {
-    const first = newDeviceLogins[0];
-    bellAlerts.push({
-      id: "new-device",
-      tone: "warning",
-      title: "Ingresaron desde un dispositivo nuevo",
-      detail: `${first.who} · ${first.device}${newDeviceLogins.length > 1 ? ` y ${newDeviceLogins.length - 1} más` : ""}`,
-      href: "/configuracion",
-    });
-  }
+  const deviceAlert = isAdmin ? newDeviceAlert(newDeviceLogins) : null;
+  if (deviceAlert) bellAlerts.push(deviceAlert);
   if (overdueSuppliers > 0) {
     const locked = !canUse(subscription, "supplierAccounts");
     bellAlerts.push({
@@ -218,7 +209,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
               closeTime={organization.cash_close_time ?? null}
             />
           )}
-          <NewDeviceAlert logins={newDeviceLogins} />
           {isOrgAdmin(membership.role) && subscription.billing?.status === "past_due" && (
             <div className="mx-4 mt-4 rounded-2xl border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-foreground sm:mx-6 lg:mx-8">
               {`No pudimos cobrar tu plan con Mercado Pago${

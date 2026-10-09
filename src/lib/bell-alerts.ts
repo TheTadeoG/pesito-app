@@ -17,6 +17,34 @@ export interface BellAlert {
   href: string;
   /** Plan que desbloquea el detalle (la función no está en el plan del negocio). */
   lockedPlan?: Plan;
+  /**
+   * Aviso que se descarta al abrirlo: queda guardado en este navegador (`key`) con el
+   * `token` del último hecho (p. ej. el id del último ingreso) y vuelve sólo si cambia.
+   */
+  dismiss?: { key: string; token: string };
+}
+
+export interface NewDeviceLogin {
+  id: string;
+  who: string;
+  device: string;
+  at: string;
+}
+
+/** Ingresos desde dispositivos nuevos (últimas 48 h) para dueño o administrador. */
+export function newDeviceAlert(logins: NewDeviceLogin[]): BellAlert | null {
+  const first = logins[0];
+  if (!first) return null;
+  const more = logins.length > 1 ? ` (y ${logins.length - 1} más)` : "";
+  return {
+    id: "new-device",
+    tone: "warning",
+    title: "Ingreso desde un dispositivo nuevo",
+    detail: `${first.who}, ${first.device}, ${first.at}${more}. ¿No lo reconocés? Cambiá la contraseña.`,
+    href: "/configuracion",
+    // La misma clave que usaba el cartel de arriba: quien ya lo había cerrado no lo vuelve a ver.
+    dismiss: { key: "pesito-dismissed-new-device", token: first.id },
+  };
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
