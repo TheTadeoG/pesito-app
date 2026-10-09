@@ -165,6 +165,11 @@ export const faqCategories: FaqCategory[] = [
           "Sí. Quien administra el negocio puede bajar la lista de clientes a Excel desde Clientes (en todos los planes, incluido el Gratis), con lo que debe cada uno. La carga masiva de clientes desde una planilla de Excel o CSV está en el Plan Esencial: cargás nombre, razón social, teléfono, mail, documento, tipo de factura y notas, y antes de guardar ves cuántos son nuevos y cuántos ya existen. Si un cliente ya existe, por defecto se deja como está, y si querés elegís qué datos actualizar. Lo que cada cliente debe (el fiado), sus ventas y sus pagos nunca se modifican desde la planilla: el fiado sólo cambia al vender a fiado o al registrar un cobro. Por eso, Pesito no carga deudas anteriores desde Excel.",
       },
       {
+        question: "¿Puedo bajar mi stock a Excel?",
+        answer:
+          "Sí, desde el Plan Esencial. En Productos, pestaña Stock, el botón \"Descargar Excel\" baja la lista tal como la estás viendo: si filtraste por marca, por proveedor o por estado (sin stock, por agotarse), baja sólo esos productos. La planilla trae el producto, el SKU, la marca, el proveedor, el stock, el mínimo, cuánto falta para el mínimo, el estado, el costo, el valor al costo y el precio de venta; con el Plan IA suma además cuántos días alcanza el stock. Es una planilla para mirar o compartir: no se vuelve a subir (para cargar o corregir productos hay una planilla de carga masiva aparte).",
+      },
+      {
         question: "¿Puedo guardar los datos fiscales de un cliente?",
         answer:
           "Sí: nombre, razón social, documento o CUIT, teléfono y el tipo de comprobante que le corresponde, para tenerlo a mano en cada venta.",

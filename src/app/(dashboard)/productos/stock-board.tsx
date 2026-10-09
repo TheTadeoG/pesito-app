@@ -2,13 +2,15 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Lock, Search, ShoppingCart, TrendingDown, Wrench } from "lucide-react";
+import { AlertTriangle, Download, Lock, Search, ShoppingCart, TrendingDown, Wrench } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { cn, formatCurrency } from "@/lib/utils";
 import { planLabels, type Plan } from "@/lib/subscription";
+import { downloadStockExcel } from "@/app/(dashboard)/productos/stock-excel";
 
 export type StockStatus = "out" | "low" | "ok" | "excess";
 
@@ -21,6 +23,7 @@ export interface StockRow {
   stock: number;
   minStock: number;
   cost: number | null;
+  price: number;
   supplier: string | null;
   status: StockStatus;
   /** Días que alcanza el stock (Plan IA): 0 sin stock, null si no se vendió en el período, undefined sin el plan. */
@@ -99,6 +102,7 @@ export function StockBoard({
   const [supplier, setSupplier] = useState("");
   const [sort, setSort] = useState<Sort>("urgency");
   const [limit, setLimit] = useState({ key: "", n: PAGE });
+  const [exporting, setExporting] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const counts = useMemo(() => {
@@ -297,7 +301,27 @@ export function StockBoard({
           <CardContent className="space-y-3 py-4">
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold text-foreground">Salud del stock</p>
-              <p className="text-xs text-muted-foreground">{`${rows.length} producto${rows.length === 1 ? "" : "s"} activo${rows.length === 1 ? "" : "s"}`}</p>
+              <div className="flex items-center gap-3">
+                <p className="hidden text-xs text-muted-foreground sm:block">{`${rows.length} producto${rows.length === 1 ? "" : "s"} activo${rows.length === 1 ? "" : "s"}`}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={filtered.length === 0 || exporting}
+                  onClick={async () => {
+                    setExporting(true);
+                    try {
+                      await downloadStockExcel(filtered, insightsOn);
+                    } finally {
+                      setExporting(false);
+                    }
+                  }}
+                  title="Baja a Excel la lista como la estás viendo (con los filtros y el orden elegidos)"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {exporting ? "Preparando…" : `Descargar Excel (${filtered.length})`}
+                </Button>
+              </div>
             </div>
             <div className="flex h-3.5 gap-0.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
               {segments.map((s) => (

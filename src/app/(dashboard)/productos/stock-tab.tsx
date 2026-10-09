@@ -255,6 +255,7 @@ export function StockTab({
           stock: p.stock,
           minStock: p.min_stock,
           cost: p.cost,
+          price: p.price,
           supplier: p.default_supplier_id ? (supplierNameById.get(p.default_supplier_id) ?? null) : null,
           status,
           daysLeft: insights ? (insights.cover[p.id] ?? null) : undefined,
