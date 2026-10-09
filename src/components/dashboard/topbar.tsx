@@ -7,6 +7,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { PlanLine } from "@/components/dashboard/plan-line";
 import { HelpMenu } from "@/components/dashboard/help-menu";
+import { AlertsBell } from "@/components/dashboard/alerts-bell";
+import type { BellAlert } from "@/lib/bell-alerts";
 import type { Plan } from "@/lib/subscription";
 import type { BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
 import { signOut } from "@/app/(auth)/actions";
@@ -24,9 +26,15 @@ interface TopbarProps {
   plan: Plan;
   trial: boolean;
   role: string;
+  /** Campana de avisos: lo que ya sabe el servidor, la caja abierta y el plan que desbloquea el stock. */
+  bell: {
+    alerts: BellAlert[];
+    cash: { openedAt: string; closeTime: string | null } | null;
+    stockLockedPlan: Plan | null;
+  };
 }
 
-export function Topbar({ orgName, userLabel, greetingName, branch, alerts, roleLabel, plan, trial, role }: TopbarProps) {
+export function Topbar({ orgName, userLabel, greetingName, branch, alerts, roleLabel, plan, trial, role, bell }: TopbarProps) {
   const pathname = usePathname();
   const page = pageTitles[pathname] ?? { title: orgName, description: "" };
 
@@ -46,6 +54,7 @@ export function Topbar({ orgName, userLabel, greetingName, branch, alerts, roleL
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        <AlertsBell serverAlerts={bell.alerts} cash={bell.cash} stockLockedPlan={bell.stockLockedPlan} />
         <HelpMenu orgName={orgName} />
         {/* En el celular, el tema y salir viven al pie del menú de las tres rayitas.
             (El Button trae inline-flex y le gana a "hidden": se ocultan con un contenedor.) */}

@@ -59,6 +59,11 @@ export const faqCategories: FaqCategory[] = [
           "Sí. Lo usan kioscos, almacenes, verdulerías, fiambrerías, locales de ropa, ferreterías, pet shops, farmacias y cualquier negocio que venda productos. Cargás tus productos (por unidad o por peso) y empezás a vender.",
       },
       {
+        question: "¿Pesito me avisa cuando algo necesita atención?",
+        answer:
+          "Sí, con la campana de la barra de arriba. Muestra, dentro del sistema, el stock bajo, lo que te deben en fiado, los proveedores con deuda vencida, la hora de cierre de la caja o una caja que quedó abierta de un día anterior, y, a quien es dueño o administrador, los ingresos desde dispositivos nuevos y el estado del plan. Lo que tu plan no incluye (por ejemplo, el detalle del stock bajo en el Plan Gratis) se ve igual, con el número y el plan que lo desbloquea. Por ahora los avisos se ven dentro de Pesito: no se mandan por email ni por WhatsApp.",
+      },
+      {
         question: "¿Cómo le aviso a Pesito de un problema o le sugiero una función?",
         answer:
           "Desde el botón de ayuda (?) de la barra de arriba, en cualquier plan: \"Contanos qué te falta\" para sugerencias y \"Reportar un problema\" para algo que no anda. Escribís el mensaje y Pesito recibe junto con él el nombre de tu negocio, tu email y la pantalla en la que estabas, para poder responderte. Podés mandar hasta 10 mensajes por día. Si es urgente, también podés escribirnos por WhatsApp desde el mismo menú.",

@@ -24,6 +24,7 @@ import { cookies } from "next/headers";
 import { isOrgAdmin } from "@/lib/roles";
 import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { planAlerts, type BellAlert } from "@/lib/bell-alerts";
 import { NewDeviceAlert, type NewDeviceLogin } from "@/components/dashboard/new-device-alert";
 
 export const metadata: Metadata = {
@@ -145,6 +146,37 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ? { "/proveedores": overdueSuppliers }
     : {};
 
+  // Campana de avisos. Lo que el plan no incluye se muestra igual (con el plan que lo desbloquea).
+  const isAdmin = isOrgAdmin(membership.role);
+  const bellAlerts: BellAlert[] = [];
+  if (isAdmin) bellAlerts.push(...planAlerts(subscription, expiringBilling ? expiringBilling.currentPeriodEnd : null));
+  if (isAdmin && newDeviceLogins.length > 0) {
+    const first = newDeviceLogins[0];
+    bellAlerts.push({
+      id: "new-device",
+      tone: "warning",
+      title: "Ingresaron desde un dispositivo nuevo",
+      detail: `${first.who} · ${first.device}${newDeviceLogins.length > 1 ? ` y ${newDeviceLogins.length - 1} más` : ""}`,
+      href: "/configuracion",
+    });
+  }
+  if (overdueSuppliers > 0) {
+    const locked = !canUse(subscription, "supplierAccounts");
+    bellAlerts.push({
+      id: "suppliers-overdue",
+      tone: "danger",
+      title: overdueSuppliers === 1 ? "1 proveedor con deuda vencida" : `${overdueSuppliers} proveedores con deuda vencida`,
+      detail: locked ? "Desbloqueá el detalle y el calendario de pagos con un plan más alto." : "Revisá los vencimientos para pagar a tiempo.",
+      href: "/proveedores",
+      lockedPlan: locked ? featureMinPlan.supplierAccounts : undefined,
+    });
+  }
+  const bell = {
+    alerts: bellAlerts,
+    cash: openRegister ? { openedAt: openRegister.opened_at, closeTime: organization.cash_close_time ?? null } : null,
+    stockLockedPlan: canUse(subscription, "stockManagement") ? null : featureMinPlan.stockManagement,
+  };
+
   return (
     <ToastProvider>
       <Suspense fallback={null}>
@@ -176,6 +208,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             userLabel={membership.username ?? email ?? ""}
             greetingName={greetingName}
             branch={branch}
+            bell={bell}
           />
           <CommercialDatesBanner dates={commercialDates} />
           {openRegister && (

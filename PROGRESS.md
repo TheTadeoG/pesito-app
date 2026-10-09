@@ -550,3 +550,10 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Textos públicos: pregunta nueva en `faq-data.ts` (Empezar y planes; sale en `llms.txt`) y párrafo en la política de privacidad (fecha: octubre de 2026).
 - Probado en navegador (menú, formulario, contador, Esc, celular). El envío real falta probarlo después de aplicar la 0073.
 - Pendiente (partes 3 y 4): campana con alertas del negocio y novedades de Pesito.
+
+## Campana de avisos (parte 3 del menú de ayuda)
+- Campana al lado del botón de ayuda (`alerts-bell.tsx`, en `topbar.tsx`; también en el celular, donde el panel ocupa el ancho de la pantalla). El número cuenta sólo lo que se puede atender hoy (rojo si hay algo urgente); lo que el plan no incluye aparece igual en la lista, con `PlanPill` y link al plan que lo desbloquea.
+- Avisos: plan (pago rechazado, plan vencido o por vencer, prueba Pro que termina en 3 días o menos; sólo dueño/admin; `lib/bell-alerts.ts`), dispositivo nuevo (admin), proveedores con deuda vencida (bloqueado sin `supplierAccounts`), caja (hora de cierre o de un día anterior, calculado en el navegador), stock bajo (bloqueado sin `stockManagement`) y fiado total. Los dos últimos los calcula la acción `getBusinessAlerts` (`(dashboard)/alertas/actions.ts`) una vez al entrar y al abrir si pasaron 5 minutos; el resto ya viene del layout, sin consultas nuevas.
+- Los carteles del layout (dispositivo nuevo, plan) siguen igual: la campana los resume, no los reemplaza.
+- Pregunta nueva en `faq-data.ts` ("¿Pesito me avisa…?"; sale en `llms.txt`). Los avisos son sólo dentro del sistema: no hay email ni WhatsApp.
+- Pendiente: avisos por fiado vencido (con antigüedad de la deuda, como en Clientes), compras por vencer en los próximos días, ventana de "visto" por aviso y novedades de Pesito (parte 4).
