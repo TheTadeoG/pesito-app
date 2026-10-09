@@ -67,6 +67,7 @@ export function StockBoard({
   restockHref,
   onEdit,
   onAdjust,
+  middle,
 }: {
   rows: StockRow[];
   /** Plan IA: se ven los días que alcanza el stock y los productos sin ventas. */
@@ -83,6 +84,8 @@ export function StockBoard({
   restockHref: string | null;
   onEdit: (id: string) => void;
   onAdjust: (id: string) => void;
+  /** Se muestra entre las tarjetas y la lista de excepciones. */
+  middle?: React.ReactNode;
 }) {
   const [filter, setFilter] = useState<Filter>("restock");
   const [limit, setLimit] = useState({ key: "", n: PAGE });
@@ -308,6 +311,8 @@ export function StockBoard({
           </CardContent>
         </Card>
       </div>
+
+      {middle}
 
       {/* Salud del stock + lista de excepciones. */}
       <div ref={listRef} className="scroll-mt-20 space-y-3">

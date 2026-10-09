@@ -51,7 +51,7 @@ import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-di
 import { ProductImportDialog } from "@/app/(dashboard)/productos/import-dialog";
 import { BarcodeLabelsDialog } from "@/app/(dashboard)/productos/barcode-labels-dialog";
 import { featureMinPlan } from "@/lib/plan-access";
-import { PlanLockNote, PlanPill, upgradeHref } from "@/components/dashboard/pro-locked-card";
+import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { InlineNumber } from "@/components/dashboard/inline-number";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { downloadStockExcel } from "@/app/(dashboard)/productos/stock-excel";
@@ -147,6 +147,15 @@ const isLowStock = (p: Product) => p.active && p.stock <= p.min_stock;
 // Mismo criterio que el aviso "estarías vendiendo a pérdida" del alta/edición.
 const isSellingAtLoss = (p: Product) =>
   p.active && p.cost !== null && p.cost > p.price;
+
+const STOCK_STATE_LABELS: Record<StockFilterState, string> = {
+  out: "Sin stock",
+  low: "Por agotarse",
+  idle: `Sin ventas ${IDLE_DEFAULT_DAYS} días`,
+  nocost: "Sin costo",
+  nomin: "Sin mínimo",
+  negative: "Stock negativo",
+};
 
 export function ProductosClient({
   products: productsProp,
@@ -361,7 +370,8 @@ export function ProductosClient({
   const extraFilterCount =
     (supplierFilter ? 1 : 0) +
     (activeFilter !== "all" ? 1 : 0) +
-    (noBarcodeOnly ? 1 : 0);
+    (noBarcodeOnly ? 1 : 0) +
+    (stockState ? 1 : 0);
 
   function getSortValue(p: Product, key: SortKey): string | number {
     switch (key) {
@@ -670,6 +680,7 @@ export function ProductosClient({
                       setSupplierFilter("");
                       setActiveFilter("all");
                       setNoBarcodeOnly(false);
+                      setStockState(null);
                     }}
                     className="text-xs font-medium text-primary hover:underline"
                   >
@@ -695,7 +706,37 @@ export function ProductosClient({
               </div>
 
               <div>
-                <Label htmlFor="pf-active">Estado</Label>
+                <Label htmlFor="pf-stock-state">Estado del stock</Label>
+                <Select
+                  id="pf-stock-state"
+                  value={stockState ?? ""}
+                  onChange={(e) => chooseState((e.target.value || null) as StockFilterState | null)}
+                >
+                  <option value="">Todos · {products.length}</option>
+                  {(
+                    [
+                      ["out", stateCounts.out, stockAlertsLocked ? "Plan Esencial" : null],
+                      ["low", stateCounts.low, stockAlertsLocked ? "Plan Esencial" : null],
+                      ["idle", idleIds ? idleIds.size : null, idleAllowed ? null : "Plan IA"],
+                      ["nocost", stateCounts.nocost, null],
+                      ["nomin", stateCounts.nomin, stockAlertsLocked ? "Plan Esencial" : null],
+                      ["negative", stateCounts.negative, null],
+                    ] as const
+                  ).map(([value, count, lockedBy]) => (
+                    <option key={value} value={value} disabled={lockedBy !== null}>
+                      {`${STOCK_STATE_LABELS[value]}${count === null ? "" : ` · ${count}`}${lockedBy ? ` (${lockedBy})` : ""}`}
+                    </option>
+                  ))}
+                </Select>
+                {stockAlertsLocked && (
+                  <PlanLockNote plan="esencial" className="mt-2" cta="Ver el Plan Esencial">
+                    Filtrá por sin stock, por agotarse y sin mínimo.
+                  </PlanLockNote>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="pf-active">Activos e inactivos</Label>
                 <Select
                   id="pf-active"
                   value={activeFilter}
@@ -746,77 +787,37 @@ export function ProductosClient({
         </div>
       </div>
 
-      {/* Estado del stock: filtros que también usa "Revisar números" de la pestaña Stock. */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium text-muted-foreground">Estado del stock</span>
-          <button
-            type="button"
-            onClick={() => chooseState(null)}
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-              stockState === null ? "border-primary bg-accent text-foreground" : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {`Todos · ${products.length}`}
-          </button>
-          {(
-            [
-              ["out", "Sin stock", stateCounts.out, "esencial"],
-              ["low", "Por agotarse", stateCounts.low, "esencial"],
-              ["idle", `Sin ventas ${IDLE_DEFAULT_DAYS} d`, idleIds ? idleIds.size : null, "ia"],
-              ["nocost", "Sin costo", stateCounts.nocost, null],
-              ["nomin", "Sin mínimo", stateCounts.nomin, "esencial"],
-              ["negative", "Stock negativo", stateCounts.negative, null],
-            ] as const
-          ).map(([value, label, count, plan]) => {
-            const locked = (plan === "esencial" && stockAlertsLocked) || (plan === "ia" && !idleAllowed);
-            const text = count === null ? label : `${label} · ${count}`;
-            if (locked && plan) {
-              return (
-                <Link
-                  key={value}
-                  href={upgradeHref(plan)}
-                  prefetch={false}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  {text}
-                  <PlanPill plan={plan} />
-                </Link>
-              );
-            }
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => chooseState(stockState === value ? null : value)}
-                className={cn(
-                  "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                  stockState === value ? "border-primary bg-accent text-foreground" : "border-border text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {text}
-                {stockState === value && " ✕"}
-              </button>
-            );
-          })}
+      {/* Filtro por estado del stock activo (se elige en Filtros; también llega desde "Revisar números" de Stock). */}
+      {stockState && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => chooseState(null)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-accent px-3 py-1 text-xs font-medium text-foreground"
+              title="Quitar este filtro"
+            >
+              {`Estado del stock: ${STOCK_STATE_LABELS[stockState]} ✕`}
+            </button>
+            <span className="text-xs text-muted-foreground">{`${filtered.length} producto${filtered.length === 1 ? "" : "s"}`}</span>
+          </div>
+          {(stockState === "nocost" || stockState === "nomin") && (
+            <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
+              {stockState === "nocost"
+                ? "Escribí el costo en cada fila y apretá Enter. Con el costo, el valor del stock y tu margen quedan bien calculados."
+                : "Escribí el stock mínimo en cada fila y apretá Enter: así Pesito te avisa cuando un producto se esté por acabar."}
+            </p>
+          )}
+          {stockState === "negative" && (
+            <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
+              Con “Ajustar stock” (en los tres puntos de cada fila) dejás el stock en el número real.
+            </p>
+          )}
+          {stockState === "idle" && idleError && (
+            <p className="rounded-lg bg-danger-bg px-3 py-2 text-sm text-danger">{idleError}</p>
+          )}
         </div>
-        {(stockState === "nocost" || stockState === "nomin") && (
-          <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
-            {stockState === "nocost"
-              ? "Escribí el costo en cada fila y apretá Enter. Con el costo, el valor del stock y tu margen quedan bien calculados."
-              : "Escribí el stock mínimo en cada fila y apretá Enter: así Pesito te avisa cuando un producto se esté por acabar."}
-          </p>
-        )}
-        {stockState === "negative" && (
-          <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
-            Con “Ajustar stock” (en los tres puntos de cada fila) dejás el stock en el número real.
-          </p>
-        )}
-        {stockState === "idle" && idleError && (
-          <p className="rounded-lg bg-danger-bg px-3 py-2 text-sm text-danger">{idleError}</p>
-        )}
-      </div>
+      )}
 
       <Card className="overflow-hidden">
         <CardContent className="p-0">
