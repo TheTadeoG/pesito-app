@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Download, Lock, Search, ShoppingCart, TrendingDown, Wrench } from "lucide-react";
+import { AlertTriangle, ChevronRight, CircleCheck, Download, Lock, Search, ShoppingCart, TrendingDown, Wrench } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { cn, formatCurrency } from "@/lib/utils";
 import { planLabels, type Plan } from "@/lib/subscription";
+import { IDLE_DAYS_OPTIONS } from "@/lib/idle-days";
 import { downloadStockExcel } from "@/app/(dashboard)/productos/stock-excel";
 
 export type StockStatus = "out" | "low" | "ok" | "excess";
@@ -41,7 +42,7 @@ const statusLabel: Record<StockStatus, string> = {
   out: "Sin stock",
   low: "Por agotarse",
   ok: "OK",
-  excess: "Exceso",
+  excess: "Sin ventas",
 };
 const statusTone: Record<StockStatus, string> = {
   out: "bg-danger-bg text-danger",
@@ -83,6 +84,10 @@ export function StockBoard({
   insightsOn,
   lockedPlan,
   slow,
+  idleDays,
+  idleLoading,
+  idleError,
+  onIdleDaysChange,
   restockHref,
 }: {
   rows: StockRow[];
@@ -94,6 +99,11 @@ export function StockBoard({
   lockedPlan: Plan | null;
   /** Productos con plata parada (Plan IA), de mayor a menor capital. */
   slow: { id: string; name: string; capital: number }[];
+  /** Período de "sin ventas" de la lista de arriba. */
+  idleDays: number;
+  idleLoading: boolean;
+  idleError: string | null;
+  onIdleDaysChange: (days: number) => void;
   restockHref: string | null;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -161,7 +171,7 @@ export function StockBoard({
     { value: "out", label: "Sin stock", count: counts.out },
     { value: "low", label: "Por agotarse", count: counts.low },
     { value: "ok", label: "OK", count: counts.ok },
-    ...(insightsOn ? [{ value: "excess" as Filter, label: "Exceso", count: counts.excess }] : []),
+    ...(insightsOn ? [{ value: "excess" as Filter, label: `Sin ventas ${idleDays} d`, count: counts.excess }] : []),
   ];
 
   const total = rows.length || 1;
@@ -170,7 +180,7 @@ export function StockBoard({
   return (
     <div className="space-y-5">
       {/* Tres tarjetas con lo que hay que hacer hoy. */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
         <Card className={needRestock.length > 0 ? "border-danger/30 bg-danger-bg/40" : undefined}>
           <CardContent className="space-y-2 py-4">
             <div className="flex items-start justify-between gap-2">
@@ -234,28 +244,59 @@ export function StockBoard({
                 )}
                 {lockedPlan && <PlanPill plan={lockedPlan} />}
               </p>
-              <p className="text-xs text-muted-foreground">Plata en mercadería que casi no se vende (90 días)</p>
+              {lockedPlan ? (
+                <p className="text-xs text-muted-foreground">Plata en mercadería con stock que no se vende</p>
+              ) : (
+                <label className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  Con stock y sin ventas hace
+                  {/* El Select trae w-full y no se le puede achicar con className: va en un contenedor de ancho fijo. */}
+                  <span className="inline-block w-24">
+                    <Select
+                      value={idleDays}
+                      disabled={idleLoading}
+                      onChange={(e) => onIdleDaysChange(Number(e.target.value))}
+                      aria-label="Días sin ventas"
+                      className="h-7 rounded-lg px-2 py-0 text-xs"
+                    >
+                      {IDLE_DAYS_OPTIONS.map((d) => (
+                        <option key={d} value={d}>{`${d} días`}</option>
+                      ))}
+                    </Select>
+                  </span>
+                  {idleLoading && <span>Calculando…</span>}
+                </label>
+              )}
             </div>
             {lockedPlan ? (
               <PlanLockNote plan={lockedPlan}>
                 {`Con el Plan ${planLabels[lockedPlan]} ves qué productos no se venden y cuánta plata tenés parada en ellos.`}
               </PlanLockNote>
-            ) : slow.length === 0 ? (
-              <p className="py-3 text-sm text-muted-foreground">Nada parado: todo lo que tenés se está vendiendo.</p>
             ) : (
-              <>
-                <ul className="divide-y divide-border">
-                  {slow.slice(0, 3).map((r) => (
-                    <li key={r.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
-                      <span className="min-w-0 truncate text-foreground">{r.name}</span>
-                      <span className="shrink-0 font-medium text-foreground">{formatCurrency(r.capital)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/baja-rotacion" prefetch={false} className="text-sm font-medium text-primary hover:underline">
-                  {`Ver los ${slow.length} en Baja rotación`}
-                </Link>
-              </>
+              <div className={cn(idleLoading && "opacity-50")}>
+                {idleError && <p className="rounded-lg bg-danger-bg px-2.5 py-1.5 text-xs text-danger">{idleError}</p>}
+                {slow.length === 0 ? (
+                  <p className="py-3 text-sm text-muted-foreground">{`Nada parado: todo lo que tenés con stock se vendió en los últimos ${idleDays} días.`}</p>
+                ) : (
+                  <>
+                    <ul className="divide-y divide-border">
+                      {slow.slice(0, 3).map((r) => (
+                        <li key={r.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
+                          <span className="min-w-0 truncate text-foreground">{r.name}</span>
+                          <span className="shrink-0 font-medium text-foreground">{formatCurrency(r.capital)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
+                      <button type="button" onClick={() => jump("excess")} className="text-sm font-medium text-primary hover:underline">
+                        {`Ver los ${slow.length} en la tabla`}
+                      </button>
+                      <Link href="/baja-rotacion" prefetch={false} className="text-xs text-muted-foreground hover:text-foreground hover:underline">
+                        Baja rotación
+                      </Link>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -267,30 +308,46 @@ export function StockBoard({
                 <Wrench className="h-4 w-4 text-primary" />
                 Revisar números
               </p>
-              <p className="text-xs text-muted-foreground">Datos que conviene completar o corregir</p>
+              <p className="text-xs text-muted-foreground">Tocá uno para ver esos productos en la tabla</p>
             </div>
-            <ul className="divide-y divide-border">
+            <ul className="space-y-1.5">
               {(
                 [
-                  ["negative", "Con stock negativo", counts.negative],
-                  ["nocost", "Sin costo cargado", counts.nocost],
-                  ["nomin", "Sin stock mínimo", counts.nomin],
+                  ["negative", "Con stock negativo", "Falta cargar una compra o un ajuste", counts.negative],
+                  ["nocost", "Sin costo cargado", "El valor del stock queda por debajo del real", counts.nocost],
+                  ["nomin", "Sin stock mínimo", "No te avisamos cuando se acabe", counts.nomin],
                 ] as const
-              ).map(([value, label, n]) => (
+              ).map(([value, label, hint, n]) => (
                 <li key={value}>
                   <button
                     type="button"
                     disabled={n === 0}
                     onClick={() => jump(value)}
-                    className="flex w-full items-center justify-between gap-2 py-1.5 text-left text-sm enabled:hover:text-primary"
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors",
+                      n === 0
+                        ? "border-transparent"
+                        : filter === value
+                          ? "border-primary bg-accent"
+                          : "border-border hover:border-primary/50 hover:bg-muted"
+                    )}
                   >
-                    <span className="text-foreground">{label}</span>
-                    <span className={cn("shrink-0 font-medium", n > 0 ? "text-warning" : "text-muted-foreground")}>{n}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-foreground">{label}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{n === 0 ? "Todo en orden" : hint}</span>
+                    </span>
+                    {n === 0 ? (
+                      <CircleCheck className="h-4 w-4 shrink-0 text-success" />
+                    ) : (
+                      <>
+                        <span className="shrink-0 rounded-full bg-warning-bg px-2 py-0.5 text-sm font-semibold text-warning">{n}</span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </>
+                    )}
                   </button>
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-muted-foreground">Sin costo, el valor del stock queda por debajo del real.</p>
           </CardContent>
         </Card>
       </div>
@@ -302,7 +359,7 @@ export function StockBoard({
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold text-foreground">Salud del stock</p>
               <div className="flex items-center gap-3">
-                <p className="hidden text-xs text-muted-foreground sm:block">{`${rows.length} producto${rows.length === 1 ? "" : "s"} activo${rows.length === 1 ? "" : "s"}`}</p>
+                <p className="hidden text-xs text-muted-foreground sm:block">{`${rows.length} producto${rows.length === 1 ? "" : "s"} en total`}</p>
                 <Button
                   type="button"
                   variant="outline"
@@ -345,7 +402,7 @@ export function StockBoard({
               {!insightsOn && lockedPlan && (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-amber-500/40 px-3 py-1 text-xs text-muted-foreground">
                   <Lock className="h-3 w-3 text-amber-600" />
-                  Exceso y días que alcanza
+                  Productos sin ventas y días que alcanza
                   <PlanPill plan={lockedPlan} />
                 </span>
               )}

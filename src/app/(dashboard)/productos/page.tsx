@@ -7,12 +7,13 @@ import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan, limitsFor, planForLimit } from "@/lib/plan-access";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import {
-  computeLowRotation,
+  computeIdleStock,
   computeStockCover,
   insightsBaseFrom,
   parseSalesStats,
   type InsightProduct,
 } from "@/lib/product-insights";
+import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import { TransferButton } from "@/app/(dashboard)/productos/transfer-dialog";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
@@ -115,14 +116,18 @@ export default async function ProductosPage({
     const focusedProduct = producto ? productById.get(producto) : undefined;
 
     // Plan IA: cuántos días alcanza cada producto (ventas de los últimos 30 días) y la plata
-    // parada en lo que no se vende (últimos 90, como en Baja rotación). Sin el plan, la base
+    // parada en lo que no se vendió en los últimos 7 días (se cambia en la tarjeta). Sin el plan, la base
     // no devuelve ventas por producto (product_sales_stats pide Plan IA): se ofrece desbloquearlo.
     const insightsOn = canUse(subscription, "lowRotation");
-    let insights: { cover: Record<string, number | null>; slow: { id: string; capital: number }[] } | null = null;
+    let insights: {
+      cover: Record<string, number | null>;
+      slow: { id: string; name: string; capital: number }[];
+      idleDays: number;
+    } | null = null;
     if (insightsOn) {
       try {
-        const [stats30, stats90] = await Promise.all(
-          [30, 90].map((days) =>
+        const [stats30, statsIdle] = await Promise.all(
+          [30, IDLE_DEFAULT_DAYS].map((days) =>
             supabase.rpc("product_sales_stats", {
               p_org_id: organization.id,
               p_days: days,
@@ -130,7 +135,7 @@ export default async function ProductosPage({
             })
           )
         );
-        if (!stats30.error && !stats90.error) {
+        if (!stats30.error && !statsIdle.error) {
           const insightProducts: InsightProduct[] = activeProducts.map((p) => ({
             id: p.id,
             name: p.name,
@@ -146,10 +151,11 @@ export default async function ProductosPage({
             created_at: p.created_at,
           }));
           const cover = computeStockCover(insightsBaseFrom(insightProducts, parseSalesStats(stats30.data)), 30);
-          const slow = computeLowRotation(insightsBaseFrom(insightProducts, parseSalesStats(stats90.data)), 90);
+          const slow = computeIdleStock(insightProducts, parseSalesStats(statsIdle.data), IDLE_DEFAULT_DAYS);
           insights = {
             cover: Object.fromEntries(cover),
-            slow: slow.filter((r) => (r.capital ?? 0) > 0).map((r) => ({ id: r.product.id, capital: r.capital ?? 0 })),
+            slow,
+            idleDays: IDLE_DEFAULT_DAYS,
           };
         }
       } catch {

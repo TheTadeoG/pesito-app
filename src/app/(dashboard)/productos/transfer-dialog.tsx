@@ -162,23 +162,26 @@ export function TransferButton({
                 <li key={l.product.id} className="flex items-center gap-3 px-3 py-2">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{l.product.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-muted-foreground">
                       Hay {l.product.stock} {l.product.unit} en {fromName}
                     </p>
                   </div>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={l.quantity}
-                    onChange={(e) =>
-                      setLines((current) =>
-                        current.map((x, j) => (j === i ? { ...x, quantity: e.target.value } : x))
-                      )
-                    }
-                    className="h-9 w-24"
-                    aria-label={`Cantidad de ${l.product.name}`}
-                  />
+                  {/* El Input trae w-full y no se le puede achicar con className: va en un contenedor de ancho fijo. */}
+                  <div className="w-24 shrink-0">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={l.quantity}
+                      onChange={(e) =>
+                        setLines((current) =>
+                          current.map((x, j) => (j === i ? { ...x, quantity: e.target.value } : x))
+                        )
+                      }
+                      className="h-9"
+                      aria-label={`Cantidad de ${l.product.name}`}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => setLines((current) => current.filter((_, j) => j !== i))}

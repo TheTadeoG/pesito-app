@@ -5,7 +5,7 @@ const STATUS_LABEL: Record<StockStatus, string> = {
   out: "Sin stock",
   low: "Por agotarse",
   ok: "OK",
-  excess: "Exceso",
+  excess: "Sin ventas",
 };
 
 type Cell = { value: string | number; fontWeight?: "bold"; backgroundColor?: string; format?: string };

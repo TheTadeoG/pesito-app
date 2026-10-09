@@ -12,6 +12,7 @@ import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import { getPeriodRange, type ReportPeriod } from "@/lib/report-periods";
 import type { Product } from "@/lib/types";
 import type { Plan } from "@/lib/subscription";
+import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { StockBoard, type StockRow } from "@/app/(dashboard)/productos/stock-board";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 
@@ -218,7 +219,12 @@ export function StockTab({
   movements: MovementRow[];
   suppliers: { id: string; name: string }[];
   /** Plan IA: días que alcanza cada producto y plata parada (null sin el plan o si falló). */
-  insights: { cover: Record<string, number | null>; slow: { id: string; capital: number }[] } | null;
+  insights: {
+    cover: Record<string, number | null>;
+    slow: { id: string; name: string; capital: number }[];
+    /** Período de "sin ventas" con el que arrancó la lista (7 días). */
+    idleDays: number;
+  } | null;
   /** Plan que desbloquea los datos anteriores (null si el negocio ya lo tiene). */
   insightsLockedPlan: Plan | null;
   // Viene de "Ver movimientos" en la tabla de productos.
@@ -240,7 +246,24 @@ export function StockTab({
     [suppliers]
   );
 
-  const slowIds = useMemo(() => new Set((insights?.slow ?? []).map((r) => r.id)), [insights]);
+  // Capital parado: productos con stock y sin ventas en los últimos N días (N se cambia en la tarjeta).
+  const [idle, setIdle] = useState({ days: insights?.idleDays ?? 7, slow: insights?.slow ?? [] });
+  const [idleLoading, setIdleLoading] = useState(false);
+  const [idleError, setIdleError] = useState<string | null>(null);
+  async function changeIdleDays(days: number) {
+    setIdleLoading(true);
+    setIdleError(null);
+    try {
+      const res = await loadIdleStock(days);
+      if (res.rows) setIdle({ days, slow: res.rows });
+      else setIdleError(res.error ?? "No pudimos calcularlo.");
+    } catch {
+      setIdleError("No pudimos calcularlo. Probá de nuevo.");
+    } finally {
+      setIdleLoading(false);
+    }
+  }
+  const slowIds = useMemo(() => new Set(idle.slow.map((r) => r.id)), [idle]);
   const rows = useMemo<StockRow[]>(
     () =>
       products.map((p) => {
@@ -264,12 +287,6 @@ export function StockTab({
       }),
     [products, slowIds, insights, supplierNameById]
   );
-  const slowTop = useMemo(() => {
-    const nameById = new Map(products.map((p) => [p.id, p.name]));
-    return (insights?.slow ?? [])
-      .map((r) => ({ id: r.id, name: nameById.get(r.id) ?? "Producto", capital: r.capital }))
-      .sort((x, y) => y.capital - x.capital);
-  }, [insights, products]);
   const brandOptions = useMemo(
     () => Array.from(new Set(rows.map((r) => r.brand).filter((b): b is string => Boolean(b)))).sort((x, y) => x.localeCompare(y)),
     [rows]
@@ -394,7 +411,11 @@ export function StockTab({
         suppliers={supplierOptions}
         insightsOn={insights !== null}
         lockedPlan={insightsLockedPlan}
-        slow={slowTop}
+        slow={idle.slow}
+        idleDays={idle.days}
+        idleLoading={idleLoading}
+        idleError={idleError}
+        onIdleDaysChange={changeIdleDays}
         restockHref={insightsLockedPlan ? null : "/recomendaciones"}
       />
 

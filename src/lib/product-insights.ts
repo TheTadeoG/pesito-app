@@ -169,6 +169,34 @@ export function insightsBaseFrom(products: InsightProduct[], stats: Map<string, 
   };
 }
 
+export interface IdleStockRow {
+  id: string;
+  name: string;
+  /** Plata parada: stock × costo. */
+  capital: number;
+}
+
+/**
+ * Productos con stock y costo que no se vendieron en los últimos `days` días (`stats` tiene que
+ * ser de ese mismo período). Los cargados hace menos de `days` días no cuentan: todavía no tuvieron
+ * tiempo de venderse. De más a menos plata parada.
+ */
+export function computeIdleStock(
+  products: InsightProduct[],
+  stats: Map<string, SalesStat>,
+  days: number,
+  now: Date = new Date()
+): IdleStockRow[] {
+  const rows: IdleStockRow[] = [];
+  for (const product of products) {
+    if (product.stock <= 0 || product.cost === null || product.cost <= 0) continue;
+    if (ageInDays(product, now) < days) continue;
+    if ((stats.get(product.id)?.qtySold ?? 0) > 0) continue;
+    rows.push({ id: product.id, name: product.name, capital: product.stock * product.cost });
+  }
+  return rows.sort((a, b) => b.capital - a.capital);
+}
+
 /**
  * Cuántos días alcanza el stock de cada producto al ritmo de los últimos `windowDays` días.
  * 0 si no queda stock; null si en ese período no se vendió (no se puede estimar).
