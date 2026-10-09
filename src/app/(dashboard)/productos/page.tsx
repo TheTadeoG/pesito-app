@@ -6,6 +6,13 @@ import { isOrgAdmin } from "@/lib/roles";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan, limitsFor, planForLimit } from "@/lib/plan-access";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
+import {
+  computeLowRotation,
+  computeStockCover,
+  insightsBaseFrom,
+  parseSalesStats,
+  type InsightProduct,
+} from "@/lib/product-insights";
 import { TransferButton } from "@/app/(dashboard)/productos/transfer-dialog";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
@@ -107,11 +114,56 @@ export default async function ProductosPage({
     });
     const focusedProduct = producto ? productById.get(producto) : undefined;
 
+    // Plan IA: cuántos días alcanza cada producto (ventas de los últimos 30 días) y la plata
+    // parada en lo que no se vende (últimos 90, como en Baja rotación). Sin el plan, la base
+    // no devuelve ventas por producto (product_sales_stats pide Plan IA): se ofrece desbloquearlo.
+    const insightsOn = canUse(subscription, "lowRotation");
+    let insights: { cover: Record<string, number | null>; slow: { id: string; capital: number }[] } | null = null;
+    if (insightsOn) {
+      try {
+        const [stats30, stats90] = await Promise.all(
+          [30, 90].map((days) =>
+            supabase.rpc("product_sales_stats", {
+              p_org_id: organization.id,
+              p_days: days,
+              p_branch_id: branch?.id ?? null,
+            })
+          )
+        );
+        if (!stats30.error && !stats90.error) {
+          const insightProducts: InsightProduct[] = activeProducts.map((p) => ({
+            id: p.id,
+            name: p.name,
+            brand: p.brand,
+            barcode: p.barcode,
+            unit: p.unit,
+            price: p.price,
+            cost: p.cost,
+            stock: p.stock,
+            min_stock: p.min_stock,
+            default_supplier_id: p.default_supplier_id,
+            pack_size: p.pack_size ?? null,
+            created_at: p.created_at,
+          }));
+          const cover = computeStockCover(insightsBaseFrom(insightProducts, parseSalesStats(stats30.data)), 30);
+          const slow = computeLowRotation(insightsBaseFrom(insightProducts, parseSalesStats(stats90.data)), 90);
+          insights = {
+            cover: Object.fromEntries(cover),
+            slow: slow.filter((r) => (r.capital ?? 0) > 0).map((r) => ({ id: r.product.id, capital: r.capital ?? 0 })),
+          };
+        }
+      } catch {
+        insights = null;
+      }
+    }
+
     content = (
       <StockTab
         key={focusedProduct?.id ?? "all"}
         products={activeProducts}
         movements={normalizedMovements}
+        insights={insights}
+        insightsLockedPlan={insightsOn ? null : featureMinPlan.lowRotation}
         suppliers={suppliers ?? []}
         focusedProduct={
           focusedProduct ? { id: focusedProduct.id, name: focusedProduct.name } : null

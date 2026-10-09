@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, PackagePlus, Search, ShoppingCart, X } from "lucide-react";
+import { ChevronDown, PackagePlus, Search, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import { getPeriodRange, type ReportPeriod } from "@/lib/report-periods";
 import type { Product } from "@/lib/types";
+import type { Plan } from "@/lib/subscription";
+import { StockBoard, type StockRow } from "@/app/(dashboard)/productos/stock-board";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 
 interface ValuationRow {
@@ -84,31 +86,44 @@ function ValuationBreakdownCard({ title, rows }: { title: string; rows: Valuatio
 }
 
 const MOVEMENTS_PAGE = 30;
-const LOW_STOCK_PREVIEW = 8;
-const LOW_STOCK_PAGE = 20;
 // El "reference" de una venta es su id (un uuid): no le dice nada a nadie.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** "$ 5,0 M" para los montos grandes en pantallas chicas. */
+function shortMoney(value: number): string {
+  return value >= 1_000_000 ? `$ ${(value / 1_000_000).toFixed(1).replace(".", ",")} M` : formatCurrency(value);
+}
+
 function Kpi({
   label,
+  shortLabel,
   value,
+  short,
   alert,
   onClick,
 }: {
   label: string;
+  /** Nombre corto para el celular. */
+  shortLabel?: string;
   value: string;
+  /** Valor corto para el celular. */
+  short?: string;
   alert?: boolean;
   onClick?: () => void;
 }) {
   const content = (
     <>
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn("block text-xl font-bold sm:text-2xl", alert ? "text-danger" : "text-foreground")}>
-        {value}
+      <span className="block truncate text-[11px] text-muted-foreground sm:text-xs">
+        <span className="sm:hidden">{shortLabel ?? label}</span>
+        <span className="hidden sm:inline">{label}</span>
+      </span>
+      <span className={cn("block truncate text-base font-bold sm:text-xl lg:text-2xl", alert ? "text-danger" : "text-foreground")}>
+        <span className="sm:hidden">{short ?? value}</span>
+        <span className="hidden sm:inline">{value}</span>
       </span>
     </>
   );
-  const base = "rounded-2xl border px-4 py-3 text-left";
+  const base = "min-w-0 rounded-2xl border px-3 py-3 text-left sm:px-4";
   return onClick ? (
     <button
       type="button"
@@ -195,11 +210,17 @@ export function StockTab({
   products,
   movements,
   suppliers,
+  insights,
+  insightsLockedPlan,
   focusedProduct,
 }: {
   products: Product[];
   movements: MovementRow[];
   suppliers: { id: string; name: string }[];
+  /** Plan IA: días que alcanza cada producto y plata parada (null sin el plan o si falló). */
+  insights: { cover: Record<string, number | null>; slow: { id: string; capital: number }[] } | null;
+  /** Plan que desbloquea los datos anteriores (null si el negocio ya lo tiene). */
+  insightsLockedPlan: Plan | null;
   // Viene de "Ver movimientos" en la tabla de productos.
   focusedProduct: { id: string; name: string } | null;
 }) {
@@ -213,20 +234,48 @@ export function StockTab({
   // plegados. Si se viene de "Ver movimientos" de un producto, se abren los movimientos.
   const [openValuation, setOpenValuation] = useState(false);
   const [openMoves, setOpenMoves] = useState(Boolean(focusedProduct));
-  const [lowLimit, setLowLimit] = useState(LOW_STOCK_PREVIEW);
   const [moveLimit, setMoveLimit] = useState({ key: "", n: MOVEMENTS_PAGE });
-  // Lo que más falta primero (la diferencia con el mínimo, de menor a mayor).
-  const lowStock = useMemo(
-    () =>
-      products
-        .filter((p) => p.stock <= p.min_stock)
-        .sort((a, b) => a.stock - a.min_stock - (b.stock - b.min_stock) || a.name.localeCompare(b.name)),
-    [products]
-  );
-
   const supplierNameById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s.name])),
     [suppliers]
+  );
+
+  const slowIds = useMemo(() => new Set((insights?.slow ?? []).map((r) => r.id)), [insights]);
+  const rows = useMemo<StockRow[]>(
+    () =>
+      products.map((p) => {
+        const status: StockRow["status"] =
+          p.stock <= 0 ? "out" : p.stock <= p.min_stock ? "low" : slowIds.has(p.id) ? "excess" : "ok";
+        return {
+          id: p.id,
+          name: p.name,
+          brand: p.brand?.trim() || null,
+          sku: p.sku,
+          unit: p.unit,
+          stock: p.stock,
+          minStock: p.min_stock,
+          cost: p.cost,
+          supplier: p.default_supplier_id ? (supplierNameById.get(p.default_supplier_id) ?? null) : null,
+          status,
+          daysLeft: insights ? (insights.cover[p.id] ?? null) : undefined,
+          value: p.stock * (p.cost ?? 0),
+        };
+      }),
+    [products, slowIds, insights, supplierNameById]
+  );
+  const slowTop = useMemo(() => {
+    const nameById = new Map(products.map((p) => [p.id, p.name]));
+    return (insights?.slow ?? [])
+      .map((r) => ({ id: r.id, name: nameById.get(r.id) ?? "Producto", capital: r.capital }))
+      .sort((x, y) => y.capital - x.capital);
+  }, [insights, products]);
+  const brandOptions = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.brand).filter((b): b is string => Boolean(b)))).sort((x, y) => x.localeCompare(y)),
+    [rows]
+  );
+  const supplierOptions = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.supplier).filter((x): x is string => Boolean(x)))).sort((x, y) => x.localeCompare(y)),
+    [rows]
   );
 
   const valuation = useMemo(() => {
@@ -326,81 +375,27 @@ export function StockTab({
 
   return (
     <div className="space-y-5">
-      {/* Primero cuánto tenés (unidades y valor); el stock bajo, al lado: al tocarlo baja a la lista. */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="Unidades en stock" value={formatQty(valuation.totalUnits)} />
-        <Kpi label="Valor al costo" value={formatCurrency(valuation.totalCost)} />
-        <Kpi label="Valor a precio de venta" value={formatCurrency(valuation.totalPrice)} />
+      {/* Cuánto tenés, en tres números; abajo, lo que hay que hacer y la tabla de productos. */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <Kpi label="Unidades en stock" shortLabel="Unidades" value={formatQty(valuation.totalUnits)} />
+        <Kpi label="Valor al costo" shortLabel="Al costo" value={formatCurrency(valuation.totalCost)} short={shortMoney(valuation.totalCost)} />
         <Kpi
-          label="Por debajo del mínimo"
-          value={`${lowStock.length} producto${lowStock.length === 1 ? "" : "s"}`}
-          alert={lowStock.length > 0}
-          onClick={() => document.getElementById("stock-bajo")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          label="Valor a precio de venta"
+          shortLabel="A la venta"
+          value={formatCurrency(valuation.totalPrice)}
+          short={shortMoney(valuation.totalPrice)}
         />
       </div>
 
-      {/* Stock bajo, abierto: es lo primero que hay que atender. */}
-      <Card id="stock-bajo" className={cn("scroll-mt-20", lowStock.length > 0 && "border-danger/30 bg-danger-bg/40")}>
-        <CardHeader>
-          <CardTitle className="text-base">
-            {lowStock.length > 0
-              ? `${lowStock.length} producto${lowStock.length > 1 ? "s" : ""} por debajo del stock mínimo`
-              : "Stock mínimo"}
-          </CardTitle>
-          {lowStock.length > 0 && (
-            <p className="text-xs text-muted-foreground">Primero los que más faltan.</p>
-          )}
-        </CardHeader>
-        <CardContent className={lowStock.length > 0 ? "p-0" : undefined}>
-          {lowStock.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Ningún producto está por debajo de su stock mínimo.
-            </p>
-          ) : (
-            // Una línea por producto. El CTA es "Comprar", no "Ajustar": lo que
-            // falta se resuelve reponiendo mercadería, no corrigiendo el número a mano.
-            <div className="divide-y divide-border">
-              {lowStock.slice(0, lowLimit).map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center justify-between gap-3 px-5 py-2"
-                >
-                  <p className="min-w-0 truncate text-sm">
-                    <span className="font-medium text-foreground">{product.name}</span>
-                    <span className="text-muted-foreground">
-                      {" — "}
-                      <span className="font-medium text-danger">
-                        {product.stock}
-                        {product.unit}
-                      </span>
-                      {" / mín. "}
-                      {product.min_stock}
-                      {product.unit}
-                    </span>
-                  </p>
-                  <Link
-                    href={`/compras?producto=${product.id}`}
-                    aria-label={`Comprar ${product.name}`}
-                    className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                  >
-                    <ShoppingCart className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Comprar</span>
-                  </Link>
-                </div>
-              ))}
-              {lowStock.length > lowLimit && (
-                <button
-                  type="button"
-                  onClick={() => setLowLimit((n) => n + LOW_STOCK_PAGE)}
-                  className="w-full px-5 py-3 text-center text-sm font-medium text-primary hover:bg-muted"
-                >
-                  {`Ver más (${lowStock.length - lowLimit} restantes)`}
-                </button>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <StockBoard
+        rows={rows}
+        brands={brandOptions}
+        suppliers={supplierOptions}
+        insightsOn={insights !== null}
+        lockedPlan={insightsLockedPlan}
+        slow={slowTop}
+        restockHref={insightsLockedPlan ? null : "/recomendaciones"}
+      />
 
       <Fold
         title="Valorización por marca y proveedor"

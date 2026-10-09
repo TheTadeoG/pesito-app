@@ -47,6 +47,22 @@ export interface InsightsBase {
   onOrder: Map<string, number>;
 }
 
+type SalesStatRow = Database["public"]["Functions"]["product_sales_stats"]["Returns"][number];
+
+/** Filas de `product_sales_stats` → ventas por producto. */
+export function parseSalesStats(rows: SalesStatRow[] | null): Map<string, SalesStat> {
+  const stats = new Map<string, SalesStat>();
+  for (const row of rows ?? []) {
+    stats.set(row.product_id, {
+      qtySold: Number(row.qty_sold),
+      revenue: Number(row.revenue),
+      saleDays: Number(row.sale_days),
+      lastSoldAt: row.last_sold_at ? new Date(row.last_sold_at) : null,
+    });
+  }
+  return stats;
+}
+
 /** Productos activos (con el stock de la sucursal) + ventas de los últimos `days` días. */
 export async function loadInsightsBase(
   supabase: SupabaseClient<Database>,
@@ -106,15 +122,7 @@ export async function loadInsightsBase(
     min_stock: Number(p.min_stock),
   }));
 
-  const stats = new Map<string, SalesStat>();
-  for (const row of statsResult.data ?? []) {
-    stats.set(row.product_id, {
-      qtySold: Number(row.qty_sold),
-      revenue: Number(row.revenue),
-      saleDays: Number(row.sale_days),
-      lastSoldAt: row.last_sold_at ? new Date(row.last_sold_at) : null,
-    });
-  }
+  const stats = parseSalesStats(statsResult.data);
 
   return {
     products,
@@ -146,6 +154,40 @@ function dailyRate(product: InsightProduct, stat: SalesStat | undefined, windowD
   if (!stat || stat.qtySold <= 0) return 0;
   const days = Math.min(windowDays, Math.max(7, ageInDays(product, now)));
   return stat.qtySold / days;
+}
+
+/** Base sólo con los productos y las ventas ya cargados (para las cuentas que no necesitan proveedores). */
+export function insightsBaseFrom(products: InsightProduct[], stats: Map<string, SalesStat>): InsightsBase {
+  return {
+    products,
+    stats,
+    supplierNames: new Map(),
+    supplierLeadDays: new Map(),
+    supplierContacts: new Map(),
+    supplierMinOrder: new Map(),
+    onOrder: new Map(),
+  };
+}
+
+/**
+ * Cuántos días alcanza el stock de cada producto al ritmo de los últimos `windowDays` días.
+ * 0 si no queda stock; null si en ese período no se vendió (no se puede estimar).
+ */
+export function computeStockCover(
+  base: InsightsBase,
+  windowDays: number,
+  now: Date = new Date()
+): Map<string, number | null> {
+  const cover = new Map<string, number | null>();
+  for (const product of base.products) {
+    if (product.stock <= 0) {
+      cover.set(product.id, 0);
+      continue;
+    }
+    const rate = dailyRate(product, base.stats.get(product.id), windowDays, now);
+    cover.set(product.id, rate > 0 ? product.stock / rate : null);
+  }
+  return cover;
 }
 
 // ---------------------------------------------------------------------------
