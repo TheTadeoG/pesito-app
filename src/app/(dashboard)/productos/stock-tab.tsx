@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Boxes, DollarSign, PackagePlus, Search, ShoppingCart, X } from "lucide-react";
+import { ChevronDown, PackagePlus, Search, ShoppingCart, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,8 +26,12 @@ function formatQty(value: number) {
 // Componente aparte (no inline) porque se usa dos veces (marca y proveedor)
 // y react-hooks/static-components no permite definir componentes dentro del
 // render de otro.
+const BREAKDOWN_PREVIEW = 8;
+
 function ValuationBreakdownCard({ title, rows }: { title: string; rows: ValuationRow[] }) {
+  const [showAll, setShowAll] = useState(false);
   const maxValue = rows[0]?.value ?? 0;
+  const shown = showAll ? rows : rows.slice(0, BREAKDOWN_PREVIEW);
   return (
     <Card>
       <CardHeader>
@@ -40,7 +44,7 @@ function ValuationBreakdownCard({ title, rows }: { title: string; rows: Valuatio
           </p>
         ) : (
           <div className="divide-y divide-border">
-            {rows.map((row) => (
+            {shown.map((row) => (
               <div key={row.label} className="space-y-1.5 px-5 py-3">
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="truncate font-medium text-foreground">{row.label}</span>
@@ -63,10 +67,96 @@ function ValuationBreakdownCard({ title, rows }: { title: string; rows: Valuatio
                 </div>
               </div>
             ))}
+            {rows.length > BREAKDOWN_PREVIEW && (
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                className="w-full px-5 py-2.5 text-center text-sm font-medium text-primary hover:bg-muted"
+              >
+                {showAll ? "Ver menos" : `Ver las ${rows.length}`}
+              </button>
+            )}
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+const MOVEMENTS_PAGE = 30;
+const LOW_STOCK_PREVIEW = 8;
+const LOW_STOCK_PAGE = 20;
+// El "reference" de una venta es su id (un uuid): no le dice nada a nadie.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function Kpi({
+  label,
+  value,
+  alert,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  alert?: boolean;
+  onClick?: () => void;
+}) {
+  const content = (
+    <>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={cn("block text-xl font-bold sm:text-2xl", alert ? "text-danger" : "text-foreground")}>
+        {value}
+      </span>
+    </>
+  );
+  const base = "rounded-2xl border px-4 py-3 text-left";
+  return onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(base, "transition-colors", alert ? "border-danger/30 bg-danger-bg/40 hover:bg-danger-bg/70" : "border-border bg-card hover:bg-muted")}
+    >
+      {content}
+    </button>
+  ) : (
+    <div className={cn(base, "border-border bg-card")}>{content}</div>
+  );
+}
+
+// Sección plegable: cabecera con un resumen en una línea; el contenido se ve al abrirla.
+function Fold({
+  title,
+  summary,
+  open,
+  onToggle,
+  action,
+  children,
+}: {
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-3.5 text-left transition-colors hover:bg-muted"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", !open && "-rotate-90")} />
+            <span className="text-base font-semibold text-foreground">{title}</span>
+          </span>
+          <span className="hidden truncate text-xs text-muted-foreground sm:block">{summary}</span>
+        </button>
+        {action}
+      </div>
+      {open && children}
+    </section>
   );
 }
 
@@ -119,7 +209,20 @@ export function StockTab({
   const [period, setPeriod] = useState<MovementPeriod>(focusedProduct ? "all" : "30d");
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [movementQuery, setMovementQuery] = useState("");
-  const lowStock = products.filter((p) => p.stock <= p.min_stock);
+  // Stock bajo siempre a la vista (es lo que hay que atender); valorización y movimientos
+  // plegados. Si se viene de "Ver movimientos" de un producto, se abren los movimientos.
+  const [openValuation, setOpenValuation] = useState(false);
+  const [openMoves, setOpenMoves] = useState(Boolean(focusedProduct));
+  const [lowLimit, setLowLimit] = useState(LOW_STOCK_PREVIEW);
+  const [moveLimit, setMoveLimit] = useState({ key: "", n: MOVEMENTS_PAGE });
+  // Lo que más falta primero (la diferencia con el mínimo, de menor a mayor).
+  const lowStock = useMemo(
+    () =>
+      products
+        .filter((p) => p.stock <= p.min_stock)
+        .sort((a, b) => a.stock - a.min_stock - (b.stock - b.min_stock) || a.name.localeCompare(b.name)),
+    [products]
+  );
 
   const supplierNameById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s.name])),
@@ -204,15 +307,49 @@ export function StockTab({
     });
   }, [movements, focusedProduct, period, typeFilter, movementQuery]);
 
+  // Resumen del día para la cabecera plegada de Movimientos.
+  const movementsSummary = useMemo(() => {
+    const start = getPeriodRange("today").start;
+    const counts = new Map<string, number>();
+    for (const m of movements) {
+      if (new Date(m.created_at) >= start) counts.set(m.type, (counts.get(m.type) ?? 0) + 1);
+    }
+    if (counts.size === 0) return "Hoy: sin movimientos";
+    const parts = movementTypes
+      .filter((t) => counts.has(t))
+      .map((t) => `${counts.get(t)} ${movementTypeLabels[t].toLowerCase()}${counts.get(t) === 1 ? "" : "s"}`);
+    return `Hoy: ${parts.join(" · ")}`;
+  }, [movements]);
+
+  const moveKey = `${period}|${typeFilter ?? ""}|${movementQuery}|${focusedProduct?.id ?? ""}`;
+  const moveLimitNow = moveLimit.key === moveKey ? moveLimit.n : MOVEMENTS_PAGE;
+
   return (
-    <div className="space-y-6">
-      <Card className={lowStock.length > 0 ? "border-danger/30 bg-danger-bg/40" : undefined}>
+    <div className="space-y-5">
+      {/* Primero cuánto tenés (unidades y valor); el stock bajo, al lado: al tocarlo baja a la lista. */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi label="Unidades en stock" value={formatQty(valuation.totalUnits)} />
+        <Kpi label="Valor al costo" value={formatCurrency(valuation.totalCost)} />
+        <Kpi label="Valor a precio de venta" value={formatCurrency(valuation.totalPrice)} />
+        <Kpi
+          label="Por debajo del mínimo"
+          value={`${lowStock.length} producto${lowStock.length === 1 ? "" : "s"}`}
+          alert={lowStock.length > 0}
+          onClick={() => document.getElementById("stock-bajo")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        />
+      </div>
+
+      {/* Stock bajo, abierto: es lo primero que hay que atender. */}
+      <Card id="stock-bajo" className={cn("scroll-mt-20", lowStock.length > 0 && "border-danger/30 bg-danger-bg/40")}>
         <CardHeader>
           <CardTitle className="text-base">
             {lowStock.length > 0
               ? `${lowStock.length} producto${lowStock.length > 1 ? "s" : ""} por debajo del stock mínimo`
               : "Stock mínimo"}
           </CardTitle>
+          {lowStock.length > 0 && (
+            <p className="text-xs text-muted-foreground">Primero los que más faltan.</p>
+          )}
         </CardHeader>
         <CardContent className={lowStock.length > 0 ? "p-0" : undefined}>
           {lowStock.length === 0 ? (
@@ -220,18 +357,15 @@ export function StockTab({
               Ningún producto está por debajo de su stock mínimo.
             </p>
           ) : (
-            // Una línea por producto (en vez de dos) y altura acotada con
-            // scroll interno — con muchos productos bajo mínimo, esta
-            // tarjeta no debe empujar todo lo demás hacia abajo. El CTA es
-            // "Comprar", no "Ajustar": lo que falta se resuelve reponiendo
-            // mercadería, no corrigiendo el número a mano.
-            <div className="max-h-72 divide-y divide-border overflow-y-auto">
-              {lowStock.map((product) => (
+            // Una línea por producto. El CTA es "Comprar", no "Ajustar": lo que
+            // falta se resuelve reponiendo mercadería, no corrigiendo el número a mano.
+            <div className="divide-y divide-border">
+              {lowStock.slice(0, lowLimit).map((product) => (
                 <div
                   key={product.id}
                   className="flex items-center justify-between gap-3 px-5 py-2"
                 >
-                  <p className="truncate text-sm">
+                  <p className="min-w-0 truncate text-sm">
                     <span className="font-medium text-foreground">{product.name}</span>
                     <span className="text-muted-foreground">
                       {" — "}
@@ -246,28 +380,55 @@ export function StockTab({
                   </p>
                   <Link
                     href={`/compras?producto=${product.id}`}
+                    aria-label={`Comprar ${product.name}`}
                     className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                   >
                     <ShoppingCart className="h-3.5 w-3.5" />
-                    Comprar
+                    <span className="hidden sm:inline">Comprar</span>
                   </Link>
                 </div>
               ))}
+              {lowStock.length > lowLimit && (
+                <button
+                  type="button"
+                  onClick={() => setLowLimit((n) => n + LOW_STOCK_PAGE)}
+                  className="w-full px-5 py-3 text-center text-sm font-medium text-primary hover:bg-muted"
+                >
+                  {`Ver más (${lowStock.length - lowLimit} restantes)`}
+                </button>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
+      <Fold
+        title="Valorización por marca y proveedor"
+        summary={`${valuation.byBrand.length} marca${valuation.byBrand.length === 1 ? "" : "s"} · ${valuation.bySupplier.length} proveedor${valuation.bySupplier.length === 1 ? "" : "es"}`}
+        open={openValuation}
+        onToggle={() => setOpenValuation((v) => !v)}
+      >
+        <div className="grid gap-4 lg:grid-cols-2">
+        <ValuationBreakdownCard title="Valorización por marca" rows={valuation.byBrand} />
+        <ValuationBreakdownCard title="Valorización por proveedor" rows={valuation.bySupplier} />
+        </div>
+      </Fold>
+
+      <Fold
+        title="Movimientos de stock"
+        summary={movementsSummary}
+        open={openMoves}
+        onToggle={() => setOpenMoves((v) => !v)}
+        action={
+          <Button type="button" variant="outline" onClick={() => setPickerOpen(true)}>
+            <PackagePlus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nuevo movimiento</span>
+          </Button>
+        }
+      >
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="text-base">Movimientos de stock</CardTitle>
-            <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
-              <PackagePlus className="h-3.5 w-3.5" />
-              Nuevo movimiento
-            </Button>
-          </div>
-          <div className="mt-3 space-y-3">
+          <div className="space-y-3">
             {focusedProduct && (
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Mostrando sólo</span>
@@ -350,7 +511,7 @@ export function StockTab({
             </p>
           ) : (
             <div className="divide-y divide-border">
-              {filteredMovements.map((m) => (
+              {filteredMovements.slice(0, moveLimitNow).map((m) => (
                 <div key={m.id} className="flex items-center justify-between gap-3 px-5 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">
@@ -359,7 +520,7 @@ export function StockTab({
                     <p className="text-xs text-muted-foreground">
                       {formatDateTime(m.created_at)}
                       {m.product_sku ? ` · SKU ${m.product_sku}` : ""}
-                      {m.reference ? ` · ${m.reference}` : ""}
+                      {m.reference && !UUID_RE.test(m.reference) ? ` · ${m.reference}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -373,47 +534,20 @@ export function StockTab({
                   </div>
                 </div>
               ))}
+              {filteredMovements.length > moveLimitNow && (
+                <button
+                  type="button"
+                  onClick={() => setMoveLimit({ key: moveKey, n: moveLimitNow + MOVEMENTS_PAGE })}
+                  className="w-full px-5 py-3 text-center text-sm font-medium text-primary hover:bg-muted"
+                >
+                  {`Ver más (${filteredMovements.length - moveLimitNow} restantes)`}
+                </button>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <Boxes className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Unidades en stock</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-foreground">{formatQty(valuation.totalUnits)}</p>
-            <p className="text-xs text-muted-foreground">
-              En {products.length} producto{products.length === 1 ? "" : "s"} activo
-              {products.length === 1 ? "" : "s"}.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Valorización de stock</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Al costo</p>
-              <p className="text-xl font-bold text-foreground">{formatCurrency(valuation.totalCost)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">A precio de venta</p>
-              <p className="text-xl font-bold text-foreground">{formatCurrency(valuation.totalPrice)}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ValuationBreakdownCard title="Valorización por marca" rows={valuation.byBrand} />
-        <ValuationBreakdownCard title="Valorización por proveedor" rows={valuation.bySupplier} />
-      </div>
+      </Fold>
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
 
