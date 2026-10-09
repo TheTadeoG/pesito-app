@@ -167,7 +167,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo bajar mi stock o mi lista de productos a Excel?",
         answer:
-          "Sí. En Productos, \"Descargar Excel\" (en Acciones) baja la lista tal como la estás viendo, en todos los planes, incluido el Gratis: si filtraste por marca, proveedor o estado del stock (sin stock, por agotarse, sin costo…), baja sólo esos productos. La planilla trae el producto, el SKU, la marca, el proveedor, el stock, el mínimo, cuánto falta para el mínimo, el estado, el costo, el valor al costo y el precio de venta. Con el Plan Esencial, la pestaña Stock también baja la lista de lo que hay que reponer, y con el Plan IA suma cuántos días alcanza el stock de cada producto. Es una planilla para mirar o compartir: no se vuelve a subir (para cargar o corregir productos hay una planilla de carga masiva aparte).",
+          "Sí. En Productos, \"Descargar Excel\" (en Acciones) abre una ventana donde elegís qué productos bajar (lo que estás viendo con los filtros, todos los activos o también los inactivos) y qué columnas querés: SKU, código de barras, marca, proveedor, stock, mínimo, cuánto falta para el mínimo, estado, costo, valor al costo y precio de venta. Está en todos los planes, incluido el Gratis. Con el Plan Esencial, la pestaña Stock también tiene su \"Descargar Excel\" (la lista que estás viendo o todos los productos), y con el Plan IA suma una columna con cuántos días alcanza el stock de cada producto. Es una planilla para mirar o compartir: no se vuelve a subir (para cargar o corregir productos hay una planilla de carga masiva aparte).",
       },
       {
         question: "¿Puedo guardar los datos fiscales de un cliente?",

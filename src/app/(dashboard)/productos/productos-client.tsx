@@ -54,7 +54,7 @@ import { featureMinPlan } from "@/lib/plan-access";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { InlineNumber } from "@/components/dashboard/inline-number";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
-import { downloadStockExcel } from "@/app/(dashboard)/productos/stock-excel";
+import { ExcelExportDialog, type ExportScope } from "@/app/(dashboard)/productos/excel-export-dialog";
 import { toStockRow, type StockFilterState } from "@/lib/stock-rows";
 import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import type { Plan } from "@/lib/subscription";
@@ -148,11 +148,13 @@ const isLowStock = (p: Product) => p.active && p.stock <= p.min_stock;
 const isSellingAtLoss = (p: Product) =>
   p.active && p.cost !== null && p.cost > p.price;
 
-const STOCK_STATE_LABELS: Record<StockFilterState, string> = {
+// "Sin costo" no es del stock: tiene su propio filtro aparte (ver noCostOnly).
+type StockSelectState = Exclude<StockFilterState, "nocost">;
+
+const STOCK_STATE_LABELS: Record<StockSelectState, string> = {
   out: "Sin stock",
   low: "Por agotarse",
   idle: `Sin ventas ${IDLE_DEFAULT_DAYS} días`,
-  nocost: "Sin costo",
   nomin: "Sin mínimo",
   negative: "Stock negativo",
 };
@@ -208,14 +210,18 @@ export function ProductosClient({
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [noBarcodeOnly, setNoBarcodeOnly] = useState(false);
   // Estado del stock (chips): sin stock, por agotarse, sin ventas, sin costo, sin mínimo, negativo.
-  const [stockState, setStockState] = useState<StockFilterState | null>(initialStockState);
+  const [stockState, setStockState] = useState<StockSelectState | null>(
+    initialStockState === "nocost" ? null : initialStockState,
+  );
+  // Sin costo cargado: dato que falta, no es del stock; va aparte, en Filtros.
+  const [noCostOnly, setNoCostOnly] = useState(initialStockState === "nocost");
   // Productos sin ventas en los últimos N días (Plan IA): se calculan recién al pedirlos.
   const [idleIds, setIdleIds] = useState<Set<string> | null>(null);
   const [idleLoading, setIdleLoading] = useState(false);
   const [idleError, setIdleError] = useState<string | null>(null);
   // Costo y mínimo corregidos desde la tabla (edición rápida, sin recargar la pantalla).
   const [edits, setEdits] = useState<Record<string, { cost?: number; min_stock?: number }>>({});
-  const [exporting, setExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const products = useMemo(
     () => productsProp.map((p) => (edits[p.id] ? { ...p, ...edits[p.id] } : p)),
     [productsProp, edits],
@@ -287,7 +293,7 @@ export function ProductosClient({
 
   // Con un filtro por estado se ven las columnas que hacen falta para corregirlo.
   const forcedColumns: ColumnId[] =
-    stockState === "nocost"
+    noCostOnly
       ? ["cost"]
       : stockState === "nomin"
         ? ["minStock"]
@@ -345,7 +351,7 @@ export function ProductosClient({
       if (stockState === "out" && p.stock > 0) return false;
       if (stockState === "low" && !(p.stock > 0 && p.stock <= p.min_stock)) return false;
       if (stockState === "negative" && p.stock >= 0) return false;
-      if (stockState === "nocost" && p.cost !== null && p.cost > 0) return false;
+      if (noCostOnly && (!p.active || (p.cost !== null && p.cost > 0))) return false;
       if (stockState === "nomin" && p.min_stock > 0) return false;
       if (stockState === "idle" && !idleIds?.has(p.id)) return false;
       if (!q) return true;
@@ -363,6 +369,7 @@ export function ProductosClient({
     supplierFilter,
     activeFilter,
     noBarcodeOnly,
+    noCostOnly,
     stockState,
     idleIds,
   ]);
@@ -371,6 +378,7 @@ export function ProductosClient({
     (supplierFilter ? 1 : 0) +
     (activeFilter !== "all" ? 1 : 0) +
     (noBarcodeOnly ? 1 : 0) +
+    (noCostOnly ? 1 : 0) +
     (stockState ? 1 : 0);
 
   function getSortValue(p: Product, key: SortKey): string | number {
@@ -420,6 +428,7 @@ export function ProductosClient({
     supplierFilter,
     activeFilter,
     noBarcodeOnly,
+    noCostOnly,
     stockState,
     sortKey,
     sortDir,
@@ -518,7 +527,7 @@ export function ProductosClient({
     }
   }
 
-  function chooseState(next: StockFilterState | null) {
+  function chooseState(next: StockSelectState | null) {
     setStockState(next);
     if (next === "idle" && idleIds === null && !idleLoading) void loadIdle();
   }
@@ -533,22 +542,32 @@ export function ProductosClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleDownloadExcel() {
-    setExporting(true);
-    try {
-      await downloadStockExcel(
-        sorted.map((p) =>
-          toStockRow(p, {
-            supplier: p.default_supplier_id ? (supplierNameById.get(p.default_supplier_id) ?? null) : null,
-            idle: idleIds?.has(p.id),
-          }),
-        ),
-        false,
-      );
-    } finally {
-      setExporting(false);
+  // Qué productos se pueden bajar: lo que se está viendo (si hay filtros), todos los activos y todos.
+  const toRows = (list: Product[]) =>
+    list.map((p) =>
+      toStockRow(p, {
+        supplier: p.default_supplier_id ? (supplierNameById.get(p.default_supplier_id) ?? null) : null,
+        idle: idleIds?.has(p.id),
+      }),
+    );
+  const exportScopes: ExportScope[] = (() => {
+    const active = products.filter((p) => p.active);
+    const list: ExportScope[] = [];
+    if (sorted.length !== products.length) {
+      list.push({
+        id: "view",
+        label: "Lo que estoy viendo",
+        hint: "Con la búsqueda y los filtros de ahora",
+        count: sorted.length,
+        rows: () => toRows(sorted),
+      });
     }
-  }
+    list.push({ id: "active", label: "Todos los productos activos", count: active.length, rows: () => toRows(active) });
+    if (active.length !== products.length) {
+      list.push({ id: "all", label: "Todos, con los inactivos", count: products.length, rows: () => toRows(products) });
+    }
+    return list;
+  })();
 
   // Cuántos hay en cada estado (sólo productos activos, como en la pestaña Stock).
   const stateCounts = useMemo(() => {
@@ -616,9 +635,9 @@ export function ProductosClient({
               </Button>
             }
           >
-            <DropdownMenuItem onClick={() => void handleDownloadExcel()}>
+            <DropdownMenuItem onClick={() => setExportOpen(true)}>
               <FileSpreadsheet className="h-4 w-4" />
-              {exporting ? "Preparando…" : `Descargar Excel (${sorted.length})`}
+              Descargar Excel
             </DropdownMenuItem>
             {canManageCatalog && (
               <>
@@ -680,6 +699,7 @@ export function ProductosClient({
                       setSupplierFilter("");
                       setActiveFilter("all");
                       setNoBarcodeOnly(false);
+                      setNoCostOnly(false);
                       setStockState(null);
                     }}
                     className="text-xs font-medium text-primary hover:underline"
@@ -710,7 +730,7 @@ export function ProductosClient({
                 <Select
                   id="pf-stock-state"
                   value={stockState ?? ""}
-                  onChange={(e) => chooseState((e.target.value || null) as StockFilterState | null)}
+                  onChange={(e) => chooseState((e.target.value || null) as StockSelectState | null)}
                 >
                   <option value="">Todos · {products.length}</option>
                   {(
@@ -718,7 +738,6 @@ export function ProductosClient({
                       ["out", stateCounts.out, stockAlertsLocked ? "Plan Esencial" : null],
                       ["low", stateCounts.low, stockAlertsLocked ? "Plan Esencial" : null],
                       ["idle", idleIds ? idleIds.size : null, idleAllowed ? null : "Plan IA"],
-                      ["nocost", stateCounts.nocost, null],
                       ["nomin", stateCounts.nomin, stockAlertsLocked ? "Plan Esencial" : null],
                       ["negative", stateCounts.negative, null],
                     ] as const
@@ -759,6 +778,18 @@ export function ProductosClient({
                   className="h-4 w-4 accent-primary"
                 />
               </label>
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
+                <span className="text-foreground">
+                  Sin costo cargado
+                  {stateCounts.nocost > 0 && ` (${stateCounts.nocost})`}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={noCostOnly}
+                  onChange={(e) => setNoCostOnly(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+              </label>
             </div>
           </FilterPanel>
           {/* Cerca del límite del plan: cuántos productos activos quedan. */}
@@ -787,25 +818,40 @@ export function ProductosClient({
         </div>
       </div>
 
-      {/* Filtro por estado del stock activo (se elige en Filtros; también llega desde "Revisar números" de Stock). */}
-      {stockState && (
+      {/* Filtros activos de stock o de costo (se eligen en Filtros; también llegan desde "Revisar números" de Stock). */}
+      {(stockState || noCostOnly) && (
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => chooseState(null)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-accent px-3 py-1 text-xs font-medium text-foreground"
-              title="Quitar este filtro"
-            >
-              {`Estado del stock: ${STOCK_STATE_LABELS[stockState]} ✕`}
-            </button>
+            {stockState && (
+              <button
+                type="button"
+                onClick={() => chooseState(null)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-accent px-3 py-1 text-xs font-medium text-foreground"
+                title="Quitar este filtro"
+              >
+                {`Estado del stock: ${STOCK_STATE_LABELS[stockState]} ✕`}
+              </button>
+            )}
+            {noCostOnly && (
+              <button
+                type="button"
+                onClick={() => setNoCostOnly(false)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-accent px-3 py-1 text-xs font-medium text-foreground"
+                title="Quitar este filtro"
+              >
+                Sin costo cargado ✕
+              </button>
+            )}
             <span className="text-xs text-muted-foreground">{`${filtered.length} producto${filtered.length === 1 ? "" : "s"}`}</span>
           </div>
-          {(stockState === "nocost" || stockState === "nomin") && (
+          {noCostOnly && (
             <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
-              {stockState === "nocost"
-                ? "Escribí el costo en cada fila y apretá Enter. Con el costo, el valor del stock y tu margen quedan bien calculados."
-                : "Escribí el stock mínimo en cada fila y apretá Enter: así Pesito te avisa cuando un producto se esté por acabar."}
+              Escribí el costo en cada fila y apretá Enter. Con el costo, el valor del stock y tu margen quedan bien calculados.
+            </p>
+          )}
+          {stockState === "nomin" && (
+            <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
+              Escribí el stock mínimo en cada fila y apretá Enter: así Pesito te avisa cuando un producto se esté por acabar.
             </p>
           )}
           {stockState === "negative" && (
@@ -1028,7 +1074,7 @@ export function ProductosClient({
                               display={product.cost ? formatCurrency(product.cost) : "—"}
                               placeholder="Costo"
                               label={`costo de ${product.name}`}
-                              open={stockState === "nocost" && (product.cost === null || product.cost <= 0)}
+                              open={noCostOnly && (product.cost === null || product.cost <= 0)}
                               onSave={(v) => quickSave(product.id, "cost", v)}
                             />
                           </td>
@@ -1186,6 +1232,8 @@ export function ProductosClient({
       />
 
       <AdjustDialog product={adjusting} onClose={() => setAdjusting(null)} />
+
+      <ExcelExportDialog open={exportOpen} onClose={() => setExportOpen(false)} scopes={exportScopes} withCover={false} />
 
       <Dialog
         open={alertsOpen}

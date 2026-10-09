@@ -8,6 +8,7 @@ export interface StockRow {
   name: string;
   brand: string | null;
   sku: string | null;
+  barcode: string | null;
   unit: string;
   stock: number;
   minStock: number;
@@ -26,6 +27,7 @@ export interface StockSource {
   name: string;
   brand: string | null;
   sku: string | null;
+  barcode?: string | null;
   unit: string;
   stock: number;
   min_stock: number;
@@ -47,6 +49,7 @@ export function toStockRow(
     name: p.name,
     brand: p.brand?.trim() || null,
     sku: p.sku,
+    barcode: p.barcode ?? null,
     unit: p.unit,
     stock: p.stock,
     minStock: p.min_stock,
