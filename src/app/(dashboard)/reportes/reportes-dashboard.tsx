@@ -1,5 +1,6 @@
 "use client";
 
+import { StockBreakdownSection } from "@/app/(dashboard)/reportes/stock-breakdown";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -111,6 +112,8 @@ export interface ReportesData {
   sellerLabel: string | null;
   fiadoDebtors: FiadoDebtorRow[];
   stockValue: { atCost: number; atPrice: number };
+  /** Sin gestión de stock: el detalle por marca y proveedor se ofrece con el plan que lo trae. */
+  stockBreakdownLocked: boolean;
   hasProAccess: boolean;
   /** Dueño/administrador sin reportes por empleado en su plan: se muestran bloqueados. */
   teamLocked: boolean;
@@ -489,6 +492,7 @@ export function ReportesDashboard({
                     {formatCurrency(data.stockValue.atPrice)}
                   </p>
                 </div>
+                <StockBreakdownSection locked={data.stockBreakdownLocked} />
               </CardContent>
             </Card>
           )}

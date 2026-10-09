@@ -493,6 +493,7 @@ export default async function ReportesPage({
     sellerLabel,
     fiadoDebtors,
     stockValue,
+    stockBreakdownLocked: !canUse(subscription, "stockManagement"),
     hasProAccess: canProfit,
     teamLocked: isManager && !canTeam,
     periodComparison,

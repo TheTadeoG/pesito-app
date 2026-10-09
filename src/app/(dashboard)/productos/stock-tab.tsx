@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { PackagePlus, Search, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -19,76 +19,6 @@ import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/p
 import { StockBoard } from "@/app/(dashboard)/productos/stock-board";
 import { toStockRow, type StockRow } from "@/lib/stock-rows";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
-
-interface ValuationRow {
-  label: string;
-  units: number;
-  value: number;
-}
-
-function formatQty(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
-}
-
-// Componente aparte (no inline) porque se usa dos veces (marca y proveedor)
-// y react-hooks/static-components no permite definir componentes dentro del
-// render de otro.
-const BREAKDOWN_PREVIEW = 8;
-
-function ValuationBreakdownCard({ title, rows }: { title: string; rows: ValuationRow[] }) {
-  const [showAll, setShowAll] = useState(false);
-  const maxValue = rows[0]?.value ?? 0;
-  const shown = showAll ? rows : rows.slice(0, BREAKDOWN_PREVIEW);
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {rows.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-            Sin datos todavía.
-          </p>
-        ) : (
-          <div className="divide-y divide-border">
-            {shown.map((row) => (
-              <div key={row.label} className="space-y-1.5 px-5 py-3">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="truncate font-medium text-foreground">{row.label}</span>
-                  <span className="shrink-0 font-semibold text-foreground">
-                    {formatCurrency(row.value)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{
-                        width: maxValue > 0 ? `${Math.max((row.value / maxValue) * 100, 2)}%` : "0%",
-                      }}
-                    />
-                  </div>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatQty(row.units)} un.
-                  </span>
-                </div>
-              </div>
-            ))}
-            {rows.length > BREAKDOWN_PREVIEW && (
-              <button
-                type="button"
-                onClick={() => setShowAll((v) => !v)}
-                className="w-full px-5 py-2.5 text-center text-sm font-medium text-primary hover:bg-muted"
-              >
-                {showAll ? "Ver menos" : `Ver las ${rows.length}`}
-              </button>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 const MOVEMENTS_PAGE_SIZE = 25;
 // El "reference" de una venta es su id (un uuid): no le dice nada a nadie.
@@ -125,12 +55,15 @@ function StripNumber({
   );
 }
 
-type StockView = "inventory" | "moves" | "valuation";
+function formatQty(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+type StockView = "inventory" | "moves";
 
 const viewTabs: { value: StockView; label: string }[] = [
   { value: "inventory", label: "Inventario" },
   { value: "moves", label: "Movimientos" },
-  { value: "valuation", label: "Valorización" },
 ];
 
 interface MovementRow {
@@ -241,48 +174,18 @@ export function StockTab({
       ),
     [products, slowIds, insights, supplierNameById]
   );
+  // Totales de la franja de arriba (el detalle por marca y proveedor está en Reportes).
   const valuation = useMemo(() => {
     let totalUnits = 0;
     let totalCost = 0;
     let totalPrice = 0;
-    const byBrand = new Map<string, ValuationRow>();
-    const bySupplier = new Map<string, ValuationRow>();
-
     for (const p of products) {
-      const cost = p.cost ?? 0;
-      const value = p.stock * cost;
       totalUnits += p.stock;
-      totalCost += value;
+      totalCost += p.stock * (p.cost ?? 0);
       totalPrice += p.stock * p.price;
-
-      const brandLabel = p.brand?.trim() || "Sin marca";
-      const brandEntry = byBrand.get(brandLabel) ?? { label: brandLabel, units: 0, value: 0 };
-      brandEntry.units += p.stock;
-      brandEntry.value += value;
-      byBrand.set(brandLabel, brandEntry);
-
-      const supplierKey = p.default_supplier_id ?? "__none__";
-      const supplierLabel = p.default_supplier_id
-        ? supplierNameById.get(p.default_supplier_id) ?? "Proveedor eliminado"
-        : "Sin proveedor";
-      const supplierEntry =
-        bySupplier.get(supplierKey) ?? { label: supplierLabel, units: 0, value: 0 };
-      supplierEntry.units += p.stock;
-      supplierEntry.value += value;
-      bySupplier.set(supplierKey, supplierEntry);
     }
-
-    const sortByValue = (rows: Map<string, ValuationRow>) =>
-      Array.from(rows.values()).sort((a, b) => b.value - a.value);
-
-    return {
-      totalUnits,
-      totalCost,
-      totalPrice,
-      byBrand: sortByValue(byBrand),
-      bySupplier: sortByValue(bySupplier),
-    };
-  }, [products, supplierNameById]);
+    return { totalUnits, totalCost, totalPrice };
+  }, [products]);
 
   const pickerResults = useMemo(() => {
     const q = pickerQuery.trim().toLowerCase();
@@ -384,13 +287,6 @@ export function StockTab({
           }}
           onAdjust={(id) => setAdjusting(products.find((p) => p.id === id) ?? null)}
         />
-      )}
-
-      {view === "valuation" && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <ValuationBreakdownCard title="Valorización por marca" rows={valuation.byBrand} />
-          <ValuationBreakdownCard title="Valorización por proveedor" rows={valuation.bySupplier} />
-        </div>
       )}
 
       {view === "moves" && (
