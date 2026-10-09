@@ -12,6 +12,7 @@ import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import { getPeriodRange, type ReportPeriod } from "@/lib/report-periods";
 import type { Product } from "@/lib/types";
 import type { Plan } from "@/lib/subscription";
+import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { StockBoard, type StockRow } from "@/app/(dashboard)/productos/stock-board";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
@@ -222,7 +223,7 @@ export function StockTab({
   insights: {
     cover: Record<string, number | null>;
     slow: { id: string; name: string; capital: number }[];
-    /** Período de "sin ventas" con el que arrancó la lista (7 días). */
+    /** Período de "sin ventas" con el que arrancó la lista (`IDLE_DEFAULT_DAYS`). */
     idleDays: number;
   } | null;
   /** Plan que desbloquea los datos anteriores (null si el negocio ya lo tiene). */
@@ -247,7 +248,7 @@ export function StockTab({
   );
 
   // Capital parado: productos con stock y sin ventas en los últimos N días (N se cambia en la tarjeta).
-  const [idle, setIdle] = useState({ days: insights?.idleDays ?? 7, slow: insights?.slow ?? [] });
+  const [idle, setIdle] = useState({ days: insights?.idleDays ?? IDLE_DEFAULT_DAYS, slow: insights?.slow ?? [] });
   const [idleLoading, setIdleLoading] = useState(false);
   const [idleError, setIdleError] = useState<string | null>(null);
   async function changeIdleDays(days: number) {

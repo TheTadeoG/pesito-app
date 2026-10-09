@@ -116,7 +116,7 @@ export default async function ProductosPage({
     const focusedProduct = producto ? productById.get(producto) : undefined;
 
     // Plan IA: cuántos días alcanza cada producto (ventas de los últimos 30 días) y la plata
-    // parada en lo que no se vendió en los últimos 7 días (se cambia en la tarjeta). Sin el plan, la base
+    // parada en lo que no se vendió en los últimos 30 días (se cambia en la tarjeta). Sin el plan, la base
     // no devuelve ventas por producto (product_sales_stats pide Plan IA): se ofrece desbloquearlo.
     const insightsOn = canUse(subscription, "lowRotation");
     let insights: {
@@ -126,8 +126,10 @@ export default async function ProductosPage({
     } | null = null;
     if (insightsOn) {
       try {
-        const [stats30, statsIdle] = await Promise.all(
-          [30, IDLE_DEFAULT_DAYS].map((days) =>
+        // Con el período por defecto igual a los 30 días de la cobertura, es una sola consulta.
+        const periods = Array.from(new Set([30, IDLE_DEFAULT_DAYS]));
+        const results = await Promise.all(
+          periods.map((days) =>
             supabase.rpc("product_sales_stats", {
               p_org_id: organization.id,
               p_days: days,
@@ -135,6 +137,8 @@ export default async function ProductosPage({
             })
           )
         );
+        const stats30 = results[periods.indexOf(30)];
+        const statsIdle = results[periods.indexOf(IDLE_DEFAULT_DAYS)];
         if (!stats30.error && !statsIdle.error) {
           const insightProducts: InsightProduct[] = activeProducts.map((p) => ({
             id: p.id,
