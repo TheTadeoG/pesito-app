@@ -14,9 +14,9 @@ import type { Brand, Product } from "@/lib/types";
 import type { Plan } from "@/lib/subscription";
 import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
-import { updateProductQuick } from "@/app/(dashboard)/productos/actions";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
-import { StockBoard, type StockRow } from "@/app/(dashboard)/productos/stock-board";
+import { StockBoard } from "@/app/(dashboard)/productos/stock-board";
+import { toStockRow, type StockRow } from "@/lib/stock-rows";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 
 interface ValuationRow {
@@ -274,51 +274,20 @@ export function StockTab({
       setIdleLoading(false);
     }
   }
-  // Costo y mínimo corregidos desde la tabla (edición rápida, sin recargar la pantalla).
-  const [edits, setEdits] = useState<Record<string, { cost?: number; minStock?: number }>>({});
   const [formProduct, setFormProduct] = useState<Product | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  async function quickSave(id: string, field: "cost" | "minStock", value: number): Promise<string | null> {
-    const res = await updateProductQuick(id, field === "cost" ? "cost" : "min_stock", value);
-    if (res.error) return res.error;
-    setEdits((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
-    return null;
-  }
   const slowIds = useMemo(() => new Set(idle.slow.map((r) => r.id)), [idle]);
   const rows = useMemo<StockRow[]>(
     () =>
-      products.map((p) => {
-        const minStock = edits[p.id]?.minStock ?? p.min_stock;
-        const cost = edits[p.id]?.cost ?? p.cost;
-        const status: StockRow["status"] =
-          p.stock <= 0 ? "out" : p.stock <= minStock ? "low" : slowIds.has(p.id) ? "excess" : "ok";
-        return {
-          id: p.id,
-          name: p.name,
-          brand: p.brand?.trim() || null,
-          sku: p.sku,
-          unit: p.unit,
-          stock: p.stock,
-          minStock,
-          cost,
-          price: p.price,
+      products.map((p) =>
+        toStockRow(p, {
           supplier: p.default_supplier_id ? (supplierNameById.get(p.default_supplier_id) ?? null) : null,
-          status,
+          idle: slowIds.has(p.id),
           daysLeft: insights ? (insights.cover[p.id] ?? null) : undefined,
-          value: p.stock * (cost ?? 0),
-        };
-      }),
-    [products, slowIds, insights, supplierNameById, edits]
+        })
+      ),
+    [products, slowIds, insights, supplierNameById]
   );
-  const brandOptions = useMemo(
-    () => Array.from(new Set(rows.map((r) => r.brand).filter((b): b is string => Boolean(b)))).sort((x, y) => x.localeCompare(y)),
-    [rows]
-  );
-  const supplierOptions = useMemo(
-    () => Array.from(new Set(rows.map((r) => r.supplier).filter((x): x is string => Boolean(x)))).sort((x, y) => x.localeCompare(y)),
-    [rows]
-  );
-
   const valuation = useMemo(() => {
     let totalUnits = 0;
     let totalCost = 0;
@@ -430,8 +399,6 @@ export function StockTab({
 
       <StockBoard
         rows={rows}
-        brands={brandOptions}
-        suppliers={supplierOptions}
         insightsOn={insights !== null}
         lockedPlan={insightsLockedPlan}
         slow={idle.slow}
@@ -440,7 +407,6 @@ export function StockTab({
         idleError={idleError}
         onIdleDaysChange={changeIdleDays}
         restockHref={insightsLockedPlan ? null : "/recomendaciones"}
-        onQuickSave={quickSave}
         onEdit={(id) => {
           setFormProduct(products.find((p) => p.id === id) ?? null);
           setFormOpen(true);

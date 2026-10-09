@@ -254,7 +254,8 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         values: fromEsencial,
       },
       { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromEsencial },
-      { label: "Bajar tu stock a una planilla de Excel (con los filtros que elegiste)", values: fromEsencial },
+      { label: "Bajar tu lista de productos a una planilla de Excel (con los filtros que elegiste)", values: everyPlan },
+      { label: "Corregir costo y stock mínimo desde la lista y filtrar por estado del stock", values: everyPlan },
       { label: "Historial de movimientos de stock", values: fromEsencial },
       {
         label: "Inventarios físicos: contás y el stock se ajusta solo",

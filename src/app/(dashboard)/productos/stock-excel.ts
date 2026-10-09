@@ -1,5 +1,5 @@
 import { dayKey } from "@/lib/supplier-debt";
-import type { StockRow, StockStatus } from "@/app/(dashboard)/productos/stock-board";
+import type { StockRow, StockStatus } from "@/lib/stock-rows";
 
 const STATUS_LABEL: Record<StockStatus, string> = {
   out: "Sin stock",

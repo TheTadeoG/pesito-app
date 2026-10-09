@@ -42,6 +42,7 @@ import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 import {
   deleteProduct,
   toggleProductActive,
+  updateProductQuick,
 } from "@/app/(dashboard)/productos/actions";
 import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
@@ -50,7 +51,12 @@ import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-di
 import { ProductImportDialog } from "@/app/(dashboard)/productos/import-dialog";
 import { BarcodeLabelsDialog } from "@/app/(dashboard)/productos/barcode-labels-dialog";
 import { featureMinPlan } from "@/lib/plan-access";
-import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
+import { PlanLockNote, PlanPill, upgradeHref } from "@/components/dashboard/pro-locked-card";
+import { InlineNumber } from "@/components/dashboard/inline-number";
+import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
+import { downloadStockExcel } from "@/app/(dashboard)/productos/stock-excel";
+import { toStockRow, type StockFilterState } from "@/lib/stock-rows";
+import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import type { Plan } from "@/lib/subscription";
 
 type SupplierOption = Pick<Supplier, "id" | "name">;
@@ -143,7 +149,7 @@ const isSellingAtLoss = (p: Product) =>
   p.active && p.cost !== null && p.cost > p.price;
 
 export function ProductosClient({
-  products,
+  products: productsProp,
   brands,
   suppliers,
   initialBrand,
@@ -156,6 +162,8 @@ export function ProductosClient({
   labelsLocked,
   canManageCatalog,
   restockLocked,
+  initialStockState,
+  idleAllowed,
 }: {
   orgId: string;
   products: Product[];
@@ -179,6 +187,10 @@ export function ProductosClient({
   canManageCatalog: boolean;
   /** Sin recomendaciones de reposición (Plan IA): "Comprar" va a Compras en vez de a Recomendaciones. */
   restockLocked: boolean;
+  /** Viene de "Revisar números" (Stock): el filtro por estado ya puesto. */
+  initialStockState: StockFilterState | null;
+  /** Plan IA: se puede filtrar por "sin ventas". */
+  idleAllowed: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -186,8 +198,19 @@ export function ProductosClient({
   const [supplierFilter, setSupplierFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [noBarcodeOnly, setNoBarcodeOnly] = useState(false);
-  const [noCostOnly, setNoCostOnly] = useState(false);
-  const [lowStockOnly, setLowStockOnly] = useState(false);
+  // Estado del stock (chips): sin stock, por agotarse, sin ventas, sin costo, sin mínimo, negativo.
+  const [stockState, setStockState] = useState<StockFilterState | null>(initialStockState);
+  // Productos sin ventas en los últimos N días (Plan IA): se calculan recién al pedirlos.
+  const [idleIds, setIdleIds] = useState<Set<string> | null>(null);
+  const [idleLoading, setIdleLoading] = useState(false);
+  const [idleError, setIdleError] = useState<string | null>(null);
+  // Costo y mínimo corregidos desde la tabla (edición rápida, sin recargar la pantalla).
+  const [edits, setEdits] = useState<Record<string, { cost?: number; min_stock?: number }>>({});
+  const [exporting, setExporting] = useState(false);
+  const products = useMemo(
+    () => productsProp.map((p) => (edits[p.id] ? { ...p, ...edits[p.id] } : p)),
+    [productsProp, edits],
+  );
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [formOpen, setFormOpen] = useState(false);
@@ -253,7 +276,16 @@ export function ProductosClient({
     });
   }
 
-  const showColumn = (id: ColumnId) => columns.has(id);
+  // Con un filtro por estado se ven las columnas que hacen falta para corregirlo.
+  const forcedColumns: ColumnId[] =
+    stockState === "nocost"
+      ? ["cost"]
+      : stockState === "nomin"
+        ? ["minStock"]
+        : stockState === "out" || stockState === "low" || stockState === "negative"
+          ? ["stock", "minStock"]
+          : [];
+  const showColumn = (id: ColumnId) => columns.has(id) || forcedColumns.includes(id);
 
   const supplierNameById = useMemo(
     () => new Map(localSuppliers.map((s) => [s.id, s.name])),
@@ -300,8 +332,13 @@ export function ProductosClient({
       if (activeFilter === "active" && !p.active) return false;
       if (activeFilter === "inactive" && p.active) return false;
       if (noBarcodeOnly && p.barcode) return false;
-      if (noCostOnly && p.cost !== null) return false;
-      if (lowStockOnly && !isLowStock(p)) return false;
+      if (stockState && !p.active) return false;
+      if (stockState === "out" && p.stock > 0) return false;
+      if (stockState === "low" && !(p.stock > 0 && p.stock <= p.min_stock)) return false;
+      if (stockState === "negative" && p.stock >= 0) return false;
+      if (stockState === "nocost" && p.cost !== null && p.cost > 0) return false;
+      if (stockState === "nomin" && p.min_stock > 0) return false;
+      if (stockState === "idle" && !idleIds?.has(p.id)) return false;
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
@@ -317,16 +354,14 @@ export function ProductosClient({
     supplierFilter,
     activeFilter,
     noBarcodeOnly,
-    noCostOnly,
-    lowStockOnly,
+    stockState,
+    idleIds,
   ]);
 
   const extraFilterCount =
     (supplierFilter ? 1 : 0) +
     (activeFilter !== "all" ? 1 : 0) +
-    (noBarcodeOnly ? 1 : 0) +
-    (noCostOnly ? 1 : 0) +
-    (lowStockOnly ? 1 : 0);
+    (noBarcodeOnly ? 1 : 0);
 
   function getSortValue(p: Product, key: SortKey): string | number {
     switch (key) {
@@ -375,8 +410,7 @@ export function ProductosClient({
     supplierFilter,
     activeFilter,
     noBarcodeOnly,
-    noCostOnly,
-    lowStockOnly,
+    stockState,
     sortKey,
     sortDir,
   ].join("|");
@@ -452,6 +486,74 @@ export function ProductosClient({
     }
   }
 
+  async function quickSave(id: string, field: "cost" | "min_stock", value: number): Promise<string | null> {
+    const res = await updateProductQuick(id, field, value);
+    if (res.error) return res.error;
+    setEdits((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
+    return null;
+  }
+
+  // Los "sin ventas" (Plan IA) se calculan al pedirlos, con el período de la pestaña Stock por defecto.
+  async function loadIdle() {
+    setIdleLoading(true);
+    setIdleError(null);
+    try {
+      const res = await loadIdleStock(IDLE_DEFAULT_DAYS);
+      if (res.rows) setIdleIds(new Set(res.rows.map((r) => r.id)));
+      else setIdleError(res.error ?? "No pudimos calcularlo.");
+    } catch {
+      setIdleError("No pudimos calcularlo. Probá de nuevo.");
+    } finally {
+      setIdleLoading(false);
+    }
+  }
+
+  function chooseState(next: StockFilterState | null) {
+    setStockState(next);
+    if (next === "idle" && idleIds === null && !idleLoading) void loadIdle();
+  }
+
+  // Si se llegó con ?estado=sin-ventas, se calcula al abrir.
+  const idleRequested = useRef(false);
+  useEffect(() => {
+    if (initialStockState === "idle" && idleAllowed && !idleRequested.current) {
+      idleRequested.current = true;
+      void loadIdle();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleDownloadExcel() {
+    setExporting(true);
+    try {
+      await downloadStockExcel(
+        sorted.map((p) =>
+          toStockRow(p, {
+            supplier: p.default_supplier_id ? (supplierNameById.get(p.default_supplier_id) ?? null) : null,
+            idle: idleIds?.has(p.id),
+          }),
+        ),
+        false,
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  // Cuántos hay en cada estado (sólo productos activos, como en la pestaña Stock).
+  const stateCounts = useMemo(() => {
+    const c = { out: 0, low: 0, nocost: 0, nomin: 0, negative: 0 };
+    for (const p of products) {
+      if (!p.active) continue;
+      if (p.stock <= 0) c.out += 1;
+      else if (p.stock <= p.min_stock) c.low += 1;
+      if (p.stock < 0) c.negative += 1;
+      if (p.cost === null || p.cost <= 0) c.nocost += 1;
+      if (p.min_stock <= 0) c.nomin += 1;
+    }
+    return c;
+  }, [products]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -504,6 +606,10 @@ export function ProductosClient({
               </Button>
             }
           >
+            <DropdownMenuItem onClick={() => void handleDownloadExcel()}>
+              <FileSpreadsheet className="h-4 w-4" />
+              {exporting ? "Preparando…" : `Descargar Excel (${sorted.length})`}
+            </DropdownMenuItem>
             {canManageCatalog && (
               <>
                 <DropdownMenuItem
@@ -564,8 +670,6 @@ export function ProductosClient({
                       setSupplierFilter("");
                       setActiveFilter("all");
                       setNoBarcodeOnly(false);
-                      setNoCostOnly(false);
-                      setLowStockOnly(false);
                     }}
                     className="text-xs font-medium text-primary hover:underline"
                   >
@@ -605,43 +709,12 @@ export function ProductosClient({
                 </Select>
               </div>
 
-              {stockAlertsLocked ? (
-                <div className="flex items-center justify-between rounded-xl border border-dashed border-border px-3.5 py-2.5 text-sm text-muted-foreground">
-                  <span>
-                    Stock bajo
-                    {lowStockCount > 0 && ` (${lowStockCount})`}
-                  </span>
-                  <PlanPill plan="esencial" />
-                </div>
-              ) : (
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
-                <span className="text-foreground">
-                  Stock bajo
-                  {lowStockCount > 0 && ` (${lowStockCount})`}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={lowStockOnly}
-                  onChange={(e) => setLowStockOnly(e.target.checked)}
-                  className="h-4 w-4 accent-primary"
-                />
-              </label>
-              )}
               <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
                 <span className="text-foreground">Sin código de barras</span>
                 <input
                   type="checkbox"
                   checked={noBarcodeOnly}
                   onChange={(e) => setNoBarcodeOnly(e.target.checked)}
-                  className="h-4 w-4 accent-primary"
-                />
-              </label>
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border px-3.5 py-2.5 text-sm">
-                <span className="text-foreground">Sin costo cargado</span>
-                <input
-                  type="checkbox"
-                  checked={noCostOnly}
-                  onChange={(e) => setNoCostOnly(e.target.checked)}
                   className="h-4 w-4 accent-primary"
                 />
               </label>
@@ -673,21 +746,94 @@ export function ProductosClient({
         </div>
       </div>
 
+      {/* Estado del stock: filtros que también usa "Revisar números" de la pestaña Stock. */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-xs font-medium text-muted-foreground">Estado del stock</span>
+          <button
+            type="button"
+            onClick={() => chooseState(null)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              stockState === null ? "border-primary bg-accent text-foreground" : "border-border text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {`Todos · ${products.length}`}
+          </button>
+          {(
+            [
+              ["out", "Sin stock", stateCounts.out, "esencial"],
+              ["low", "Por agotarse", stateCounts.low, "esencial"],
+              ["idle", `Sin ventas ${IDLE_DEFAULT_DAYS} d`, idleIds ? idleIds.size : null, "ia"],
+              ["nocost", "Sin costo", stateCounts.nocost, null],
+              ["nomin", "Sin mínimo", stateCounts.nomin, "esencial"],
+              ["negative", "Stock negativo", stateCounts.negative, null],
+            ] as const
+          ).map(([value, label, count, plan]) => {
+            const locked = (plan === "esencial" && stockAlertsLocked) || (plan === "ia" && !idleAllowed);
+            const text = count === null ? label : `${label} · ${count}`;
+            if (locked && plan) {
+              return (
+                <Link
+                  key={value}
+                  href={upgradeHref(plan)}
+                  prefetch={false}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  {text}
+                  <PlanPill plan={plan} />
+                </Link>
+              );
+            }
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => chooseState(stockState === value ? null : value)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  stockState === value ? "border-primary bg-accent text-foreground" : "border-border text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {text}
+                {stockState === value && " ✕"}
+              </button>
+            );
+          })}
+        </div>
+        {(stockState === "nocost" || stockState === "nomin") && (
+          <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
+            {stockState === "nocost"
+              ? "Escribí el costo en cada fila y apretá Enter. Con el costo, el valor del stock y tu margen quedan bien calculados."
+              : "Escribí el stock mínimo en cada fila y apretá Enter: así Pesito te avisa cuando un producto se esté por acabar."}
+          </p>
+        )}
+        {stockState === "negative" && (
+          <p className="rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
+            Con “Ajustar stock” (en los tres puntos de cada fila) dejás el stock en el número real.
+          </p>
+        )}
+        {stockState === "idle" && idleError && (
+          <p className="rounded-lg bg-danger-bg px-3 py-2 text-sm text-danger">{idleError}</p>
+        )}
+      </div>
+
       <Card className="overflow-hidden">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
             <p className="px-5 py-14 text-center text-sm text-muted-foreground">
               {products.length === 0
                 ? "Todavía no cargaste productos. Creá el primero."
-                : lowStockOnly &&
-                    !query.trim() &&
-                    !brandFilter &&
-                    !supplierFilter &&
-                    activeFilter === "all" &&
-                    !noBarcodeOnly &&
-                    !noCostOnly
-                  ? "Ningún producto está por debajo de su stock mínimo."
-                  : "No encontramos productos con esos filtros."}
+                : stockState === "idle" && idleLoading
+                  ? "Calculando…"
+                  : stockState &&
+                      !query.trim() &&
+                      !brandFilter &&
+                      !supplierFilter &&
+                      activeFilter === "all" &&
+                      !noBarcodeOnly
+                    ? "Ningún producto en esta lista. Todo en orden."
+                    : "No encontramos productos con esos filtros."}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -876,7 +1022,14 @@ export function ProductosClient({
                               !isActive && "opacity-60",
                             )}
                           >
-                            {product.cost ? formatCurrency(product.cost) : "—"}
+                            <InlineNumber
+                              value={product.cost}
+                              display={product.cost ? formatCurrency(product.cost) : "—"}
+                              placeholder="Costo"
+                              label={`costo de ${product.name}`}
+                              open={stockState === "nocost" && (product.cost === null || product.cost <= 0)}
+                              onSave={(v) => quickSave(product.id, "cost", v)}
+                            />
                           </td>
                         )}
                         {showColumn("price") && (
@@ -916,8 +1069,14 @@ export function ProductosClient({
                               !isActive && "opacity-60",
                             )}
                           >
-                            {product.min_stock}
-                            {product.unit}
+                            <InlineNumber
+                              value={product.min_stock}
+                              display={`${product.min_stock}${product.unit}`}
+                              placeholder="Mínimo"
+                              label={`stock mínimo de ${product.name}`}
+                              open={stockState === "nomin" && product.min_stock <= 0}
+                              onSave={(v) => quickSave(product.id, "min_stock", v)}
+                            />
                           </td>
                         )}
                         <td className="px-4 py-2.5">

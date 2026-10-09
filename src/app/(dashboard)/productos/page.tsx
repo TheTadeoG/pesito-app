@@ -14,6 +14,7 @@ import {
   type InsightProduct,
 } from "@/lib/product-insights";
 import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
+import { parseStockFilterState } from "@/lib/stock-rows";
 import { TransferButton } from "@/app/(dashboard)/productos/transfer-dialog";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
@@ -27,9 +28,9 @@ function parseTab(value: string | undefined): CatalogTab {
 export default async function ProductosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; producto?: string; marca?: string }>;
+  searchParams: Promise<{ tab?: string; producto?: string; marca?: string; estado?: string }>;
 }) {
-  const { tab: tabParam, producto, marca } = await searchParams;
+  const { tab: tabParam, producto, marca, estado } = await searchParams;
   const tab = parseTab(tabParam);
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
@@ -190,7 +191,7 @@ export default async function ProductosPage({
   } else {
     content = (
       <ProductosClient
-        key={marca ?? "all"}
+        key={`${marca ?? "all"}|${estado ?? ""}`}
         products={normalized}
         brands={brands ?? []}
         suppliers={suppliers ?? []}
@@ -208,6 +209,8 @@ export default async function ProductosPage({
         labelsLocked={!canUse(subscription, "barcodeLabels")}
         canManageCatalog={isOrgAdmin(membership.role)}
         restockLocked={!canUse(subscription, "restockRecommendations")}
+        initialStockState={parseStockFilterState(estado)}
+        idleAllowed={canUse(subscription, "lowRotation")}
       />
     );
   }
