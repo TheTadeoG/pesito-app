@@ -1,7 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CheckCircle2, Clock, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels } from "@/lib/subscription";
@@ -9,11 +6,12 @@ import { syncReturnedPayment } from "@/lib/billing";
 import { formatDate } from "@/lib/utils";
 import { chargeAmount } from "@/lib/billing";
 import { TrackEvent } from "@/components/track-event";
-import { AutoContinue } from "./auto-continue";
+import { ListoView } from "./listo-view";
+import { planDefinitions } from "@/lib/plan-features";
 
 // A dónde vuelve Mercado Pago (en la misma pestaña) con
 // ?preapproval_id= (débito automático) o ?payment_id=&status= (pago único).
-// Se aplica lo pagado; la pestaña original de Pesito se actualiza sola.
+// Se aplica lo pagado y la pantalla sigue sola a Pesito (listo-view.tsx).
 
 export const metadata: Metadata = {
   title: "Pago del plan",
@@ -41,17 +39,16 @@ export default async function PagoListoPage({
   const billing = subscription.billing;
   const periodEnd = billing?.currentPeriodEnd ? formatDate(billing.currentPeriodEnd) : null;
   const autoDebit = billing?.status === "active" && Boolean(billing.mpPreapprovalId);
-  const periodText = periodEnd
+  const renewal = periodEnd
     ? autoDebit
-      ? `Se renueva solo el ${periodEnd} con débito automático. `
-      : `Pago hasta el ${periodEnd}. `
+      ? `Se renueva solo el ${periodEnd} con débito automático.`
+      : `Queda pago hasta el ${periodEnd}.`
     : "";
 
   // Compra confirmada: se avisa una sola vez por pago (sin datos personales).
   const transactionId = params.preapproval_id ?? params.payment_id ?? billing?.mpPreapprovalId ?? null;
   const purchaseValue = paid && subscription.plan !== "gratis" ? chargeAmount(subscription.plan, billing?.cycle ?? "mensual") : 0;
 
-  const Icon = paid ? CheckCircle2 : pending ? Clock : Loader2;
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       {paid && transactionId && subscription.plan !== "gratis" && (
@@ -74,29 +71,13 @@ export default async function PagoListoPage({
           }}
         />
       )}
-      {paid && <AutoContinue href="/pos" />}
-      <div className="w-full max-w-md space-y-5 rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
-        <Icon className={paid ? "mx-auto h-14 w-14 text-success" : pending ? "mx-auto h-12 w-12 text-warning" : "mx-auto h-12 w-12 animate-spin text-muted-foreground"} />
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {paid
-              ? `¡Listo! Tu Plan ${planLabels[subscription.plan]} está activo`
-              : pending
-                ? "Tu pago está pendiente"
-                : "Estamos confirmando tu pago"}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {paid
-              ? `${periodText}Te llevamos a Pesito en unos segundos.`
-              : pending
-                ? "Cuando pagues y Mercado Pago lo acredite, el plan se activa solo."
-                : "Suele tardar unos segundos. Cuando se confirme, el plan se activa solo en Pesito."}
-          </p>
-        </div>
-        <Link href="/pos" className="block">
-          <Button className="w-full">Ir a Pesito</Button>
-        </Link>
-      </div>
+      <ListoView
+        state={paid ? "paid" : pending ? "pending" : "confirming"}
+        planName={`Plan ${planLabels[subscription.plan]}`}
+        renewal={renewal}
+        features={planDefinitions[subscription.plan].features.slice(1, 5)}
+        href="/pos"
+      />
     </div>
   );
 }
