@@ -184,7 +184,7 @@ export function CheckoutView(props: CheckoutViewProps) {
               <div>
                 <h2 className="text-2xl font-bold text-foreground">Elegí cómo pagar</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Pagás con Mercado Pago, en una pestaña segura.
+                  Pagás con Mercado Pago y volvés acá al terminar.
                 </p>
               </div>
 
@@ -422,14 +422,14 @@ function Waiting({
       <p className="text-sm text-muted-foreground">
         {pending
           ? "Cuando pagues en el local (Rapipago, Pago Fácil…) y Mercado Pago lo acredite, el plan se activa solo. Podés cerrar esta pantalla."
-          : "Terminá el pago en la otra pestaña. Cuando se confirme, esta pantalla sigue sola."}
+          : "Cuando se confirme, esta pantalla sigue sola."}
       </p>
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onCheck}>
           Ya pagué
         </Button>
         {checkoutUrl && !pending && (
-          <a href={checkoutUrl} target="_blank" rel="noopener noreferrer">
+          <a href={checkoutUrl}>
             <Button type="button" variant="ghost" size="sm">
               Volver a abrir el pago
             </Button>

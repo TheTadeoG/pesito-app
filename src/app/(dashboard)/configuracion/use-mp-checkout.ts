@@ -8,11 +8,10 @@ import { checkPendingCheckout, startSubscription } from "@/app/(dashboard)/confi
 type Status = "idle" | "opening" | "waiting" | "pending" | "active";
 
 /**
- * Pago del plan con Mercado Pago: abre el pago en otra pestaña y, mientras
- * tanto, pregunta cada pocos segundos si ya se pagó ese pago puntual. Apenas
- * se confirma, `status` pasa a "active" (Mercado Pago no siempre vuelve solo
- * a Pesito). "pending": eligió efectivo y todavía no pagó en el local.
- * Si el navegador bloquea la pestaña nueva, se va a Mercado Pago en esta.
+ * Pago del plan con Mercado Pago: lleva a Mercado Pago en esta misma pestaña
+ * (vuelve a /suscribirse/listo). `check` pregunta si un pago puntual ya se
+ * confirmó (por si vuelve con "atrás" o toca "Ya pagué"): `status` pasa a
+ * "active". "pending": eligió efectivo y todavía no pagó en el local.
  */
 export function useMercadoPagoCheckout() {
   const [status, setStatus] = useState<Status>("idle");
@@ -26,24 +25,27 @@ export function useMercadoPagoCheckout() {
   const start = useCallback(async (plan: Plan, cycle: BillingCycle, method: PaymentMethod) => {
     setError(null);
     setStatus("opening");
-    // Se abre ya (dentro del clic) para que el navegador no la bloquee.
-    const tab = window.open("", "_blank");
     const result = await startSubscription(plan, cycle, method);
     if (result.error || !result.url || !result.checkoutId) {
-      tab?.close();
       setStatus("idle");
       setError(result.error ?? "No pudimos conectar con Mercado Pago.");
       return;
     }
     setCheckoutId(result.checkoutId);
-    if (!tab) {
-      window.location.href = result.url;
-      return;
-    }
-    tab.opener = null;
-    tab.location.href = result.url;
     setCheckoutUrl(result.url);
-    setStatus("waiting");
+    // En esta misma pestaña: Mercado Pago deja un botón "Ir a la página del
+    // vendedor" que vuelve a /suscribirse/listo, y ahí se sigue solo a Pesito.
+    window.location.assign(result.url);
+  }, []);
+
+  // Si vuelve con "atrás" desde Mercado Pago, la pantalla no queda trabada
+  // en "Abriendo el pago…".
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setStatus((s) => (s === "opening" ? "idle" : s));
+    };
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
   }, []);
 
   const check = useCallback(async () => {

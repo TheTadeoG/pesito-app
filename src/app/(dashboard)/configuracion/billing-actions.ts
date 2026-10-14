@@ -39,7 +39,7 @@ export interface BillingActionResult {
 const PAID: Plan[] = ["esencial", "pro", "ia"];
 
 /**
- * Arma el pago en Mercado Pago y devuelve el link (se abre en otra pestaña):
+ * Arma el pago en Mercado Pago y devuelve el link (se abre en la misma pestaña):
  * - débito automático: checkout de un plan de suscripción (tarjeta o cuenta
  *   de Mercado Pago, sin pedir antes el email);
  * - pago único: Checkout Pro por un mes o un año (tarjeta, dinero en cuenta
@@ -148,7 +148,7 @@ export interface CheckoutStatus {
 }
 
 /**
- * Mientras la persona paga en Mercado Pago (en otra pestaña), la pantalla
+ * Mientras la persona paga en Mercado Pago , la pantalla
  * pregunta cada tanto si ya se pagó ese checkout, para avisarle y seguir sola.
  */
 export async function checkPendingCheckout(checkoutId: string): Promise<CheckoutStatus> {

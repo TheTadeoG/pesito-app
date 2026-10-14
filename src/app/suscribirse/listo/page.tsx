@@ -9,8 +9,9 @@ import { syncReturnedPayment } from "@/lib/billing";
 import { formatDate } from "@/lib/utils";
 import { chargeAmount } from "@/lib/billing";
 import { TrackEvent } from "@/components/track-event";
+import { AutoContinue } from "./auto-continue";
 
-// A dónde vuelve Mercado Pago (en la pestaña del pago) con
+// A dónde vuelve Mercado Pago (en la misma pestaña) con
 // ?preapproval_id= (débito automático) o ?payment_id=&status= (pago único).
 // Se aplica lo pagado; la pestaña original de Pesito se actualiza sola.
 
@@ -73,6 +74,7 @@ export default async function PagoListoPage({
           }}
         />
       )}
+      {paid && <AutoContinue href="/pos" />}
       <div className="w-full max-w-md space-y-5 rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
         <Icon className={paid ? "mx-auto h-14 w-14 text-success" : pending ? "mx-auto h-12 w-12 text-warning" : "mx-auto h-12 w-12 animate-spin text-muted-foreground"} />
         <div>
@@ -85,7 +87,7 @@ export default async function PagoListoPage({
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {paid
-              ? `${periodText}Ya podés cerrar esta pestaña y volver a Pesito.`
+              ? `${periodText}Te llevamos a Pesito en unos segundos.`
               : pending
                 ? "Cuando pagues y Mercado Pago lo acredite, el plan se activa solo."
                 : "Suele tardar unos segundos. Cuando se confirme, el plan se activa solo en Pesito."}

@@ -12,7 +12,7 @@ import { CheckoutView } from "@/app/suscribirse/checkout-view";
 // Pantalla de pago de un plan. Se llega desde Configuración → Plan
 // ("Contratar") y, al crear la cuenta con un plan elegido en precios, como
 // último paso del alta (?desde=alta). El pago se hace en Mercado Pago en
-// otra pestaña; esta pantalla espera la confirmación y sigue sola.
+// la misma pestaña; al volver a /suscribirse/listo sigue sola a Pesito.
 
 export const metadata: Metadata = {
   title: "Pagá tu plan",
