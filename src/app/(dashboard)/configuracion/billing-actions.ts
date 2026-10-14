@@ -65,7 +65,7 @@ export async function startSubscription(
   // automático mensual). Sin la variable no hace nada. Sin promo, así el
   // monto no se sube solo después del primer cobro.
   const testPrice = method === "debito" && cycle === "mensual" && process.env.MP_TEST_ORG_ID === organization.id;
-  const amount = testPrice ? 1 : firstChargeAmount(plan, cycle, promo);
+  const amount = testPrice ? 15 : firstChargeAmount(plan, cycle, promo);
   try {
     if (method === "unico") {
       const ref = `${buildExternalReference(organization.id, plan, cycle)}|u${crypto.randomBytes(6).toString("hex")}`;
