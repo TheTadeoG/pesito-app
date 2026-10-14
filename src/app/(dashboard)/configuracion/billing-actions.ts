@@ -61,7 +61,11 @@ export async function startSubscription(
   const backUrl = `${siteUrl}/suscribirse/listo`;
   // Promo del primer mes (mensual, para quien nunca pagó un plan).
   const promo = cycle === "mensual" && (await isPromoEligible(organization.id));
-  const amount = firstChargeAmount(plan, cycle, promo);
+  // Prueba de cobro real: sólo el negocio de MP_TEST_ORG_ID paga $1 (débito
+  // automático mensual). Sin la variable no hace nada. Sin promo, así el
+  // monto no se sube solo después del primer cobro.
+  const testPrice = method === "debito" && cycle === "mensual" && process.env.MP_TEST_ORG_ID === organization.id;
+  const amount = testPrice ? 1 : firstChargeAmount(plan, cycle, promo);
   try {
     if (method === "unico") {
       const ref = `${buildExternalReference(organization.id, plan, cycle)}|u${crypto.randomBytes(6).toString("hex")}`;
@@ -78,7 +82,9 @@ export async function startSubscription(
     }
 
     const checkout = await createPreapprovalPlan({
-      reason: promo
+      reason: testPrice
+        ? `Pesito — Plan ${planLabels[plan]} (prueba de cobro)`
+        : promo
         ? `Pesito — Plan ${planLabels[plan]} (primer mes ${planDefinitions[plan].promoLabel}, después ${planDefinitions[plan].priceLabel})`
         : `Pesito — Plan ${planLabels[plan]} (${cycle})`,
       externalReference: buildExternalReference(organization.id, plan, cycle),
@@ -87,7 +93,7 @@ export async function startSubscription(
       backUrl,
     });
     if (!checkout.init_point) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
-    await recordCheckout(organization.id, checkout.id, { plan, cycle, method, promo });
+    await recordCheckout(organization.id, checkout.id, { plan, cycle, method, promo: promo && !testPrice });
     return { url: checkout.init_point, checkoutId: checkout.id };
   } catch (e) {
     const detail = mercadoPagoErrorMessage(e);
