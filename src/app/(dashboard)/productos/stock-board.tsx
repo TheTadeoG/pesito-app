@@ -2,11 +2,13 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowDown, ArrowUp, ChevronRight, ChevronsUpDown, CircleCheck, Download, Lock, Pencil, Search, ShoppingCart, SlidersHorizontal, TrendingDown, Wrench } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, ArrowDown, ArrowUp, ChevronRight, ChevronsUpDown, CircleCheck, Download, Lock, MoreVertical, Pencil, Search, ShoppingCart, SlidersHorizontal, TrendingDown, Wrench } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { PlanPill, upgradeHref } from "@/components/dashboard/pro-locked-card";
 import { cn, formatCurrency } from "@/lib/utils";
 import { planLabels, type Plan } from "@/lib/subscription";
@@ -127,6 +129,7 @@ export function StockBoard({
   onEdit: (id: string) => void;
   onAdjust: (id: string) => void;
 }) {
+  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("");
@@ -497,37 +500,34 @@ export function StockBoard({
                       </td>
                       <td className="hidden whitespace-nowrap px-3 py-2.5 text-right text-muted-foreground lg:table-cell">{formatCurrency(r.value)}</td>
                       <td className="px-3 py-2.5">
-                        <div className="flex items-center justify-end gap-1 sm:gap-1.5">
-                          {(r.status === "out" || r.status === "low") && (
-                            <Link
-                              href={`/compras?producto=${r.id}`}
-                              prefetch={false}
-                              aria-label={`Comprar ${r.name}`}
-                              title="Comprar"
-                              className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-2 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:px-2.5"
-                            >
-                              <ShoppingCart className="h-3.5 w-3.5" />
-                              <span className="hidden xl:inline">Comprar</span>
-                            </Link>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => onAdjust(r.id)}
-                            aria-label={`Ajustar el stock de ${r.name}`}
-                            title="Ajustar stock"
-                            className="inline-flex h-8 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:w-8"
+                        <div className="flex items-center justify-end">
+                          <DropdownMenu
+                            trigger={
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                aria-label={`Acciones de ${r.name}`}
+                                title="Acciones"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            }
                           >
-                            <SlidersHorizontal className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onEdit(r.id)}
-                            aria-label={`Editar ${r.name}`}
-                            title="Editar producto"
-                            className="inline-flex h-8 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:w-8"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
+                            {(r.status === "out" || r.status === "low") && (
+                              <DropdownMenuItem onClick={() => router.push(`/compras?producto=${r.id}`)}>
+                                <ShoppingCart className="h-4 w-4" />
+                                Comprar
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => onAdjust(r.id)}>
+                              <SlidersHorizontal className="h-4 w-4" />
+                              Ajustar stock
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onEdit(r.id)}>
+                              <Pencil className="h-4 w-4" />
+                              Editar producto
+                            </DropdownMenuItem>
+                          </DropdownMenu>
                         </div>
                       </td>
                     </tr>
