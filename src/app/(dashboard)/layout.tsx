@@ -24,6 +24,7 @@ import { cookies } from "next/headers";
 import { isOrgAdmin } from "@/lib/roles";
 import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { loadAlertSettings } from "@/lib/alert-settings";
 import { AlertsProvider } from "@/components/dashboard/alerts-provider";
 import { newDeviceAlert, planAlerts, type BellAlert, type NewDeviceLogin } from "@/lib/bell-alerts";
 
@@ -45,6 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     branchContext,
     { data: newDeviceRows },
     overdueSuppliers,
+    alertSettings,
   ] = await Promise.all([
     getSubscription(supabase, organization.id),
     supabase
@@ -70,6 +72,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       : Promise.resolve({ data: null }),
     // Proveedores con deuda vencida (numerito del menú).
     countOverdueSuppliers(supabase, organization.id),
+    // Qué avisos apagó el negocio y con qué umbrales (Configuración → Avisos).
+    loadAlertSettings(supabase, organization.id),
   ]);
   // Sucursal de la caja abierta (la caja es de la sucursal donde se abrió).
   const registerBranch =
@@ -163,7 +167,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const bell = {
     alerts: bellAlerts,
     cash: openRegister ? { openedAt: openRegister.opened_at, closeTime: organization.cash_close_time ?? null } : null,
-    stockLockedPlan: canUse(subscription, "stockManagement") ? null : featureMinPlan.stockManagement,
+    // Plan que desbloquea cada grupo de avisos del catálogo (null si ya lo tiene).
+    locks: {
+      stock: canUse(subscription, "stockManagement") ? null : featureMinPlan.stockManagement,
+      margin: canUse(subscription, "marginAlerts") ? null : featureMinPlan.marginAlerts,
+      costRise: canUse(subscription, "costRiseAlert") ? null : featureMinPlan.costRiseAlert,
+      idle: canUse(subscription, "lowRotation") ? null : featureMinPlan.lowRotation,
+    },
   };
 
   return (
@@ -172,7 +182,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <WelcomeModal />
       </Suspense>
       <RefreshAfterSale />
-      <AlertsProvider serverAlerts={bell.alerts} cash={bell.cash} stockLockedPlan={bell.stockLockedPlan}>
+      <AlertsProvider serverAlerts={bell.alerts} cash={bell.cash} locks={bell.locks} settings={alertSettings}>
       <div className="flex min-h-screen bg-background">
         <Sidebar
           orgName={organization.name}

@@ -776,6 +776,22 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["feedback"]["Insert"]>;
         Relationships: [];
       };
+      alert_settings: {
+        Row: {
+          org_id: string;
+          settings: Json;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          org_id: string;
+          settings?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["alert_settings"]["Insert"]>;
+        Relationships: [];
+      };
       testimonials: {
         Row: {
           id: string;
@@ -1005,6 +1021,10 @@ export interface Database {
       rate_limit_ip: {
         Args: { p_key: string; p_bucket: string; p_max: number; p_window_seconds: number };
         Returns: boolean;
+      };
+      save_alert_settings: {
+        Args: { p_org_id: string; p_settings: Json };
+        Returns: undefined;
       };
       submit_feedback: {
         Args: { p_org_id: string; p_kind: string; p_message: string; p_page?: string | null };

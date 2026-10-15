@@ -5,7 +5,8 @@ import { getBusinessAlerts, type BusinessAlertCounts } from "@/app/(dashboard)/a
 import { alertPriority, cashAlert, MODULE_HREF, MODULE_LABEL, type AlertModule, type BellAlert, type BellTone } from "@/lib/bell-alerts";
 import { cn } from "@/lib/utils";
 import { countsToAlerts } from "@/lib/alert-counts";
-import type { Plan } from "@/lib/subscription";
+import { alertEnabled, type AlertSettings } from "@/lib/alert-config";
+import type { AlertLocks } from "@/lib/product-alerts";
 
 // Una sola fuente de avisos para todo el sistema: la campana, las insignias
 // del menú lateral, la tira de Productos y su campanita leen de acá, así que
@@ -55,12 +56,15 @@ const tokenOf = (a: BellAlert) => `${a.id}|${a.title}`;
 export function AlertsProvider({
   serverAlerts,
   cash,
-  stockLockedPlan,
+  locks,
+  settings,
   children,
 }: {
   serverAlerts: BellAlert[];
   cash: { openedAt: string; closeTime: string | null } | null;
-  stockLockedPlan: Plan | null;
+  locks: AlertLocks;
+  /** Qué avisos apagó el negocio (Configuración → Avisos). */
+  settings: AlertSettings;
   children: ReactNode;
 }) {
   const [counts, setCounts] = useState<BusinessAlertCounts | null>(null);
@@ -129,12 +133,12 @@ export function AlertsProvider({
 
   const alerts = useMemo(() => {
     void tick;
-    const visibleServer = serverAlerts.filter((a) => !a.dismiss || dismissed[a.id] !== a.dismiss.token);
+    const visibleServer = serverAlerts.filter((a) => (!a.dismiss || dismissed[a.id] !== a.dismiss.token) && alertEnabled(settings, a.id));
     const cashItem = cash ? cashAlert(cash.openedAt, cash.closeTime) : null;
-    const all = [...visibleServer, ...(cashItem ? [cashItem] : []), ...countsToAlerts(counts, stockLockedPlan)];
+    const all = [...visibleServer, ...(cashItem ? [cashItem] : []), ...countsToAlerts(counts, locks, settings)];
     const prio = (a: BellAlert) => (alertPriority(a) === "urgent" ? 0 : 1);
     return all.sort((a, b) => prio(a) - prio(b) || toneOrder[a.tone] - toneOrder[b.tone]);
-  }, [serverAlerts, dismissed, cash, counts, stockLockedPlan, tick]);
+  }, [serverAlerts, dismissed, cash, counts, locks, settings, tick]);
 
   const isSeen = useCallback((a: BellAlert) => !a.pinned && seenMap[a.id] === tokenOf(a), [seenMap]);
 

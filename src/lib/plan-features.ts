@@ -89,6 +89,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Todas las funciones del Plan Gratis +",
       "Ventas ilimitadas",
       "Control de stock, alertas y reposición",
+      "Avisos configurables, de margen bajo y de costos sin actualizar",
       "Cuentas corrientes de clientes y proveedores, con vencimientos y calendario de pagos",
       "Control de caja por empleado",
       "Carga masiva de productos y clientes con Excel",
@@ -111,6 +112,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     features: [
       "Todas las funciones del Plan Esencial +",
       "Aumentos masivos de precios en segundos",
+      "Aviso cuando sube el costo y no actualizaste el precio",
       "Reportes avanzados",
       "Mirá el negocio en vivo, desde casa, en tu celular",
       `Hasta ${products("pro")}, 6 usuarios y 6 cajas`,
@@ -257,6 +259,13 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Bajar tu lista de productos a una planilla de Excel (elegís qué productos y qué columnas)", values: everyPlan },
       { label: "Corregir costo y stock mínimo desde la lista y filtrar por estado del stock", values: everyPlan },
       { label: "Historial de movimientos de stock", values: fromEsencial },
+      {
+        label: "Avisos en la campana y en cada módulo (stock bajo, venta a pérdida, números para revisar, fiado, proveedores y caja), con urgentes y \"visto\"",
+        values: everyPlan,
+      },
+      { label: "Configurar los avisos, y avisos de margen bajo y de costos sin actualizar", values: fromEsencial },
+      { label: "Aviso cuando sube el costo y no actualizaste el precio", values: fromPro },
+      { label: "Aviso de plata parada en productos que no se venden", values: onlyIa },
       {
         label: "Inventarios físicos: contás y el stock se ajusta solo",
         values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },

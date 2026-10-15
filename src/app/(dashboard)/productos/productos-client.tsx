@@ -63,7 +63,6 @@ import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/p
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { ExcelExportDialog, type ExportScope } from "@/app/(dashboard)/productos/excel-export-dialog";
 import { toStockRow, type StockFilterState } from "@/lib/stock-rows";
-import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import type { Plan } from "@/lib/subscription";
 
 type SupplierOption = Pick<Supplier, "id" | "name">;
@@ -161,7 +160,7 @@ type StockSelectState = Exclude<StockFilterState, "nocost">;
 const STOCK_STATE_LABELS: Record<StockSelectState, string> = {
   out: "Sin stock",
   low: "Por agotarse",
-  idle: `Sin ventas ${IDLE_DEFAULT_DAYS} días`,
+  idle: "Sin ventas",
   nomin: "Sin mínimo",
   negative: "Stock negativo",
 };
@@ -182,6 +181,8 @@ export function ProductosClient({
   restockLocked,
   initialStockState,
   initialAlertsOpen,
+  idFilter: idFilterProp,
+  idleDays,
   idleAllowed,
 }: {
   orgId: string;
@@ -210,6 +211,10 @@ export function ProductosClient({
   initialStockState: StockFilterState | null;
   /** Viene del aviso "se vende a pérdida": abre el detalle de alertas. */
   initialAlertsOpen: boolean;
+  /** Viene de un aviso (margen bajo, costo sin actualizar, precio sin actualizar): sólo esos productos. */
+  idFilter: { label: string; ids: string[] } | null;
+  /** Días de "sin ventas" configurados en Avisos (el mismo período que el aviso de plata parada). */
+  idleDays: number;
   /** Plan IA: se puede filtrar por "sin ventas". */
   idleAllowed: boolean;
 }) {
@@ -251,6 +256,8 @@ export function ProductosClient({
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [labelsLockedOpen, setLabelsLockedOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(initialAlertsOpen);
+  const [idFilter, setIdFilter] = useState(idFilterProp);
+  const idFilterSet = useMemo(() => (idFilter ? new Set(idFilter.ids) : null), [idFilter]);
   const [busyId, setBusyId] = useState<string | null>(null);
   // Activar/desactivar se ve al toque en vez de esperar el viaje al server +
   // la revalidación de la página — se corrige solo si la acción falla.
@@ -351,6 +358,7 @@ export function ProductosClient({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
+      if (idFilterSet && !idFilterSet.has(p.id)) return false;
       if (brandFilter && p.brand !== brandFilter) return false;
       if (supplierFilter && p.default_supplier_id !== supplierFilter)
         return false;
@@ -375,6 +383,7 @@ export function ProductosClient({
   }, [
     products,
     query,
+    idFilterSet,
     brandFilter,
     supplierFilter,
     activeFilter,
@@ -513,12 +522,12 @@ export function ProductosClient({
     return null;
   }
 
-  // Los "sin ventas" (Plan IA) se calculan al pedirlos, con el período por defecto (IDLE_DEFAULT_DAYS).
+  // Los "sin ventas" (Plan IA) se calculan al pedirlos, con los días configurados en Avisos.
   async function loadIdle() {
     setIdleLoading(true);
     setIdleError(null);
     try {
-      const res = await loadIdleStock(IDLE_DEFAULT_DAYS);
+      const res = await loadIdleStock(idleDays);
       if (res.rows) setIdleIds(new Set(res.rows.map((r) => r.id)));
       else setIdleError(res.error ?? "No pudimos calcularlo.");
     } catch {
@@ -748,7 +757,7 @@ export function ProductosClient({
                     ] as const
                   ).map(([value, count, lockedBy]) => (
                     <option key={value} value={value} disabled={lockedBy !== null}>
-                      {`${STOCK_STATE_LABELS[value]}${count === null ? "" : ` · ${count}`}${lockedBy ? ` (${lockedBy})` : ""}`}
+                      {`${STOCK_STATE_LABELS[value]}${value === "idle" ? ` ${idleDays} días` : ""}${count === null ? "" : ` · ${count}`}${lockedBy ? ` (${lockedBy})` : ""}`}
                     </option>
                   ))}
                 </Select>
@@ -824,7 +833,7 @@ export function ProductosClient({
       </div>
 
       {/* Filtros activos de stock o de costo (se eligen en Filtros; también llegan desde "Revisar números" de Stock). */}
-      {(stockState || noCostOnly) && (
+      {(stockState || noCostOnly || idFilter) && (
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             {stockState && (
@@ -834,7 +843,17 @@ export function ProductosClient({
                 className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-accent px-3 py-1 text-xs font-medium text-foreground"
                 title="Quitar este filtro"
               >
-                {`Estado del stock: ${STOCK_STATE_LABELS[stockState]} ✕`}
+                {`Estado del stock: ${STOCK_STATE_LABELS[stockState]}${stockState === "idle" ? ` hace ${idleDays} días` : ""} ✕`}
+              </button>
+            )}
+            {idFilter && (
+              <button
+                type="button"
+                onClick={() => setIdFilter(null)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-accent px-3 py-1 text-xs font-medium text-foreground"
+                title="Quitar este filtro"
+              >
+                {`${idFilter.label} ✕`}
               </button>
             )}
             {noCostOnly && (

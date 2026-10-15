@@ -33,7 +33,11 @@ export type PlanFeature =
   | "priceSuggestions"
   | "marketAnalysis"
   | "restockRecommendations"
-  | "lowRotation";
+  | "lowRotation"
+  // Avisos del sistema (campana y módulos).
+  | "alertSettings"
+  | "marginAlerts"
+  | "costRiseAlert";
 
 /** Plan mínimo que habilita cada función (los planes superiores la heredan). */
 export const featureMinPlan: Record<PlanFeature, Plan> = {
@@ -63,6 +67,11 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   marketAnalysis: "ia",
   restockRecommendations: "ia",
   lowRotation: "ia",
+  // Los avisos básicos (stock bajo, venta a pérdida, números para revisar, fiado,
+  // proveedores, caja y plan) son de todos los planes.
+  alertSettings: "esencial",
+  marginAlerts: "esencial",
+  costRiseAlert: "pro",
 };
 
 /** Nombre de la función para los avisos ("… está en el Plan Pro"). */
@@ -93,6 +102,9 @@ export const featureLabels: Record<PlanFeature, string> = {
   marketAnalysis: "El análisis de competidores y del mercado",
   restockRecommendations: "Las recomendaciones de reposición",
   lowRotation: "La detección de productos de baja rotación",
+  alertSettings: "La configuración de los avisos",
+  marginAlerts: "Los avisos de margen bajo y de costos sin actualizar",
+  costRiseAlert: "El aviso de precios sin actualizar cuando sube el costo",
 };
 
 export interface PlanLimits {

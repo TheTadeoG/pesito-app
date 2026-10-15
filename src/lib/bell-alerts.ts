@@ -1,6 +1,7 @@
 import type { Plan, SubscriptionInfo } from "@/lib/subscription";
 import { planLabels } from "@/lib/subscription";
 import { getCashReminder } from "@/lib/cash-reminder";
+import { formatDate } from "@/lib/utils";
 
 // Avisos de la campana de la barra de arriba. Los que ya se saben en cada pantalla
 // (plan, caja, dispositivos, deuda a proveedores) los arma el servidor en el layout y
@@ -104,7 +105,9 @@ export function planAlerts(subscription: SubscriptionInfo, expiringPeriodEnd: st
       pinned: true,
       tone: "danger",
       title: "No pudimos cobrar tu plan",
-      detail: "Actualizá el medio de pago en Mercado Pago para no perder las funciones.",
+      detail: subscription.billing.graceUntil
+        ? `Actualizá el medio de pago en Mercado Pago antes del ${formatDate(subscription.billing.graceUntil)}: si no, el negocio pasa al Plan Gratis.`
+        : "Actualizá el medio de pago en Mercado Pago para no perder las funciones.",
       href: "/planes",
     });
   }

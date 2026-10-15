@@ -13,6 +13,9 @@ import { MovementsTab } from "@/app/(dashboard)/productos/movements-tab";
 import { MarcasTab } from "@/app/(dashboard)/productos/marcas-tab";
 import { CatalogTabs, type CatalogTab } from "@/app/(dashboard)/productos/catalog-tabs";
 import { ModuleAlerts } from "@/components/dashboard/catalog-alerts";
+import { loadAlertSettings } from "@/lib/alert-settings";
+import { thresholdsFrom } from "@/lib/product-alerts";
+import { costRiseIds, lowMarginIds, staleCostIds } from "@/lib/catalog-alert-data";
 
 // "stock" es el nombre viejo de la pestaña (links guardados): con un producto
 // elegido era su historial, sin producto era la lista, que ahora es Productos.
@@ -124,8 +127,24 @@ export default async function ProductosPage({
     }
     content = <MarcasTab brands={brands ?? []} productCountByBrand={productCountByBrand} />;
   } else {
+    // Los avisos de margen y de costos llevan acá, a la lista de esos productos (la misma cuenta
+    // que hace la campana: lib/catalog-alert-data.ts).
+    const thresholds = thresholdsFrom(await loadAlertSettings(supabase, organization.id));
+    let idFilter: { label: string; ids: string[] } | null = null;
+    if (estado === "margen-bajo" && canUse(subscription, "marginAlerts")) {
+      idFilter = { label: `Margen menor al ${thresholds.marginPercent}%`, ids: lowMarginIds(activeProducts, thresholds.marginPercent) };
+    } else if (estado === "costo-viejo" && canUse(subscription, "marginAlerts")) {
+      idFilter = {
+        label: `Costo sin cambios hace más de ${thresholds.staleDays} días`,
+        ids: await staleCostIds(supabase, organization.id, activeProducts, thresholds.staleDays),
+      };
+    } else if (estado === "precio-viejo" && canUse(subscription, "costRiseAlert")) {
+      idFilter = { label: "Costo subió y el precio no", ids: await costRiseIds(supabase, organization.id, activeProducts) };
+    }
     content = (
       <ProductosClient
+        idFilter={idFilter}
+        idleDays={thresholds.idleDays}
         key={`${marca ?? "all"}|${estado ?? ""}|${alertas ?? ""}`}
         initialAlertsOpen={alertas === "1"}
         products={normalized}

@@ -19,6 +19,10 @@ import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 import { TwoFactorCard } from "@/app/(dashboard)/configuracion/two-factor-card";
 import { describeDevice } from "@/lib/login-events";
+import { AlertSettingsManager } from "@/app/(dashboard)/configuracion/alert-settings-manager";
+import { loadAlertSettings } from "@/lib/alert-settings";
+import { ALERT_DEFS } from "@/lib/alert-config";
+import { featureMinPlan } from "@/lib/plan-access";
 
 
 export default async function ConfiguracionPage({
@@ -35,6 +39,11 @@ export default async function ConfiguracionPage({
   }
   const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
+
+  const alertSettings = await loadAlertSettings(supabase, organization.id);
+  const alertFeatureLocks = Object.fromEntries(
+    ALERT_DEFS.map((d) => [d.id, d.feature && !canUse(subscription, d.feature) ? featureMinPlan[d.feature] : null])
+  );
 
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
 
@@ -115,6 +124,22 @@ export default async function ConfiguracionPage({
               <BranchesManager
                 branches={branchContext.branches}
                 canAddBranches={canUse(subscription, "branches")}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {isOrgAdmin(membership.role) && (
+          <Card id="avisos" className="scroll-mt-20">
+            <CardHeader>
+              <CardTitle>Avisos</CardTitle>
+              <CardDescription>Elegí qué avisos querés recibir y con qué umbral, módulo por módulo.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertSettingsManager
+                initial={alertSettings}
+                canConfigure={canUse(subscription, "alertSettings")}
+                featureLocks={alertFeatureLocks}
               />
             </CardContent>
           </Card>

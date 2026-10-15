@@ -1,14 +1,14 @@
 import type { BusinessAlertCounts } from "@/app/(dashboard)/alertas/actions";
 import type { BellAlert } from "@/lib/bell-alerts";
-import { productAlerts } from "@/lib/product-alerts";
+import { alertEnabled, type AlertSettings } from "@/lib/alert-config";
+import { productAlerts, type AlertLocks } from "@/lib/product-alerts";
 import { formatCurrency } from "@/lib/utils";
-import type { Plan } from "@/lib/subscription";
 
-/** Pasa los conteos que trae el servidor (stock, números para revisar y fiado) a avisos. */
-export function countsToAlerts(counts: BusinessAlertCounts | null, stockLockedPlan: Plan | null): BellAlert[] {
+/** Pasa los conteos que trae el servidor (catálogo y fiado) a avisos, sin los que el negocio apagó. */
+export function countsToAlerts(counts: BusinessAlertCounts | null, locks: AlertLocks, settings: AlertSettings): BellAlert[] {
   if (!counts) return [];
-  const out: BellAlert[] = productAlerts(counts.products, stockLockedPlan);
-  if (counts.debtorCount > 0) {
+  const out: BellAlert[] = productAlerts(counts.products, locks, settings);
+  if (alertEnabled(settings, "fiado") && counts.debtorCount > 0) {
     const n = counts.debtorCount;
     out.push({
       id: "fiado",
