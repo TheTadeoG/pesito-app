@@ -22,8 +22,12 @@ import {
   Search,
   ShoppingCart,
   SlidersHorizontal,
+  PackageX,
   Trash2,
+  TrendingDown,
   TrendingUp,
+  Wrench,
+  type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -176,6 +180,7 @@ export function ProductosClient({
   canManageCatalog,
   restockLocked,
   initialStockState,
+  initialAlertsOpen,
   idleAllowed,
 }: {
   orgId: string;
@@ -202,6 +207,8 @@ export function ProductosClient({
   restockLocked: boolean;
   /** Viene de "Revisar números" (Stock): el filtro por estado ya puesto. */
   initialStockState: StockFilterState | null;
+  /** Viene del aviso "se vende a pérdida": abre el detalle de alertas. */
+  initialAlertsOpen: boolean;
   /** Plan IA: se puede filtrar por "sin ventas". */
   idleAllowed: boolean;
 }) {
@@ -242,7 +249,7 @@ export function ProductosClient({
   const [importLockedOpen, setImportLockedOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [labelsLockedOpen, setLabelsLockedOpen] = useState(false);
-  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(initialAlertsOpen);
   const [busyId, setBusyId] = useState<string | null>(null);
   // Activar/desactivar se ve al toque en vez de esperar el viaje al server +
   // la revalidación de la página — se corrige solo si la acción falla.
@@ -1235,10 +1242,7 @@ export function ProductosClient({
       >
         <div className="space-y-5">
           <div>
-            <p className="mb-2 text-sm font-semibold text-foreground">
-              Stock bajo
-              {lowStockProducts.length > 0 && ` (${lowStockProducts.length})`}
-            </p>
+            <AlertTitle icon={PackageX} tone="warning" title="Stock bajo" count={lowStockProducts.length} />
             {lowStockProducts.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Ningún producto está por debajo de su stock mínimo.
@@ -1249,11 +1253,11 @@ export function ProductosClient({
               </PlanLockNote>
             ) : (
               <div>
-                <div className="divide-y divide-border rounded-xl border border-border">
+                <div className="space-y-2">
                   {lowStockTop.map((product) => (
                     <div
                       key={product.id}
-                      className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background/60 px-3.5 py-2.5"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-foreground">
@@ -1311,20 +1315,17 @@ export function ProductosClient({
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-semibold text-foreground">
-              Vendiendo a pérdida
-              {lossProducts.length > 0 && ` (${lossProducts.length})`}
-            </p>
+            <AlertTitle icon={TrendingDown} tone="danger" title="Vendiendo a pérdida" count={lossProducts.length} />
             {lossProducts.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Ningún producto tiene el costo por encima del precio de venta.
               </p>
             ) : (
-              <div className="divide-y divide-border rounded-xl border border-border">
+              <div className="space-y-2">
                 {lossProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background/60 px-3.5 py-2.5"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-foreground">
@@ -1352,6 +1353,50 @@ export function ProductosClient({
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+          <div>
+            <AlertTitle
+              icon={Wrench}
+              tone="info"
+              title="Números para revisar"
+              count={stateCounts.negative + stateCounts.nocost + (stockAlertsLocked ? 0 : stateCounts.nomin)}
+            />
+            {stateCounts.negative + stateCounts.nocost + (stockAlertsLocked ? 0 : stateCounts.nomin) === 0 ? (
+              <p className="text-sm text-muted-foreground">Todos tus productos tienen costo y stock en orden.</p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-1.5">
+                  {stateCounts.negative > 0 && (
+                    <ReviewChip
+                      label={`${stateCounts.negative} con stock negativo`}
+                      onClick={() => {
+                        chooseState("negative");
+                        setAlertsOpen(false);
+                      }}
+                    />
+                  )}
+                  {stateCounts.nocost > 0 && (
+                    <ReviewChip
+                      label={`${stateCounts.nocost} sin costo`}
+                      onClick={() => {
+                        setNoCostOnly(true);
+                        setAlertsOpen(false);
+                      }}
+                    />
+                  )}
+                  {!stockAlertsLocked && stateCounts.nomin > 0 && (
+                    <ReviewChip
+                      label={`${stateCounts.nomin} sin mínimo`}
+                      onClick={() => {
+                        chooseState("nomin");
+                        setAlertsOpen(false);
+                      }}
+                    />
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">Corregirlos mejora tus reportes y avisos.</p>
+              </>
             )}
           </div>
         </div>
@@ -1459,5 +1504,44 @@ export function ProductosClient({
         </div>
       </Dialog>
     </div>
+  );
+}
+
+function AlertTitle({
+  icon: I,
+  tone,
+  title,
+  count,
+}: {
+  icon: LucideIcon;
+  tone: "danger" | "warning" | "info";
+  title: string;
+  count: number;
+}) {
+  const toneClass = {
+    danger: "bg-danger-bg text-danger",
+    warning: "bg-warning-bg text-warning",
+    info: "bg-accent text-accent-foreground",
+  }[tone];
+  return (
+    <div className="mb-2.5 flex items-center gap-2.5">
+      <span className={cn("flex h-8 w-8 items-center justify-center rounded-xl", toneClass)}>
+        <I className="h-4 w-4" />
+      </span>
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      {count > 0 && <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", toneClass)}>{count}</span>}
+    </div>
+  );
+}
+
+function ReviewChip({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+    >
+      {label}
+    </button>
   );
 }

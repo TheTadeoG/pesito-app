@@ -25,9 +25,9 @@ function parseTab(value: string | undefined, producto: string | undefined): Cata
 export default async function ProductosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; producto?: string; marca?: string; estado?: string }>;
+  searchParams: Promise<{ tab?: string; producto?: string; marca?: string; estado?: string; alertas?: string }>;
 }) {
-  const { tab: tabParam, producto, marca, estado } = await searchParams;
+  const { tab: tabParam, producto, marca, estado, alertas } = await searchParams;
   const tab = parseTab(tabParam, producto);
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
@@ -128,7 +128,8 @@ export default async function ProductosPage({
   } else {
     content = (
       <ProductosClient
-        key={`${marca ?? "all"}|${estado ?? ""}`}
+        key={`${marca ?? "all"}|${estado ?? ""}|${alertas ?? ""}`}
+        initialAlertsOpen={alertas === "1"}
         products={normalized}
         brands={brands ?? []}
         suppliers={suppliers ?? []}

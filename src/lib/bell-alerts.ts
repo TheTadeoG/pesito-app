@@ -15,6 +15,10 @@ export interface BellAlert {
   title: string;
   detail?: string;
   href: string;
+  /** Resumen corto para la tira compacta de Productos ("12 stock bajo"). */
+  chip?: string;
+  /** Atajos debajo del aviso (p. ej. "Qué comprar"); el aviso entero lleva a `href`. */
+  actions?: { label: string; href: string }[];
   /** Plan que desbloquea el detalle (la función no está en el plan del negocio). */
   lockedPlan?: Plan;
   /**

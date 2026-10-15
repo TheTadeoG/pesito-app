@@ -30,7 +30,7 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
       fetchAll((from, to) =>
         supabase
           .from("products")
-          .select("id, stock, min_stock, cost")
+          .select("id, stock, min_stock, cost, price")
           .eq("org_id", organization.id)
           .eq("active", true)
           .order("id")
