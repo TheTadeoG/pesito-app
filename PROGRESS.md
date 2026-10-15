@@ -176,7 +176,6 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Espacio: ~55 bytes extra por renglón de historial que viene de un aumento masivo (~0,4 MB por año para un cliente mediano).
 - Historial de precios y costos (menú de cada producto): pestañas "Precio de venta" y "Costo", "Volver a este precio/costo", y etiqueta "Aumento masivo · +13% · Proveedor" en los cambios que vinieron de un aumento. Sin 0039 se ve igual pero sin la etiqueta.
 - Menú de los tres puntos en Productos: se posiciona fijo en pantalla y se abre hacia arriba si no entra (antes agrandaba la tabla con una barra de scroll). Acompaña al botón si la tabla o la página se mueven.
-- Productos (15/10/2026): cada fila tiene un solo botón de tres puntos con todo adentro (Editar, Ajustar stock, Ver movimientos, Historial de precios y costos, Activar/Desactivar y Borrar). Antes el lápiz de Editar iba aparte.
 
 ## Hecho: precio de venta en Compras y ticket en el POS
 
