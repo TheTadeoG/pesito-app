@@ -1121,27 +1121,22 @@ export function ProductosClient({
                         )}
                         <td className="px-4 py-2.5">
                           <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => openEdit(product)}
-                              aria-label="Editar"
-                              title="Editar"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
                             <DropdownMenu
                               trigger={
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  aria-label="Más acciones"
-                                  title="Más acciones"
+                                  aria-label="Acciones del producto"
+                                  title="Acciones"
                                 >
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               }
                             >
+                              <DropdownMenuItem onClick={() => openEdit(product)}>
+                                <Pencil className="h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => setAdjusting(product)}
                               >
