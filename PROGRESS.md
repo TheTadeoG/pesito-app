@@ -348,6 +348,9 @@ Para Pesito (negocio):
 - [ ] Más SEO/GEO: páginas por rubro y ciudad, "alternativas a X" por competidor, glosario.
 - [ ] Copias y exportación completa de datos, visible para el cliente.
 - [ ] Alertas internas de errores (Sentry o similar) y de cobros fallidos o renovaciones rechazadas. Ya avisa por mail si falla el webhook de Mercado Pago (ver "Sesión, landing y avisos del cobro").
+- [ ] Activar el aviso por mail si falla el webhook de Mercado Pago (el código ya está, ver "Sesión, landing y avisos del cobro"): cargar en Vercel `RESEND_API_KEY` y `BILLING_ALERT_EMAIL` (o usar `FEEDBACK_NOTIFY_EMAIL`) y redeployar. Sin eso sólo queda anotado en `billing_events` (topic `alert`).
+- [ ] Borrar `MP_TEST_ORG_ID` de Vercel (Production) cuando terminen las pruebas de cobro; mientras esté cargada, ese negocio paga $15 en vez del precio del plan.
+- [ ] Decidir si, después de pagar desde Configuración → Plan, `/suscribirse/listo` vuelve a Planes en vez de al POS (alta nueva: POS; cliente que ya usaba Pesito: Planes). Hoy siempre va a `/pos`.
 - [ ] Rutina mensual de Claude (a definir con el usuario): revisar competencia de `blog-rankings.ts` y auditar coherencia de textos públicos, en rama con aviso.
 - Orden sugerido: métricas internas, correos del ciclo de vida, factura electrónica por etapas.
 
