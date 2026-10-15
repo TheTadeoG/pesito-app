@@ -1,4 +1,4 @@
-// Fila de producto con su estado de stock: la comparten la pestaña Stock (lista de excepciones),
+// Fila de producto con su estado de stock: la comparten Productos y el reponer,
 // Productos (filtros por estado) y la planilla de Excel. Sin código de servidor: la usa el navegador.
 
 export type StockStatus = "out" | "low" | "ok" | "excess";

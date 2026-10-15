@@ -10,7 +10,7 @@ import { computeIdleStock, parseSalesStats, type IdleStockRow } from "@/lib/prod
 import { IDLE_DAYS_OPTIONS } from "@/lib/idle-days";
 
 /**
- * "Capital parado" de la pestaña Stock para otro período (7, 15, 30, 60 o 90 días). Plan IA:
+ * "Sin ventas" (plata parada) de Productos para otro período (7, 15, 30, 60 o 90 días). Plan IA:
  * `product_sales_stats` lo exige también en la base. No revalida páginas: la tarjeta aplica el resultado.
  */
 export async function loadIdleStock(days: number): Promise<{ rows?: IdleStockRow[]; error?: string }> {

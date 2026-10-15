@@ -109,7 +109,7 @@ export function isNavItemActive(item: NavItem, pathname: string, tabParam: strin
 export const pageTitles: Record<string, { title: string; description: string }> = {
   "/pos": { title: "Punto de Venta", description: "Cobrá tus ventas y armá el carrito." },
   "/compras": { title: "Compras", description: "Registrá el ingreso de mercadería." },
-  "/productos": { title: "Productos", description: "Tu catálogo, el stock y las marcas." },
+  "/productos": { title: "Productos", description: "Tu catálogo con el stock, y los movimientos." },
   "/clientes": { title: "Clientes", description: "Tus clientes y sus cuentas." },
   "/proveedores": {
     title: "Proveedores",

@@ -6,25 +6,20 @@ import { isOrgAdmin } from "@/lib/roles";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan, limitsFor, planForLimit } from "@/lib/plan-access";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
-import {
-  computeIdleStock,
-  computeStockCover,
-  insightsBaseFrom,
-  parseSalesStats,
-  type InsightProduct,
-} from "@/lib/product-insights";
-import { IDLE_DEFAULT_DAYS } from "@/lib/idle-days";
 import { parseStockFilterState } from "@/lib/stock-rows";
 import { TransferButton } from "@/app/(dashboard)/productos/transfer-dialog";
 import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
-import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
+import { MovementsTab } from "@/app/(dashboard)/productos/movements-tab";
 import { MarcasTab } from "@/app/(dashboard)/productos/marcas-tab";
 import { CatalogTabs, type CatalogTab } from "@/app/(dashboard)/productos/catalog-tabs";
 import { CatalogAlerts } from "@/components/dashboard/catalog-alerts";
 import { countProductIssues } from "@/lib/product-alerts";
 
-function parseTab(value: string | undefined): CatalogTab {
-  return value === "stock" || value === "marcas" ? value : "productos";
+// "stock" es el nombre viejo de la pestaña (links guardados): con un producto
+// elegido era su historial, sin producto era la lista, que ahora es Productos.
+function parseTab(value: string | undefined, producto: string | undefined): CatalogTab {
+  if (value === "marcas" || value === "movimientos") return value;
+  return value === "stock" && producto ? "movimientos" : "productos";
 }
 
 export default async function ProductosPage({
@@ -33,7 +28,7 @@ export default async function ProductosPage({
   searchParams: Promise<{ tab?: string; producto?: string; marca?: string; estado?: string }>;
 }) {
   const { tab: tabParam, producto, marca, estado } = await searchParams;
-  const tab = parseTab(tabParam);
+  const tab = parseTab(tabParam, producto);
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const { current: branch, branches } = await getBranchContext();
@@ -55,10 +50,10 @@ export default async function ProductosPage({
           .range(from, to)
       ),
       supabase.from("brands").select("*").eq("org_id", organization.id).order("name"),
-      tab === "productos" || tab === "stock"
+      tab === "productos"
         ? supabase.from("suppliers").select("id, name").eq("org_id", organization.id).order("name")
         : Promise.resolve({ data: [] }),
-      tab === "stock" && !stockLocked
+      tab === "movimientos" && !stockLocked
         ? supabase
             .from("stock_movements")
             .select("id, product_id, type, quantity, reference, created_at")
@@ -85,19 +80,18 @@ export default async function ProductosPage({
   // Se cuenta aunque el plan no tenga gestión de stock: el número en la
   // pestaña invita a verlo (la pestaña muestra con qué plan se desbloquea).
   const issueCounts = countProductIssues(activeProducts);
-  const lowStockCount = issueCounts.low;
 
   let content: React.ReactNode;
-  if (tab === "stock" && stockLocked) {
+  if (tab === "movimientos" && stockLocked) {
     content = (
       <ProLockedCard
-        title="Gestión de stock y reposición"
+        title="Movimientos de stock"
         plan={featureMinPlan.stockManagement}
         preview="list"
-        description="Stock mínimo por producto, aviso de lo que se está acabando, lista para reponer e historial de cada movimiento."
+        description="El historial de cada movimiento de stock (ventas, compras, ajustes y transferencias), con el stock mínimo por producto y el aviso de lo que se está acabando."
       />
     );
-  } else if (tab === "stock") {
+  } else if (tab === "movimientos") {
     // Sin filtrar por activo: un movimiento puede referenciar un producto
     // ya desactivado, y lo necesitamos igual para mostrar/filtrar por SKU.
     const productById = new Map(normalized.map((p) => [p.id, p]));
@@ -117,72 +111,12 @@ export default async function ProductosPage({
     });
     const focusedProduct = producto ? productById.get(producto) : undefined;
 
-    // Plan IA: cuántos días alcanza cada producto (ventas de los últimos 30 días) y la plata
-    // parada en lo que no se vendió en los últimos 30 días (se cambia en la tarjeta). Sin el plan, la base
-    // no devuelve ventas por producto (product_sales_stats pide Plan IA): se ofrece desbloquearlo.
-    const insightsOn = canUse(subscription, "lowRotation");
-    let insights: {
-      cover: Record<string, number | null>;
-      slow: { id: string; name: string; capital: number }[];
-      idleDays: number;
-    } | null = null;
-    if (insightsOn) {
-      try {
-        // Con el período por defecto igual a los 30 días de la cobertura, es una sola consulta.
-        const periods = Array.from(new Set([30, IDLE_DEFAULT_DAYS]));
-        const results = await Promise.all(
-          periods.map((days) =>
-            supabase.rpc("product_sales_stats", {
-              p_org_id: organization.id,
-              p_days: days,
-              p_branch_id: branch?.id ?? null,
-            })
-          )
-        );
-        const stats30 = results[periods.indexOf(30)];
-        const statsIdle = results[periods.indexOf(IDLE_DEFAULT_DAYS)];
-        if (!stats30.error && !statsIdle.error) {
-          const insightProducts: InsightProduct[] = activeProducts.map((p) => ({
-            id: p.id,
-            name: p.name,
-            brand: p.brand,
-            barcode: p.barcode,
-            unit: p.unit,
-            price: p.price,
-            cost: p.cost,
-            stock: p.stock,
-            min_stock: p.min_stock,
-            default_supplier_id: p.default_supplier_id,
-            pack_size: p.pack_size ?? null,
-            created_at: p.created_at,
-          }));
-          const cover = computeStockCover(insightsBaseFrom(insightProducts, parseSalesStats(stats30.data)), 30);
-          const slow = computeIdleStock(insightProducts, parseSalesStats(statsIdle.data), IDLE_DEFAULT_DAYS);
-          insights = {
-            cover: Object.fromEntries(cover),
-            slow,
-            idleDays: IDLE_DEFAULT_DAYS,
-          };
-        }
-      } catch {
-        insights = null;
-      }
-    }
-
     content = (
-      <StockTab
+      <MovementsTab
         key={focusedProduct?.id ?? "all"}
         products={activeProducts}
         movements={normalizedMovements}
-        insights={insights}
-        insightsLockedPlan={insightsOn ? null : featureMinPlan.lowRotation}
-        orgId={organization.id}
-        brands={brands ?? []}
-        barcodeLocked={!canUse(subscription, "barcodeLabels")}
-        suppliers={suppliers ?? []}
-        focusedProduct={
-          focusedProduct ? { id: focusedProduct.id, name: focusedProduct.name } : null
-        }
+        focusedProduct={focusedProduct ? { id: focusedProduct.id, name: focusedProduct.name } : null}
       />
     );
   } else if (tab === "marcas") {
@@ -237,7 +171,7 @@ export default async function ProductosPage({
           )}
         </div>
       )}
-      <CatalogTabs active={tab} lowStockCount={lowStockCount} />
+      <CatalogTabs active={tab} />
       <CatalogAlerts counts={issueCounts} stockLockedPlan={stockLocked ? featureMinPlan.stockManagement : null} />
       {content}
     </div>

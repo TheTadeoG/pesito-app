@@ -14,6 +14,7 @@ import {
   History,
   ImageIcon,
   MoreVertical,
+  Tag,
   Pencil,
   Plus,
   Receipt,
@@ -142,7 +143,7 @@ function SortHeader({
   );
 }
 
-// Mismo criterio que el contador de la pestaña Stock (sólo productos activos).
+// Mismo criterio que el contador de la campana (sólo productos activos).
 const isLowStock = (p: Product) => p.active && p.stock <= p.min_stock;
 
 // Mismo criterio que el aviso "estarías vendiendo a pérdida" del alta/edición.
@@ -504,7 +505,7 @@ export function ProductosClient({
     return null;
   }
 
-  // Los "sin ventas" (Plan IA) se calculan al pedirlos, con el período de la pestaña Stock por defecto.
+  // Los "sin ventas" (Plan IA) se calculan al pedirlos, con el período por defecto (IDLE_DEFAULT_DAYS).
   async function loadIdle() {
     setIdleLoading(true);
     setIdleError(null);
@@ -561,7 +562,7 @@ export function ProductosClient({
     return list;
   })();
 
-  // Cuántos hay en cada estado (sólo productos activos, como en la pestaña Stock).
+  // Cuántos hay en cada estado (sólo productos activos, como en la campana).
   const stateCounts = useMemo(() => {
     const c = { out: 0, low: 0, nocost: 0, nomin: 0, negative: 0 };
     for (const p of products) {
@@ -662,6 +663,10 @@ export function ProductosClient({
               <TrendingUp className="h-4 w-4" />
               Ajustar costos
               {bulkLocked && <Badge tone="accent">Pro</Badge>}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/productos?tab=marcas")}>
+              <Tag className="h-4 w-4" />
+              Marcas
             </DropdownMenuItem>
           </DropdownMenu>
           <Button variant="outline" onClick={() => setShowColumns(true)}>
@@ -1151,7 +1156,7 @@ export function ProductosClient({
                               <DropdownMenuItem
                                 onClick={() =>
                                   router.push(
-                                    `/productos?tab=stock&producto=${product.id}`,
+                                    `/productos?tab=movimientos&producto=${product.id}`,
                                   )
                                 }
                               >

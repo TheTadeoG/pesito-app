@@ -43,7 +43,7 @@ export function productAlerts(counts: ProductIssueCounts, stockLockedPlan: Plan 
       tone: "warning",
       title: n === 1 ? "1 producto con stock bajo" : `${n} productos con stock bajo`,
       detail: stockLockedPlan ? "Desbloqueá el detalle y la reposición con un plan más alto." : "Ya llegaron al mínimo que cargaste.",
-      href: "/productos?tab=stock",
+      href: "/productos?estado=por-agotarse",
       lockedPlan: stockLockedPlan ?? undefined,
     });
   }

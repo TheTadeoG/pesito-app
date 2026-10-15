@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Inventario ahora es la pestaña "Stock" de Productos.
+// Inventario ahora es la lista de Productos (con su stock).
 export default function InventarioPage() {
-  redirect("/productos?tab=stock");
+  redirect("/productos");
 }
