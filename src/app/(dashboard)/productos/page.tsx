@@ -20,6 +20,8 @@ import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { StockTab } from "@/app/(dashboard)/productos/stock-tab";
 import { MarcasTab } from "@/app/(dashboard)/productos/marcas-tab";
 import { CatalogTabs, type CatalogTab } from "@/app/(dashboard)/productos/catalog-tabs";
+import { CatalogAlerts } from "@/components/dashboard/catalog-alerts";
+import { countProductIssues } from "@/lib/product-alerts";
 
 function parseTab(value: string | undefined): CatalogTab {
   return value === "stock" || value === "marcas" ? value : "productos";
@@ -82,7 +84,8 @@ export default async function ProductosPage({
   const activeProducts = normalized.filter((p) => p.active);
   // Se cuenta aunque el plan no tenga gestión de stock: el número en la
   // pestaña invita a verlo (la pestaña muestra con qué plan se desbloquea).
-  const lowStockCount = activeProducts.filter((p) => p.stock <= p.min_stock).length;
+  const issueCounts = countProductIssues(activeProducts);
+  const lowStockCount = issueCounts.low;
 
   let content: React.ReactNode;
   if (tab === "stock" && stockLocked) {
@@ -235,6 +238,7 @@ export default async function ProductosPage({
         </div>
       )}
       <CatalogTabs active={tab} lowStockCount={lowStockCount} />
+      <CatalogAlerts counts={issueCounts} stockLockedPlan={stockLocked ? featureMinPlan.stockManagement : null} />
       {content}
     </div>
   );

@@ -176,6 +176,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Espacio: ~55 bytes extra por renglón de historial que viene de un aumento masivo (~0,4 MB por año para un cliente mediano).
 - Historial de precios y costos (menú de cada producto): pestañas "Precio de venta" y "Costo", "Volver a este precio/costo", y etiqueta "Aumento masivo · +13% · Proveedor" en los cambios que vinieron de un aumento. Sin 0039 se ve igual pero sin la etiqueta.
 - Menú de los tres puntos en Productos: se posiciona fijo en pantalla y se abre hacia arriba si no entra (antes agrandaba la tabla con una barra de scroll). Acompaña al botón si la tabla o la página se mueven.
+- Alertas del catálogo (15/10/2026): `lib/product-alerts.ts` arma stock bajo y "Hay números para revisar" (stock negativo, sin costo, sin mínimo; el mínimo sólo cuenta con gestión de stock) para la campana y para una tira arriba de Productos, Stock y Marcas (`components/dashboard/catalog-alerts.tsx`, calculada en el servidor con los productos que ya trae la página). La ficha "Revisar números" de Stock se sacó: ahora es esa alerta.
 - Stock (15/10/2026): en la tabla de Inventario, cada fila tiene un solo botón de tres puntos con Comprar (sólo con stock bajo o agotado), Ajustar stock y Editar producto (antes eran hasta tres botones sueltos). Productos conserva el lápiz de Editar aparte del menú.
 
 ## Hecho: precio de venta en Compras y ticket en el POS

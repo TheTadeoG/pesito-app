@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowDown, ArrowUp, ChevronRight, ChevronsUpDown, CircleCheck, Download, Lock, MoreVertical, Pencil, Search, ShoppingCart, SlidersHorizontal, TrendingDown, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, ChevronsUpDown, Download, Lock, MoreVertical, Pencil, Search, ShoppingCart, SlidersHorizontal, TrendingDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,8 +96,7 @@ function SortTh({
 }
 
 /**
- * Vista "Inventario" de la pestaña Stock: tres fichas de una línea (reponer, capital parado, revisar
- * números) y una sola tarjeta con la lista de productos: buscador, filtros, chips por estado, barra
+ * Vista "Inventario" de la pestaña Stock: dos fichas de una línea (reponer, capital parado) y una sola tarjeta con la lista de productos: buscador, filtros, chips por estado, barra
  * de salud y tabla paginada. Para editar precios y costos, el catálogo (Productos).
  */
 export function StockBoard({
@@ -142,12 +141,9 @@ export function StockBoard({
   const listRef = useRef<HTMLDivElement>(null);
 
   const counts = useMemo(() => {
-    const c = { out: 0, low: 0, ok: 0, excess: 0, negative: 0, nocost: 0, nomin: 0 };
+    const c = { out: 0, low: 0, ok: 0, excess: 0 };
     for (const r of rows) {
       c[r.status] += 1;
-      if (r.stock < 0) c.negative += 1;
-      if (r.cost === null || r.cost <= 0) c.nocost += 1;
-      if (r.minStock <= 0) c.nomin += 1;
     }
     return c;
   }, [rows]);
@@ -265,8 +261,8 @@ export function StockBoard({
 
   return (
     <div className="space-y-4">
-      {/* Tres fichas de una línea: cada una lleva a la lista o a donde se corrige. */}
-      <div className="grid gap-3 lg:grid-cols-3 [&>*]:min-w-0">
+      {/* Dos fichas de una línea: cada una lleva a la lista. Los números para revisar son un aviso (campana y tira de arriba). */}
+      <div className="grid gap-3 lg:grid-cols-2 [&>*]:min-w-0">
         <div
           className={cn(
             "flex items-center justify-between gap-3 rounded-2xl border px-4 py-3",
@@ -349,44 +345,6 @@ export function StockBoard({
             </button>
           )}
           {idleError && <p className="mt-1 rounded-lg bg-danger-bg px-2.5 py-1 text-xs text-danger">{idleError}</p>}
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card px-4 py-3">
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Wrench className="h-3.5 w-3.5 text-primary" />
-            Revisar números
-          </span>
-          {counts.negative + counts.nocost + counts.nomin === 0 ? (
-            <p className="mt-1.5 flex items-center gap-1.5 text-sm text-success">
-              <CircleCheck className="h-4 w-4" />
-              Todo en orden
-            </p>
-          ) : (
-            <>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {(
-                  [
-                    ["negativo", "con stock negativo", counts.negative],
-                    ["sin-costo", "sin costo", counts.nocost],
-                    ["sin-minimo", "sin mínimo", counts.nomin],
-                  ] as const
-                )
-                  .filter(([, , n]) => n > 0)
-                  .map(([estado, label, n]) => (
-                    <Link
-                      key={estado}
-                      href={`/productos?estado=${estado}`}
-                      prefetch={false}
-                      className="inline-flex items-center gap-0.5 rounded-full bg-warning-bg px-2.5 py-1 text-xs font-semibold text-warning hover:opacity-80"
-                    >
-                      {`${n} ${label}`}
-                      <ChevronRight className="h-3 w-3" />
-                    </Link>
-                  ))}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">Te llevan a Productos para corregirlos</p>
-            </>
-          )}
         </div>
       </div>
 

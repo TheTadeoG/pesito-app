@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PlanPill, upgradeHref } from "@/components/dashboard/pro-locked-card";
 import { getBusinessAlerts, type BusinessAlertCounts } from "@/app/(dashboard)/alertas/actions";
 import { cashAlert, type BellAlert, type BellTone } from "@/lib/bell-alerts";
+import { productAlerts } from "@/lib/product-alerts";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Plan } from "@/lib/subscription";
 
@@ -19,21 +20,10 @@ const toneClass: Record<BellTone, string> = {
   info: "bg-accent text-accent-foreground",
 };
 
-/** Pasa los conteos de stock y fiado a avisos (con el plan que desbloquea el stock, si no lo tiene). */
+/** Pasa los conteos (stock, números para revisar y fiado) a avisos. */
 export function countsToAlerts(counts: BusinessAlertCounts | null, stockLockedPlan: Plan | null): BellAlert[] {
   if (!counts) return [];
-  const out: BellAlert[] = [];
-  if (counts.lowStock > 0) {
-    const n = counts.lowStock;
-    out.push({
-      id: "low-stock",
-      tone: "warning",
-      title: n === 1 ? "1 producto con stock bajo" : `${n} productos con stock bajo`,
-      detail: stockLockedPlan ? "Desbloqueá el detalle y la reposición con un plan más alto." : "Ya llegaron al mínimo que cargaste.",
-      href: "/productos?tab=stock",
-      lockedPlan: stockLockedPlan ?? undefined,
-    });
-  }
+  const out: BellAlert[] = productAlerts(counts.products, stockLockedPlan);
   if (counts.debtorCount > 0) {
     const n = counts.debtorCount;
     out.push({
