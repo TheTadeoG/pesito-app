@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
 import { MFA_COOKIE, SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 // Rutas públicas: landing + todo lo de "Recursos" (SEO/GEO, pensado para
 // alguien que todavía no nos conoce y no tiene por qué estar logueado) más
@@ -96,6 +97,33 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/login";
     url.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(url);
+  }
+
+  // Con la sesión iniciada, /login y /registro no tienen nada que mostrar:
+  // van adentro (a ?next= si es una ruta interna). /registro con un plan
+  // elegido en precios va directo a pagarlo. Con ?error= o ?restablecida=
+  // (vuelta de Google, del mail o de cambiar la clave) se muestra la pantalla
+  // para que se vea el aviso.
+  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/registro")) {
+    const params = request.nextUrl.searchParams;
+    if (!params.get("error") && !params.get("restablecida")) {
+      const url = request.nextUrl.clone();
+      url.search = "";
+      const plan = params.get("plan");
+      if (request.nextUrl.pathname === "/registro" && (plan === "esencial" || plan === "pro" || plan === "ia")) {
+        url.pathname = "/suscribirse";
+        url.searchParams.set("plan", plan);
+        url.searchParams.set("ciclo", params.get("anual") === "1" ? "anual" : "mensual");
+      } else {
+        const target = new URL(
+          request.nextUrl.pathname === "/login" ? safeNextPath(params.get("next"), "/pos") : "/pos",
+          request.url
+        );
+        url.pathname = target.pathname;
+        url.search = target.search;
+      }
+      return NextResponse.redirect(url);
+    }
   }
 
   // Verificación en dos pasos: con la app de códigos activada y la sesión

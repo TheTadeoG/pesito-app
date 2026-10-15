@@ -301,6 +301,10 @@ export function CheckoutView(props: CheckoutViewProps) {
 
               {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
 
+              <p className="text-center text-xs text-muted-foreground">
+                Al terminar de pagar, tocá «Ir al sitio del vendedor» para volver a Pesito.
+              </p>
+
               <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
                 <Lock className="h-3.5 w-3.5 shrink-0" />
                 Pago seguro procesado por Mercado Pago · Comprobante por email

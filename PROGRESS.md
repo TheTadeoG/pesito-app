@@ -296,6 +296,14 @@ Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados
 - `MP_TEST_ORG_ID` (opcional, `billing-actions.ts`): el negocio con ese id paga $15 (mínimo de Mercado Pago; menos da "Cannot pay an amount lower than $15.00") el plan mensual con débito automático, para probar un cobro real. Sin promo, el monto no sube solo. Vacío en el uso normal; borrar la variable al terminar de probar.
 - El nombre que se ve arriba en el checkout de Mercado Pago es el de la cuenta vendedora (razón social), no sale del código: se cambia en el perfil de la cuenta, si Mercado Pago lo permite.
 
+## Hecho: sesión, landing y avisos del cobro (15/10/2026)
+
+- Con sesión iniciada, `/login` y `/registro` van adentro (`lib/supabase/middleware.ts`): `/login` a `?next=` (`safeNextPath`) o `/pos`; `/registro?plan=&anual=` directo a `/suscribirse?plan=&ciclo=`; el resto de `/registro` a `/pos`. Con `?error=` o `?restablecida=` se muestra la pantalla igual, para que se vea el aviso.
+- Landing: `AuthSwitch` (`components/marketing/auth-switch.tsx`) mira en el navegador si hay cookie `sb-*-auth-token` y cambia "Ingresar / Empezar gratis" por "Ir a Pesito" (barra y botón principal). La página sigue estática (no lee la sesión en el servidor, para no perder caché ni PageSpeed) y sin sesión se ve igual que para Google y las IA. Los botones de precios llevan a `/registro?plan=`, que con sesión salta al pago. El pie sigue diciendo "Ingresar".
+- Pantalla de pago: aviso "Al terminar de pagar, tocá «Ir al sitio del vendedor» para volver a Pesito" (Mercado Pago deja ese link chico debajo de "Ir a tus suscripciones").
+- `lib/billing-alerts.ts`: si el webhook de Mercado Pago responde 500, o llega con `x-signature` que no coincide (casi seguro `MP_WEBHOOK_SECRET` mal cargada), se anota en `billing_events` (topic `alert`) y llega un mail (`BILLING_ALERT_EMAIL`, o `FEEDBACK_NOTIFY_EMAIL`; necesita `RESEND_API_KEY`), uno por tipo cada 30 min.
+- Pendiente de decidir: que después de pagar desde Configuración → Plan vuelva a Planes en vez de al POS (hoy `/suscribirse/listo` siempre va a `/pos`).
+
 ## Funciones pendientes (tasklist)
 
 Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: controlarla con `canUse` (ya tiene su plan en `featureMinPlan`), sacarle el "Pronto" en `plan-features.ts` (cards y `planComparison`), `faq-data.ts`, blog y páginas por rubro.
@@ -339,7 +347,7 @@ Para Pesito (negocio):
 - [ ] Programa de referidos (un mes gratis por traer otro negocio).
 - [ ] Más SEO/GEO: páginas por rubro y ciudad, "alternativas a X" por competidor, glosario.
 - [ ] Copias y exportación completa de datos, visible para el cliente.
-- [ ] Alertas internas de errores y de cobros (Sentry o similar; aviso si falla el webhook de Mercado Pago).
+- [ ] Alertas internas de errores (Sentry o similar) y de cobros fallidos o renovaciones rechazadas. Ya avisa por mail si falla el webhook de Mercado Pago (ver "Sesión, landing y avisos del cobro").
 - [ ] Rutina mensual de Claude (a definir con el usuario): revisar competencia de `blog-rankings.ts` y auditar coherencia de textos públicos, en rama con aviso.
 - Orden sugerido: métricas internas, correos del ciclo de vida, factura electrónica por etapas.
 

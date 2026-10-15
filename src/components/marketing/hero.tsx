@@ -5,6 +5,7 @@ import { HeroPanel } from "@/components/marketing/hero-panel";
 import { HeroSides } from "@/components/marketing/hero-sides";
 import { SaleProvider } from "@/components/marketing/hero-sale";
 import { AnchorLink } from "@/components/marketing/anchor-link";
+import { AuthSwitch } from "@/components/marketing/auth-switch";
 
 const trust = ["Plan Gratis para siempre", "Sin tarjeta", "14 días de Plan Pro de regalo"];
 
@@ -36,12 +37,24 @@ export function Hero() {
             className="fx-up mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-center"
             style={{ animationDelay: "150ms" }}
           >
-            <Link href="/registro">
-              <Button size="lg" variant="primary" className="h-[54px] w-full px-8 text-[17px] font-bold sm:w-auto">
-                Empezar gratis
-                <ArrowRight className="h-[18px] w-[18px]" />
-              </Button>
-            </Link>
+            <AuthSwitch
+              guest={
+                <Link href="/registro">
+                  <Button size="lg" variant="primary" className="h-[54px] w-full px-8 text-[17px] font-bold sm:w-auto">
+                    Empezar gratis
+                    <ArrowRight className="h-[18px] w-[18px]" />
+                  </Button>
+                </Link>
+              }
+              member={
+                <Link href="/pos">
+                  <Button size="lg" variant="primary" className="h-[54px] w-full px-8 text-[17px] font-bold sm:w-auto">
+                    Ir a Pesito
+                    <ArrowRight className="h-[18px] w-[18px]" />
+                  </Button>
+                </Link>
+              }
+            />
             <AnchorLink href="#funciones">
               <Button size="lg" variant="heroGhost" className="h-[54px] w-full px-8 text-[17px] sm:w-auto">
                 Ver qué hace Pesito

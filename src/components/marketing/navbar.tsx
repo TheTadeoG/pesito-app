@@ -6,6 +6,7 @@ import { AnchorLink } from "@/components/marketing/anchor-link";
 import { LogoIcon } from "@/components/marketing/logo-icon";
 import { Wordmark } from "@/components/marketing/wordmark";
 import { InfoMenu } from "@/components/marketing/info-menu";
+import { AuthSwitch } from "@/components/marketing/auth-switch";
 
 const links = [
   { href: "#funciones", label: "Funciones" },
@@ -41,17 +42,30 @@ export function Navbar() {
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <ThemeToggle />
-          <Link href="/login">
-            <Button variant="ghost" size="sm" aria-label="Ingresar">
-              <LogIn className="h-4 w-4 sm:hidden" />
-              <span className="hidden sm:inline">Ingresar</span>
-            </Button>
-          </Link>
-          <Link href="/registro">
-            <Button size="sm" className="whitespace-nowrap">
-              Empezar gratis
-            </Button>
-          </Link>
+          <AuthSwitch
+            guest={
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm" aria-label="Ingresar">
+                    <LogIn className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Ingresar</span>
+                  </Button>
+                </Link>
+                <Link href="/registro">
+                  <Button size="sm" className="whitespace-nowrap">
+                    Empezar gratis
+                  </Button>
+                </Link>
+              </>
+            }
+            member={
+              <Link href="/pos">
+                <Button size="sm" className="whitespace-nowrap">
+                  Ir a Pesito
+                </Button>
+              </Link>
+            }
+          />
         </div>
       </div>
     </header>

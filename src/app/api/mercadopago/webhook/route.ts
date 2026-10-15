@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { MercadoPagoError, verifyWebhookSignature } from "@/lib/mercadopago";
 import { syncFromMercadoPago } from "@/lib/billing";
+import { alertBilling } from "@/lib/billing-alerts";
 
 // Avisos de Mercado Pago (suscripciones y sus cobros). Se verifica la firma
 // (MP_WEBHOOK_SECRET) y después se consulta la API con nuestro token: lo
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest) {
     dataId,
   });
   if (signature === false) {
+    // Sin x-signature es ruido de internet; con firma que no coincide casi
+    // seguro es MP_WEBHOOK_SECRET mal cargada: se avisa.
+    if (request.headers.get("x-signature")) await alertBilling("webhook_firma", { topic, dataId });
     return NextResponse.json({ error: "firma inválida" }, { status: 401 });
   }
   if (!dataId) return NextResponse.json({ ok: true, ignored: "sin id" });
@@ -36,6 +40,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, ignored: "no existe en Mercado Pago" });
     }
     console.error("Webhook de Mercado Pago", topic, dataId, e);
+    await alertBilling("webhook_error", {
+      topic,
+      dataId,
+      error: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json({ error: "no pudimos procesarlo" }, { status: 500 });
   }
 }
