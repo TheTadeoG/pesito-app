@@ -1,5 +1,6 @@
 "use client";
 
+import { ModuleBadge } from "@/components/dashboard/alerts-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, Lock, Settings2, ShoppingCart, Wallet } from "lucide-react";
@@ -199,6 +200,7 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
         >
           {!(showHints && !closing) && <Wallet className="h-4 w-4 shrink-0" />}
           {closing ? "Cerrar caja" : "Caja"}
+          <ModuleBadge module="caja" />
           {!closing && <AltHint href="/caja" className="border-white/40 bg-transparent text-white opacity-80" />}
         </Link>
       </div>

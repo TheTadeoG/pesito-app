@@ -1,16 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
   Bell,
+  Check,
+  CheckCheck,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   CreditCard,
   HandCoins,
   Info,
   PackageX,
+  RotateCcw,
+  Settings2,
   ShieldAlert,
   Sparkles,
   TrendingDown,
@@ -21,13 +26,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlanPill, upgradeHref } from "@/components/dashboard/pro-locked-card";
-import { getBusinessAlerts, type BusinessAlertCounts } from "@/app/(dashboard)/alertas/actions";
-import { cashAlert, type BellAlert, type BellTone } from "@/lib/bell-alerts";
-import { productAlerts } from "@/lib/product-alerts";
-import { cn, formatCurrency } from "@/lib/utils";
-import type { Plan } from "@/lib/subscription";
-
-const STALE_MS = 5 * 60 * 1000;
+import { useAlerts } from "@/components/dashboard/alerts-provider";
+import { alertPriority, type BellAlert, type BellTone } from "@/lib/bell-alerts";
+import { cn } from "@/lib/utils";
 
 const toneIcon: Record<BellTone, LucideIcon> = { danger: AlertTriangle, warning: AlertTriangle, info: Info };
 const toneClass: Record<BellTone, string> = {
@@ -35,23 +36,6 @@ const toneClass: Record<BellTone, string> = {
   warning: "bg-warning-bg text-warning",
   info: "bg-accent text-accent-foreground",
 };
-
-/** Pasa los conteos (stock, números para revisar y fiado) a avisos. */
-export function countsToAlerts(counts: BusinessAlertCounts | null, stockLockedPlan: Plan | null): BellAlert[] {
-  if (!counts) return [];
-  const out: BellAlert[] = productAlerts(counts.products, stockLockedPlan);
-  if (counts.debtorCount > 0) {
-    const n = counts.debtorCount;
-    out.push({
-      id: "fiado",
-      tone: "info",
-      title: `Te deben ${formatCurrency(counts.debtTotal)} en fiado`,
-      detail: n === 1 ? "De 1 cliente." : `De ${n} clientes.`,
-      href: "/clientes",
-    });
-  }
-  return out;
-}
 
 // Un ícono propio por tipo de aviso (se reconoce de un vistazo); sin uno, el de su urgencia.
 const kindIcon: Record<string, LucideIcon> = {
@@ -75,8 +59,99 @@ const toneAccent: Record<BellTone, string> = {
   info: "border-l-primary",
 };
 
-/** Lista de avisos (sin la lógica de carga): el contenido de la campana y de la tira de Productos. */
-export function AlertsPanel({ alerts, onNavigate }: { alerts: BellAlert[]; onNavigate?: (alert: BellAlert) => void }) {
+function AlertCard({ alert: a, seen, onNavigate }: { alert: BellAlert; seen: boolean; onNavigate?: (a: BellAlert) => void }) {
+  const { markSeen, unmarkSeen } = useAlerts();
+  const Icon = kindIcon[a.id] ?? toneIcon[a.tone];
+  const href = a.lockedPlan ? upgradeHref(a.lockedPlan) : a.href;
+  const canMark = !a.pinned && !a.lockedPlan;
+  return (
+    <li
+      className={cn(
+        "overflow-hidden rounded-xl border border-l-[3px] border-border bg-background/60",
+        toneAccent[a.tone],
+        seen && "opacity-60"
+      )}
+    >
+      <Link
+        href={href}
+        prefetch={false}
+        onClick={() => onNavigate?.(a)}
+        className="group flex items-start gap-3 px-3 py-3 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+      >
+        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", toneClass[a.tone])}>
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
+            {a.title}
+            {a.lockedPlan && <PlanPill plan={a.lockedPlan} />}
+          </span>
+          {a.detail && <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{a.detail}</span>}
+        </span>
+        <ChevronRight className="mt-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+      </Link>
+      {((a.actions && a.actions.length > 0 && !a.lockedPlan) || canMark) && (
+        <div className="flex flex-wrap items-center gap-1.5 px-3 pb-3 pl-[3.75rem]">
+          {!a.lockedPlan &&
+            a.actions?.map((act) => (
+              <Link
+                key={act.href + act.label}
+                href={act.href}
+                prefetch={false}
+                onClick={() => onNavigate?.(a)}
+                className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+              >
+                {act.label}
+              </Link>
+            ))}
+          {canMark && (
+            <button
+              type="button"
+              onClick={() => (seen ? unmarkSeen(a) : markSeen(a))}
+              className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title={seen ? "Volver a avisarme" : "Ya lo vi: no lo cuentes hasta que cambie"}
+            >
+              {seen ? <RotateCcw className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+              {seen ? "Volver a avisar" : "Visto"}
+            </button>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
+function GroupTitle({ children, count, tone }: { children: string; count: number; tone?: BellTone }) {
+  return (
+    <p className="flex items-center gap-1.5 px-1 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      {tone && <span className={cn("h-1.5 w-1.5 rounded-full", tone === "danger" ? "bg-danger" : "bg-warning")} />}
+      {children}
+      <span className="font-medium normal-case tracking-normal">{`· ${count}`}</span>
+    </p>
+  );
+}
+
+/**
+ * Lista de avisos por urgencia: Urgentes, No urgentes y Vistos (plegados). La usan la campana
+ * y la tira de cada módulo con los avisos que les tocan.
+ */
+export function AlertList({
+  alerts,
+  onNavigate,
+  className,
+}: {
+  alerts: BellAlert[];
+  onNavigate?: (alert: BellAlert) => void;
+  className?: string;
+}) {
+  const { markAllSeen, seen: seenAll } = useAlerts();
+  const [showSeen, setShowSeen] = useState(false);
+  const seenIds = new Set(seenAll.map((a) => a.id));
+  const unseen = alerts.filter((a) => !seenIds.has(a.id));
+  const seen = alerts.filter((a) => seenIds.has(a.id));
+  const urgent = unseen.filter((a) => alertPriority(a) === "urgent");
+  const normal = unseen.filter((a) => alertPriority(a) !== "urgent");
+
   if (alerts.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
@@ -89,90 +164,86 @@ export function AlertsPanel({ alerts, onNavigate }: { alerts: BellAlert[]; onNav
     );
   }
   return (
-    <ul className="max-h-[min(26rem,70vh)] space-y-2 overflow-y-auto p-2">
-      {alerts.map((a) => {
-        const Icon = kindIcon[a.id] ?? toneIcon[a.tone];
-        const href = a.lockedPlan ? upgradeHref(a.lockedPlan) : a.href;
-        return (
-          <li
-            key={a.id}
-            className={cn("overflow-hidden rounded-xl border border-l-[3px] border-border bg-background/60", toneAccent[a.tone])}
+    <div className={cn("max-h-[min(26rem,70vh)] overflow-y-auto p-2", className)}>
+      {unseen.length === 0 && (
+        <p className="flex items-center gap-2 px-2 py-4 text-sm text-muted-foreground">
+          <CheckCheck className="h-4 w-4 text-success" />
+          Viste todos los avisos.
+        </p>
+      )}
+      {urgent.length > 0 && (
+        <section>
+          <GroupTitle count={urgent.length} tone="danger">
+            Urgentes
+          </GroupTitle>
+          <ul className="space-y-2">
+            {urgent.map((a) => (
+              <AlertCard key={a.id} alert={a} seen={false} onNavigate={onNavigate} />
+            ))}
+          </ul>
+        </section>
+      )}
+      {normal.length > 0 && (
+        <section className={urgent.length > 0 ? "mt-3" : undefined}>
+          <GroupTitle count={normal.length} tone="warning">
+            No urgentes
+          </GroupTitle>
+          <ul className="space-y-2">
+            {normal.map((a) => (
+              <AlertCard key={a.id} alert={a} seen={false} onNavigate={onNavigate} />
+            ))}
+          </ul>
+        </section>
+      )}
+      <div className="mt-2 flex items-center justify-between gap-2 px-1">
+        {seen.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setShowSeen((v) => !v)}
+            aria-expanded={showSeen}
+            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
-            <Link
-              href={href}
-              prefetch={false}
-              onClick={() => onNavigate?.(a)}
-              className="group flex items-start gap-3 px-3 py-3 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
-            >
-              <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", toneClass[a.tone])}>
-                <Icon className="h-[18px] w-[18px]" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
-                  {a.title}
-                  {a.lockedPlan && <PlanPill plan={a.lockedPlan} />}
-                </span>
-                {a.detail && <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{a.detail}</span>}
-              </span>
-              <ChevronRight className="mt-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            {a.actions && a.actions.length > 0 && !a.lockedPlan && (
-              <div className="flex flex-wrap gap-1.5 px-3 pb-3 pl-[3.75rem]">
-                {a.actions.map((act) => (
-                  <Link
-                    key={act.href + act.label}
-                    href={act.href}
-                    prefetch={false}
-                    onClick={() => onNavigate?.(a)}
-                    className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
-                  >
-                    {act.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showSeen && "rotate-180")} />
+            {`Vistos (${seen.length})`}
+          </button>
+        ) : (
+          <span />
+        )}
+        {unseen.filter((a) => !a.pinned && !a.lockedPlan).length > 1 && (
+          <button
+            type="button"
+            onClick={markAllSeen}
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            <CheckCheck className="h-3.5 w-3.5" />
+            Marcar todo como visto
+          </button>
+        )}
+      </div>
+      {showSeen && seen.length > 0 && (
+        <ul className="mt-2 space-y-2">
+          {seen.map((a) => (
+            <AlertCard key={a.id} alert={a} seen onNavigate={onNavigate} />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
 /**
- * Campana de la barra de arriba: avisos del negocio (plan, caja, dispositivos nuevos,
- * deuda con proveedores, stock bajo y fiado). El número rojo cuenta sólo lo que se
- * puede atender hoy; lo que está fuera del plan se ve igual en la lista, con el plan
- * que lo desbloquea.
+ * Campana de la barra de arriba: todos los avisos del negocio por urgencia. El número es la
+ * cantidad de AVISOS sin ver (la suma de las insignias del menú lateral); es rojo si alguno es
+ * urgente. Lo que está fuera del plan se ve igual en la lista, con el plan que lo desbloquea.
  */
-export function AlertsBell({
-  serverAlerts,
-  cash,
-  stockLockedPlan,
-}: {
-  serverAlerts: BellAlert[];
-  cash: { openedAt: string; closeTime: string | null } | null;
-  stockLockedPlan: Plan | null;
-}) {
+export function AlertsBell() {
+  const { alerts, total, urgentTotal, refresh } = useAlerts();
   const [open, setOpen] = useState(false);
-  const [counts, setCounts] = useState<BusinessAlertCounts | null>(null);
-  const loadedAt = useRef(0);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async () => {
-    loadedAt.current = Date.now();
-    const next = await getBusinessAlerts();
-    if (next) setCounts(next);
-  }, []);
-
-  // Una vez al entrar (sin apurar la carga de la pantalla) y al abrir si pasaron unos minutos.
   useEffect(() => {
-    const id = window.setTimeout(load, 1500);
-    return () => window.clearTimeout(id);
-  }, [load]);
-
-  useEffect(() => {
-    if (open && Date.now() - loadedAt.current > STALE_MS) void load();
-  }, [open, load]);
+    if (open) refresh();
+  }, [open, refresh]);
 
   useEffect(() => {
     if (!open) return;
@@ -190,68 +261,26 @@ export function AlertsBell({
     };
   }, [open]);
 
-  // Avisos que se descartan al abrirlos (ver BellAlert.dismiss): se leen del navegador.
-  const [dismissed, setDismissed] = useState<Record<string, string>>({});
-  useEffect(() => {
-    const found: Record<string, string> = {};
-    for (const a of serverAlerts) {
-      if (!a.dismiss) continue;
-      try {
-        const stored = window.localStorage.getItem(a.dismiss.key);
-        if (stored) found[a.id] = stored;
-      } catch {
-        // sin almacenamiento: el aviso se ve siempre
-      }
-    }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDismissed(found);
-  }, [serverAlerts]);
-
-  const dismissAlert = useCallback((a: BellAlert) => {
-    if (!a.dismiss) return;
-    const { key, token } = a.dismiss;
-    try {
-      window.localStorage.setItem(key, token);
-    } catch {
-      // ignore
-    }
-    setDismissed((d) => ({ ...d, [a.id]: token }));
-  }, []);
-
-  const alerts = useMemo(() => {
-    const visibleServer = serverAlerts.filter((a) => !a.dismiss || dismissed[a.id] !== a.dismiss.token);
-    const cashItem = cash ? cashAlert(cash.openedAt, cash.closeTime) : null;
-    const order: Record<BellTone, number> = { danger: 0, warning: 1, info: 2 };
-    return [...visibleServer, ...(cashItem ? [cashItem] : []), ...countsToAlerts(counts, stockLockedPlan)].sort(
-      (a, b) => order[a.tone] - order[b.tone]
-    );
-    // El aviso de la caja depende de la hora: se recalcula cada vez que se abre.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serverAlerts, dismissed, cash, counts, stockLockedPlan, open]);
-
-  const actionable = alerts.filter((a) => !a.lockedPlan).length;
-  const urgent = alerts.some((a) => a.tone === "danger" && !a.lockedPlan);
-
   return (
     <div ref={rootRef} className="relative">
       <Button
         variant="outline"
         size="icon"
-        aria-label={actionable > 0 ? `Avisos (${actionable})` : "Avisos"}
+        aria-label={total > 0 ? `Avisos (${total})` : "Avisos"}
         aria-haspopup="dialog"
         aria-expanded={open}
         className={cn("relative", open && "border-primary")}
         onClick={() => setOpen((v) => !v)}
       >
         <Bell className="h-4 w-4" />
-        {actionable > 0 && (
+        {total > 0 && (
           <span
             className={cn(
               "absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white",
-              urgent ? "bg-danger" : "bg-warning"
+              urgentTotal > 0 ? "bg-danger" : "bg-warning"
             )}
           >
-            {actionable > 9 ? "9+" : actionable}
+            {total}
           </span>
         )}
       </Button>
@@ -260,23 +289,34 @@ export function AlertsBell({
         <div
           role="dialog"
           aria-label="Avisos"
-          className="fixed inset-x-3 top-[4.25rem] z-50 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[22rem]"
+          className="fixed inset-x-3 top-[4.25rem] z-50 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[24rem]"
         >
           <div className="flex items-center justify-between gap-2 px-4 pb-1 pt-3.5">
             <p className="text-sm font-semibold text-foreground">Avisos</p>
-            {actionable > 0 && (
-              <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", urgent ? "bg-danger-bg text-danger" : "bg-warning-bg text-warning")}>
-                {actionable === 1 ? "1 para atender" : `${actionable} para atender`}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {total > 0 && (
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                    urgentTotal > 0 ? "bg-danger-bg text-danger" : "bg-warning-bg text-warning"
+                  )}
+                >
+                  {urgentTotal > 0 ? `${urgentTotal} urgente${urgentTotal === 1 ? "" : "s"} · ${total} en total` : `${total} sin ver`}
+                </span>
+              )}
+              <Link
+                href="/configuracion?tab=avisos"
+                prefetch={false}
+                onClick={() => setOpen(false)}
+                aria-label="Configurar avisos"
+                title="Configurar avisos"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Settings2 className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
-          <AlertsPanel
-            alerts={alerts}
-            onNavigate={(a) => {
-              dismissAlert(a);
-              setOpen(false);
-            }}
-          />
+          <AlertList alerts={alerts} onNavigate={() => setOpen(false)} />
         </div>
       )}
     </div>

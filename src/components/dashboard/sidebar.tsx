@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { navSections, isNavItemActive, type NavItem, type NavSection } from "@/lib/nav";
 import type { Plan } from "@/lib/subscription";
+import { ModuleBadge } from "@/components/dashboard/alerts-provider";
 import { AltHint } from "@/components/dashboard/alt-hint";
 import { PlanLine } from "@/components/dashboard/plan-line";
 import { isOrgAdmin } from "@/lib/roles";
@@ -32,7 +33,6 @@ interface SidebarProps {
   /** Funciones que el plan no incluye, con el plan que las trae ("Pro"). */
   lockedFeatures: Partial<Record<PlanFeature, string>>;
   /** Numerito rojo por ruta (ej. proveedores con deuda vencida). 0 no se muestra. */
-  alerts?: Record<string, number>;
   /** Hora de cierre del negocio, para avisar en el bloque de la caja. */
   closeTime?: string | null;
 }
@@ -46,7 +46,6 @@ export function Sidebar({
   cashRegister,
   branch,
   lockedFeatures,
-  alerts = {},
   closeTime = null,
 }: SidebarProps) {
   const router = useRouter();
@@ -89,15 +88,7 @@ export function Sidebar({
               {badge}
             </span>
           )}
-          {(alerts[item.href] ?? 0) > 0 && (
-            <span
-              className="min-w-5 rounded-full bg-danger px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
-              title="Con deuda vencida"
-              aria-label={`${alerts[item.href]} con deuda vencida`}
-            >
-              {alerts[item.href]}
-            </span>
-          )}
+          <ModuleBadge href={item.href} />
           <AltHint href={item.href} />
         </span>
       </Link>

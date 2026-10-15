@@ -12,8 +12,7 @@ import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { MovementsTab } from "@/app/(dashboard)/productos/movements-tab";
 import { MarcasTab } from "@/app/(dashboard)/productos/marcas-tab";
 import { CatalogTabs, type CatalogTab } from "@/app/(dashboard)/productos/catalog-tabs";
-import { CatalogAlerts } from "@/components/dashboard/catalog-alerts";
-import { countProductIssues } from "@/lib/product-alerts";
+import { ModuleAlerts } from "@/components/dashboard/catalog-alerts";
 
 // "stock" es el nombre viejo de la pestaña (links guardados): con un producto
 // elegido era su historial, sin producto era la lista, que ahora es Productos.
@@ -79,7 +78,6 @@ export default async function ProductosPage({
   const activeProducts = normalized.filter((p) => p.active);
   // Se cuenta aunque el plan no tenga gestión de stock: el número en la
   // pestaña invita a verlo (la pestaña muestra con qué plan se desbloquea).
-  const issueCounts = countProductIssues(activeProducts);
 
   let content: React.ReactNode;
   if (tab === "movimientos" && stockLocked) {
@@ -173,7 +171,7 @@ export default async function ProductosPage({
         </div>
       )}
       <CatalogTabs active={tab} />
-      <CatalogAlerts counts={issueCounts} stockLockedPlan={stockLocked ? featureMinPlan.stockManagement : null} />
+      <ModuleAlerts module="productos" />
       {content}
     </div>
   );

@@ -43,6 +43,7 @@ export function productAlerts(counts: ProductIssueCounts, stockLockedPlan: Plan 
     const n = counts.low;
     out.push({
       id: "low-stock",
+      module: "productos",
       tone: "warning",
       title: n === 1 ? "1 producto con stock bajo" : `${n} productos con stock bajo`,
       chip: `${n} con stock bajo`,
@@ -57,6 +58,7 @@ export function productAlerts(counts: ProductIssueCounts, stockLockedPlan: Plan 
     const n = counts.loss;
     out.push({
       id: "selling-at-loss",
+      module: "productos",
       tone: "danger",
       title: n === 1 ? "1 producto se vende a pérdida" : `${n} productos se venden a pérdida`,
       chip: `${n} a pérdida`,
@@ -73,6 +75,7 @@ export function productAlerts(counts: ProductIssueCounts, stockLockedPlan: Plan 
   if (parts.length > 0) {
     out.push({
       id: "review-numbers",
+      module: "productos",
       tone: counts.negative > 0 ? "warning" : "info",
       title: "Hay números para revisar",
       chip: `${counts.negative + counts.noCost + noMin} para revisar`,

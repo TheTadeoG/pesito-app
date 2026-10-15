@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
+import { useAlerts } from "@/components/dashboard/alerts-provider";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
@@ -328,7 +329,6 @@ export function ProductosClient({
   // Con el plan sin gestión de stock igual se cuentan (y se avisa en la
   // campanita), pero la lista queda bloqueada con el plan que la trae.
   const lowStockProducts = useMemo(() => products.filter(isLowStock), [products]);
-  const lowStockCount = lowStockProducts.length;
   // Para el aviso de alertas: primero lo más urgente (sin stock y lo más
   // lejos del mínimo), y sólo unos pocos; el resto se ve en Comprar.
   const lowStockTop = useMemo(
@@ -345,7 +345,8 @@ export function ProductosClient({
     () => products.filter(isSellingAtLoss),
     [products],
   );
-  const alertsCount = lowStockCount + lossProducts.length;
+  // Mismo número que la insignia del menú y la campana: avisos del módulo, no productos.
+  const alertsCount = useAlerts().byModule.productos ?? 0;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -612,7 +613,7 @@ export function ProductosClient({
           <button
             type="button"
             onClick={() => setAlertsOpen(true)}
-            title="Alertas: stock bajo y productos vendiendo a pérdida"
+            title="Avisos de Productos: stock bajo, ventas a pérdida y números para revisar"
             className={cn(
               "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-sm font-medium transition-colors",
               alertsCount > 0
@@ -1237,7 +1238,7 @@ export function ProductosClient({
       <Dialog
         open={alertsOpen}
         onClose={() => setAlertsOpen(false)}
-        title="Alertas"
+        title="Avisos de Productos"
         description="Productos que conviene revisar."
       >
         <div className="space-y-5">

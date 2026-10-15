@@ -24,6 +24,7 @@ import { cookies } from "next/headers";
 import { isOrgAdmin } from "@/lib/roles";
 import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { AlertsProvider } from "@/components/dashboard/alerts-provider";
 import { newDeviceAlert, planAlerts, type BellAlert, type NewDeviceLogin } from "@/lib/bell-alerts";
 
 export const metadata: Metadata = {
@@ -141,10 +142,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const memberName = greetingName || membership.username || email || "";
 
   const expiringBilling = expiringPaidPlan(subscription);
-  const navAlerts: Record<string, number> = canUse(subscription, "supplierAccounts")
-    ? { "/proveedores": overdueSuppliers }
-    : {};
-
   // Campana de avisos. Lo que el plan no incluye se muestra igual (con el plan que lo desbloquea).
   const isAdmin = isOrgAdmin(membership.role);
   const bellAlerts: BellAlert[] = [];
@@ -155,6 +152,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const locked = !canUse(subscription, "supplierAccounts");
     bellAlerts.push({
       id: "suppliers-overdue",
+      module: "proveedores",
       tone: "danger",
       title: overdueSuppliers === 1 ? "1 proveedor con deuda vencida" : `${overdueSuppliers} proveedores con deuda vencida`,
       detail: locked ? "Desbloqueá el detalle y el calendario de pagos con un plan más alto." : "Revisá los vencimientos para pagar a tiempo.",
@@ -174,6 +172,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <WelcomeModal />
       </Suspense>
       <RefreshAfterSale />
+      <AlertsProvider serverAlerts={bell.alerts} cash={bell.cash} stockLockedPlan={bell.stockLockedPlan}>
       <div className="flex min-h-screen bg-background">
         <Sidebar
           orgName={organization.name}
@@ -185,12 +184,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           cashRegister={cashRegister}
           branch={branch}
           lockedFeatures={lockedFeatures}
-          alerts={navAlerts}
           closeTime={organization.cash_close_time ?? null}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar
-            alerts={navAlerts}
             roleLabel={roleLabel}
             plan={subscription.trialActive ? "pro" : subscription.plan}
             trial={subscription.trialActive}
@@ -199,7 +196,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
             userLabel={membership.username ?? email ?? ""}
             greetingName={greetingName}
             branch={branch}
-            bell={bell}
           />
           <CommercialDatesBanner dates={commercialDates} />
           {openRegister && (
@@ -257,6 +253,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>
+      </AlertsProvider>
     </ToastProvider>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { ModuleBadge, useAlertsOptional } from "@/components/dashboard/alerts-provider";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -15,13 +16,11 @@ import { BranchSwitcher, type BranchSwitcherProps } from "@/components/dashboard
 export function MobileNav({
   orgName,
   branch,
-  alerts = {},
 }: {
   orgName: string;
   branch?: BranchSwitcherProps | null;
-  alerts?: Record<string, number>;
 }) {
-  const hasAlerts = Object.values(alerts).some((n) => n > 0);
+  const hasAlerts = (useAlertsOptional()?.total ?? 0) > 0;
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -98,14 +97,7 @@ export function MobileNav({
                         >
                           <item.icon className="h-4 w-4" />
                           <span className="flex-1">{item.label}</span>
-                          {(alerts[item.href] ?? 0) > 0 && (
-                            <span
-                              className="min-w-5 rounded-full bg-danger px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
-                              aria-label={`${alerts[item.href]} con deuda vencida`}
-                            >
-                              {alerts[item.href]}
-                            </span>
-                          )}
+                          <ModuleBadge href={item.href} />
                         </Link>
                       );
                     })}
