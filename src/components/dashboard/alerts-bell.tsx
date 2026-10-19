@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Bell,
@@ -61,6 +62,22 @@ const toneAccent: Record<BellTone, string> = {
 
 function AlertCard({ alert: a, seen, onNavigate }: { alert: BellAlert; seen: boolean; onNavigate?: (a: BellAlert) => void }) {
   const { markSeen, unmarkSeen } = useAlerts();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Si el aviso lleva a la pantalla donde ya estás (con un filtro o con el detalle abierto), un link
+  // común no hace nada cuando la dirección es la misma, y la pantalla ya no vuelve a abrirlo. Se
+  // navega con una marca nueva (`v`) para que la pantalla arranque de cero con ese aviso.
+  function go(e: React.MouseEvent, target: string) {
+    onNavigate?.(a);
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const url = new URL(target, window.location.origin);
+    if (url.pathname !== pathname || !url.search) return;
+    e.preventDefault();
+    url.searchParams.set("v", String(Date.now()));
+    router.push(`${url.pathname}${url.search}`);
+  }
+
   const Icon = kindIcon[a.id] ?? toneIcon[a.tone];
   const href = a.lockedPlan ? upgradeHref(a.lockedPlan) : a.href;
   const canMark = !a.pinned && !a.lockedPlan;
@@ -75,7 +92,7 @@ function AlertCard({ alert: a, seen, onNavigate }: { alert: BellAlert; seen: boo
       <Link
         href={href}
         prefetch={false}
-        onClick={() => onNavigate?.(a)}
+        onClick={(e) => go(e, href)}
         className="group flex items-start gap-3 px-3 py-3 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
       >
         <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", toneClass[a.tone])}>
@@ -98,7 +115,7 @@ function AlertCard({ alert: a, seen, onNavigate }: { alert: BellAlert; seen: boo
                 key={act.href + act.label}
                 href={act.href}
                 prefetch={false}
-                onClick={() => onNavigate?.(a)}
+                onClick={(e) => go(e, act.href)}
                 className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
               >
                 {act.label}

@@ -27,9 +27,9 @@ function parseTab(value: string | undefined, producto: string | undefined): Cata
 export default async function ProductosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; producto?: string; marca?: string; estado?: string; alertas?: string }>;
+  searchParams: Promise<{ tab?: string; producto?: string; marca?: string; estado?: string; alertas?: string; v?: string }>;
 }) {
-  const { tab: tabParam, producto, marca, estado, alertas } = await searchParams;
+  const { tab: tabParam, producto, marca, estado, alertas, v } = await searchParams;
   const tab = parseTab(tabParam, producto);
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
@@ -145,7 +145,8 @@ export default async function ProductosPage({
       <ProductosClient
         idFilter={idFilter}
         idleDays={thresholds.idleDays}
-        key={`${marca ?? "all"}|${estado ?? ""}|${alertas ?? ""}`}
+        // `v` lo pone un aviso que lleva a esta misma pantalla: cambia la clave y arranca de cero con ese aviso.
+        key={`${marca ?? "all"}|${estado ?? ""}|${alertas ?? ""}|${v ?? ""}`}
         initialAlertsOpen={alertas === "1"}
         products={normalized}
         brands={brands ?? []}

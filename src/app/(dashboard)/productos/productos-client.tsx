@@ -256,6 +256,14 @@ export function ProductosClient({
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [labelsLockedOpen, setLabelsLockedOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(initialAlertsOpen);
+  // Al cerrar el detalle que abrió un aviso, se saca ?alertas de la dirección: si no, al recargar se reabriría.
+  useEffect(() => {
+    if (alertsOpen) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("alertas")) return;
+    url.searchParams.delete("alertas");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}`);
+  }, [alertsOpen]);
   const [idFilter, setIdFilter] = useState(idFilterProp);
   const idFilterSet = useMemo(() => (idFilter ? new Set(idFilter.ids) : null), [idFilter]);
   const [busyId, setBusyId] = useState<string | null>(null);
