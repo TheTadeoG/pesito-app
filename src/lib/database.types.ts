@@ -917,7 +917,26 @@ export interface Database {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      /** Vista del panel interno (0075): sólo la lee la service role. */
+      platform_org_activity: {
+        Row: {
+          org_id: string;
+          created_at: string;
+          first_product_at: string | null;
+          product_count: number;
+          first_sale_at: string | null;
+          sale_count: number;
+          has_purchase: boolean;
+          has_cash: boolean;
+          has_cash_closed: boolean;
+          has_customer: boolean;
+          has_supplier: boolean;
+          member_count: number;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       is_org_member: {
         Args: { p_org_id: string };

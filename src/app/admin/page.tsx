@@ -24,6 +24,9 @@ import {
 import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { OrgPlanManager } from "@/app/admin/org-plan-manager";
+import { FunnelSection } from "@/app/admin/funnel-section";
+import { computeFunnel } from "@/lib/admin-funnel";
+import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
 import { LandingStatsManager } from "@/app/admin/landing-stats-manager";
 import { MarketInsightsManager } from "@/app/admin/market-insights-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,9 +133,10 @@ export default async function AdminPage() {
     { count: publishedTestimonialsCount },
     { count: newFeedbackCount },
     { data: landingStatsRow },
+    { data: activityRows },
   ] = await Promise.all([
     admin.from("organizations").select("id, name, business_type, created_at"),
-    admin.from("organization_subscriptions").select("org_id, plan, pro_trial_ends_at"),
+    admin.from("organization_subscriptions").select("org_id, plan, pro_trial_ends_at, mp_preapproval_id, payment_status, billing_cycle"),
     // Tope de 20.000 ventas más recientes: de sobra para esta etapa. Si la
     // plataforma crece mucho más, esto pasa a subestimar el total histórico
     // y conviene mover los totales a una función agregada en SQL.
@@ -159,6 +163,8 @@ export default async function AdminPage() {
       .eq("published", true),
     admin.from("feedback").select("id", { count: "exact", head: true }).eq("status", "new"),
     admin.from("landing_stats").select("*").eq("id", "main").maybeSingle(),
+    // Una fila por negocio con lo que hizo (migración 0075); null si todavía no está aplicada.
+    admin.from("platform_org_activity").select("*"),
   ]);
 
   // auth.users no se puede leer con .from() ni siquiera con la service role;
@@ -243,6 +249,38 @@ export default async function AdminPage() {
   const totalUsers = users.length;
   const usersWithOrg = users.filter((u) => membersWithOrg.has(u.id)).length;
   const onboardingRate = totalUsers > 0 ? (usersWithOrg / totalUsers) * 100 : 0;
+
+  // Embudo de activación: dueños que se registraron (con o sin negocio todavía; los empleados
+  // que entran por invitación no son altas), negocios que cargaron un producto, vendieron y pagan.
+  const ownerUserIds = new Set(memberships.filter((m) => m.role === "owner").map((m) => m.user_id));
+  const signedUpOwners = ownerUserIds.size + users.filter((u) => !membersWithOrg.has(u.id)).length;
+  const funnelSubscriptions = new Map(
+    (subscriptionsRaw ?? []).map((s) => [
+      s.org_id,
+      {
+        plan: s.plan,
+        trialEndsAt: s.pro_trial_ends_at,
+        // Un plan asignado a mano desde el panel no tiene suscripción ni pago de Mercado Pago.
+        paidViaMp: s.plan !== "gratis" && Boolean(s.mp_preapproval_id || s.payment_status),
+        cycle: s.billing_cycle ?? null,
+      },
+    ])
+  );
+  const funnel = activityRows
+    ? computeFunnel({
+        signedUpOwners,
+        activity: activityRows.map((a) => ({
+          ...a,
+          sale_count: Number(a.sale_count),
+          member_count: Number(a.member_count),
+        })),
+        subscriptions: funnelSubscriptions,
+        monthlyPrice: (plan, cycle) => {
+          const price = planDefinitions[plan as Plan]?.price ?? 0;
+          return cycle === "anual" ? Math.round(price * (1 - ANNUAL_DISCOUNT)) : price;
+        },
+      })
+    : null;
 
   // "En línea" de verdad necesitaría presencia en tiempo real (websockets);
   // esto es la mejor aproximación posible con lo que ya tenemos: último
@@ -527,6 +565,8 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      <FunnelSection funnel={funnel} />
 
       <div>
         <h2 className="mb-3 text-base font-semibold text-foreground">Activación y retención</h2>
