@@ -45,6 +45,9 @@ assertNoSecretInPublicEnv();
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Versión que está corriendo (los 7 primeros caracteres del commit que armó Vercel): se ve al pie del
+  // menú de ayuda, para saber de un vistazo si un cambio ya llegó a producción.
+  env: { NEXT_PUBLIC_BUILD_ID: (process.env.VERCEL_GIT_COMMIT_SHA ?? "local").slice(0, 7) },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

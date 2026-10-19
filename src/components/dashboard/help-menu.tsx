@@ -305,6 +305,7 @@ export function HelpMenu({ orgName, canOnboard }: { orgName: string; canOnboard:
             <BookOpen className="h-4 w-4 text-primary" />
             Preguntas frecuentes
           </a>
+          <p className="px-4 pb-1 pt-2 text-[11px] text-muted-foreground">{`Versión ${process.env.NEXT_PUBLIC_BUILD_ID ?? "local"}`}</p>
         </div>
       )}
 

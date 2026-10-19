@@ -140,6 +140,7 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
   const [visited, setVisited] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState(true); // oculto hasta saber qué hay guardado
   const [forced, setForced] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState<boolean | null>(null);
   const lastFetch = useRef(0);
 
@@ -171,6 +172,7 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
     lastFetch.current = Date.now();
     const next = await getOnboardingProgress();
     if (next) setProgress(next);
+    setFailed(!next);
   }, []);
 
   // "Ver los primeros pasos" del menú de ayuda.
@@ -195,6 +197,24 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eligible, dismissed, pathname, load]);
+
+  // Reabierta desde la ayuda y todavía sin datos: nunca queda en silencio (cargando, o no se pudo).
+  if (eligible && !dismissed && forced && !progress && pathname !== "/pos") {
+    return (
+      <div className="mx-4 mt-4 flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-foreground sm:mx-6 lg:mx-8">
+        <Rocket className="h-4 w-4 shrink-0 text-primary" />
+        <p className="flex-1">{failed ? "No pudimos cargar tus primeros pasos." : "Cargando tus primeros pasos…"}</p>
+        {failed && (
+          <button type="button" onClick={() => void load()} className="shrink-0 text-xs font-semibold text-primary hover:underline">
+            Reintentar
+          </button>
+        )}
+        <button type="button" onClick={dismiss} className="shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground">
+          Cerrar
+        </button>
+      </div>
+    );
+  }
 
   // En el POS no: ahí se cobra y el espacio es del carrito.
   if (!eligible || dismissed || !progress || pathname === "/pos") return null;
