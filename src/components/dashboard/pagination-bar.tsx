@@ -40,6 +40,34 @@ export function pageBounds(total: number, page: number, pageSize: number) {
 }
 
 /**
+ * Paginación de una lista que ya está en el navegador: la página actual, cuántos por página (se
+ * recuerda en este navegador, `storageKey`) y el tramo a mostrar. Al cambiar `resetKey` (la
+ * búsqueda, un filtro o el orden) vuelve a la primera página. Se usa con `<PaginationBar>` abajo
+ * y `items.slice(start, end)` en la lista.
+ */
+export function usePagination(total: number, resetKey: string, storageKey: string, initial = PAGE_SIZE_OPTIONS[0] as number) {
+  const [pageSize, setPageSizeState] = usePageSize(storageKey, initial);
+  const [page, setPage] = useState(0);
+  const [lastKey, setLastKey] = useState(resetKey);
+  if (lastKey !== resetKey) {
+    setLastKey(resetKey);
+    setPage(0);
+  }
+  const { safePage, start, end } = pageBounds(total, page, pageSize);
+  return {
+    page: safePage,
+    pageSize,
+    start,
+    end,
+    setPage,
+    setPageSize: (n: number) => {
+      setPageSizeState(n);
+      setPage(0);
+    },
+  };
+}
+
+/**
  * Pie de una lista paginada: "Mostrando 51–100 de 207", cuántos por página (lo elige la persona),
  * anterior y siguiente. No se muestra si todo entra en la primera página y es el tamaño más chico.
  */
@@ -71,7 +99,7 @@ export function PaginationBar({
             <Select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              aria-label="Productos por página"
+              aria-label={`${noun} por página`}
               className="h-9 px-2.5"
             >
               {PAGE_SIZE_OPTIONS.map((n) => (

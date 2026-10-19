@@ -1,5 +1,6 @@
 "use client";
 
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -170,6 +171,12 @@ export function ClientesClient({
     const sign = sort.dir === "asc" ? 1 : -1;
     return list.sort((a, b) => sign * compare(a, b));
   }, [customers, query, ages, sort, todayKey]);
+
+  const pager = usePagination(
+    filtered.length,
+    `${query}|${Array.from(ages).join(",")}|${sort.key}|${sort.dir}`,
+    "pesito-clientes-page-size"
+  );
 
   function sortBy(key: SortKey, firstDir: SortDir) {
     setSort((cur) =>
@@ -420,7 +427,7 @@ export function ClientesClient({
                 <span />
                 <span />
               </div>
-              {filtered.map((c) => {
+              {filtered.slice(pager.start, pager.end).map((c) => {
                 const owes = c.balance > 0;
                 const days = debtDays(c, todayKey);
                 const whatsapp = owes ? chatWhatsappUrl(c.phone, whatsappMessage(c)) : null;
@@ -542,6 +549,14 @@ export function ClientesClient({
             </div>
           )}
         </div>
+        <PaginationBar
+          total={filtered.length}
+          page={pager.page}
+          pageSize={pager.pageSize}
+          noun="clientes"
+          onPageChange={pager.setPage}
+          onPageSizeChange={pager.setPageSize}
+        />
       </Card>
 
       <CustomerForm

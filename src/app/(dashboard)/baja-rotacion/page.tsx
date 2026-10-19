@@ -6,6 +6,7 @@ import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan } from "@/lib/plan-access";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { RotationList } from "@/app/(dashboard)/baja-rotacion/rotation-list";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { computeLowRotation, formatQty, loadInsightsBase } from "@/lib/product-insights";
 
@@ -89,33 +90,22 @@ export default async function BajaRotacionPage({
               </CardContent>
             </Card>
           </div>
-          <Card>
-            <CardContent className="divide-y divide-border py-2">
-              {rows.slice(0, 200).map((r) => (
-                <div key={r.product.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{r.product.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {r.kind === "sin-ventas"
-                        ? r.daysSinceSale === null
-                          ? "No se vendió en el último año"
-                          : `Última venta hace ${r.daysSinceSale} días`
-                        : `Vendiste ${formatQty(r.soldInPeriod, r.product.unit)} en ${days} días; el stock dura unos ${Math.round((r.coverDays ?? 0) / 30)} meses`}
-                    </p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {`Stock ${formatQty(r.product.stock, r.product.unit)}`}
-                  </p>
-                  <p className="w-28 text-right text-sm font-semibold text-foreground">
-                    {r.capital === null ? "Sin costo" : formatCurrency(r.capital)}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-          {rows.length > 200 && (
-            <p className="text-xs text-muted-foreground">Mostramos los 200 que más plata inmovilizan.</p>
-          )}
+          <RotationList
+            days={days}
+            rows={rows.map((r) => ({
+              id: r.product.id,
+              name: r.product.name,
+              unit: r.product.unit,
+              stockLabel: `Stock ${formatQty(r.product.stock, r.product.unit)}`,
+              capital: r.capital,
+              detail:
+                r.kind === "sin-ventas"
+                  ? r.daysSinceSale === null
+                    ? "No se vendió en el último año"
+                    : `Última venta hace ${r.daysSinceSale} días`
+                  : `Vendiste ${formatQty(r.soldInPeriod, r.product.unit)} en ${days} días; el stock dura unos ${Math.round((r.coverDays ?? 0) / 30)} meses`,
+            }))}
+          />
         </>
       )}
     </div>

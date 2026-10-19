@@ -1,5 +1,6 @@
 "use client";
 
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { useState, useTransition } from "react";
 import { Check, Tag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,6 +38,7 @@ export function PriceSuggestions({
   const { showSuccess, showWarning } = useToast();
   const [rows, setRows] = useState(items);
   const [pending, startTransition] = useTransition();
+  const pager = usePagination(rows.length, String(rows.length), "pesito-precios-page-size");
 
   function apply(chosen: PriceSuggestionItem[]) {
     startTransition(async () => {
@@ -81,7 +83,7 @@ export function PriceSuggestions({
           )}
         </div>
         <div className="divide-y divide-border">
-          {rows.slice(0, 100).map((r) => (
+          {rows.slice(pager.start, pager.end).map((r) => (
             <div key={r.productId} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">{r.name}</p>
@@ -102,12 +104,15 @@ export function PriceSuggestions({
             </div>
           ))}
         </div>
-        {rows.length > 100 && (
-          <p className="text-xs text-muted-foreground">
-            Mostramos los 100 más importantes. Al aplicarlos, aparecen los que siguen.
-          </p>
-        )}
       </CardContent>
+      <PaginationBar
+        total={rows.length}
+        page={pager.page}
+        pageSize={pager.pageSize}
+        noun="productos"
+        onPageChange={pager.setPage}
+        onPageSizeChange={pager.setPageSize}
+      />
     </Card>
   );
 }

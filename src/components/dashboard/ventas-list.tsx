@@ -1,5 +1,6 @@
 "use client";
 
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Eye } from "lucide-react";
@@ -40,6 +41,7 @@ export function VentasList({
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailSale, setDetailSale] = useState<SaleDetail | null>(null);
+  const pager = usePagination(sales.length, String(sales.length), "pesito-ventas-page-size");
 
   async function openDetail(saleId: string) {
     setDetailOpen(true);
@@ -82,7 +84,7 @@ export function VentasList({
         <p className="mx-5 mt-3 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
       )}
       <div className="divide-y divide-border">
-        {sales.map((sale) => (
+        {sales.slice(pager.start, pager.end).map((sale) => (
           <div
             key={sale.id}
             role="button"
@@ -144,6 +146,14 @@ export function VentasList({
           </div>
         ))}
       </div>
+      <PaginationBar
+        total={sales.length}
+        page={pager.page}
+        pageSize={pager.pageSize}
+        noun="ventas"
+        onPageChange={pager.setPage}
+        onPageSizeChange={pager.setPageSize}
+      />
 
       <SaleDetailDialog
         open={detailOpen}

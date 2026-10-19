@@ -1,5 +1,6 @@
 "use client";
 
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -223,6 +224,12 @@ export function ProveedoresClient({
     const sign = sort.dir === "asc" ? 1 : -1;
     return list.sort((a, b) => sign * compare(a, b));
   }, [rows, query, estados, sort, dayFilter, todayKey]);
+
+  const pager = usePagination(
+    filtered.length,
+    `${query}|${Array.from(estados).join(",")}|${dayFilter ?? ""}|${sort.key}|${sort.dir}`,
+    "pesito-proveedores-page-size"
+  );
 
   async function handleDelete(supplier: Supplier) {
     if (!confirm(`¿Borrar a "${supplier.name}"?`)) return;
@@ -745,7 +752,7 @@ export function ProveedoresClient({
                 )}
                 <span />
               </div>
-              {filtered.map((s) => {
+              {filtered.slice(pager.start, pager.end).map((s) => {
                 const next = nextPayment(s.items);
                 const owes = s.balance > 0;
                 const credit = s.balance < -0.004;
@@ -917,6 +924,14 @@ export function ProveedoresClient({
             </div>
           )}
         </div>
+        <PaginationBar
+          total={filtered.length}
+          page={pager.page}
+          pageSize={pager.pageSize}
+          noun="proveedores"
+          onPageChange={pager.setPage}
+          onPageSizeChange={pager.setPageSize}
+        />
       </Card>
 
       <PurchaseDetailDialog

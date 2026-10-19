@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export interface CuentaCorrienteMovement {
@@ -30,6 +33,7 @@ export function CuentaCorriente({
   /** Aclaración junto al saldo final (ej. "Le debés"). */
   finalBalanceLabel?: string;
 }) {
+  const pager = usePagination(movements.length, String(movements.length), "pesito-cuenta-page-size");
   if (movements.length === 0) {
     return (
       <p className="px-5 py-10 text-center text-sm text-muted-foreground">{emptyLabel}</p>
@@ -52,51 +56,61 @@ export function CuentaCorriente({
   const finalSaldo = rows[rows.length - 1].saldo;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <th className="whitespace-nowrap px-5 py-2.5">Fecha</th>
-            <th className="px-3 py-2.5">Operación</th>
-            <th className="whitespace-nowrap px-3 py-2.5 text-right">Cargo</th>
-            <th className="whitespace-nowrap px-3 py-2.5 text-right">Pago</th>
-            <th className="whitespace-nowrap px-5 py-2.5 text-right">Saldo</th>
-            {hasActions && <th className="px-3 py-2.5" />}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {displayRows.map((row) => (
-            <tr key={row.id}>
-              <td className="whitespace-nowrap px-5 py-2.5 text-muted-foreground">
-                {formatDateTime(row.date)}
-              </td>
-              <td className="px-3 py-2.5 text-foreground">{row.label}</td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-right text-warning">
-                {row.cargo > 0 ? formatCurrency(row.cargo) : "—"}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-right text-success">
-                {row.pago > 0 ? formatCurrency(row.pago) : "—"}
-              </td>
-              <td className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-foreground">
-                {formatCurrency(row.saldo)}
-              </td>
-              {hasActions && <td className="whitespace-nowrap px-3 py-2.5 text-right">{row.action}</td>}
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="whitespace-nowrap px-5 py-2.5">Fecha</th>
+              <th className="px-3 py-2.5">Operación</th>
+              <th className="whitespace-nowrap px-3 py-2.5 text-right">Cargo</th>
+              <th className="whitespace-nowrap px-3 py-2.5 text-right">Pago</th>
+              <th className="whitespace-nowrap px-5 py-2.5 text-right">Saldo</th>
+              {hasActions && <th className="px-3 py-2.5" />}
             </tr>
-          ))}
-        </tbody>
-        {oldestFirst && (
-          <tfoot>
-            <tr className="border-t-2 border-border bg-accent/40">
-              <td colSpan={4} className="px-5 py-3 text-sm font-semibold text-foreground">
-                {finalBalanceLabel ? `Saldo actual · ${finalBalanceLabel}` : "Saldo actual"}
-              </td>
-              <td className="whitespace-nowrap px-5 py-3 text-right text-base font-bold text-foreground">
-                {formatCurrency(finalSaldo)}
-              </td>
-            </tr>
-          </tfoot>
-        )}
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {displayRows.slice(pager.start, pager.end).map((row) => (
+              <tr key={row.id}>
+                <td className="whitespace-nowrap px-5 py-2.5 text-muted-foreground">
+                  {formatDateTime(row.date)}
+                </td>
+                <td className="px-3 py-2.5 text-foreground">{row.label}</td>
+                <td className="whitespace-nowrap px-3 py-2.5 text-right text-warning">
+                  {row.cargo > 0 ? formatCurrency(row.cargo) : "—"}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2.5 text-right text-success">
+                  {row.pago > 0 ? formatCurrency(row.pago) : "—"}
+                </td>
+                <td className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-foreground">
+                  {formatCurrency(row.saldo)}
+                </td>
+                {hasActions && <td className="whitespace-nowrap px-3 py-2.5 text-right">{row.action}</td>}
+              </tr>
+            ))}
+          </tbody>
+          {oldestFirst && (
+            <tfoot>
+              <tr className="border-t-2 border-border bg-accent/40">
+                <td colSpan={4} className="px-5 py-3 text-sm font-semibold text-foreground">
+                  {finalBalanceLabel ? `Saldo actual · ${finalBalanceLabel}` : "Saldo actual"}
+                </td>
+                <td className="whitespace-nowrap px-5 py-3 text-right text-base font-bold text-foreground">
+                  {formatCurrency(finalSaldo)}
+                </td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+      <PaginationBar
+        total={displayRows.length}
+        page={pager.page}
+        pageSize={pager.pageSize}
+        noun="movimientos"
+        onPageChange={pager.setPage}
+        onPageSizeChange={pager.setPageSize}
+      />
+    </>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
@@ -30,6 +31,7 @@ export function MarcasTab({
     if (!q) return brands;
     return brands.filter((b) => b.name.toLowerCase().includes(q));
   }, [brands, query]);
+  const pager = usePagination(filtered.length, `${query}|${brands.length}`, "pesito-marcas-page-size");
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -110,7 +112,7 @@ export function MarcasTab({
             </p>
           ) : (
             <div className="divide-y divide-border">
-              {filtered.map((brand) => (
+              {filtered.slice(pager.start, pager.end).map((brand) => (
                 <div
                   key={brand.id}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
@@ -195,6 +197,14 @@ export function MarcasTab({
             </div>
           )}
         </CardContent>
+        <PaginationBar
+          total={filtered.length}
+          page={pager.page}
+          pageSize={pager.pageSize}
+          noun="marcas"
+          onPageChange={pager.setPage}
+          onPageSizeChange={pager.setPageSize}
+        />
       </Card>
     </div>
   );

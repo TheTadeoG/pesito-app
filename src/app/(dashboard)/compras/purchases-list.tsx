@@ -1,5 +1,6 @@
 "use client";
 
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Eye } from "lucide-react";
@@ -37,6 +38,7 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const pager = usePagination(purchases.length, String(purchases.length), "pesito-compras-page-size");
 
   async function openDetail(purchaseId: string) {
     setDetailOpen(true);
@@ -82,7 +84,7 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
         <p className="mx-5 mt-3 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
       )}
       <div className="divide-y divide-border">
-        {purchases.map((purchase) => (
+        {purchases.slice(pager.start, pager.end).map((purchase) => (
           <div
             key={purchase.id}
             role="button"
@@ -147,6 +149,14 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
           </div>
         ))}
       </div>
+      <PaginationBar
+        total={purchases.length}
+        page={pager.page}
+        pageSize={pager.pageSize}
+        noun="compras"
+        onPageChange={pager.setPage}
+        onPageSizeChange={pager.setPageSize}
+      />
 
       <PurchaseDetailDialog
         open={detailOpen}

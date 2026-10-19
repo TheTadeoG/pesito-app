@@ -1,6 +1,6 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
-import { fetchAll } from "@/lib/supabase/fetch-all";
+import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { getBranchContext, withBranchStock } from "@/lib/branches";
 import { getSubscription } from "@/lib/subscription";
 import { canUse } from "@/lib/plan-access";
@@ -10,7 +10,8 @@ import { ComprasClient } from "@/app/(dashboard)/compras/compras-client";
 import { loadPurchaseDueDates } from "@/lib/supplier-overview";
 import { PurchasesList, type PurchaseRow } from "@/app/(dashboard)/compras/purchases-list";
 
-const RECENT_PURCHASES_LIMIT = 20;
+// Las últimas compras que se traen; la lista las muestra de a 25, 50, 100 o 200 por página.
+const RECENT_PURCHASES_LIMIT = 200;
 
 export default async function ComprasPage({
   searchParams,
@@ -82,26 +83,27 @@ export default async function ComprasPage({
   const purchaseIds = purchases.map((p) => p.id);
   const dueDates = await loadPurchaseDueDates(supabase, organization.id);
 
-  const [{ data: itemsRaw }, { data: purchaseSuppliersRaw }] = await Promise.all([
-    purchaseIds.length > 0
-      ? supabase
-          .from("purchase_items")
-          .select("purchase_id, product_name, quantity")
-          .in("purchase_id", purchaseIds)
-      : Promise.resolve({ data: [] }),
-    (() => {
-      const supplierIds = Array.from(
-        new Set(purchases.map((p) => p.supplier_id).filter((id): id is string => Boolean(id)))
-      );
-      return supplierIds.length > 0
-        ? supabase.from("suppliers").select("id, name").in("id", supplierIds)
-        : Promise.resolve({ data: [] });
-    })(),
+  // fetchAllIn: con 200 compras el .in() largo fallaba por la URL (ver fetch-all.ts).
+  const supplierIds = Array.from(
+    new Set(purchases.map((p) => p.supplier_id).filter((id): id is string => Boolean(id)))
+  );
+  const [itemsRaw, purchaseSuppliersRaw] = await Promise.all([
+    fetchAllIn(purchaseIds, (ids, from, to) =>
+      supabase
+        .from("purchase_items")
+        .select("id, purchase_id, product_name, quantity")
+        .in("purchase_id", ids)
+        .order("id")
+        .range(from, to)
+    ),
+    fetchAllIn(supplierIds, (ids, from, to) =>
+      supabase.from("suppliers").select("id, name").in("id", ids).order("id").range(from, to)
+    ),
   ]);
 
-  const supplierNameById = new Map((purchaseSuppliersRaw ?? []).map((s) => [s.id, s.name]));
+  const supplierNameById = new Map(purchaseSuppliersRaw.map((s) => [s.id, s.name]));
   const itemsByPurchase = new Map<string, string[]>();
-  for (const item of itemsRaw ?? []) {
+  for (const item of itemsRaw) {
     const list = itemsByPurchase.get(item.purchase_id) ?? [];
     const quantity = Number(item.quantity);
     list.push(quantity > 1 ? `${item.product_name} x${quantity}` : item.product_name);
