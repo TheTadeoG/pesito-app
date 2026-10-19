@@ -184,7 +184,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
   - Avisos nuevos de Productos: **Margen bajo** (`low-margin`, gana menos de X% sobre el costo, por defecto 10; Plan Esencial, `marginAlerts`), **Costo sin actualizar** (`stale-cost`, sin cambios en X días, por defecto 90; Esencial), **Precio sin actualizar** (`cost-rise`, el costo subió después del último cambio de precio, el caso "costo-subio" de las sugerencias; Plan Pro, `costRiseAlert`) y **Plata parada** (`idle-capital`, X días sin ventas, por defecto 30, con la plata que hay ahí; Plan IA, `lowRotation`). Con el plan bloqueado, margen y costo viejo se muestran con el número y el plan; los otros dos no se calculan. Cada aviso lleva a Productos ya filtrado (`?estado=margen-bajo|costo-viejo|precio-viejo|sin-ventas`, con un chip para quitarlo): la lista la arma `lib/catalog-alert-data.ts`, la misma cuenta que usa la campana, así que el número y la lista coinciden. "Sin ventas" usa los días configurados.
   - Cobro del plan (clave): `plan-past-due` es urgente, no se puede marcar como visto y dice hasta cuándo hay que pagar. El webhook caído avisa por mail (ver más abajo).
   - Textos al día: `plan-features.ts` (Esencial, Pro y `planComparison`), `faq-data.ts` (campana).
-  - Antes de usar: **aplicar la migración 0074 en Supabase**. Sin ella los avisos funcionan con los valores por defecto y guardar da error.
+  - La migración 0074 ya está aplicada en producción.
 - Stock (15/10/2026): en la tabla de Inventario, cada fila tiene un solo botón de tres puntos con Comprar (sólo con stock bajo o agotado), Ajustar stock y Editar producto (antes eran hasta tres botones sueltos). Productos conserva el lápiz de Editar aparte del menú.
 
 ## Hecho: precio de venta en Compras y ticket en el POS
@@ -361,7 +361,7 @@ Para Pesito (negocio):
 - [ ] Activar el aviso por mail si falla el webhook de Mercado Pago (el código ya está, ver "Sesión, landing y avisos del cobro"): cargar en Vercel `RESEND_API_KEY` y `BILLING_ALERT_EMAIL` (o usar `FEEDBACK_NOTIFY_EMAIL`) y redeployar. Sin eso sólo queda anotado en `billing_events` (topic `alert`).
 - [ ] Borrar `MP_TEST_ORG_ID` de Vercel (Production) cuando terminen las pruebas de cobro; mientras esté cargada, ese negocio paga $15 en vez del precio del plan.
 - [ ] Decidir si, después de pagar desde Configuración → Plan, `/suscribirse/listo` vuelve a Planes en vez de al POS (alta nueva: POS; cliente que ya usaba Pesito: Planes). Hoy siempre va a `/pos`.
-- [ ] Aplicar la migración 0074 (`alert_settings`) en Supabase; sin eso no se puede guardar la configuración de avisos.
+- [x] Migración 0074 (`alert_settings`) aplicada en Supabase (19/10/2026); Configuración → Avisos guarda bien.
 - [ ] Avisos: ver cuáles más sumar (clientes con fiado vencido, margen del día, ventas por debajo de lo normal, faltante de caja repetido) y si el estado "visto" tiene que sincronizarse entre dispositivos (hoy queda en el navegador).
 - [ ] Rutina mensual de Claude (a definir con el usuario): revisar competencia de `blog-rankings.ts` y auditar coherencia de textos públicos, en rama con aviso.
 - Orden sugerido: métricas internas, correos del ciclo de vida, factura electrónica por etapas.
