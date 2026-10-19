@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
-import { ALERT_DEFS, FIXED_MODULES, alertEnabled, alertValue, type AlertDef, type AlertSettings } from "@/lib/alert-config";
+import { ALERT_DEFS, FIXED_MODULES, MODULE_NOTE, alertEnabled, alertValue, type AlertDef, type AlertSettings } from "@/lib/alert-config";
 import { MODULE_LABEL, type AlertModule } from "@/lib/bell-alerts";
 import type { Plan } from "@/lib/subscription";
 import { cn } from "@/lib/utils";
 import { saveAlertSettings } from "@/app/(dashboard)/alertas/actions";
 
-const MODULES: AlertModule[] = ["productos", "proveedores", "clientes"];
+const MODULES: AlertModule[] = ["productos", "caja", "proveedores", "clientes"];
 
 /**
  * Configuración → Avisos: por módulo, cuáles avisos están prendidos y con qué umbral. Cada
@@ -144,6 +144,7 @@ export function AlertSettingsManager({
       {MODULES.map((m) => (
         <section key={m}>
           <h3 className="text-sm font-semibold text-foreground">{MODULE_LABEL[m]}</h3>
+          {MODULE_NOTE[m] && <p className="mt-0.5 text-xs text-muted-foreground">{MODULE_NOTE[m]}</p>}
           <div className="divide-y divide-border">
             {ALERT_DEFS.filter((d) => d.module === m).map((d) => (
               <Row key={d.id} def={d} />

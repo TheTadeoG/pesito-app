@@ -14,6 +14,9 @@ import { loadAlertSettings } from "@/lib/alert-settings";
 import { countProductIssues, thresholdsFrom, type ProductIssueCounts } from "@/lib/product-alerts";
 import { costRiseIds, staleCostIds } from "@/lib/catalog-alert-data";
 import { computeIdleStock, parseSalesStats } from "@/lib/product-insights";
+import { alertValue } from "@/lib/alert-config";
+import { recentDifferences, recurringShortages, type CashAlertCounts } from "@/lib/caja-alerts";
+import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 
 export interface BusinessAlertCounts {
   /** Productos activos: stock, números para revisar, precios y costos (de la sucursal actual). */
@@ -21,6 +24,8 @@ export interface BusinessAlertCounts {
   /** Clientes con deuda de fiado y cuánto deben en total. */
   debtorCount: number;
   debtTotal: number;
+  /** Faltantes y sobrantes al cerrar la caja (sólo dueño/administrador con el control por empleado; si no, null). */
+  cash: CashAlertCounts | null;
 }
 
 // Lo pesado (historial de costos, ventas) se calcula una vez cada pocos minutos por negocio,
@@ -38,7 +43,7 @@ const cache = new Map<string, { at: number; value: BusinessAlertCounts }>();
  */
 export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
   try {
-    const { organization } = await requireOrgContext();
+    const { userId, organization, membership } = await requireOrgContext();
     const supabase = await createClient();
     const branchContext = await getBranchContext();
     const [settings, subscription] = await Promise.all([
@@ -46,7 +51,8 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
       getSubscription(supabase, organization.id),
     ]);
 
-    const key = `${organization.id}|${branchContext.current?.id ?? ""}|${subscription.plan}${subscription.trialActive ? "t" : ""}|${JSON.stringify(settings)}`;
+    // Por persona: los avisos de la caja nombran a quien cerró ("Vos" para quien pregunta) y sólo los ve quien administra.
+    const key = `${organization.id}|${userId}|${branchContext.current?.id ?? ""}|${subscription.plan}${subscription.trialActive ? "t" : ""}|${JSON.stringify(settings)}`;
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < CACHE_MS) return hit.value;
 
@@ -112,10 +118,42 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
     counts.idleCount = idle?.count ?? 0;
     counts.idleCapital = idle?.capital ?? 0;
 
+    // Faltantes y sobrantes: los últimos cierres de todas las cajas (Esencial: control por empleado).
+    let cash: CashAlertCounts | null = null;
+    if (
+      isOrgAdmin(membership.role) &&
+      canUse(subscription, "teamReports") &&
+      (alertEnabled(settings, "cash-difference") || alertEnabled(settings, "cash-shortage-repeat"))
+    ) {
+      const [closes, labels] = await Promise.all([
+        supabase
+          .from("cash_registers")
+          .select("user_id, expected_amount, closing_amount, closed_at")
+          .eq("org_id", organization.id)
+          .eq("status", "cerrada")
+          .order("closed_at", { ascending: false })
+          .limit(150),
+        getMemberLabelsById(supabase, organization.id),
+      ]);
+      const rows = closes.data ?? [];
+      const threshold = alertValue(settings, "cash-difference");
+      cash = {
+        differences: recentDifferences(rows, threshold),
+        repeated: recurringShortages(rows).map((r) => ({
+          label: memberLabelFor(r.userId, userId, labels),
+          faltanteCount: r.faltanteCount,
+          consideredCount: r.consideredCount,
+          totalFaltante: r.totalFaltante,
+        })),
+        threshold,
+      };
+    }
+
     const value: BusinessAlertCounts = {
       products: counts,
       debtorCount: debtors.length,
       debtTotal: debtors.reduce((sum, c) => sum + Number(c.balance), 0),
+      cash,
     };
     cache.set(key, { at: Date.now(), value });
     return value;

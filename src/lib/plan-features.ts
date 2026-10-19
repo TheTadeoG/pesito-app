@@ -287,6 +287,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Comparar con el período anterior o el año pasado", values: fromPro },
       { label: "En vivo: ventas del momento por sucursal y vendedor", values: fromPro },
       { label: "Ventas y diferencias de caja por empleado", values: fromEsencial },
+      { label: "Avisos de faltantes y sobrantes al cerrar la caja, y de faltantes que se repiten", values: fromEsencial },
       { label: "Historial completo de caja", values: fromPro },
       {
         label: "Control por usuario: todos sus movimientos de stock, caja y diferencias",

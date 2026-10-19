@@ -90,11 +90,30 @@ export const ALERT_DEFS: AlertDef[] = [
     label: "Fiado",
     description: "Cuánta plata te deben tus clientes en fiado.",
   },
+  {
+    id: "cash-difference",
+    module: "caja",
+    label: "Diferencias al cerrar la caja",
+    description: "Cierres de los últimos 7 días donde lo contado no coincidió con lo esperado (faltante o sobrante).",
+    feature: "teamReports",
+    param: { label: "Contar diferencias de más de", unit: "$", min: 50, max: 100000, default: 100 },
+  },
+  {
+    id: "cash-shortage-repeat",
+    module: "caja",
+    label: "Faltantes repetidos",
+    description: "Una persona que cierra con faltante en 3 de sus últimos 5 cierres (o más).",
+    feature: "teamReports",
+  },
 ];
+
+/** Aclaración que se muestra bajo el nombre de un módulo en Configuración → Avisos. */
+export const MODULE_NOTE: Partial<Record<AlertModule, string>> = {
+  caja: "El recordatorio de la hora de cierre y de la caja abierta de un día anterior se elige en Negocio → Cierre de caja.",
+};
 
 /** Módulos sin interruptores en Avisos: o no se apagan, o se configuran en otro lado. */
 export const FIXED_MODULES: { module: AlertModule; label: string; description: string }[] = [
-  { module: "caja", label: "Caja", description: "El recordatorio de cierre se prende y se elige la hora en Cierre de caja (más arriba)." },
   { module: "plan", label: "Mi plan", description: "No se pudo cobrar, vencimientos y fin de la prueba. Siempre activos." },
   { module: "seguridad", label: "Seguridad", description: "Ingresos desde dispositivos nuevos. Siempre activos." },
 ];
@@ -107,9 +126,9 @@ export type AlertSettings = Record<string, AlertSetting>;
 
 const DEF_BY_ID = new Map(ALERT_DEFS.map((d) => [d.id, d]));
 
-/** Id con el que se guarda la configuración de un aviso (los de la caja van juntos y no se apagan desde Avisos). */
+/** Id con el que se guarda la configuración de un aviso (los recordatorios de hora de la caja no se apagan desde Avisos). */
 export function settingKey(alertId: string): string {
-  return alertId.startsWith("cash-") ? "cash" : alertId;
+  return alertId;
 }
 
 /** Deja sólo lo que se conoce y con valores válidos (lo que viene de la base o del navegador no se cree). */

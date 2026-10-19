@@ -18,14 +18,9 @@ import {
 import { BranchFilter } from "@/app/(dashboard)/caja/branch-filter";
 import { countOverdueSuppliers } from "@/lib/supplier-overview";
 import { getBranchContext } from "@/lib/branches";
+import { recurringShortages } from "@/lib/caja-alerts";
+import { ModuleAlerts } from "@/components/dashboard/catalog-alerts";
 
-// Un cierre cuenta como "faltante" recién a partir de esta diferencia, para
-// no marcar diferencias chicas de vuelto/redondeo como si fuera un patrón.
-const FALTANTE_THRESHOLD = 100;
-// De los últimos closes considerados por usuario (ver RECENT_CLOSES_PER_USER
-// más abajo), a partir de qué proporción con faltante se avisa al manager.
-const FALTANTE_RATIO_ALERT = 0.6;
-const RECENT_CLOSES_PER_USER = 5;
 // Sin historial completo de caja (Plan Pro) se ven sólo los últimos cierres.
 const LIMITED_HISTORY = 5;
 
@@ -177,32 +172,10 @@ export default async function CajaPage({
       ? await countOverdueSuppliers(supabase, organization.id)
       : 0;
 
-    const closesByUser = new Map<string, { expected: number; closing: number }[]>();
-    for (const r of recentClosedRegisters ?? []) {
-      const list = closesByUser.get(r.user_id) ?? [];
-      if (list.length < RECENT_CLOSES_PER_USER) {
-        list.push({ expected: Number(r.expected_amount ?? 0), closing: Number(r.closing_amount ?? 0) });
-      }
-      closesByUser.set(r.user_id, list);
-    }
-
-    const recurringDiscrepancies: RecurringDiscrepancyRow[] = Array.from(closesByUser.entries())
-      .map(([userIdKey, closes]) => {
-        const faltantes = closes.filter((c) => c.closing - c.expected < -FALTANTE_THRESHOLD);
-        const totalFaltante = faltantes.reduce((acc, c) => acc + (c.expected - c.closing), 0);
-        return {
-          userId: userIdKey,
-          userLabel: memberLabelFor(userIdKey, userId, memberLabelsById),
-          faltanteCount: faltantes.length,
-          consideredCount: closes.length,
-          totalFaltante,
-        };
-      })
-      .filter(
-        (row) =>
-          row.consideredCount >= 3 && row.faltanteCount / row.consideredCount >= FALTANTE_RATIO_ALERT
-      )
-      .sort((a, b) => b.totalFaltante - a.totalFaltante);
+    const recurringDiscrepancies: RecurringDiscrepancyRow[] = recurringShortages(recentClosedRegisters ?? []).map((row) => ({
+      ...row,
+      userLabel: memberLabelFor(row.userId, userId, memberLabelsById),
+    }));
 
     teamOverview = (
       <>
@@ -240,6 +213,7 @@ export default async function CajaPage({
   if (!register) {
     return (
       <div className="space-y-6">
+        <ModuleAlerts module="caja" />
         <OpenCajaDialog />
         {teamOverview}
         <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
@@ -345,6 +319,7 @@ export default async function CajaPage({
 
   return (
     <div className="space-y-6">
+      <ModuleAlerts module="caja" />
       <ManageCaja
         cashRegisterId={register.id}
         openingAmount={openingAmount}
