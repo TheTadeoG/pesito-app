@@ -170,6 +170,11 @@ export const faqCategories: FaqCategory[] = [
           "Sí. En Productos, \"Descargar Excel\" (en Acciones) abre una ventana donde elegís qué productos bajar (lo que estás viendo con los filtros, todos los activos o también los inactivos) y qué columnas querés: SKU, código de barras, marca, proveedor, stock, mínimo, cuánto falta para el mínimo, estado, costo, valor al costo y precio de venta. Está en todos los planes, incluido el Gratis. Con el Plan Esencial, la pestaña Stock también tiene su \"Descargar Excel\" (la lista que estás viendo o todos los productos), y con el Plan IA suma una columna con cuántos días alcanza el stock de cada producto. Es una planilla para mirar o compartir: no se vuelve a subir (para cargar o corregir productos hay una planilla de carga masiva aparte).",
       },
       {
+        question: "¿Puedo llevarme todos mis datos si dejo de usar Pesito?",
+        answer:
+          "Sí, en cualquier plan, incluido el Gratis. En Ajustes → Tus datos, el dueño o un administrador baja archivos que abre Excel (CSV) con los productos, los clientes con lo que te deben, los proveedores con lo que les debés, las ventas, las compras y los movimientos de stock. Ventas, compras y movimientos se pueden acotar por fechas. Sirve de copia de seguridad y para llevarte tu información a donde quieras: tus datos son tuyos.",
+      },
+      {
         question: "¿Puedo guardar los datos fiscales de un cliente?",
         answer:
           "Sí: nombre, razón social, documento o CUIT, teléfono y el tipo de comprobante que le corresponde, para tenerlo a mano en cada venta.",

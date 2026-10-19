@@ -19,6 +19,9 @@ import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 import { TwoFactorCard } from "@/app/(dashboard)/configuracion/two-factor-card";
 import { describeDevice } from "@/lib/login-events";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EXPORT_KINDS, EXPORT_MAX_ROWS } from "@/lib/data-export";
 import { ConfigTabs, type ConfigSection } from "@/app/(dashboard)/configuracion/config-tabs";
 import { AlertSettingsManager } from "@/app/(dashboard)/configuracion/alert-settings-manager";
 import { loadAlertSettings } from "@/lib/alert-settings";
@@ -41,7 +44,13 @@ export default async function ConfiguracionPage({
   const { userId, email, organization, membership } = await requireOrgContext();
   // Una sección por vez; Avisos es sólo para dueños y administradores.
   const section: ConfigSection =
-    tab === "cuenta" ? "cuenta" : tab === "avisos" && isOrgAdmin(membership.role) ? "avisos" : "negocio";
+    tab === "cuenta"
+      ? "cuenta"
+      : tab === "avisos" && isOrgAdmin(membership.role)
+        ? "avisos"
+        : tab === "datos" && isOrgAdmin(membership.role)
+          ? "datos"
+          : "negocio";
   const supabase = await createClient();
 
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
@@ -168,6 +177,48 @@ export default async function ConfiguracionPage({
           </Card>
         )}
           </>
+        )}
+
+        {section === "datos" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Tus datos son tuyos</CardTitle>
+              <CardDescription>
+                Bajá tu información cuando quieras, en archivos que abre Excel. Sirve de copia de seguridad o para llevártela a otro lado.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="divide-y divide-border">
+              {EXPORT_KINDS.map((e) => (
+                <form key={e.kind} method="get" action="/configuracion/exportar" className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-end sm:justify-between">
+                  <input type="hidden" name="tipo" value={e.kind} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{e.label}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{e.description}</p>
+                    {e.ranged && (
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <label className="flex items-center gap-1.5">
+                          Desde
+                          <input type="date" name="desde" className="h-9 rounded-lg border border-border bg-card px-2 text-sm text-foreground" />
+                        </label>
+                        <label className="flex items-center gap-1.5">
+                          Hasta
+                          <input type="date" name="hasta" className="h-9 rounded-lg border border-border bg-card px-2 text-sm text-foreground" />
+                        </label>
+                        <span>Sin fechas, baja todo.</span>
+                      </div>
+                    )}
+                  </div>
+                  <Button type="submit" variant="outline" className="shrink-0">
+                    <Download className="h-4 w-4" />
+                    Bajar Excel
+                  </Button>
+                </form>
+              ))}
+              <p className="pt-4 text-xs text-muted-foreground">
+                {`Cada archivo trae hasta ${EXPORT_MAX_ROWS.toLocaleString("es-AR")} filas (las más recientes): si tenés más, acotá con las fechas. Las fechas están en hora de Argentina.`}
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {section === "cuenta" && (
