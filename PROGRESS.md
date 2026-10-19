@@ -370,10 +370,12 @@ Para Pesito (negocio):
 - [ ] Borrar `MP_TEST_ORG_ID` de Vercel (Production) cuando terminen las pruebas de cobro; mientras esté cargada, ese negocio paga $15 en vez del precio del plan.
 - [ ] Decidir si, después de pagar desde Configuración → Plan, `/suscribirse/listo` vuelve a Planes en vez de al POS (alta nueva: POS; cliente que ya usaba Pesito: Planes). Hoy siempre va a `/pos`.
 - [x] Migración 0074 (`alert_settings`) aplicada en Supabase (19/10/2026); Configuración → Avisos guarda bien.
-- [ ] Aplicar la migración 0076 (`app_errors`) en Supabase y cargar `ERROR_ALERT_EMAIL` (o usar `FEEDBACK_NOTIFY_EMAIL`) para recibir el mail de errores nuevos.
-- [ ] Aplicar la migración 0077 (`lifecycle_emails`, `lifecycle_optout`) en Supabase y cargar `CRON_SECRET` en Vercel (más `RESEND_API_KEY`); sin eso los correos del ciclo de vida no salen. Después del primer envío, mirar el resultado de la tarea en Vercel → Cron Jobs.
+- [x] Migración 0076 (`app_errors`) aplicada en Supabase (19/10/2026).
+- [ ] Cargar `ERROR_ALERT_EMAIL` (o usar `FEEDBACK_NOTIFY_EMAIL`) y `RESEND_API_KEY` en Vercel para recibir el mail de errores nuevos.
+- [x] Migración 0077 (`lifecycle_emails`, `lifecycle_optout`) aplicada en Supabase (19/10/2026).
+- [ ] Cargar `CRON_SECRET` en Vercel (más `RESEND_API_KEY`); sin eso los correos del ciclo de vida no salen. Después del primer envío, mirar el resultado de la tarea en Vercel → Cron Jobs.
 - [ ] Revisar con el contador o un abogado que los correos de ayuda y la política de privacidad (/privacidad) estén de acuerdo (hoy tienen baja con un link).
-- [ ] Aplicar la migración 0075 (`platform_org_activity`) en Supabase; sin eso el embudo del panel interno avisa que falta.
+- [x] Migración 0075 (`platform_org_activity`) aplicada en Supabase (19/10/2026).
 - [ ] Avisos: ver cuáles más sumar (clientes con fiado vencido, margen del día, ventas por debajo de lo normal, faltante de caja repetido) y si el estado "visto" tiene que sincronizarse entre dispositivos (hoy queda en el navegador).
 - [ ] Rutina mensual de Claude (a definir con el usuario): revisar competencia de `blog-rankings.ts` y auditar coherencia de textos públicos, en rama con aviso.
 - Orden sugerido: métricas internas, correos del ciclo de vida, factura electrónica por etapas.
