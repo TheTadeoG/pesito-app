@@ -11,6 +11,15 @@ import type { Pick } from "@/lib/lifecycle";
 
 const SUPPORT = "soporte@pesito.com.ar";
 
+/**
+ * Interruptor general de los correos automáticos: APAGADO salvo que LIFECYCLE_EMAILS_ENABLED
+ * valga exactamente "true". Con el interruptor apagado no sale ningún correo del ciclo de vida
+ * (ni la bienvenida del alta ni la tarea diaria), aunque estén cargadas RESEND_API_KEY y CRON_SECRET.
+ */
+export function lifecycleEmailsEnabled(): boolean {
+  return process.env.LIFECYCLE_EMAILS_ENABLED === "true";
+}
+
 function secret(): string {
   const s = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!s) throw new Error("Falta SUPABASE_SERVICE_ROLE_KEY");
@@ -47,6 +56,7 @@ export async function sendLifecycle(
   admin: SupabaseClient<Database>,
   input: { orgId: string; orgName: string; ownerEmail: string; pick: Pick; trialEndsAt?: string | null; graceUntil?: string | null }
 ): Promise<boolean> {
+  if (!lifecycleEmailsEnabled()) return false; // última barrera: nada sale con el interruptor apagado
   const { subject, text } = renderLifecycleEmail(input.pick.template, {
     orgName: input.orgName,
     siteUrl,
@@ -69,7 +79,7 @@ export async function sendLifecycle(
  */
 export async function sendWelcome(admin: SupabaseClient<Database>, slug: string, ownerEmail: string | undefined): Promise<void> {
   try {
-    if (!ownerEmail) return;
+    if (!lifecycleEmailsEnabled() || !ownerEmail) return;
     const { data: org } = await admin.from("organizations").select("id, name").eq("slug", slug).maybeSingle();
     if (!org) return;
     const [{ data: sent }, { data: optout }] = await Promise.all([

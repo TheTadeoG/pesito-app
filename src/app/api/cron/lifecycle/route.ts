@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 import { pickEmail, type OrgLifecycleState } from "@/lib/lifecycle";
-import { sendLifecycle } from "@/lib/lifecycle-send";
+import { lifecycleEmailsEnabled, sendLifecycle } from "@/lib/lifecycle-send";
 
 // Correos automáticos del ciclo de vida: la llama Vercel Cron una vez por día (vercel.json) con
 // "Authorization: Bearer $CRON_SECRET". Decide qué le toca a cada negocio nuevo (lib/lifecycle.ts)
@@ -25,6 +25,8 @@ function authorized(request: NextRequest): boolean {
 
 export async function GET(request: NextRequest) {
   if (!authorized(request)) return new NextResponse(null, { status: 401 });
+  // Interruptor general (LIFECYCLE_EMAILS_ENABLED=true para prender): apagado, no lee ni manda nada.
+  if (!lifecycleEmailsEnabled()) return NextResponse.json({ enabled: false, considered: 0, sent: 0 });
   const admin = createAdminClient();
   const now = Date.now();
 
