@@ -1,5 +1,8 @@
 "use server";
 
+import { after } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { sendWelcome } from "@/lib/lifecycle-send";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
@@ -64,6 +67,9 @@ export async function createKiosco(
   if (error) {
     return { error: "No pudimos crear tu cuenta. Intentá de nuevo." };
   }
+
+  // Correo de bienvenida: después de responder (no demora el alta). Si falla, la tarea diaria lo manda.
+  after(() => sendWelcome(createAdminClient(), slug, user.email));
 
   // Eligió un plan pago en precios: primero se cobra, después entra.
   const selectedPlan = user.user_metadata?.selected_plan;

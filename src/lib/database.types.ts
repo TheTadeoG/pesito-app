@@ -776,6 +776,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["feedback"]["Insert"]>;
         Relationships: [];
       };
+      lifecycle_emails: {
+        Row: {
+          id: string;
+          org_id: string;
+          kind: string;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          kind: string;
+          sent_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["lifecycle_emails"]["Insert"]>;
+        Relationships: [];
+      };
+      lifecycle_optout: {
+        Row: {
+          org_id: string;
+          created_at: string;
+        };
+        Insert: {
+          org_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["lifecycle_optout"]["Insert"]>;
+        Relationships: [];
+      };
       app_errors: {
         Row: {
           id: string;

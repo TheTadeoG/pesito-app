@@ -29,6 +29,10 @@ const PUBLIC_PATHS = [
   "/sitemap.xml",
   "/robots.txt",
   "/llms.txt",
+  // Tarea diaria de correos (la llama Vercel Cron con su propio secreto) y baja de esos correos
+  // (link firmado de cada mail): se abren sin sesión.
+  "/api/cron",
+  "/api/lifecycle",
   // Avisos de Mercado Pago (cobro de los planes): verifican su propia firma.
   "/api/mercadopago",
   // Archivos que buscan los crawlers y agentes de IA (ai-catalog.json, etc.):
