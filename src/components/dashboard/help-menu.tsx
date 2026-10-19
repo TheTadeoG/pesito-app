@@ -6,7 +6,7 @@ import { BookOpen, Bug, HelpCircle, Keyboard, Lightbulb, MessageCircle, Rocket }
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { FeedbackDialog } from "@/components/dashboard/feedback-dialog";
-import { reopenOnboarding } from "@/components/dashboard/onboarding-checklist";
+import { restartOnboarding } from "@/components/dashboard/onboarding-checklist";
 import type { FeedbackKind } from "@/lib/feedback";
 import { whatsappLink } from "@/lib/whatsapp";
 import { NAV_SHORTCUTS } from "@/lib/shortcuts";
@@ -180,7 +180,7 @@ const itemClass =
   "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-muted focus-visible:bg-muted focus-visible:outline-none";
 
 /**
- * Botón de ayuda (?) de la barra de arriba: un menú con los atajos del teclado, volver a ver los
+ * Botón de ayuda (?) de la barra de arriba: un menú con los atajos del teclado, hacer de nuevo los
  * primeros pasos (dueño o administrador), el soporte por WhatsApp, las sugerencias y reportes de problemas y las preguntas frecuentes. En el celular no hay
  * atajos (no hay teclado), así que esa opción no se muestra.
  */
@@ -250,13 +250,13 @@ export function HelpMenu({ orgName, canOnboard }: { orgName: string; canOnboard:
               className={itemClass}
               onClick={() => {
                 setOpen(false);
-                reopenOnboarding();
+                restartOnboarding();
                 // En el POS la guía no se muestra (ahí se cobra): se va a Productos, que es el primer paso.
                 if (pathname === "/pos") router.push("/productos");
               }}
             >
               <Rocket className="h-4 w-4 text-primary" />
-              Ver los primeros pasos
+              Hacer de nuevo los primeros pasos
             </button>
           )}
           <a

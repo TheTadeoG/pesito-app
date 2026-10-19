@@ -10,6 +10,7 @@ import {
   ChevronDown,
   PackagePlus,
   Receipt,
+  RotateCcw,
   Rocket,
   ShoppingBag,
   ShoppingCart,
@@ -28,6 +29,8 @@ import { cn } from "@/lib/utils";
 
 const DISMISS_KEY = "pesito-onboarding-dismissed";
 const FORCE_KEY = "pesito-onboarding-forced";
+const SINCE_KEY = "pesito-onboarding-since";
+const SKIP_KEY = "pesito-onboarding-skipped";
 const OPEN_EVENT = "pesito:onboarding-open";
 const VISITED_KEY = "pesito-onboarding-visited";
 const REFETCH_MS = 20_000;
@@ -113,17 +116,38 @@ const NEXT_STEPS: Step[] = [
 ];
 
 /**
- * Vuelve a mostrar la guía (desde el botón de ayuda), aunque el negocio ya no sea nuevo, la haya
- * ocultado o la haya terminado: entonces se ven todos los pasos juntos, con los hechos tildados.
+ * Reinicia la guía (desde el botón de ayuda o el "Reiniciar" de la guía): arranca de cero, con todos
+ * los pasos pendientes aunque el negocio ya tenga todo cargado. Un paso se completa cuando se lo
+ * vuelve a hacer (se cuenta lo hecho desde ahora) o cuando se lo salta. Se ve aunque el negocio ya
+ * no sea nuevo o la guía se haya ocultado.
  */
-export function reopenOnboarding() {
+export function restartOnboarding() {
   try {
     window.localStorage.removeItem(DISMISS_KEY);
     window.localStorage.setItem(FORCE_KEY, "1");
+    window.localStorage.setItem(SINCE_KEY, new Date().toISOString());
+    window.localStorage.setItem(SKIP_KEY, "[]");
+    window.localStorage.setItem(VISITED_KEY, "[]");
   } catch {
     // sin almacenamiento: se muestra igual mientras no se recargue
   }
   window.dispatchEvent(new Event(OPEN_EVENT));
+}
+
+function readSkipped(): Set<string> {
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem(SKIP_KEY) ?? "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function readSince(): string | null {
+  try {
+    return window.localStorage.getItem(SINCE_KEY);
+  } catch {
+    return null;
+  }
 }
 
 function readVisited(): Set<string> {
@@ -140,6 +164,8 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
   const [visited, setVisited] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState(true); // oculto hasta saber qué hay guardado
   const [forced, setForced] = useState(false);
+  const [skipped, setSkipped] = useState<Set<string>>(new Set());
+  const sinceRef = useRef<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState<boolean | null>(null);
   const lastFetch = useRef(0);
@@ -153,6 +179,8 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
       setDismissed(false);
     }
     setVisited(readVisited());
+    setSkipped(readSkipped());
+    sinceRef.current = readSince();
   }, []);
 
   // Visitar Reportes cuenta como "mirá tus reportes".
@@ -170,7 +198,7 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
 
   const load = useCallback(async () => {
     lastFetch.current = Date.now();
-    const next = await getOnboardingProgress();
+    const next = await getOnboardingProgress(sinceRef.current);
     if (next) setProgress(next);
     setFailed(!next);
   }, []);
@@ -178,6 +206,10 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
   // "Ver los primeros pasos" del menú de ayuda.
   useEffect(() => {
     function onOpen() {
+      sinceRef.current = readSince();
+      setSkipped(readSkipped());
+      setVisited(readVisited());
+      setProgress(null); // vuelve a pedir: los pasos arrancan desde ahora
       setForced(true);
       setDismissed(false);
       setOpen(true);
@@ -219,13 +251,25 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
   // En el POS no: ahí se cobra y el espacio es del carrito.
   if (!eligible || dismissed || !progress || pathname === "/pos") return null;
 
-  const firstDone = FIRST_SALE.every((s) => s.done(progress, visited));
+  // Un paso está hecho si ya se hizo (desde que se reinició, si se reinició) o si se lo saltó.
+  const isDone = (s: Step) => skipped.has(s.id) || s.done(progress, visited);
+  const firstDone = FIRST_SALE.every(isDone);
   // Reabierta desde la ayuda: todos los pasos juntos, con los hechos tildados.
   const steps = forced ? [...FIRST_SALE, ...NEXT_STEPS] : firstDone ? NEXT_STEPS : FIRST_SALE;
-  const doneCount = steps.filter((s) => s.done(progress, visited)).length;
-  const allDone = !forced && firstDone && NEXT_STEPS.every((s) => s.done(progress, visited));
-  const current = steps.find((s) => !s.done(progress, visited)) ?? null;
+  const doneCount = steps.filter(isDone).length;
+  const allDone = !forced && firstDone && NEXT_STEPS.every(isDone);
+  const current = steps.find((s) => !isDone(s)) ?? null;
   const expanded = open ?? doneCount === 0;
+
+  function skip(id: string) {
+    const next = new Set(skipped).add(id);
+    setSkipped(next);
+    try {
+      window.localStorage.setItem(SKIP_KEY, JSON.stringify(Array.from(next)));
+    } catch {
+      // sin almacenamiento: queda saltado hasta recargar
+    }
+  }
 
   function dismiss() {
     setDismissed(true);
@@ -280,6 +324,18 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         )}
+        {forced && (
+          <button
+            type="button"
+            onClick={restartOnboarding}
+            aria-label="Reiniciar los primeros pasos"
+            title="Reiniciar: todos los pasos vuelven a quedar pendientes"
+            className="inline-flex shrink-0 items-center gap-1 rounded-lg p-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span className="hidden sm:inline">Reiniciar</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setOpen(!expanded)}
@@ -302,7 +358,7 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
       {expanded && (
         <ol className="space-y-2 border-t border-primary/15 p-3">
           {steps.map((s, i) => {
-            const done = s.done(progress, visited);
+            const done = isDone(s);
             const isCurrent = current?.id === s.id;
             const Icon = s.icon;
             return (
@@ -328,6 +384,16 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
                   </p>
                   {!done && <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{s.text}</p>}
                 </div>
+                {!done && forced && (
+                  <button
+                    type="button"
+                    onClick={() => skip(s.id)}
+                    className="shrink-0 self-center rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                    title="Ya lo sé hacer: marcar como hecho"
+                  >
+                    Saltar
+                  </button>
+                )}
                 {!done && (
                   <Link
                     href={s.href}
