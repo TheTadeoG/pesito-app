@@ -87,7 +87,7 @@ export function newDeviceAlert(logins: NewDeviceLogin[]): BellAlert | null {
     tone: "warning",
     title: "Ingreso desde un dispositivo nuevo",
     detail: `${first.who}, ${first.device}, ${first.at}${more}. ¿No lo reconocés? Cambiá la contraseña.`,
-    href: "/configuracion",
+    href: "/configuracion?tab=cuenta",
     // La misma clave que usaba el cartel de arriba: quien ya lo había cerrado no lo vuelve a ver.
     dismiss: { key: "pesito-dismissed-new-device", token: first.id },
   };

@@ -305,7 +305,7 @@ export function AlertsBell() {
                 </span>
               )}
               <Link
-                href="/configuracion#avisos"
+                href="/configuracion?tab=avisos"
                 prefetch={false}
                 onClick={() => setOpen(false)}
                 aria-label="Configurar avisos"

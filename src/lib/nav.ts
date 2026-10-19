@@ -125,7 +125,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/recomendaciones": { title: "Qué comprar", description: "Qué pedir y qué precios revisar." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },
   "/mercado": { title: "Mercado", description: "Novedades y precios de referencia de tu rubro." },
-  "/configuracion": { title: "Ajustes", description: "Datos de tu negocio." },
+  "/configuracion": { title: "Ajustes", description: "Tu negocio, tus avisos y tu cuenta." },
   "/planes": { title: "Mi plan", description: "Tu plan, los demás planes y cómo pagás." },
   "/soporte": { title: "Ayuda", description: "¿Necesitás ayuda?" },
   "/caja": { title: "Mi Caja", description: "Apertura y cierre de caja." },

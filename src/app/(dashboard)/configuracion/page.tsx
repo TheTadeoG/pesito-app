@@ -19,6 +19,7 @@ import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 import { TwoFactorCard } from "@/app/(dashboard)/configuracion/two-factor-card";
 import { describeDevice } from "@/lib/login-events";
+import { ConfigTabs, type ConfigSection } from "@/app/(dashboard)/configuracion/config-tabs";
 import { AlertSettingsManager } from "@/app/(dashboard)/configuracion/alert-settings-manager";
 import { loadAlertSettings } from "@/lib/alert-settings";
 import { ALERT_DEFS } from "@/lib/alert-config";
@@ -38,6 +39,9 @@ export default async function ConfiguracionPage({
     redirect(preapprovalId ? `/planes?preapproval_id=${encodeURIComponent(preapprovalId)}` : "/planes");
   }
   const { userId, email, organization, membership } = await requireOrgContext();
+  // Una sección por vez; Avisos es sólo para dueños y administradores.
+  const section: ConfigSection =
+    tab === "cuenta" ? "cuenta" : tab === "avisos" && isOrgAdmin(membership.role) ? "avisos" : "negocio";
   const supabase = await createClient();
 
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
@@ -82,7 +86,10 @@ export default async function ConfiguracionPage({
 
   return (
     <div className="space-y-6">
+      <ConfigTabs active={section} isAdmin={isOrgAdmin(membership.role)} />
       <div className="max-w-2xl space-y-6">
+        {section === "negocio" && (
+          <>
         <Card>
           <CardHeader>
             <CardTitle>Tu negocio</CardTitle>
@@ -129,6 +136,22 @@ export default async function ConfiguracionPage({
           </Card>
         )}
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Medios de pago</CardTitle>
+            <CardDescription>
+              Agregá los que uses además de los de siempre (ej: Mercado Pago, Talo).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PaymentMethodsManager methods={paymentMethods ?? []} />
+          </CardContent>
+        </Card>
+          </>
+        )}
+
+        {section === "avisos" && (
+          <>
         {isOrgAdmin(membership.role) && (
           <Card id="avisos" className="scroll-mt-20">
             <CardHeader>
@@ -144,19 +167,11 @@ export default async function ConfiguracionPage({
             </CardContent>
           </Card>
         )}
+          </>
+        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Medios de pago</CardTitle>
-            <CardDescription>
-              Agregá los que uses además de los de siempre (ej: Mercado Pago, Talo).
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PaymentMethodsManager methods={paymentMethods ?? []} />
-          </CardContent>
-        </Card>
-
+        {section === "cuenta" && (
+          <>
         <Card>
           <CardHeader>
             <CardTitle>Mi cuenta</CardTitle>
@@ -225,6 +240,8 @@ export default async function ConfiguracionPage({
             </div>
           </CardContent>
         </Card>
+          </>
+        )}
       </div>
     </div>
   );
