@@ -25,6 +25,7 @@ import { isOrgAdmin } from "@/lib/roles";
 import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { loadAlertSettings } from "@/lib/alert-settings";
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { AlertsProvider } from "@/components/dashboard/alerts-provider";
 import { newDeviceAlert, planAlerts, type BellAlert, type NewDeviceLogin } from "@/lib/bell-alerts";
 
@@ -143,6 +144,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .filter((f) => !canUse(subscription, f))
       .map((f) => [f, planLabels[featureMinPlan[f]]])
   );
+  // "Primeros pasos": el primer mes del negocio.
+  // eslint-disable-next-line react-hooks/purity
+  const newBusiness = Date.now() - new Date(organization.created_at).getTime() < 30 * 24 * 60 * 60 * 1000;
   const memberName = greetingName || membership.username || email || "";
 
   const expiringBilling = expiringPaidPlan(subscription);
@@ -207,6 +211,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             greetingName={greetingName}
             branch={branch}
           />
+          <OnboardingChecklist show={isOrgAdmin(membership.role) && newBusiness} />
           <CommercialDatesBanner dates={commercialDates} />
           {openRegister && (
             <CashCloseReminder
