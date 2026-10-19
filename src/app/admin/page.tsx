@@ -167,6 +167,9 @@ export default async function AdminPage() {
     admin.from("platform_org_activity").select("*"),
   ]);
 
+  // Errores abiertos de la app (migración 0076; 0 si todavía no está aplicada).
+  const { count: openErrorsCount } = await admin.from("app_errors").select("id", { count: "exact", head: true }).eq("status", "new");
+
   // auth.users no se puede leer con .from() ni siquiera con la service role;
   // hay que paginar con la Admin API. Con un tope de 20 páginas (20.000
   // usuarios) alcanza de sobra para esta etapa del producto.
@@ -774,6 +777,27 @@ export default async function AdminPage() {
             <Link href="/admin/mensajes">
               <Button variant="outline" size="sm">
                 Ver mensajes
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                <AlertTriangle className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-muted-foreground">Errores de la app</p>
+                <p className="text-lg font-bold text-foreground">
+                  {openErrorsCount ?? 0} <span className="text-sm font-normal text-muted-foreground">abiertos</span>
+                </p>
+              </div>
+            </div>
+            <Link href="/admin/errores">
+              <Button variant="outline" size="sm">
+                Ver errores
               </Button>
             </Link>
           </CardContent>

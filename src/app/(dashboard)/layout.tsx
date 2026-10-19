@@ -24,6 +24,7 @@ import { cookies } from "next/headers";
 import { isOrgAdmin } from "@/lib/roles";
 import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { ErrorReporter } from "@/components/error-reporter";
 import { loadAlertSettings } from "@/lib/alert-settings";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { AlertsProvider } from "@/components/dashboard/alerts-provider";
@@ -186,6 +187,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <WelcomeModal />
       </Suspense>
       <RefreshAfterSale />
+      <ErrorReporter />
       <AlertsProvider serverAlerts={bell.alerts} cash={bell.cash} locks={bell.locks} settings={alertSettings}>
       <div className="flex min-h-screen bg-background">
         <Sidebar

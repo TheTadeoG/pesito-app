@@ -776,6 +776,36 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["feedback"]["Insert"]>;
         Relationships: [];
       };
+      app_errors: {
+        Row: {
+          id: string;
+          fingerprint: string;
+          source: "server" | "client";
+          message: string;
+          stack: string | null;
+          path: string | null;
+          context: string | null;
+          occurrences: number;
+          first_seen_at: string;
+          last_seen_at: string;
+          status: "new" | "resolved";
+        };
+        Insert: {
+          id?: string;
+          fingerprint: string;
+          source: "server" | "client";
+          message: string;
+          stack?: string | null;
+          path?: string | null;
+          context?: string | null;
+          occurrences?: number;
+          first_seen_at?: string;
+          last_seen_at?: string;
+          status?: "new" | "resolved";
+        };
+        Update: Partial<Database["public"]["Tables"]["app_errors"]["Insert"]>;
+        Relationships: [];
+      };
       alert_settings: {
         Row: {
           org_id: string;
@@ -1040,6 +1070,17 @@ export interface Database {
       rate_limit_ip: {
         Args: { p_key: string; p_bucket: string; p_max: number; p_window_seconds: number };
         Returns: boolean;
+      };
+      log_app_error: {
+        Args: {
+          p_fingerprint: string;
+          p_source: string;
+          p_message: string;
+          p_stack: string | null;
+          p_path: string | null;
+          p_context: string | null;
+        };
+        Returns: { is_new: boolean; reopened: boolean; occurrences: number }[];
       };
       save_alert_settings: {
         Args: { p_org_id: string; p_settings: Json };
