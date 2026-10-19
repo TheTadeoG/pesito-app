@@ -40,11 +40,6 @@ export default async function ConfiguracionPage({
   const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
 
-  const alertSettings = await loadAlertSettings(supabase, organization.id);
-  const alertFeatureLocks = Object.fromEntries(
-    ALERT_DEFS.map((d) => [d.id, d.feature && !canUse(subscription, d.feature) ? featureMinPlan[d.feature] : null])
-  );
-
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
 
   const [
@@ -74,6 +69,11 @@ export default async function ConfiguracionPage({
       .order("created_at", { ascending: false })
       .limit(10),
   ]);
+  // Avisos (Configuración → Avisos): qué está prendido y qué plan desbloquea cada uno.
+  const alertSettings = await loadAlertSettings(supabase, organization.id);
+  const alertFeatureLocks = Object.fromEntries(
+    ALERT_DEFS.map((d) => [d.id, d.feature && !canUse(subscription, d.feature) ? featureMinPlan[d.feature] : null])
+  );
   const memberLabel = (id: string) => {
     if (id === userId) return "Vos";
     const m = (memberships ?? []).find((x) => x.user_id === id);
