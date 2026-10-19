@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BookOpen, Bug, HelpCircle, Keyboard, Lightbulb, MessageCircle } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { BookOpen, Bug, HelpCircle, Keyboard, Lightbulb, MessageCircle, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { FeedbackDialog } from "@/components/dashboard/feedback-dialog";
+import { reopenOnboarding } from "@/components/dashboard/onboarding-checklist";
 import type { FeedbackKind } from "@/lib/feedback";
 import { whatsappLink } from "@/lib/whatsapp";
 import { NAV_SHORTCUTS } from "@/lib/shortcuts";
@@ -178,11 +180,13 @@ const itemClass =
   "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-muted focus-visible:bg-muted focus-visible:outline-none";
 
 /**
- * Botón de ayuda (?) de la barra de arriba: un menú con los atajos del teclado,
- * el soporte por WhatsApp, las sugerencias y reportes de problemas y las preguntas frecuentes. En el celular no hay
+ * Botón de ayuda (?) de la barra de arriba: un menú con los atajos del teclado, volver a ver los
+ * primeros pasos (dueño o administrador), el soporte por WhatsApp, las sugerencias y reportes de problemas y las preguntas frecuentes. En el celular no hay
  * atajos (no hay teclado), así que esa opción no se muestra.
  */
-export function HelpMenu({ orgName }: { orgName: string }) {
+export function HelpMenu({ orgName, canOnboard }: { orgName: string; canOnboard: boolean }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackKind | null>(null);
@@ -239,6 +243,22 @@ export function HelpMenu({ orgName }: { orgName: string }) {
             <Keyboard className="h-4 w-4 text-primary" />
             Atajos del teclado
           </button>
+          {canOnboard && (
+            <button
+              type="button"
+              role="menuitem"
+              className={itemClass}
+              onClick={() => {
+                setOpen(false);
+                reopenOnboarding();
+                // En el POS la guía no se muestra (ahí se cobra): se va a Productos, que es el primer paso.
+                if (pathname === "/pos") router.push("/productos");
+              }}
+            >
+              <Rocket className="h-4 w-4 text-primary" />
+              Ver los primeros pasos
+            </button>
+          )}
           <a
             role="menuitem"
             className={itemClass}

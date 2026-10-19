@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { PlanLine } from "@/components/dashboard/plan-line";
 import { HelpMenu } from "@/components/dashboard/help-menu";
+import { isOrgAdmin } from "@/lib/roles";
 import { AlertsBell } from "@/components/dashboard/alerts-bell";
 import type { Plan } from "@/lib/subscription";
 import type { BranchSwitcherProps } from "@/components/dashboard/branch-switcher";
@@ -49,7 +50,7 @@ export function Topbar({ orgName, userLabel, greetingName, branch, roleLabel, pl
 
       <div className="flex shrink-0 items-center gap-2">
         <AlertsBell />
-        <HelpMenu orgName={orgName} />
+        <HelpMenu orgName={orgName} canOnboard={isOrgAdmin(role)} />
         {/* En el celular, el tema y salir viven al pie del menú de las tres rayitas.
             (El Button trae inline-flex y le gana a "hidden": se ocultan con un contenedor.) */}
         <div className="hidden items-center gap-2 sm:flex">

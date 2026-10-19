@@ -213,7 +213,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             greetingName={greetingName}
             branch={branch}
           />
-          <OnboardingChecklist show={isOrgAdmin(membership.role) && newBusiness} />
+          <OnboardingChecklist show={newBusiness} canReopen={isOrgAdmin(membership.role)} />
           <CommercialDatesBanner dates={commercialDates} />
           {openRegister && (
             <CashCloseReminder

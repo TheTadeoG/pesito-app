@@ -27,6 +27,8 @@ import { cn } from "@/lib/utils";
 // nada. Se puede ocultar y no vuelve. Sólo dueños y administradores, el primer mes.
 
 const DISMISS_KEY = "pesito-onboarding-dismissed";
+const FORCE_KEY = "pesito-onboarding-forced";
+const OPEN_EVENT = "pesito:onboarding-open";
 const VISITED_KEY = "pesito-onboarding-visited";
 const REFETCH_MS = 20_000;
 
@@ -110,6 +112,20 @@ const NEXT_STEPS: Step[] = [
   },
 ];
 
+/**
+ * Vuelve a mostrar la guía (desde el botón de ayuda), aunque el negocio ya no sea nuevo, la haya
+ * ocultado o la haya terminado: entonces se ven todos los pasos juntos, con los hechos tildados.
+ */
+export function reopenOnboarding() {
+  try {
+    window.localStorage.removeItem(DISMISS_KEY);
+    window.localStorage.setItem(FORCE_KEY, "1");
+  } catch {
+    // sin almacenamiento: se muestra igual mientras no se recargue
+  }
+  window.dispatchEvent(new Event(OPEN_EVENT));
+}
+
 function readVisited(): Set<string> {
   try {
     return new Set(JSON.parse(window.localStorage.getItem(VISITED_KEY) ?? "[]") as string[]);
@@ -118,11 +134,12 @@ function readVisited(): Set<string> {
   }
 }
 
-export function OnboardingChecklist({ show }: { show: boolean }) {
+export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReopen: boolean }) {
   const pathname = usePathname();
   const [progress, setProgress] = useState<OnboardingProgress | null>(null);
   const [visited, setVisited] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState(true); // oculto hasta saber qué hay guardado
+  const [forced, setForced] = useState(false);
   const [open, setOpen] = useState<boolean | null>(null);
   const lastFetch = useRef(0);
 
@@ -130,6 +147,7 @@ export function OnboardingChecklist({ show }: { show: boolean }) {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDismissed(window.localStorage.getItem(DISMISS_KEY) === "1");
+      setForced(window.localStorage.getItem(FORCE_KEY) === "1");
     } catch {
       setDismissed(false);
     }
@@ -155,28 +173,45 @@ export function OnboardingChecklist({ show }: { show: boolean }) {
     if (next) setProgress(next);
   }, []);
 
+  // "Ver los primeros pasos" del menú de ayuda.
+  useEffect(() => {
+    function onOpen() {
+      setForced(true);
+      setDismissed(false);
+      setOpen(true);
+      void load();
+    }
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+  }, [load]);
+
+  const eligible = canReopen && (show || forced);
+
   // Al entrar y, al moverse entre pantallas, a lo sumo una vez cada 20 s.
   useEffect(() => {
-    if (!show || dismissed) return;
+    if (!eligible || dismissed) return;
     if (Date.now() - lastFetch.current < REFETCH_MS && progress) return;
     const id = window.setTimeout(load, progress ? 800 : 1200);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [show, dismissed, pathname, load]);
+  }, [eligible, dismissed, pathname, load]);
 
   // En el POS no: ahí se cobra y el espacio es del carrito.
-  if (!show || dismissed || !progress || pathname === "/pos") return null;
+  if (!eligible || dismissed || !progress || pathname === "/pos") return null;
 
   const firstDone = FIRST_SALE.every((s) => s.done(progress, visited));
-  const steps = firstDone ? NEXT_STEPS : FIRST_SALE;
+  // Reabierta desde la ayuda: todos los pasos juntos, con los hechos tildados.
+  const steps = forced ? [...FIRST_SALE, ...NEXT_STEPS] : firstDone ? NEXT_STEPS : FIRST_SALE;
   const doneCount = steps.filter((s) => s.done(progress, visited)).length;
-  const allDone = firstDone && NEXT_STEPS.every((s) => s.done(progress, visited));
+  const allDone = !forced && firstDone && NEXT_STEPS.every((s) => s.done(progress, visited));
   const current = steps.find((s) => !s.done(progress, visited)) ?? null;
   const expanded = open ?? doneCount === 0;
 
   function dismiss() {
     setDismissed(true);
+    setForced(false);
     try {
+      window.localStorage.removeItem(FORCE_KEY);
       window.localStorage.setItem(DISMISS_KEY, "1");
     } catch {
       // sin almacenamiento: vuelve en la próxima visita
@@ -208,7 +243,7 @@ export function OnboardingChecklist({ show }: { show: boolean }) {
         </span>
         <button type="button" onClick={() => setOpen(!expanded)} aria-expanded={expanded} className="min-w-0 flex-1 text-left">
           <span className="block text-sm font-semibold text-foreground">
-            {firstDone ? "Ya sabés vender. Sumá esto:" : "Tu primera venta en 3 pasos"}
+            {forced ? "Primeros pasos" : firstDone ? "Ya sabés vender. Sumá esto:" : "Tu primera venta en 3 pasos"}
             <span className="ml-2 text-xs font-medium text-muted-foreground">{`${doneCount} de ${steps.length}`}</span>
           </span>
           <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-primary/15" aria-hidden="true">
