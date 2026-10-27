@@ -832,7 +832,7 @@ export function ProductosClient({
               <PlanPill plan={productUsage.nextPlan} />
             </Link>
           ) : (
-            <Button onClick={openCreate}>
+            <Button data-tour="new-product" onClick={openCreate}>
               <Plus className="h-4 w-4" />
               Nuevo producto
             </Button>

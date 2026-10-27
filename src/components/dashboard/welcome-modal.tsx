@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { startTour } from "@/lib/tour-state";
 import { ArrowRight, BookOpen, Rocket, X } from "lucide-react";
 
 // Aparece una sola vez, justo después de terminar el onboarding — el
@@ -44,16 +45,22 @@ export function WelcomeModal() {
         <div className="mt-5 space-y-2.5">
           <button
             type="button"
-            onClick={close}
-            className="flex w-full items-start gap-3 rounded-xl border border-border p-4 text-left transition-colors hover:bg-muted"
+            onClick={() => {
+              close();
+              startTour();
+            }}
+            className="flex w-full items-start gap-3 rounded-xl border-2 border-primary bg-accent/40 p-4 text-left transition-colors hover:bg-accent"
           >
             <Rocket className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <span>
-              <span className="block text-sm font-semibold text-foreground">
-                Empezar a vender ahora
+              <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                Hacer el tutorial guiado
+                <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
+                  Recomendado
+                </span>
               </span>
               <span className="block text-xs text-muted-foreground">
-                Cargá tu primer producto y probá una venta.
+                Te llevamos de la mano: cargás un producto y hacés tu primera venta. Unos 5 minutos.
               </span>
             </span>
           </button>
@@ -67,10 +74,10 @@ export function WelcomeModal() {
             <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <span>
               <span className="block text-sm font-semibold text-foreground">
-                Ver cómo funciona
+                Leer cómo funciona
               </span>
               <span className="block text-xs text-muted-foreground">
-                Los 5 pasos, en una pestaña nueva.
+                Los 5 pasos y las guías del blog, en una pestaña nueva. Los videos, pronto.
               </span>
             </span>
           </Link>

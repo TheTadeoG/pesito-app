@@ -68,6 +68,7 @@ function OpenCajaFormContent({ onClose }: { onClose: () => void }) {
           )}
         </label>
         <Input
+          data-tour="caja-amount"
           ref={amountRef}
           type="number"
           min={0}
@@ -97,7 +98,7 @@ function OpenCajaFormContent({ onClose }: { onClose: () => void }) {
         <Button type="button" variant="outline" onClick={onClose}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" data-tour="caja-submit" disabled={pending}>
           <DollarSign className="h-4 w-4" />
           {pending ? "Abriendo…" : "Abrir Caja (Enter)"}
         </Button>
@@ -150,7 +151,7 @@ export function OpenCajaDialog() {
           <p className="text-sm text-muted-foreground">
             Abrí tu caja con el efectivo con el que empezás el día para poder vender.
           </p>
-          <Button className="mt-2" onClick={() => setOpen(true)}>
+          <Button className="mt-2" data-tour="open-caja" onClick={() => setOpen(true)}>
             <DollarSign className="h-4 w-4" />
             Abrir Mi Caja (Enter)
           </Button>

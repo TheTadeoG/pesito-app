@@ -139,7 +139,7 @@ export function SaleDoneDialog({
   return (
     <>
       <Dialog open onClose={onClose} title="¡Venta cobrada!">
-        <div className="space-y-5">
+        <div data-tour="sale-done" className="space-y-5">
           <div className="flex items-center gap-3 rounded-xl bg-success-bg px-4 py-3">
             <CheckCircle2 className="h-6 w-6 shrink-0 text-success" />
             <div>

@@ -26,6 +26,7 @@ import { DEVICE_COOKIE, describeDevice } from "@/lib/login-events";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { ErrorReporter } from "@/components/error-reporter";
 import { loadAlertSettings } from "@/lib/alert-settings";
+import { TourController } from "@/components/dashboard/tour-controller";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { AlertsProvider } from "@/components/dashboard/alerts-provider";
 import { newDeviceAlert, planAlerts, type BellAlert, type NewDeviceLogin } from "@/lib/bell-alerts";
@@ -186,6 +187,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Suspense fallback={null}>
         <WelcomeModal />
       </Suspense>
+      <TourController enabled={isOrgAdmin(membership.role)} />
       <RefreshAfterSale />
       <ErrorReporter />
       <AlertsProvider serverAlerts={bell.alerts} cash={bell.cash} locks={bell.locks} settings={alertSettings}>

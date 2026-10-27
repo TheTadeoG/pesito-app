@@ -108,7 +108,7 @@ function PriceWithIvaField({
   }
 
   return (
-    <div>
+    <div data-tour={id}>
       <div className="flex items-center justify-between gap-2">
         <Label htmlFor={id} required={required}>
           {label}
@@ -749,7 +749,7 @@ export function ProductForm({
           <Button type="button" variant="outline" onClick={resetAndClose}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={pending || uploadingImage}>
+          <Button type="submit" data-tour="product-save" disabled={pending || uploadingImage}>
             {pending ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear producto"}
           </Button>
         </div>

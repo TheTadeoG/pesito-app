@@ -939,7 +939,7 @@ export function PosClient({
 
   return (
     <div className="grid gap-6 xl:grid-cols-3">
-      <div className="min-w-0 rounded-card border border-border bg-card p-5 xl:col-span-2">
+      <div data-tour="pos-search" className="min-w-0 rounded-card border border-border bg-card p-5 xl:col-span-2">
         <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">
                 <button
@@ -1411,6 +1411,7 @@ export function PosClient({
           )}
 
           <Button
+            data-tour="pos-charge"
             className="w-full"
             size="lg"
             disabled={cart.length === 0 || pending}

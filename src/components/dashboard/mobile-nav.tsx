@@ -86,6 +86,7 @@ export function MobileNav({
                         <Link
                           key={item.href}
                           href={item.href}
+                          data-tour={`nav-${item.href}`}
                           prefetch={false}
                           onClick={() => setOpen(false)}
                           className={cn(

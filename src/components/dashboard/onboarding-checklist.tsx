@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { getOnboardingProgress, type OnboardingProgress } from "@/components/dashboard/onboarding-actions";
 import { cn } from "@/lib/utils";
+import { useTourState, startTour } from "@/lib/tour-state";
 
 // "Primeros pasos": una guía corta para el negocio recién creado. Primero lo mínimo para hacer la
 // primera venta (producto, caja, venta); cuando eso está, qué más probar (una compra, un cliente,
@@ -160,6 +161,7 @@ function readVisited(): Set<string> {
 
 export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReopen: boolean }) {
   const pathname = usePathname();
+  const touring = useTourState() !== null;
   const [progress, setProgress] = useState<OnboardingProgress | null>(null);
   const [visited, setVisited] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState(true); // oculto hasta saber qué hay guardado
@@ -249,7 +251,7 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
   }
 
   // En el POS no: ahí se cobra y el espacio es del carrito.
-  if (!eligible || dismissed || !progress || pathname === "/pos") return null;
+  if (!eligible || dismissed || !progress || pathname === "/pos" || touring) return null;
 
   // Un paso está hecho si ya se hizo (desde que se reinició, si se reinició) o si se lo saltó.
   const isDone = (s: Step) => skipped.has(s.id) || s.done(progress, visited);
@@ -324,6 +326,14 @@ export function OnboardingChecklist({ show, canReopen }: { show: boolean; canReo
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         )}
+        <button
+          type="button"
+          onClick={startTour}
+          className="hidden shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-primary hover:bg-muted sm:inline-flex"
+        >
+          <Rocket className="h-3.5 w-3.5" />
+          Guiame paso a paso
+        </button>
         {forced && (
           <button
             type="button"

@@ -253,6 +253,7 @@ export function ClientesClient({
             </DropdownMenu>
           )}
           <Button
+            data-tour="new-customer"
             onClick={() => {
               setEditing(null);
               setFormOpen(true);

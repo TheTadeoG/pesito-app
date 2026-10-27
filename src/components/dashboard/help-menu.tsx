@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, Bug, HelpCircle, Keyboard, Lightbulb, MessageCircle, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { FeedbackDialog } from "@/components/dashboard/feedback-dialog";
-import { restartOnboarding } from "@/components/dashboard/onboarding-checklist";
+import { startTour } from "@/lib/tour-state";
 import type { FeedbackKind } from "@/lib/feedback";
 import { whatsappLink } from "@/lib/whatsapp";
 import { NAV_SHORTCUTS } from "@/lib/shortcuts";
@@ -185,8 +184,6 @@ const itemClass =
  * atajos (no hay teclado), así que esa opción no se muestra.
  */
 export function HelpMenu({ orgName, canOnboard }: { orgName: string; canOnboard: boolean }) {
-  const router = useRouter();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackKind | null>(null);
@@ -250,9 +247,7 @@ export function HelpMenu({ orgName, canOnboard }: { orgName: string; canOnboard:
               className={itemClass}
               onClick={() => {
                 setOpen(false);
-                restartOnboarding();
-                // En el POS la guía no se muestra (ahí se cobra): se va a Productos, que es el primer paso.
-                if (pathname === "/pos") router.push("/productos");
+                startTour();
               }}
             >
               <Rocket className="h-4 w-4 text-primary" />

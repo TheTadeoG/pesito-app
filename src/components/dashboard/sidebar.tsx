@@ -61,6 +61,7 @@ export function Sidebar({
       <Link
         key={item.href}
         href={item.href}
+        data-tour={`nav-${item.href}`}
         // Sin esto, Next.js prefetchea los ~14 links del menú
         // apenas se monta el sidebar (todos entran en el
         // viewport de una) — cada uno dispara el layout del
