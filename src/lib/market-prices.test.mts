@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {
-  diffPct, fetchStorePrice, MARKET_STORES, normalizeEan, parseVtexProducts, pricePosition, priceStats, roundShelfPrice, suggestPrice,
+  categoryPageUrl, dedupeByEan, diffPct, fetchStorePrice, leafCategories, parseVtexCatalogPage, MARKET_STORES, normalizeEan, parseVtexProducts, pricePosition, priceStats, roundShelfPrice, suggestPrice,
 } from "./market-prices.ts";
 
 let passed = 0;
@@ -77,6 +77,40 @@ test("fetchStorePrice: 404 = no lo tiene; 500 = error; 206 sirve", async () => {
   await assert.rejects(() => fetchStorePrice(store, "7790895000782", mk(500, null)));
   assert.equal((await fetchStorePrice(store, "7790895000782", mk(206, vtex)))?.price, 3499);
   assert.equal((await fetchStorePrice(store, "7790895000782", mk(200, vtex)))?.price, 3499);
+});
+
+test("categorías hoja con su ruta", () => {
+  const tree = [
+    { id: 1, name: "Bebidas", children: [{ id: 10, name: "Gaseosas", children: [] }, { id: 11, name: "Aguas", children: [{ id: 110, name: "Saborizadas" }] }] },
+    { id: 2, name: "Almacén" },
+    { name: "sin id" },
+  ];
+  assert.deepEqual(leafCategories(tree).map((c) => c.path), ["1/10", "1/11/110", "2"]);
+  assert.deepEqual(leafCategories({ x: 1 }), []);
+});
+
+test("página de catálogo: todas las presentaciones con EAN y precio", () => {
+  const page = [
+    { productName: "Coca", brand: "Coca-Cola", link: "/coca/p", items: [
+      { ean: "7790895000782", nameComplete: "Coca 1,75 L", sellers: [{ commertialOffer: { Price: 3499, ListPrice: 3499, AvailableQuantity: 5 } }] },
+      { ean: "7790895000799", nameComplete: "Coca 2,25 L", sellers: [{ commertialOffer: { Price: 0 } }] },
+      { ean: "x", sellers: [{ commertialOffer: { Price: 10 } }] },
+    ] },
+    { productName: "Otra", items: [{ ean: "7790895000782", sellers: [{ commertialOffer: { Price: 3600 } }] }] },
+  ];
+  const { items, products } = parseVtexCatalogPage(page);
+  assert.equal(products, 2);
+  assert.equal(items.length, 2);
+  assert.equal(items[0].name, "Coca 1,75 L");
+  assert.equal(dedupeByEan(items).length, 1);
+  assert.deepEqual(parseVtexCatalogPage({ nope: 1 }), { items: [], products: 0 });
+});
+
+test("url de página de categoría", () => {
+  assert.equal(
+    categoryPageUrl(MARKET_STORES[0], "1/10", 50),
+    "https://www.carrefour.com.ar/api/catalog_system/pub/products/search?fq=C:/1/10/&_from=50&_to=99"
+  );
 });
 
 setTimeout(() => console.log(`${passed} pruebas pasaron`), 200);

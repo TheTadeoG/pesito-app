@@ -834,6 +834,30 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["app_errors"]["Insert"]>;
         Relationships: [];
       };
+      market_crawl: {
+        Row: {
+          store: string;
+          month: string;
+          category: string;
+          name: string | null;
+          next_from: number;
+          done: boolean;
+          items: number;
+          updated_at: string;
+        };
+        Insert: {
+          store: string;
+          month: string;
+          category: string;
+          name?: string | null;
+          next_from?: number;
+          done?: boolean;
+          items?: number;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["market_crawl"]["Insert"]>;
+        Relationships: [];
+      };
       market_prices: {
         Row: {
           ean: string;
@@ -1141,6 +1165,18 @@ export interface Database {
           p_context: string | null;
         };
         Returns: { is_new: boolean; reopened: boolean; occurrences: number }[];
+      };
+      market_search: {
+        Args: { p_org_id: string; p_query: string; p_limit: number; p_offset: number };
+        Returns: {
+          ean: string;
+          name: string;
+          brand: string | null;
+          image_url: string | null;
+          min_price: number;
+          stores: Json;
+          total: number;
+        }[];
       };
       market_pending_eans: {
         Args: { p_month: string; p_stores: number; p_limit: number };

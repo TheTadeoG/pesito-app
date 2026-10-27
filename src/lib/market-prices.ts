@@ -187,3 +187,94 @@ export function cacheValidUntil(at: number): number {
   if (d.getUTCDate() <= SCAN_DAYS) return at + SCAN_TTL_MS;
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
 }
+
+// --- Catálogo completo de cada súper (para buscar por nombre) ---------------------------------
+
+export interface CatalogItem extends StorePrice {
+  ean: string;
+}
+
+export interface CrawlCategory {
+  /** Ruta de ids para filtrar: "12/45/301". */
+  path: string;
+  name: string;
+}
+
+interface VtexCategoryNode {
+  id?: number;
+  name?: string;
+  children?: VtexCategoryNode[];
+}
+
+/** Categorías "hoja" del árbol de VTEX (`/api/catalog_system/pub/category/tree/<n>`), con su ruta de ids. */
+export function leafCategories(tree: unknown): CrawlCategory[] {
+  const out: CrawlCategory[] = [];
+  const walk = (nodes: VtexCategoryNode[], path: string[]) => {
+    for (const n of nodes) {
+      if (typeof n.id !== "number") continue;
+      const here = [...path, String(n.id)];
+      if (n.children && n.children.length > 0) walk(n.children, here);
+      else out.push({ path: here.join("/"), name: String(n.name ?? "").slice(0, 100) });
+    }
+  };
+  if (Array.isArray(tree)) walk(tree as VtexCategoryNode[], []);
+  return out;
+}
+
+export const CRAWL_PAGE_SIZE = 50;
+/** VTEX no devuelve más de 2.500 resultados por consulta. */
+export const CRAWL_MAX_FROM = 2450;
+
+export function categoryPageUrl(store: MarketStore, categoryPath: string, from: number): string {
+  const to = from + CRAWL_PAGE_SIZE - 1;
+  return `https://${store.host}/api/catalog_system/pub/products/search?fq=C:/${categoryPath}/&_from=${from}&_to=${to}`;
+}
+
+/** Todas las presentaciones con código de barras y precio de una página de resultados. */
+export function parseVtexCatalogPage(json: unknown): { items: CatalogItem[]; products: number } {
+  if (!Array.isArray(json)) return { items: [], products: 0 };
+  const items: CatalogItem[] = [];
+  for (const product of json as (VtexProduct & { items?: (VtexItem & { nameComplete?: string })[] })[]) {
+    for (const item of product.items ?? []) {
+      const ean = normalizeEan(item.ean);
+      if (!ean) continue;
+      const offer = (item.sellers ?? []).map((s) => s.commertialOffer).find((o) => o && Number(o.Price) > 0);
+      if (!offer) continue;
+      const list = Number(offer.ListPrice);
+      items.push({
+        ean,
+        price: Math.round(Number(offer.Price) * 100) / 100,
+        listPrice: list > 0 ? Math.round(list * 100) / 100 : null,
+        name: (item.nameComplete ?? product.productName ?? "").slice(0, 200) || null,
+        brand: product.brand?.slice(0, 80) ?? null,
+        url: product.link?.slice(0, 300) ?? null,
+        imageUrl: item.images?.[0]?.imageUrl?.slice(0, 300) ?? null,
+        available: Number(offer.AvailableQuantity ?? 1) > 0,
+      });
+    }
+  }
+  return { items, products: (json as unknown[]).length };
+}
+
+/** Un mismo código puede venir repetido en una página: queda el primero. */
+export function dedupeByEan(items: CatalogItem[]): CatalogItem[] {
+  const seen = new Set<string>();
+  return items.filter((i) => (seen.has(i.ean) ? false : (seen.add(i.ean), true)));
+}
+
+/** Una consulta de catálogo (árbol o página). Mismo criterio de errores que fetchStorePrice. */
+export async function fetchJson(url: string, fetchImpl: FetchLike = fetch as FetchLike): Promise<unknown | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetchImpl(url, {
+      headers: { accept: "application/json", "user-agent": "Mozilla/5.0 (compatible; PesitoPrecios/1.0; +https://www.pesito.com.ar)" },
+      signal: controller.signal,
+    });
+    if (res.status === 404) return null;
+    if (!res.ok && res.status !== 206) throw new Error(`respondió ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}

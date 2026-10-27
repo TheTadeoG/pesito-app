@@ -4,6 +4,7 @@ import { loadAlertSettings } from "@/lib/alert-settings";
 import { alertValue } from "@/lib/alert-config";
 import { loadMarketPrices, statsFor } from "@/lib/market-data";
 import { diffPct, normalizeEan, pricePosition, suggestPrice, MARKET_STORES } from "@/lib/market-prices";
+import { MarketSearch } from "./market-search";
 import { PricesTable, type PriceRow } from "./prices-table";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription } from "@/lib/subscription";
@@ -148,6 +149,7 @@ export default async function MercadoPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-8">
+      {canPrices && <MarketSearch insights={insights} />}
       <section className="space-y-3">{prices}</section>
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Notas de tu rubro</h2>
