@@ -67,7 +67,6 @@ returns table (
   scraped_at timestamptz
 )
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
