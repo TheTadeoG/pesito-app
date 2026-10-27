@@ -158,6 +158,10 @@ export function TourController({ enabled }: { enabled: boolean }) {
             onPopoverRender: addExtras,
           },
         });
+        // driver deja el foco en el cartel: un Enter caería en «Atrás» o «Salir» en vez de llegar a la pantalla.
+        if (document.activeElement instanceof HTMLElement && document.activeElement.closest(".driver-popover")) {
+          document.activeElement.blur();
+        }
       });
     };
 
@@ -172,7 +176,8 @@ export function TourController({ enabled }: { enabled: boolean }) {
       const poll = window.setInterval(() => {
         if (cancelled) return;
         drv?.refresh();
-        if (a.type === "gone" && !document.body.contains(el)) next();
+        if (a.type === "click" && a.orAppear && findVisible(a.orAppear)) next();
+        else if (a.type === "gone" && !document.body.contains(el)) next();
         else if (a.type === "enabled" && !startedDone) {
           const t = findVisible(a.selector) as HTMLButtonElement | null;
           if (t && !t.disabled) next();

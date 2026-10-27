@@ -5,7 +5,7 @@
 
 export type TourAdvance =
   /** Tocar el elemento señalado (un botón del menú, "Nuevo producto"…). */
-  | { type: "click" }
+  | { type: "click"; orAppear?: string }
   /** El elemento desaparece (se guardó o se cerró el formulario). */
   | { type: "gone" }
   /** El botón "Siguiente" del cartel (con `requires`: queda apagado hasta que ese campo tenga algo). */
@@ -174,7 +174,7 @@ export const TOUR_STEPS: TourStep[] = [
     title: "Cobrá",
     text: "Con el producto en el carrito, tocá «Cobrar». También lo podés hacer con el teclado: apretando Enter dos veces seguidas.",
     side: "left",
-    advance: { type: "click" },
+    advance: { type: "click", orAppear: '[data-tour="pay-picker"]' },
   },
   {
     id: "pay-method",
