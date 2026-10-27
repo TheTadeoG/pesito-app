@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
-import { normalizeEan, priceStats, type PriceStats } from "@/lib/market-prices";
+import { cacheValidUntil, normalizeEan, priceStats, type PriceStats } from "@/lib/market-prices";
 
 // Lectura de los precios de supermercados para un negocio (market_prices_for, plan Pro). Sólo servidor.
 
@@ -18,11 +18,12 @@ export interface MarketRow {
 
 const CHUNK = 300;
 
-// Los precios se juntan una vez por mes: no hace falta preguntarle a la base en cada visita. Se
-// guardan por código de barras en la memoria del servidor (son iguales para todos los negocios) y
-// se vuelven a pedir pasadas unas horas. Quien llama ya comprobó el plan (Pro); la base lo exige
-// de nuevo cada vez que sí se consulta.
-const TTL_MS = 6 * 60 * 60 * 1000;
+// Los precios se juntan una vez por mes (el cron corre los días 1 a 10): fuera de esos días no
+// cambian, así que no hace falta preguntarle a la base en cada visita. Se guardan por código de
+// barras en la memoria del servidor (son iguales para todos los negocios). Lo guardado entre el
+// día 12 y fin de mes vale hasta el día 1 del mes siguiente; lo guardado mientras el cron todavía
+// está juntando (días 1 a 11) sólo vale una hora, para tomar los precios nuevos. Quien llama ya
+// comprobó el plan (Pro); la base lo exige de nuevo cada vez que sí se consulta.
 const MAX_CACHED = 20000;
 const cache = new Map<string, { at: number; rows: MarketRow[] }>();
 
@@ -38,7 +39,7 @@ export async function loadMarketPrices(
   const missing: string[] = [];
   for (const ean of eans) {
     const hit = cache.get(ean);
-    if (hit && now - hit.at < TTL_MS) {
+    if (hit && now < cacheValidUntil(hit.at)) {
       if (hit.rows.length > 0) out.set(ean, hit.rows);
     } else missing.push(ean);
   }

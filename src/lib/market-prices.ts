@@ -176,3 +176,14 @@ export function suggestPrice(stats: PriceStats, cost: number | null, minMarginPc
   }
   return { price: base, reason: `Apenas por debajo de la mediana de los súper ($${Math.round(stats.median)}, entre $${Math.round(stats.min)} y $${Math.round(stats.max)}).` };
 }
+
+/** Días del mes en que el cron todavía puede estar juntando precios. */
+const SCAN_DAYS = 11;
+const SCAN_TTL_MS = 60 * 60 * 1000;
+
+/** Hasta cuándo sirve lo guardado en `at`. */
+export function cacheValidUntil(at: number): number {
+  const d = new Date(at);
+  if (d.getUTCDate() <= SCAN_DAYS) return at + SCAN_TTL_MS;
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
+}
