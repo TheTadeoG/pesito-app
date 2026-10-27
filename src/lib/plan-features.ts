@@ -267,6 +267,14 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Aviso cuando sube el costo y no actualizaste el precio", values: fromPro },
       { label: "Aviso de plata parada en productos que no se venden", values: onlyIa },
       {
+        label: "Precios de supermercados (Carrefour, Jumbo, Disco y Vea) de tus productos con código de barras, actualizados una vez por mes",
+        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+      },
+      {
+        label: "Precio sugerido y avisos de si estás caro o barato frente a los supermercados",
+        values: { gratis: false, esencial: false, pro: false, ia: "Pronto" },
+      },
+      {
         label: "Inventarios físicos: contás y el stock se ajusta solo",
         values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
       },

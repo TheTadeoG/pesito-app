@@ -78,7 +78,7 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/recomendaciones", label: "Qué comprar", icon: Sparkles, feature: "restockRecommendations" },
       { href: "/baja-rotacion", label: "Baja rotación", icon: TrendingDown, feature: "lowRotation" },
-      { href: "/mercado", label: "Mercado", icon: Globe, feature: "marketAnalysis" },
+      { href: "/mercado", label: "Mercado", icon: Globe, feature: "supermarketPrices" },
     ],
   },
   {
@@ -124,7 +124,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
   "/recomendaciones": { title: "Qué comprar", description: "Qué pedir y qué precios revisar." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },
-  "/mercado": { title: "Mercado", description: "Novedades y precios de referencia de tu rubro." },
+  "/mercado": { title: "Mercado", description: "Precios de supermercados y novedades de tu rubro." },
   "/configuracion": { title: "Ajustes", description: "Tu negocio, tus avisos y tu cuenta." },
   "/planes": { title: "Mi plan", description: "Tu plan, los demás planes y cómo pagás." },
   "/soporte": { title: "Ayuda", description: "¿Necesitás ayuda?" },

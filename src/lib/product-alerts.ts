@@ -14,6 +14,7 @@ export interface AlertLocks {
   idle: Plan | null;
 }
 
+
 export interface ProductIssueCounts {
   /** Stock en el mínimo o por debajo. */
   low: number;
@@ -31,16 +32,21 @@ export interface ProductIssueCounts {
   /** Productos con stock sin ventas en `thresholds.idleDays` días y la plata que hay ahí (Plan IA). */
   idleCount: number;
   idleCapital: number;
-  thresholds: { marginPercent: number; staleDays: number; idleDays: number };
+  /** Productos más caros / más baratos que la mediana de los supermercados (Plan IA; 0 si no se calculó). */
+  marketHigh: number;
+  marketLow: number;
+  thresholds: { marginPercent: number; staleDays: number; idleDays: number; marketHighPct: number; marketLowPct: number };
 }
 
-export const DEFAULT_THRESHOLDS: ProductIssueCounts["thresholds"] = { marginPercent: 10, staleDays: 90, idleDays: 30 };
+export const DEFAULT_THRESHOLDS: ProductIssueCounts["thresholds"] = { marginPercent: 10, staleDays: 90, idleDays: 30, marketHighPct: 20, marketLowPct: 15 };
 
 export function thresholdsFrom(settings: AlertSettings): ProductIssueCounts["thresholds"] {
   return {
     marginPercent: alertValue(settings, "low-margin"),
     staleDays: alertValue(settings, "stale-cost"),
     idleDays: alertValue(settings, "idle-capital"),
+    marketHighPct: alertValue(settings, "market-expensive"),
+    marketLowPct: alertValue(settings, "market-cheap"),
   };
 }
 
@@ -60,6 +66,8 @@ export function countProductIssues(
     costRise: 0,
     idleCount: 0,
     idleCapital: 0,
+    marketHigh: 0,
+    marketLow: 0,
     thresholds,
   };
   for (const p of products) {
@@ -126,6 +134,30 @@ export function productAlerts(counts: ProductIssueCounts, locks: AlertLocks, set
       chip: `${n} precio sin actualizar`,
       detail: "Si no subís el precio, cada venta te deja menos ganancia.",
       href: "/productos?estado=precio-viejo",
+    });
+  }
+  if (on("market-expensive") && counts.marketHigh > 0) {
+    const n = counts.marketHigh;
+    out.push({
+      id: "market-expensive",
+      module: "productos",
+      tone: "warning",
+      title: plural(n, "producto más caro que los supermercados", "productos más caros que los supermercados"),
+      chip: `${n} más caros que el súper`,
+      detail: `Estás más de ${t.marketHighPct}% arriba de la mediana de Carrefour, Jumbo, Disco y Vea. Mirá cuáles en Mercado.`,
+      href: "/mercado?filtro=caro",
+    });
+  }
+  if (on("market-cheap") && counts.marketLow > 0) {
+    const n = counts.marketLow;
+    out.push({
+      id: "market-cheap",
+      module: "productos",
+      tone: "info",
+      title: plural(n, "producto más barato que los supermercados", "productos más baratos que los supermercados"),
+      chip: `${n} más baratos que el súper`,
+      detail: `Estás más de ${t.marketLowPct}% abajo de la mediana de los supermercados: quizás podés subir el precio.`,
+      href: "/mercado?filtro=barato",
     });
   }
   if (on("low-margin") && counts.lowMargin > 0) {

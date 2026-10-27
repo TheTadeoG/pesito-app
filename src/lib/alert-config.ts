@@ -79,6 +79,22 @@ export const ALERT_DEFS: AlertDef[] = [
     param: { label: "Sin ventas hace", unit: "días", min: 7, max: 90, default: IDLE_DEFAULT_DAYS, options: IDLE_DAYS_OPTIONS },
   },
   {
+    id: "market-expensive",
+    module: "productos",
+    label: "Más caro que los supermercados",
+    description: "Productos con código de barras que vendés bastante por encima del precio de los supermercados.",
+    feature: "marketPriceInsights",
+    param: { label: "Avisar si estás más caro en", unit: "%", min: 5, max: 100, default: 20 },
+  },
+  {
+    id: "market-cheap",
+    module: "productos",
+    label: "Más barato que los supermercados",
+    description: "Productos que vendés muy por debajo de los supermercados: quizás podés ganar más.",
+    feature: "marketPriceInsights",
+    param: { label: "Avisar si estás más barato en", unit: "%", min: 5, max: 80, default: 15 },
+  },
+  {
     id: "suppliers-overdue",
     module: "proveedores",
     label: "Deuda vencida con proveedores",

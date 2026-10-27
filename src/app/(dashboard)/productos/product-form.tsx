@@ -17,6 +17,7 @@ import {
   type ProductFormInput,
   type SaveProductResult,
 } from "@/app/(dashboard)/productos/actions";
+import { MarketHintNote } from "@/app/(dashboard)/productos/market-hint";
 import { generateBarcode } from "@/app/(dashboard)/productos/barcode-actions";
 import { featureLockedMessage } from "@/lib/plan-access";
 import type { Brand, Product, Supplier } from "@/lib/types";
@@ -238,6 +239,7 @@ export function ProductForm({
   const [generatingBarcode, setGeneratingBarcode] = useState(false);
   const [barcodeNote, setBarcodeNote] = useState<string | null>(null);
   const [sku, setSku] = useState(product?.sku ?? "");
+  const [priceKey, setPriceKey] = useState(0);
   const [price, setPrice] = useState(String(product?.price ?? ""));
   const [cost, setCost] = useState(String(product?.cost ?? ""));
   const [stock, setStock] = useState(String(product?.stock ?? "0"));
@@ -600,6 +602,11 @@ export function ProductForm({
             <Input id="p-sku" value={sku} onChange={(e) => setSku(e.target.value)} />
           </div>
         </div>
+        <MarketHintNote barcode={barcode} price={price} cost={cost} onUse={(v) => {
+          setPrice(v);
+          setPriceKey((k) => k + 1); // rearma «Sin IVA» con el precio nuevo
+        }}
+        />
         <p className="-mt-2 text-xs text-muted-foreground">
           El código de barras lo podés escanear con un lector en el campo de arriba, o cargarlo a
           mano si no tenés lector.
@@ -607,6 +614,7 @@ export function ProductForm({
 
         <div className="grid grid-cols-2 gap-3">
           <PriceWithIvaField
+            key={priceKey}
             id="p-price"
             label="Precio de venta"
             value={price}

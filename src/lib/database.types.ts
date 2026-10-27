@@ -834,6 +834,38 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["app_errors"]["Insert"]>;
         Relationships: [];
       };
+      market_prices: {
+        Row: {
+          ean: string;
+          store: string;
+          month: string;
+          found: boolean;
+          price: number | null;
+          list_price: number | null;
+          name: string | null;
+          brand: string | null;
+          url: string | null;
+          image_url: string | null;
+          available: boolean;
+          scraped_at: string;
+        };
+        Insert: {
+          ean: string;
+          store: string;
+          month: string;
+          found?: boolean;
+          price?: number | null;
+          list_price?: number | null;
+          name?: string | null;
+          brand?: string | null;
+          url?: string | null;
+          image_url?: string | null;
+          available?: boolean;
+          scraped_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["market_prices"]["Insert"]>;
+        Relationships: [];
+      };
       alert_settings: {
         Row: {
           org_id: string;
@@ -1109,6 +1141,25 @@ export interface Database {
           p_context: string | null;
         };
         Returns: { is_new: boolean; reopened: boolean; occurrences: number }[];
+      };
+      market_pending_eans: {
+        Args: { p_month: string; p_stores: number; p_limit: number };
+        Returns: { ean: string }[];
+      };
+      market_prices_for: {
+        Args: { p_org_id: string; p_eans: string[] };
+        Returns: {
+          ean: string;
+          store: string;
+          month: string;
+          price: number;
+          list_price: number | null;
+          name: string | null;
+          brand: string | null;
+          url: string | null;
+          available: boolean;
+          scraped_at: string;
+        }[];
       };
       save_alert_settings: {
         Args: { p_org_id: string; p_settings: Json };

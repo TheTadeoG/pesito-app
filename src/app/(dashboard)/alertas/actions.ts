@@ -1,5 +1,7 @@
 "use server";
 
+import { loadMarketPrices, statsFor } from "@/lib/market-data";
+import { diffPct, normalizeEan } from "@/lib/market-prices";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
@@ -113,6 +115,19 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
             })
         : null,
     ]);
+    // Contra los supermercados (Plan IA): sólo productos con código de barras y precio juntado.
+    const wantsMarket = alertEnabled(settings, "market-expensive") || alertEnabled(settings, "market-cheap");
+    if (wantsMarket && canUse(subscription, "marketPriceInsights")) {
+      const prices = await loadMarketPrices(supabase, organization.id, withStock.map((p) => p.barcode));
+      for (const p of withStock) {
+        const ean = normalizeEan(p.barcode);
+        const stats = ean ? statsFor(prices.get(ean)) : null;
+        if (!stats || !(p.price > 0)) continue;
+        const d = diffPct(p.price, stats);
+        if (d > thresholds.marketHighPct && alertEnabled(settings, "market-expensive")) counts.marketHigh += 1;
+        if (d < -thresholds.marketLowPct && alertEnabled(settings, "market-cheap")) counts.marketLow += 1;
+      }
+    }
     counts.staleCost = staleCost;
     counts.costRise = costRise;
     counts.idleCount = idle?.count ?? 0;

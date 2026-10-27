@@ -32,6 +32,8 @@ export type PlanFeature =
   | "aiReports"
   | "priceSuggestions"
   | "marketAnalysis"
+  | "supermarketPrices"
+  | "marketPriceInsights"
   | "restockRecommendations"
   | "lowRotation"
   // Avisos del sistema (campana y módulos).
@@ -65,6 +67,10 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   aiReports: "ia",
   priceSuggestions: "ia",
   marketAnalysis: "ia",
+  // Precios de supermercados por código de barras: verlos es Pro; la sugerencia de precio y los
+  // avisos de caro/barato contra ellos, Plan IA.
+  supermarketPrices: "pro",
+  marketPriceInsights: "ia",
   restockRecommendations: "ia",
   lowRotation: "ia",
   // Los avisos básicos (stock bajo, venta a pérdida, números para revisar, fiado,
@@ -100,6 +106,8 @@ export const featureLabels: Record<PlanFeature, string> = {
   aiReports: "Los reportes avanzados con IA",
   priceSuggestions: "La sugerencia de precios",
   marketAnalysis: "El análisis de competidores y del mercado",
+  supermarketPrices: "Los precios de los supermercados",
+  marketPriceInsights: "La sugerencia de precio y los avisos de caro o barato frente a los supermercados",
   restockRecommendations: "Las recomendaciones de reposición",
   lowRotation: "La detección de productos de baja rotación",
   alertSettings: "La configuración de los avisos",
