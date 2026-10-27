@@ -118,12 +118,24 @@ export function TourController({ enabled }: { enabled: boolean }) {
       });
     };
 
+    // Si la condición del paso ya se cumple al llegar (por ejemplo, volvió con «Atrás» y el carrito
+    // ya tiene algo), no se avanza sola: se muestra «Siguiente».
+    const alreadyDone = () => {
+      const a = step.advance;
+      if (a.type === "enabled") {
+        const t = findVisible(a.selector) as HTMLButtonElement | null;
+        return Boolean(t && !t.disabled);
+      }
+      return a.type === "appear" ? Boolean(findVisible(a.selector)) : false;
+    };
+    const startedDone = alreadyDone();
+
     const showTarget = (el: HTMLElement) => {
       drv?.destroy();
       drv = null;
       void import("driver.js").then(({ driver }) => {
         if (cancelled) return;
-        const auto = step.advance.type !== "next";
+        const auto = step.advance.type !== "next" && !startedDone;
         drv = driver({
           animate: false,
           overlayClickBehavior: "none",
@@ -141,7 +153,7 @@ export function TourController({ enabled }: { enabled: boolean }) {
             side: step.side ?? "bottom",
             align: "center",
             showButtons: auto ? [] : ["next"],
-            nextBtnText: step.advance.type === "next" ? step.advance.label ?? "Siguiente" : undefined,
+            nextBtnText: step.advance.type === "next" ? step.advance.label ?? "Siguiente" : "Siguiente",
             onNextClick: next,
             onPopoverRender: addExtras,
           },
@@ -161,10 +173,10 @@ export function TourController({ enabled }: { enabled: boolean }) {
         if (cancelled) return;
         drv?.refresh();
         if (a.type === "gone" && !document.body.contains(el)) next();
-        else if (a.type === "enabled") {
+        else if (a.type === "enabled" && !startedDone) {
           const t = findVisible(a.selector) as HTMLButtonElement | null;
           if (t && !t.disabled) next();
-        } else if (a.type === "appear") {
+        } else if (a.type === "appear" && !startedDone) {
           if (findVisible(a.selector)) next();
         }
       }, 300);
