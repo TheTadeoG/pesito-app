@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/database.types";
+import { brandFilter, brandMatches } from "@/lib/market-brands";
 import {
   categoryPageUrl, CRAWL_MAX_FROM, CRAWL_PAGE_SIZE, dedupeByEan, fetchJson, fetchStorePrice, leafCategories,
   MARKET_STORES, parseVtexCatalogPage, type MarketStore,
@@ -38,7 +39,7 @@ const CRAWL_PAUSE_MS = 300;
  * Recorre el catálogo de un súper por categorías, 50 productos por pedido, y guarda cada producto con
  * código de barras y precio (para el buscador). Retoma donde quedó (tabla market_crawl).
  */
-async function crawlStore(admin: Admin, store: MarketStore, month: string, until: number) {
+async function crawlStore(admin: Admin, store: MarketStore, month: string, until: number, brands: Set<string> | null) {
   const stats = { pages: 0, items: 0, categories: 0, errors: 0 };
   try {
     const { data: existing, error } = await admin
@@ -79,7 +80,7 @@ async function crawlStore(admin: Admin, store: MarketStore, month: string, until
         }
         const { items, products } = parseVtexCatalogPage(json);
         stats.pages++;
-        const unique = dedupeByEan(items);
+        const unique = dedupeByEan(items.filter((i) => brandMatches(i.brand, brands)));
         if (unique.length > 0) {
           const batch: PriceInsert[] = unique.map((i) => ({
             ean: i.ean, store: store.id, month, found: true, price: i.price, list_price: i.listPrice,
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
   let crawl: Record<string, { pages: number; items: number; categories: number; errors: number }> | null = null;
   if (process.env.MARKET_CATALOG_ENABLED === "true") {
     const until = started + CRAWL_DEADLINE_MS;
-    const results = await Promise.all(MARKET_STORES.map((store) => crawlStore(admin, store, month, until)));
+    const results = await Promise.all(MARKET_STORES.map((store) => crawlStore(admin, store, month, until, brandFilter(process.env.MARKET_BRANDS))));
     crawl = Object.fromEntries(MARKET_STORES.map((store, i) => [store.id, results[i]]));
   }
 
