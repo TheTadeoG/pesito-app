@@ -805,6 +805,20 @@ export default async function AdminPage() {
 
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
+            <div>
+              <p className="text-xs text-muted-foreground">Precios de supermercados</p>
+              <p className="text-sm text-foreground">Probar la recolección contra los súper</p>
+            </div>
+            <Link href="/admin/precios">
+              <Button variant="outline" size="sm">
+                Abrir
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
                 <MessageSquareQuote className="h-5 w-5" />
