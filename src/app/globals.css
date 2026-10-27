@@ -776,3 +776,10 @@ body {
 .driver-popover.pesito-tour .driver-popover-arrow-side-top { border-top-color: var(--color-card); }
 .driver-popover.pesito-tour .driver-popover-arrow-side-left { border-left-color: var(--color-card); }
 .driver-popover.pesito-tour .driver-popover-arrow-side-right { border-right-color: var(--color-card); }
+
+/* Guía paso a paso: sin scroll suave. Con el scroll animado el cartel "persigue" al
+   elemento y se ve en cámara lenta. */
+html:has(body.driver-active),
+.driver-active * {
+  scroll-behavior: auto !important;
+}
