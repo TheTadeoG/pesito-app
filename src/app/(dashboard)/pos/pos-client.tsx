@@ -1616,6 +1616,7 @@ export function PosClient({
           </form>
         ) : showCashStep ? (
           <form
+            data-tour="pay-cash-step"
             className="space-y-4"
             onSubmit={(e) => {
               e.preventDefault();
@@ -1755,6 +1756,7 @@ export function PosClient({
                 <button
                   key={method.value}
                   type="button"
+                  data-tour={method.value === "efectivo" ? "pay-cash" : undefined}
                   disabled={pending}
                   onClick={() => pickMethod(method.value)}
                   className="relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-40"

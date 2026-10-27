@@ -167,6 +167,8 @@ export function TourController({ enabled }: { enabled: boolean }) {
 
     const advanceWatch = (el: HTMLElement) => {
       const a = step.advance;
+      const back = step.watchGone;
+      let goneSince = 0;
       if (a.type === "click") {
         // Inmediato: si el click navega, el efecto se reinicia y un timer se perdería.
         const onClick = () => next();
@@ -176,6 +178,12 @@ export function TourController({ enabled }: { enabled: boolean }) {
       const poll = window.setInterval(() => {
         if (cancelled) return;
         drv?.refresh();
+        if (back) {
+          // Cerró el cobro sin cobrar: se vuelve al paso de «Cobrar».
+          if (document.querySelector(back.selector)) goneSince = 0;
+          else if (!goneSince) goneSince = Date.now();
+          else if (Date.now() - goneSince > 1500) return go(Math.max(0, stepIndexById(back.backTo)));
+        }
         if (a.type === "click" && a.orAppear && findVisible(a.orAppear)) next();
         else if (a.type === "gone" && !document.body.contains(el)) next();
         else if (a.type === "enabled" && !startedDone) {
