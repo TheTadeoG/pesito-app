@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import "driver.js/dist/driver.css";
 import { TOUR_STEPS, stepNumber, type TourStep } from "@/lib/tour-steps";
@@ -39,6 +39,8 @@ export function TourController({ enabled }: { enabled: boolean }) {
       stopTour();
       return;
     }
+    // La venta completa va en un cartel flotante (FloatingCard), sin pantalla oscura.
+    if (step.floating) return;
 
     let cancelled = false;
     let drv: Driver | null = null;
@@ -225,6 +227,32 @@ export function TourController({ enabled }: { enabled: boolean }) {
           window.clearInterval(find);
           showTarget(el);
           advanceWatch(el);
+          const gate = step.gate;
+          if (gate) {
+            // El botón de guardar queda apagado hasta que estén los datos (si no, se guardaría sin stock).
+            const sync = () => {
+              const btn = document.querySelector<HTMLButtonElement>(gate.button);
+              if (!btn) return;
+              const ok = gate.requires.every((r) => {
+                const pos = r.startsWith("+");
+                const f = document.querySelector<HTMLInputElement>(pos ? r.slice(1) : r);
+                const v = f?.value.trim() ?? "";
+                return pos ? Number(v) > 0 : v !== "";
+              });
+              btn.disabled = !ok;
+              btn.title = ok ? "" : "Completá nombre, precio y stock";
+            };
+            sync();
+            const iv = window.setInterval(sync, 200);
+            cleanups.push(() => {
+              window.clearInterval(iv);
+              const btn = document.querySelector<HTMLButtonElement>(gate.button);
+              if (btn) {
+                btn.disabled = false;
+                btn.title = "";
+              }
+            });
+          }
         } else if (Date.now() > deadline) {
           window.clearInterval(find);
           if (step.ifMissing === "skip") skip();
@@ -265,5 +293,77 @@ export function TourController({ enabled }: { enabled: boolean }) {
     };
   }, [index, pathname, router]);
 
-  return null;
+  const step = index !== null ? TOUR_STEPS[index] : undefined;
+  if (index === null || !step?.floating) return null;
+  return <FloatingCard key={step.id} step={step} index={index} pathname={pathname} />;
+}
+
+/**
+ * Cartel flotante (sin pantalla oscura) para los pasos donde la persona hace varias cosas seguidas,
+ * como la venta completa: buscar, cobrar, elegir el medio de pago y cerrar el aviso.
+ */
+function FloatingCard({ step, index, pathname }: { step: TourStep; index: number; pathname: string }) {
+  const router = useRouter();
+  const [missing, setMissing] = useState(false);
+  const { n, total } = stepNumber(index);
+  const wrongPath = step.path !== pathname;
+
+  useEffect(() => {
+    if (wrongPath) return;
+    const sel = step.advance.type === "cycle" ? step.advance.selector : null;
+    const deadline = Date.now() + (step.waitMs ?? 2500);
+    let seen = false;
+    let found = false;
+    const iv = window.setInterval(() => {
+      if (!found && step.target && findVisible(step.target)) found = true;
+      if (!found && Date.now() > deadline) setMissing(true);
+      if (found) setMissing(false);
+      if (!sel) return;
+      const visible = Boolean(findVisible(sel));
+      if (visible) seen = true;
+      else if (seen) writeTour(index + 1);
+    }, 300);
+    return () => window.clearInterval(iv);
+  }, [step, index, wrongPath]);
+
+  const prev = TOUR_STEPS[index - 1];
+  const body = wrongPath
+    ? { text: step.text, label: "Ir al punto de venta", go: step.path }
+    : missing
+      ? { text: step.missingText ?? step.text, label: step.goTo ? "Ir a la caja" : null, go: step.goTo }
+      : { text: step.text, label: null, go: undefined };
+  const link = "text-xs text-muted-foreground underline hover:text-foreground";
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Guía paso a paso"
+      className="fixed bottom-4 left-4 right-4 z-[1000000001] max-h-[70vh] overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-2xl sm:right-auto sm:max-w-sm"
+    >
+      <p className="text-sm font-bold text-foreground">{`Paso ${n} de ${total} · ${step.title}`}</p>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{body.text}</p>
+      {body.label && body.go && (
+        <button
+          type="button"
+          onClick={() => router.push(body.go as string)}
+          className="mt-3 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground"
+        >
+          {body.label}
+        </button>
+      )}
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+        {prev && !prev.quiet && (
+          <button type="button" className={link} onClick={() => writeTour(index - 1)}>
+            Atrás
+          </button>
+        )}
+        <button type="button" className={link} onClick={() => writeTour(index + 1)}>
+          Saltar paso
+        </button>
+        <button type="button" className={link} onClick={() => stopTour()}>
+          Salir de la guía
+        </button>
+      </div>
+    </div>
+  );
 }

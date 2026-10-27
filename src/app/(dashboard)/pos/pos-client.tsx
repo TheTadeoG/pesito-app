@@ -1,5 +1,6 @@
 "use client";
 
+import { tourLocksPayment } from "@/lib/tour-state";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -557,6 +558,8 @@ export function PosClient({
   }
 
   function pickMethod(method: PaymentMethod) {
+    // En la guía paso a paso, la primera venta es en efectivo.
+    if (method !== "efectivo" && tourLocksPayment()) return;
     if (method === "efectivo") {
       setShowCashStep(true);
       return;

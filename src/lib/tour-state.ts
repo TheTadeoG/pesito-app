@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { TOUR_STEPS } from "@/lib/tour-steps";
 
 // Dónde va la guía paso a paso. Se guarda en el navegador para que sobreviva a los
 // cambios de pantalla (y a un refresh) y se pueda retomar donde se dejó.
@@ -60,4 +61,10 @@ function subscribe(cb: () => void) {
 
 export function useTourState(): TourState | null {
   return useSyncExternalStore(subscribe, readTour, () => null);
+}
+
+/** En el paso de la primera venta, el cobro sólo deja elegir efectivo. */
+export function tourLocksPayment(): boolean {
+  const t = readTour();
+  return t !== null && TOUR_STEPS[t.index]?.id === "sale";
 }

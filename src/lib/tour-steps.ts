@@ -13,7 +13,9 @@ export type TourAdvance =
   /** Otro elemento deja de estar deshabilitado (el carrito ya tiene algo y se puede cobrar). */
   | { type: "enabled"; selector: string }
   /** Aparece otro elemento (se abrió el aviso de venta cobrada). */
-  | { type: "appear"; selector: string };
+  | { type: "appear"; selector: string }
+  /** Aparece el elemento y después desaparece (se cobró la venta y se cerró el aviso). */
+  | { type: "cycle"; selector: string };
 
 export interface TourStep {
   id: string;
@@ -36,6 +38,10 @@ export interface TourStep {
   waitMs?: number;
   /** Paso sin cartel: sólo espera a que pase algo (para no tapar el cobro con la pantalla oscura). */
   quiet?: boolean;
+  /** Cartel flotante sin pantalla oscura: la persona hace varias cosas seguidas (la venta completa). */
+  floating?: boolean;
+  /** Mientras no se cumpla `requires` (campos con algo; «+» = mayor a 0), el botón queda apagado. */
+  gate?: { button: string; requires: string[] };
   /** Paso sin cartel: si el elemento `selector` deja de estar un rato, se vuelve al paso `backTo` (cerró el cobro sin cobrar). */
   watchGone?: { selector: string; backTo: string };
 }
@@ -62,40 +68,14 @@ export const TOUR_STEPS: TourStep[] = [
     advance: { type: "click" },
   },
   {
-    id: "product-name",
+    id: "product-form",
     path: "/productos",
-    target: "#p-name",
-    title: "El nombre",
-    text: "Escribí cómo se llama, tal como lo ves en la góndola (por ejemplo, «Coca-Cola 1,5 L»). Es lo que vas a buscar después para vender. Cuando lo tengas, tocá «Siguiente».",
-    side: "bottom",
-    advance: { type: "next", requires: "#p-name" },
-  },
-  {
-    id: "product-price",
-    path: "/productos",
-    target: '[data-tour="p-price"]',
-    title: "El precio de venta",
-    text: "Escribí cuánto le cobrás al cliente en «Final (con IVA)», que es el precio de la góndola. El costo es opcional: si lo cargás, Pesito te calcula cuánto ganás. Cuando termines, tocá «Siguiente».",
-    side: "bottom",
-    advance: { type: "next", requires: "#p-price" },
-  },
-  {
-    id: "product-stock",
-    path: "/productos",
-    target: '[data-tour="p-stock"]',
-    title: "Cuántas unidades tenés",
-    text: "Poné cuántas unidades tenés ahora, aunque sea una. Sin stock, Pesito no te deja venderlo. Después el stock sube con tus compras y baja solo con cada venta. Tocá «Siguiente» cuando lo cargues.",
-    side: "top",
-    advance: { type: "next", requires: "#p-stock", positive: true },
-  },
-  {
-    id: "product-save",
-    path: "/productos",
-    target: '[data-tour="product-save"]',
-    title: "Guardá el producto",
-    text: "Tocá «Crear producto» para que quede en tu catálogo. Si algo falta, el formulario te avisa; con «Atrás» volvés a completarlo.",
-    side: "top",
+    target: '[data-tour="product-form"]',
+    title: "Cargá tu primer producto",
+    text: "Completá tres cosas: el nombre, tal como lo ves en la góndola (por ejemplo, «Coca-Cola 1,5 L»); el precio de venta, en «Final (con IVA)»; y cuántas unidades tenés (aunque sea una: sin stock, Pesito no te deja venderlo). El costo y el resto son opcionales. Cuando esté todo, tocá «Crear producto».",
+    side: "left",
     advance: { type: "gone" },
+    gate: { button: '[data-tour="product-save"]', requires: ["#p-name", "#p-price", "+#p-stock"] },
   },
   // --- 2. La caja
   {
@@ -143,55 +123,16 @@ export const TOUR_STEPS: TourStep[] = [
     goTo: "/pos",
   },
   {
-    id: "pos-search",
+    id: "sale",
     path: "/pos",
     target: '[data-tour="pos-search"]',
-    title: "Sumá el producto al carrito",
-    text: "Escribí el nombre del producto que cargaste (o escaneá su código de barras) y tocalo, o apretá Enter, para sumarlo al carrito. Podés sumar los que quieras; el botón «Cobrar» se enciende cuando hay algo.",
-    side: "bottom",
-    advance: { type: "enabled", selector: '[data-tour="pos-charge"]' },
+    floating: true,
+    title: "Hacé tu primera venta",
+    text: "1) Buscá el producto que cargaste (escribí su nombre o escaneá el código) y tocalo para sumarlo al carrito. 2) Tocá «Cobrar», o apretá Enter dos veces. 3) Elegí «Efectivo» (tecla 1); para esta primera venta es la única opción. 4) Escribí con cuánto paga el cliente para ver el vuelto (si paga justo, dejalo vacío) y confirmá con el botón verde o Enter. Después podés cobrar con tarjeta, transferencia, QR, fiado o mixto; los atajos del teclado los ves en el menú (?). Cuando se cobre, vas a poder imprimir el ticket (tecla P); tocá «Nueva venta» (o Enter) para seguir.",
+    advance: { type: "cycle", selector: '[data-tour="sale-done"]' },
     ifMissing: "show",
     missingText: "Para vender necesitás la caja abierta. Abrila desde «Caja» y volvé a tocar «Vender».",
     goTo: "/caja",
-  },
-  {
-    id: "pos-charge",
-    path: "/pos",
-    target: '[data-tour="pos-charge"]',
-    title: "Cobrá",
-    text: "Con el producto en el carrito, tocá «Cobrar». También lo podés hacer con el teclado: apretando Enter dos veces seguidas.",
-    side: "left",
-    advance: { type: "click", orAppear: '[data-tour="pay-picker"]' },
-  },
-  {
-    id: "pay-method",
-    path: "/pos",
-    target: '[data-tour="pay-cash"]',
-    title: "Elegí «Efectivo»",
-    text: "Para esta primera venta elegí «Efectivo» (también con la tecla 1). Después vas a poder cobrar con tarjeta, transferencia, QR, fiado o mixto. Cada opción tiene su número para elegirla con el teclado; todos los atajos los ves en el menú (?) → «Atajos del teclado».",
-    side: "right",
-    advance: { type: "click", orAppear: '[data-tour="pay-cash-step"]' },
-    waitMs: 4000,
-  },
-  {
-    id: "cash-pay",
-    path: "/pos",
-    target: '[data-tour="pay-cash-step"]',
-    title: "Con cuánto paga",
-    text: "Escribí con cuánto paga el cliente (por ejemplo, con un billete más grande que el total) y Pesito te calcula el vuelto. Si paga justo, dejalo vacío. Después tocá el botón verde para cobrar, o apretá Enter.",
-    side: "right",
-    advance: { type: "appear", selector: '[data-tour="sale-done"]' },
-    watchGone: { selector: '[data-tour="pay-dialog"]', backTo: "pos-charge" },
-    waitMs: 4000,
-  },
-  {
-    id: "sale-done",
-    path: "/pos",
-    target: '[data-tour="sale-done"]',
-    title: "¡Venta cobrada!",
-    text: "Listo, hiciste tu primera venta: el stock del producto bajó solo y la plata quedó anotada en la caja. Si el cliente quiere comprobante, tocá «Imprimir ticket» (o la tecla P). Cuando termines, tocá «Nueva venta» (o Enter) para seguir.",
-    side: "left",
-    advance: { type: "gone" },
   },
   // --- 4. Lo que sigue
   {
@@ -199,10 +140,19 @@ export const TOUR_STEPS: TourStep[] = [
     path: "*",
     target: '[data-tour="nav-/compras"]',
     title: "Cuando te llega mercadería",
-    text: "Cuando te llega mercadería, la cargás como una compra: buscás los productos, ponés cantidad y costo, elegís el proveedor y guardás; el stock se suma solo y Pesito recuerda cuánto pagaste. Tocá «Compras» para ver la pantalla; no hace falta cargar una ahora.",
+    text: "Cuando te llega mercadería, la cargás como una compra y el stock se suma solo. Tocá «Compras» en el menú para entrar.",
     side: "right",
     advance: { type: "click" },
     goTo: "/compras",
+  },
+  {
+    id: "compras-form",
+    path: "/compras",
+    target: '[data-tour="compras-form"]',
+    title: "Compras: así se carga la mercadería",
+    text: "Acá registrás lo que te entrega el proveedor: buscás el producto, ponés cantidad y costo, elegís el proveedor y guardás. El stock se suma solo y Pesito se acuerda de cuánto pagaste, así después sabe tu ganancia. No hace falta cargar una ahora: tocá «Siguiente».",
+    side: "left",
+    advance: { type: "next" },
   },
   {
     id: "nav-clientes",

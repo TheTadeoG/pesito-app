@@ -425,7 +425,7 @@ export function ProductForm({
       description={isEdit ? product?.name : "Sumá un producto a tu catálogo."}
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form data-tour="product-form" onSubmit={handleSubmit} className="space-y-4">
         <div className="flex items-start gap-3">
           <input
             ref={fileInputRef}
