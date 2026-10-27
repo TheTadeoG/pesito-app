@@ -4,16 +4,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/database.types";
 import { fetchStorePrice, MARKET_STORES } from "@/lib/market-prices";
 
-// Precios de supermercados por EAN (migración 0078). La llama un cron una vez por día con
-// "Authorization: Bearer $CRON_SECRET" y en cada pasada completa un tramo de los EAN que todavía no
-// tienen el precio del mes en todos los súper: así, durante el mes, se va actualizando todo sin
-// tocar un súper con ráfagas. Apagada hasta poner MARKET_SCAN_ENABLED=true en Vercel.
+// Precios de supermercados por EAN (migración 0078). La llama un cron los días 1 a 10 de cada mes
+// (vercel.json) con "Authorization: Bearer $CRON_SECRET"; cada pasada completa un tramo de los EAN que
+// todavía no tienen el precio del mes en todos los súper (así no se golpea a un súper con ráfagas) y,
+// cuando ya están todos, no hace nada. Apagada hasta poner MARKET_SCAN_ENABLED=true en Vercel.
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
-const EANS_PER_RUN = 30;
+const EANS_PER_RUN = 120;
 const PAUSE_MS = 250;
-const DEADLINE_MS = 50_000;
+const DEADLINE_MS = 270_000;
 
 function authorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
