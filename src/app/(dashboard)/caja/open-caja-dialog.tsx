@@ -59,7 +59,7 @@ function OpenCajaFormContent({ onClose }: { onClose: () => void }) {
   }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form data-tour="caja-form" onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="mb-1.5 block text-sm font-medium text-foreground">
           Monto inicial (en efectivo){" "}

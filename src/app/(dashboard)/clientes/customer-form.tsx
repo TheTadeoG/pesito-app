@@ -70,7 +70,7 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
       title={isEdit ? "Editar cliente" : "Nuevo cliente"}
       description={isEdit ? customer?.name : "Sumá un cliente para llevar su cuenta."}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form data-tour="customer-form" onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label htmlFor="c-name" required>
             Nombre
