@@ -171,7 +171,7 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" data-tour="customer-save" disabled={pending}>
             {pending ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear cliente"}
           </Button>
         </div>

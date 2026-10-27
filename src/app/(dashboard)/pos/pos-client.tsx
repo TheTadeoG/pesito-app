@@ -1531,6 +1531,7 @@ export function PosClient({
         }
         description={`Total a cobrar: ${formatCurrency(total)}`}
       >
+        <span hidden data-tour="pay-dialog" />
         {showMixedStep ? (
           <form
             className="space-y-4"
@@ -1748,7 +1749,7 @@ export function PosClient({
             </div>
           </form>
         ) : (
-          <div className="space-y-2">
+          <div data-tour="pay-picker" className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               {paymentMethods.map((method, index) => (
                 <button

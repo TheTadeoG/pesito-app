@@ -64,9 +64,11 @@ export function TourController({ enabled }: { enabled: boolean }) {
       // "Siguiente" apagado hasta que el campo pedido tenga algo (si no, el formulario no deja guardar).
       const req = step.advance.type === "next" ? step.advance.requires : undefined;
       if (req) {
+        const positive = step.advance.type === "next" && Boolean(step.advance.positive);
         const sync = () => {
           const f = document.querySelector<HTMLInputElement>(req);
-          popover.nextButton.disabled = !f || f.value.trim() === "";
+          const v = f?.value.trim() ?? "";
+          popover.nextButton.disabled = !f || v === "" || (positive && !(Number(v) > 0));
         };
         sync();
         const iv = window.setInterval(sync, 200);
@@ -172,8 +174,15 @@ export function TourController({ enabled }: { enabled: boolean }) {
     // Paso sin cartel: espera a que aparezca algo.
     if (step.quiet && step.advance.type === "appear") {
       const sel = step.advance.selector;
+      const back = step.watchGone;
+      let goneSince = 0;
       const poll = window.setInterval(() => {
-        if (findVisible(sel)) next();
+        if (findVisible(sel)) return next();
+        if (!back) return;
+        // Cerró el cobro sin cobrar: se vuelve al paso de "Cobrar" en vez de quedar mudo.
+        if (document.querySelector(back.selector)) goneSince = 0;
+        else if (!goneSince) goneSince = Date.now();
+        else if (Date.now() - goneSince > 1500) go(Math.max(0, stepIndexById(back.backTo)));
       }, 300);
       cleanups.push(() => window.clearInterval(poll));
     } else if (wrongPath && step.target) {

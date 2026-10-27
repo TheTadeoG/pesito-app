@@ -621,7 +621,7 @@ export function ProductForm({
           </p>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
+        <div data-tour="p-stock" className="grid grid-cols-3 gap-3">
           <div>
             <Label htmlFor="p-stock" className="flex min-h-9 items-end">
               {initialStockAsPurchase ? "Cantidad a recibir" : "Stock inicial (opcional)"}
