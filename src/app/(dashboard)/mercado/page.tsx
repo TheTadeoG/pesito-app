@@ -105,10 +105,14 @@ export default async function MercadoPage({ searchParams }: { searchParams: Prom
       const ean = normalizeEan(p.barcode) as string;
       const found = map.get(ean);
       const stats = statsFor(found);
-      if (!found || !stats) continue;
-      for (const r of found) if (r.month > lastMonth) lastMonth = r.month;
+      for (const r of found ?? []) if (r.month > lastMonth) lastMonth = r.month;
       const price = Number(p.price);
       const cost = p.cost === null ? null : Number(p.cost);
+      if (!found || !stats) {
+        // Todavía sin precios de súper: se lista igual (nombre y código), para poder buscarlo.
+        rows.push({ id: p.id, name: p.name, brand: p.brand, ean, price, stores: {}, min: null, max: null, median: null, diff: null, position: null, suggested: null, reason: null });
+        continue;
+      }
       rows.push({
         id: p.id,
         name: p.name,

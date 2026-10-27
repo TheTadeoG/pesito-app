@@ -18,9 +18,9 @@ export interface PriceRow {
   ean: string;
   price: number;
   stores: Record<string, number>;
-  min: number;
-  max: number;
-  median: number;
+  min: number | null;
+  max: number | null;
+  median: number | null;
   diff: number | null;
   position: PricePosition | null;
   suggested: number | null;
@@ -93,12 +93,18 @@ export function PricesTable({
         </PlanLockNote>
       )}
 
+      {rows.length > 0 && !rows.some((r) => r.median !== null) && (
+        <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
+          {`Todavía no juntamos precios de los supermercados para tus ${totalWithEan} productos con código de barras. Se van sumando durante el mes; mientras tanto podés buscarlos acá.`}
+        </p>
+      )}
+
       {rows.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             {totalWithEan === 0
               ? `Ninguno de tus ${totalProducts} productos tiene código de barras. Cargalo en cada producto y, cuando juntemos los precios del mes, aparece acá.`
-              : `Todavía no juntamos precios de tus ${totalWithEan} productos con código de barras. Se van sumando durante el mes: volvé en unos días.`}
+              : "No hay productos para mostrar."}
           </CardContent>
         </Card>
       ) : (
@@ -155,7 +161,7 @@ export function PricesTable({
                           {r.stores[s.id] !== undefined ? formatCurrency(r.stores[s.id]) : "—"}
                         </td>
                       ))}
-                      <td className="px-2 py-2.5 text-right tabular-nums text-foreground">{formatCurrency(r.median)}</td>
+                      <td className="px-2 py-2.5 text-right tabular-nums text-foreground">{r.median !== null ? formatCurrency(r.median) : "—"}</td>
                       <td className="py-2.5 pl-2 text-right">
                         {insights && r.position ? (
                           <div className="space-y-1">
