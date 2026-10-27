@@ -60,7 +60,18 @@ export function TourController({ enabled }: { enabled: boolean }) {
     const { n, total } = stepNumber(index);
     const heading = step.quiet ? step.title : `Paso ${n} de ${total} · ${step.title}`;
 
-    const addExtras = (popover: { footerButtons: HTMLElement }) => {
+    const addExtras = (popover: { footer: HTMLElement; nextButton: HTMLButtonElement }) => {
+      // "Siguiente" apagado hasta que el campo pedido tenga algo (si no, el formulario no deja guardar).
+      const req = step.advance.type === "next" ? step.advance.requires : undefined;
+      if (req) {
+        const sync = () => {
+          const f = document.querySelector<HTMLInputElement>(req);
+          popover.nextButton.disabled = !f || f.value.trim() === "";
+        };
+        sync();
+        const iv = window.setInterval(sync, 200);
+        cleanups.push(() => window.clearInterval(iv));
+      }
       const wrap = document.createElement("div");
       wrap.className = "pesito-tour-extras";
       const mk = (label: string, fn: () => void) => {
@@ -70,9 +81,11 @@ export function TourController({ enabled }: { enabled: boolean }) {
         b.addEventListener("click", fn);
         wrap.appendChild(b);
       };
+      const prev = TOUR_STEPS[index - 1];
+      if (prev && !prev.quiet) mk("Atrás", () => go(index - 1));
       if (step.advance.type !== "next") mk("Saltar paso", skip);
       mk("Salir de la guía", () => stopTour());
-      popover.footerButtons.parentElement?.appendChild(wrap);
+      popover.footer.insertAdjacentElement("afterend", wrap);
     };
 
     // Cartel en el centro, sin señalar nada (pantalla equivocada, menú oculto, objetivo ausente).

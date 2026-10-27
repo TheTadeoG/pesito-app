@@ -8,8 +8,8 @@ export type TourAdvance =
   | { type: "click" }
   /** El elemento desaparece (se guardó o se cerró el formulario). */
   | { type: "gone" }
-  /** El botón "Siguiente" del cartel. */
-  | { type: "next"; label?: string }
+  /** El botón "Siguiente" del cartel (con `requires`: queda apagado hasta que ese campo tenga algo). */
+  | { type: "next"; label?: string; requires?: string }
   /** Otro elemento deja de estar deshabilitado (el carrito ya tiene algo y se puede cobrar). */
   | { type: "enabled"; selector: string }
   /** Aparece otro elemento (se abrió el aviso de venta cobrada). */
@@ -66,7 +66,7 @@ export const TOUR_STEPS: TourStep[] = [
     title: "El nombre",
     text: "Escribilo como lo ves en la góndola. Por ejemplo: «Coca-Cola 1,5 L».",
     side: "bottom",
-    advance: { type: "next" },
+    advance: { type: "next", requires: "#p-name" },
   },
   {
     id: "product-price",
@@ -75,7 +75,7 @@ export const TOUR_STEPS: TourStep[] = [
     title: "El precio de venta",
     text: "Poné cuánto cobrás. El costo y el stock los podés cargar después; con el costo, Pesito te calcula cuánto ganás.",
     side: "bottom",
-    advance: { type: "next" },
+    advance: { type: "next", requires: "#p-price" },
   },
   {
     id: "product-save",

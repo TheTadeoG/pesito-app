@@ -747,10 +747,21 @@ body {
   font-weight: 600;
   text-shadow: none;
 }
+.driver-popover.pesito-tour .driver-popover-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+.driver-popover.pesito-tour .driver-popover-footer button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .driver-popover.pesito-tour .pesito-tour-extras {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem 1rem;
+  margin-top: 0.6rem;
 }
 .driver-popover.pesito-tour .pesito-tour-extras button {
   background: transparent;
