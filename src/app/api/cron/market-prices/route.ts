@@ -125,6 +125,11 @@ export async function GET(request: NextRequest) {
   const admin = createAdminClient();
   const month = new Date().toISOString().slice(0, 7) + "-01";
 
+  // 0) Limpieza: se guardan los últimos 3 meses (con 2 alcanza para mostrar y comparar); lo viejo se borra.
+  const keepFrom = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 3, 1)).toISOString().slice(0, 10);
+  await admin.from("market_prices").delete().lt("month", keepFrom);
+  await admin.from("market_crawl").delete().lt("month", keepFrom);
+
   // 1) Catálogos completos (buscador). Apagado hasta MARKET_CATALOG_ENABLED=true.
   let crawl: Record<string, { pages: number; items: number; categories: number; errors: number }> | null = null;
   if (process.env.MARKET_CATALOG_ENABLED === "true") {
