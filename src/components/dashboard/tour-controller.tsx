@@ -82,6 +82,7 @@ export function TourController({ enabled }: { enabled: boolean }) {
       void import("driver.js").then(({ driver }) => {
         if (cancelled) return;
         drv = driver({
+          animate: false,
           overlayClickBehavior: "none",
           allowClose: false,
           allowKeyboardControl: false,
@@ -109,6 +110,7 @@ export function TourController({ enabled }: { enabled: boolean }) {
         if (cancelled) return;
         const auto = step.advance.type !== "next";
         drv = driver({
+          animate: false,
           overlayClickBehavior: "none",
           allowClose: false,
           allowKeyboardControl: false,
