@@ -32,6 +32,7 @@ export type PlanFeature =
   | "aiReports"
   | "priceSuggestions"
   | "marketAnalysis"
+  | "electronicInvoicing"
   | "supermarketPrices"
   | "marketPriceInsights"
   | "restockRecommendations"
@@ -67,6 +68,8 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   aiReports: "ia",
   priceSuggestions: "ia",
   marketAnalysis: "ia",
+  // Factura electrónica con ARCA (cada negocio con su CUIT y su certificado).
+  electronicInvoicing: "esencial",
   // Precios de supermercados por código de barras: verlos es Pro; la sugerencia de precio y los
   // avisos de caro/barato contra ellos, Plan IA.
   supermarketPrices: "pro",
@@ -106,6 +109,7 @@ export const featureLabels: Record<PlanFeature, string> = {
   aiReports: "Los reportes avanzados con IA",
   priceSuggestions: "La sugerencia de precios",
   marketAnalysis: "El análisis de competidores y del mercado",
+  electronicInvoicing: "La factura electrónica con ARCA",
   supermarketPrices: "Los precios de los supermercados",
   marketPriceInsights: "La sugerencia de precio y los avisos de caro o barato frente a los supermercados",
   restockRecommendations: "Las recomendaciones de reposición",

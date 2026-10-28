@@ -279,6 +279,10 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
       },
       { label: "Compras a proveedores", values: everyPlan },
+      {
+        label: "Factura electrónica con ARCA (con tu CUIT y tu certificado): Factura A, B o C con CAE, en ticket de 80 mm o A4",
+        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+      },
       { label: "Historial de precios de cada producto", values: everyPlan },
       { label: "Cuenta corriente con proveedores (vencimientos y calendario)", values: fromEsencial },
       { label: "Aumentos masivos de precios y costos, con deshacer", values: fromPro },

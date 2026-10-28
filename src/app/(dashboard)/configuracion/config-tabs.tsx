@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-export type ConfigSection = "negocio" | "avisos" | "datos" | "cuenta";
+export type ConfigSection = "negocio" | "facturacion" | "avisos" | "datos" | "cuenta";
 
 const sections: { value: ConfigSection; label: string; href: string; adminOnly?: boolean }[] = [
   { value: "negocio", label: "Negocio", href: "/configuracion" },
+  { value: "facturacion", label: "Facturación", href: "/configuracion?tab=facturacion", adminOnly: true },
   { value: "avisos", label: "Avisos", href: "/configuracion?tab=avisos", adminOnly: true },
   { value: "datos", label: "Tus datos", href: "/configuracion?tab=datos", adminOnly: true },
   { value: "cuenta", label: "Cuenta y seguridad", href: "/configuracion?tab=cuenta" },

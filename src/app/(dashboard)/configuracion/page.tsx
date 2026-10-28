@@ -25,6 +25,9 @@ import { EXPORT_KINDS, EXPORT_MAX_ROWS } from "@/lib/data-export";
 import { ConfigTabs, type ConfigSection } from "@/app/(dashboard)/configuracion/config-tabs";
 import { AlertSettingsManager } from "@/app/(dashboard)/configuracion/alert-settings-manager";
 import { loadAlertSettings } from "@/lib/alert-settings";
+import { FacturacionManager, type ArcaStatusView } from "@/app/(dashboard)/configuracion/facturacion/facturacion-manager";
+import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
+import { encryptionConfigured } from "@/lib/arca/crypto";
 import { ALERT_DEFS } from "@/lib/alert-config";
 import { featureMinPlan } from "@/lib/plan-access";
 
@@ -50,7 +53,9 @@ export default async function ConfiguracionPage({
         ? "avisos"
         : tab === "datos" && isOrgAdmin(membership.role)
           ? "datos"
-          : "negocio";
+          : tab === "facturacion" && isOrgAdmin(membership.role)
+            ? "facturacion"
+            : "negocio";
   const supabase = await createClient();
 
   const businessType = businessTypes.find((b) => b.value === organization.business_type);
@@ -87,6 +92,14 @@ export default async function ConfiguracionPage({
   const alertFeatureLocks = Object.fromEntries(
     ALERT_DEFS.map((d) => [d.id, d.feature && !canUse(subscription, d.feature) ? featureMinPlan[d.feature] : null])
   );
+  // Facturación electrónica (Configuración → Facturación): estado sin secretos.
+  let arcaStatus: ArcaStatusView | null = null;
+  let arcaError: string | null = null;
+  if (section === "facturacion" && canUse(subscription, "electronicInvoicing")) {
+    const { data, error } = await supabase.rpc("arca_status", { p_org_id: organization.id });
+    if (error) arcaError = "No pudimos leer la configuración de facturación (¿falta aplicar la migración 0080?).";
+    else arcaStatus = data as unknown as ArcaStatusView;
+  }
   const memberLabel = (id: string) => {
     if (id === userId) return "Vos";
     const m = (memberships ?? []).find((x) => x.user_id === id);
@@ -158,6 +171,24 @@ export default async function ConfiguracionPage({
         </Card>
           </>
         )}
+
+        {section === "facturacion" &&
+          (!canUse(subscription, "electronicInvoicing") ? (
+            <ProLockedCard
+              title="Facturación electrónica"
+              plan={featureMinPlan.electronicInvoicing}
+              preview="list"
+              description="Emití facturas con CAE desde Pesito, con tu CUIT y tu certificado de ARCA."
+            />
+          ) : arcaError ? (
+            <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{arcaError}</p>
+          ) : !encryptionConfigured() ? (
+            <p className="rounded-xl bg-warning-bg px-3 py-2 text-sm text-foreground">
+              La facturación todavía no está activada en el servidor. Falta cargar la variable ARCA_ENCRYPTION_KEY.
+            </p>
+          ) : (
+            arcaStatus && <FacturacionManager status={arcaStatus} orgName={organization.name} />
+          ))}
 
         {section === "avisos" && (
           <>

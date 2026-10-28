@@ -834,6 +834,114 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["app_errors"]["Insert"]>;
         Relationships: [];
       };
+      arca_settings: {
+        Row: {
+          org_id: string;
+          issuer_condition: "monotributo" | "responsable_inscripto" | "exento" | null;
+          legal_name: string | null;
+          address: string | null;
+          gross_income: string | null;
+          activity_start: string | null;
+          active_environment: "test" | "production";
+          enabled: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          org_id: string;
+          issuer_condition?: "monotributo" | "responsable_inscripto" | "exento" | null;
+          legal_name?: string | null;
+          address?: string | null;
+          gross_income?: string | null;
+          activity_start?: string | null;
+          active_environment?: "test" | "production";
+          enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["arca_settings"]["Insert"]>;
+        Relationships: [];
+      };
+      arca_credentials: {
+        Row: {
+          org_id: string;
+          environment: "test" | "production";
+          tax_id: string | null;
+          sales_point: number | null;
+          key_enc: string | null;
+          csr_pem: string | null;
+          certificate_pem: string | null;
+          verified_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          org_id: string;
+          environment: "test" | "production";
+          tax_id?: string | null;
+          sales_point?: number | null;
+          key_enc?: string | null;
+          csr_pem?: string | null;
+          certificate_pem?: string | null;
+          verified_at?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["arca_credentials"]["Insert"]>;
+        Relationships: [];
+      };
+      arca_store: {
+        Row: { key: string; value: string; updated_at: string };
+        Insert: { key: string; value: string; updated_at?: string };
+        Update: Partial<Database["public"]["Tables"]["arca_store"]["Insert"]>;
+        Relationships: [];
+      };
+      arca_vouchers: {
+        Row: {
+          id: string;
+          org_id: string;
+          sale_id: string | null;
+          environment: "test" | "production";
+          kind: "invoice" | "credit_note" | "debit_note";
+          status: "authorized" | "rejected" | "indeterminate" | "conflict" | "error";
+          idempotency_key: string;
+          sales_point: number | null;
+          voucher_type: number | null;
+          voucher_class: string | null;
+          number: number | null;
+          cae: string | null;
+          cae_expiry: string | null;
+          qr: string | null;
+          total_cents: number | null;
+          receiver: Json | null;
+          items: Json | null;
+          detail: Json | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          sale_id?: string | null;
+          environment: "test" | "production";
+          kind?: "invoice" | "credit_note" | "debit_note";
+          status: "authorized" | "rejected" | "indeterminate" | "conflict" | "error";
+          idempotency_key: string;
+          sales_point?: number | null;
+          voucher_type?: number | null;
+          voucher_class?: string | null;
+          number?: number | null;
+          cae?: string | null;
+          cae_expiry?: string | null;
+          qr?: string | null;
+          total_cents?: number | null;
+          receiver?: Json | null;
+          items?: Json | null;
+          detail?: Json | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["arca_vouchers"]["Insert"]>;
+        Relationships: [];
+      };
       market_crawl: {
         Row: {
           store: string;
@@ -1177,6 +1285,22 @@ export interface Database {
           stores: Json;
           total: number;
         }[];
+      };
+      arca_status: {
+        Args: { p_org_id: string };
+        Returns: Json;
+      };
+      arca_store_add: {
+        Args: { p_key: string; p_value: string };
+        Returns: boolean;
+      };
+      arca_lock_acquire: {
+        Args: { p_key: string; p_owner: string; p_ttl_ms: number };
+        Returns: boolean;
+      };
+      arca_lock_release: {
+        Args: { p_key: string; p_owner: string };
+        Returns: undefined;
       };
       market_pending_eans: {
         Args: { p_month: string; p_stores: number; p_limit: number };
