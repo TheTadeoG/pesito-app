@@ -19,7 +19,6 @@ import { BranchFilter } from "@/app/(dashboard)/caja/branch-filter";
 import { countOverdueSuppliers } from "@/lib/supplier-overview";
 import { getBranchContext } from "@/lib/branches";
 import { recurringShortages } from "@/lib/caja-alerts";
-import { ModuleAlerts } from "@/components/dashboard/catalog-alerts";
 
 // Sin historial completo de caja (Plan Pro) se ven sólo los últimos cierres.
 const LIMITED_HISTORY = 5;
@@ -213,7 +212,6 @@ export default async function CajaPage({
   if (!register) {
     return (
       <div className="space-y-6">
-        <ModuleAlerts module="caja" />
         <OpenCajaDialog />
         {teamOverview}
         <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
@@ -319,7 +317,6 @@ export default async function CajaPage({
 
   return (
     <div className="space-y-6">
-      <ModuleAlerts module="caja" />
       <ManageCaja
         cashRegisterId={register.id}
         openingAmount={openingAmount}

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Bell,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
@@ -34,7 +33,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { useAlerts } from "@/components/dashboard/alerts-provider";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
@@ -361,7 +359,6 @@ export function ProductosClient({
     [products],
   );
   // Mismo número que la insignia del menú y la campana: avisos del módulo, no productos.
-  const alertsCount = useAlerts().byModule.productos ?? 0;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -627,22 +624,6 @@ export function ProductosClient({
               </option>
             ))}
           </Select>
-          <button
-            type="button"
-            onClick={() => setAlertsOpen(true)}
-            title="Avisos de Productos: stock bajo, ventas a pérdida y números para revisar"
-            className={cn(
-              "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-sm font-medium transition-colors",
-              alertsCount > 0
-                ? "border-danger/40 bg-danger-bg text-danger"
-                : "border-border bg-card text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Bell className="h-4 w-4" />
-            {alertsCount > 0 && (
-              <span className="font-semibold">{alertsCount}</span>
-            )}
-          </button>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu

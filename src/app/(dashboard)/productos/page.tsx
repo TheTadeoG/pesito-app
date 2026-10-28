@@ -12,7 +12,6 @@ import { ProductosClient } from "@/app/(dashboard)/productos/productos-client";
 import { MovementsTab } from "@/app/(dashboard)/productos/movements-tab";
 import { MarcasTab } from "@/app/(dashboard)/productos/marcas-tab";
 import { CatalogTabs, type CatalogTab } from "@/app/(dashboard)/productos/catalog-tabs";
-import { ModuleAlerts } from "@/components/dashboard/catalog-alerts";
 import { loadAlertSettings } from "@/lib/alert-settings";
 import { thresholdsFrom } from "@/lib/product-alerts";
 import { costRiseIds, lowMarginIds, staleCostIds } from "@/lib/catalog-alert-data";
@@ -191,7 +190,6 @@ export default async function ProductosPage({
         </div>
       )}
       <CatalogTabs active={tab} />
-      <ModuleAlerts module="productos" />
       {content}
     </div>
   );

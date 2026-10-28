@@ -215,15 +215,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
             greetingName={greetingName}
             branch={branch}
           />
-          <OnboardingChecklist show={newBusiness} canReopen={isOrgAdmin(membership.role)} />
-          <CommercialDatesBanner dates={commercialDates} />
-          {openRegister && (
-            <CashCloseReminder
-              registerId={openRegister.id}
-              openedAt={openRegister.opened_at}
-              closeTime={organization.cash_close_time ?? null}
-            />
-          )}
+          {/* Un solo cartel a la vez: si hay varios, se ve el primero de la lista (los que no corresponden
+              no dibujan nada) y los demás esperan. Primero lo que pide actuar (cobro, plan), después la caja,
+              la guía y la prueba, y al final lo informativo. */}
+          <div className="[&>*:nth-child(n+2)]:hidden">
           {isOrgAdmin(membership.role) && subscription.billing?.status === "past_due" && (
             <div className="mx-4 mt-4 rounded-2xl border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-foreground sm:mx-6 lg:mx-8">
               {`No pudimos cobrar tu plan con Mercado Pago${
@@ -266,9 +261,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </Link>
             </div>
           )}
+          {openRegister && (
+            <CashCloseReminder
+              registerId={openRegister.id}
+              openedAt={openRegister.opened_at}
+              closeTime={organization.cash_close_time ?? null}
+            />
+          )}
+          <OnboardingChecklist show={newBusiness} canReopen={isOrgAdmin(membership.role)} />
           {subscription.plan === "gratis" && subscription.proTrialEndsAt && (
             <ProTrialBanner proTrialEndsAt={subscription.proTrialEndsAt} />
           )}
+          <CommercialDatesBanner dates={commercialDates} />
+          </div>
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>
