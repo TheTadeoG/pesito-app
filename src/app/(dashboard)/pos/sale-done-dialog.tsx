@@ -19,16 +19,22 @@ export interface SaleReceipt {
   // Sólo en efectivo, si el cliente pagó con más de lo justo.
   cashReceived: number | null;
   customerName: string | null;
+  /** Reimpresión desde el historial: el ticket dice «COPIA». */
+  copy?: boolean;
+  /** Venta anulada: el ticket lo dice bien grande. */
+  voided?: boolean;
 }
 
 // Ticket para impresoras térmicas (58 u 80 mm). Se monta en document.body y
 // globals.css oculta todo lo demás al imprimir (ver .ticket-print).
-function Ticket({ receipt }: { receipt: SaleReceipt }) {
+export function Ticket({ receipt }: { receipt: SaleReceipt }) {
   const change =
     receipt.cashReceived !== null ? Math.max(0, receipt.cashReceived - receipt.total) : 0;
   return (
     <div className="ticket-print">
+      {receipt.voided && <p className="ticket-center ticket-bold ticket-big">VENTA ANULADA</p>}
       <p className="ticket-center ticket-bold ticket-big">{receipt.orgName}</p>
+      {receipt.copy && <p className="ticket-center ticket-bold">COPIA</p>}
       <p className="ticket-center">{formatDateTime(receipt.soldAt)}</p>
       {receipt.customerName && <p className="ticket-center">Cliente: {receipt.customerName}</p>}
       <hr />

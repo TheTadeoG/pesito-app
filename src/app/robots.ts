@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
         "/configuracion",
         "/soporte",
         "/caja",
+        "/ventas",
         "/onboarding",
         "/auth/",
       ],

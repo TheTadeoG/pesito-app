@@ -10,12 +10,15 @@ export function SaleDetailDialog({
   loading,
   sale,
   paymentLabels,
+  actions,
 }: {
   open: boolean;
   onClose: () => void;
   loading: boolean;
   sale: SaleDetail | null;
   paymentLabels: Record<string, string>;
+  /** Botones de abajo (imprimir, anular…) cuando el diálogo se usa en el historial. */
+  actions?: React.ReactNode;
 }) {
   return (
     <Dialog
@@ -43,6 +46,38 @@ export function SaleDetailDialog({
             )}
             {sale.status === "anulada" && <Badge tone="danger">Anulada</Badge>}
           </div>
+
+          {sale.voided && (
+            <div className="rounded-xl border border-danger/30 bg-danger-bg px-3.5 py-2.5 text-sm text-foreground">
+              <p className="font-semibold text-danger">Venta anulada</p>
+              <p className="mt-0.5 text-muted-foreground">
+                {[
+                  sale.voided.at ? formatDateTime(sale.voided.at) : null,
+                  sale.voided.by ? `por ${sale.voided.by}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "Sin registro de quién la anuló (anulación anterior al historial)."}
+              </p>
+              {sale.voided.reason && <p className="mt-1">{`Motivo: ${sale.voided.reason}`}</p>}
+            </div>
+          )}
+
+          {sale.vouchers.length > 0 && (
+            <div className="space-y-1 rounded-xl border border-border px-3.5 py-2.5 text-sm">
+              <p className="text-xs font-medium text-foreground">Comprobantes de ARCA</p>
+              {sale.vouchers.map((v, i) => (
+                <p key={i} className="text-muted-foreground">
+                  <span className="font-medium text-foreground">
+                    {`${v.kind === "invoice" ? "Factura" : v.kind === "credit_note" ? "Nota de crédito" : "Nota de débito"}${v.voucherClass ? ` ${v.voucherClass}` : ""}`}
+                  </span>
+                  {v.salesPoint && v.number ? ` ${String(v.salesPoint).padStart(5, "0")}-${String(v.number).padStart(8, "0")}` : ""}
+                  {v.cae ? ` · CAE ${v.cae}` : ""}
+                  {v.status !== "authorized" ? ` · ${v.status}` : ""}
+                  {v.environment === "test" ? " · prueba (sin validez fiscal)" : ""}
+                </p>
+              ))}
+            </div>
+          )}
 
           <p className="text-sm text-muted-foreground">
             Cliente: <span className="font-medium text-foreground">{sale.customerName}</span>
@@ -115,6 +150,8 @@ export function SaleDetailDialog({
               <span>{formatCurrency(sale.total)}</span>
             </div>
           </div>
+
+          {actions && <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">{actions}</div>}
         </div>
       )}
     </Dialog>

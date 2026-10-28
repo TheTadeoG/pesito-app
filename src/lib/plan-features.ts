@@ -278,6 +278,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         label: "Inventarios físicos: contás y el stock se ajusta solo",
         values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
       },
+      { label: "Historial de ventas: ver, reimprimir el ticket, anular con motivo (la venta nunca se borra) y exportar a Excel (CSV)", values: everyPlan },
       { label: "Compras a proveedores", values: everyPlan },
       {
         label: "Factura electrónica con ARCA (con tu CUIT y tu certificado): Factura A, B o C con CAE, en ticket de 80 mm o A4",

@@ -20,6 +20,17 @@ export interface SalePaymentLine {
   amount: number;
 }
 
+export interface SaleVoucherInfo {
+  kind: "invoice" | "credit_note" | "debit_note";
+  status: string;
+  voucherClass: string | null;
+  salesPoint: number | null;
+  number: number | null;
+  cae: string | null;
+  caeExpiry: string | null;
+  environment: "test" | "production";
+}
+
 export interface SaleDetail {
   id: string;
   created_at: string;
@@ -33,6 +44,10 @@ export interface SaleDetail {
   customerName: string;
   items: SaleDetailItem[];
   payments: SalePaymentLine[];
+  /** Quién, cuándo y por qué se anuló (la venta nunca se borra). */
+  voided: { at: string; by: string | null; reason: string | null } | null;
+  /** Comprobantes electrónicos de ARCA de esta venta (factura y notas de crédito). */
+  vouchers: SaleVoucherInfo[];
 }
 
 export async function getSaleDetail(
@@ -44,7 +59,7 @@ export async function getSaleDetail(
   const { data: sale } = await supabase
     .from("sales")
     .select(
-      "id, created_at, status, payment_method, invoice_type, subtotal, discount, surcharge, total, customer_id"
+      "id, created_at, status, payment_method, invoice_type, subtotal, discount, surcharge, total, customer_id, voided_at, voided_by, void_reason"
     )
     .eq("id", saleId)
     .eq("org_id", organization.id)
@@ -52,7 +67,7 @@ export async function getSaleDetail(
 
   if (!sale) return { error: "No encontramos la venta." };
 
-  const [{ data: itemsRaw }, { data: customerRaw }, { data: paymentsRaw }] = await Promise.all([
+  const [{ data: itemsRaw }, { data: customerRaw }, { data: paymentsRaw }, { data: voucherRows }, { data: voider }] = await Promise.all([
     supabase
       .from("sale_items")
       .select("product_name, quantity, unit_price, subtotal")
@@ -61,6 +76,14 @@ export async function getSaleDetail(
       ? supabase.from("customers").select("name").eq("id", sale.customer_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("sale_payments").select("method, amount").eq("sale_id", saleId),
+    supabase
+      .from("arca_vouchers")
+      .select("kind, status, voucher_class, sales_point, number, cae, cae_expiry, environment")
+      .eq("sale_id", saleId)
+      .order("created_at"),
+    sale.voided_by
+      ? supabase.from("memberships").select("username, email").eq("org_id", organization.id).eq("user_id", sale.voided_by).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   return {
@@ -88,18 +111,34 @@ export async function getSaleDetail(
         method: p.method,
         amount: Number(p.amount),
       })),
+      voided: sale.voided_at ? { at: sale.voided_at, by: voider?.username ?? voider?.email ?? null, reason: sale.void_reason } : sale.status === "anulada" ? { at: "", by: null, reason: null } : null,
+      vouchers: (voucherRows ?? []).map((v) => ({
+        kind: v.kind,
+        status: v.status,
+        voucherClass: v.voucher_class,
+        salesPoint: v.sales_point,
+        number: v.number,
+        cae: v.cae,
+        caeExpiry: v.cae_expiry,
+        environment: v.environment,
+      })),
     },
   };
 }
 
-export async function voidSale(saleId: string): Promise<ActionState> {
+/**
+ * Anula una venta (nunca se borra): repone el stock, ajusta caja y cuenta del cliente, y deja quién, cuándo y
+ * por qué. Sólo dueño o administrador. Con factura electrónica hace falta una nota de crédito.
+ */
+export async function voidSale(saleId: string, reason: string): Promise<ActionState> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("void_sale", { p_sale_id: saleId });
+  const { error } = await supabase.rpc("void_sale_audited", { p_sale_id: saleId, p_reason: reason });
 
   if (error) {
     return { error: error.message || "No pudimos anular la venta." };
   }
 
+  revalidatePath("/ventas");
   revalidatePath("/reportes");
   revalidatePath("/productos");
   revalidatePath("/pos");

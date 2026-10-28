@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   LifeBuoy,
   Radio,
+  Receipt,
   Settings,
   ShoppingBag,
   ShoppingCart,
@@ -48,6 +49,7 @@ export const navSections: NavSection[] = [
     title: "Mostrador",
     items: [
       { href: "/pos", label: "Punto de Venta", icon: ShoppingCart },
+      { href: "/ventas", label: "Ventas", icon: Receipt },
       { href: "/caja", label: "Caja", icon: Wallet },
     ],
   },
@@ -129,4 +131,5 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/planes": { title: "Mi plan", description: "Tu plan, los demás planes y cómo pagás." },
   "/soporte": { title: "Ayuda", description: "¿Necesitás ayuda?" },
   "/caja": { title: "Mi Caja", description: "Apertura y cierre de caja." },
+  "/ventas": { title: "Ventas", description: "Historial de ventas: ver, reimprimir y anular, sin borrar nada." },
 };

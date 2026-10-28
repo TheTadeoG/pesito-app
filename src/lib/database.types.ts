@@ -378,6 +378,9 @@ export interface Database {
           status: "completada" | "anulada";
           created_at: string;
           branch_id: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+          void_reason: string | null;
         };
         Insert: {
           id?: string;
@@ -394,6 +397,9 @@ export interface Database {
           status?: "completada" | "anulada";
           created_at?: string;
           branch_id?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          void_reason?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["sales"]["Insert"]>;
         Relationships: [];
@@ -1385,6 +1391,10 @@ export interface Database {
       };
       void_sale: {
         Args: { p_sale_id: string };
+        Returns: undefined;
+      };
+      void_sale_audited: {
+        Args: { p_sale_id: string; p_reason: string };
         Returns: undefined;
       };
       register_purchase: {

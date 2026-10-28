@@ -7,10 +7,10 @@ import { Ban, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { voidSale, getSaleDetail, type SaleDetail } from "@/lib/actions/sales";
+import { getSaleDetail, type SaleDetail } from "@/lib/actions/sales";
 import { invoiceLabels } from "@/lib/invoice-labels";
 import { SaleDetailDialog } from "@/components/dashboard/sale-detail-dialog";
-import { useToast } from "@/components/toast/toast-provider";
+import { VoidSaleDialog } from "@/components/dashboard/void-sale-dialog";
 
 export interface SaleRow {
   id: string;
@@ -35,9 +35,7 @@ export function VentasList({
   emptyLabel?: string;
 }) {
   const router = useRouter();
-  const { showSuccess } = useToast();
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [voidTarget, setVoidTarget] = useState<{ id: string; total: number } | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailSale, setDetailSale] = useState<SaleDetail | null>(null);
@@ -52,24 +50,8 @@ export function VentasList({
     setDetailSale(result.sale ?? null);
   }
 
-  async function handleVoid(sale: SaleRow) {
-    if (
-      !confirm(
-        `¿Anular la venta de ${formatCurrency(sale.total)}? Se repone el stock vendido y no se puede deshacer.`
-      )
-    ) {
-      return;
-    }
-    setBusyId(sale.id);
-    setError(null);
-    const result = await voidSale(sale.id);
-    setBusyId(null);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    showSuccess("Venta anulada", "Se repuso el stock vendido.");
-    router.refresh();
+  function handleVoid(sale: SaleRow) {
+    setVoidTarget({ id: sale.id, total: sale.total });
   }
 
   if (sales.length === 0) {
@@ -80,9 +62,6 @@ export function VentasList({
 
   return (
     <div>
-      {error && (
-        <p className="mx-5 mt-3 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
-      )}
       <div className="divide-y divide-border">
         {sales.slice(pager.start, pager.end).map((sale) => (
           <div
@@ -136,7 +115,6 @@ export function VentasList({
                   e.stopPropagation();
                   handleVoid(sale);
                 }}
-                disabled={busyId === sale.id}
                 aria-label="Anular venta"
                 title="Anular venta"
               >
@@ -153,6 +131,15 @@ export function VentasList({
         noun="ventas"
         onPageChange={pager.setPage}
         onPageSizeChange={pager.setPageSize}
+      />
+
+      <VoidSaleDialog
+        sale={voidTarget}
+        onClose={() => setVoidTarget(null)}
+        onVoided={() => {
+          setVoidTarget(null);
+          router.refresh();
+        }}
       />
 
       <SaleDetailDialog
