@@ -185,14 +185,18 @@ export function suggestPrice(stats: PriceStats, cost: number | null, minMarginPc
   return { price: base, reason: `Apenas por debajo de la mediana de los súper ($${Math.round(stats.median)}, entre $${Math.round(stats.min)} y $${Math.round(stats.max)}).` };
 }
 
-/** Días del mes en que el cron todavía puede estar juntando precios. */
-const SCAN_DAYS = 11;
-const SCAN_TTL_MS = 60 * 60 * 1000;
+/** Mientras lo guardado es reciente (se sigue juntando) o está vacío, la copia dura poco. */
+const FRESH_MS = 24 * 60 * 60 * 1000;
+const FRESH_TTL_MS = 5 * 60 * 1000;
 
-/** Hasta cuándo sirve lo guardado en `at`. */
-export function cacheValidUntil(at: number): number {
+/**
+ * Hasta cuándo sirve una copia de precios guardada en el servidor en `at`. Con precios viejos (ya no
+ * se juntan más hasta el mes que viene) vale hasta el día 1 del mes siguiente; sin precios, o con
+ * precios de las últimas 24 horas (todavía se están juntando), sólo unos minutos.
+ */
+export function cacheValidUntil(at: number, latestScrapedAt: number | null): number {
+  if (latestScrapedAt === null || at - latestScrapedAt < FRESH_MS) return at + FRESH_TTL_MS;
   const d = new Date(at);
-  if (d.getUTCDate() <= SCAN_DAYS) return at + SCAN_TTL_MS;
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
 }
 

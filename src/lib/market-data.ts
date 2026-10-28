@@ -14,6 +14,7 @@ export interface MarketRow {
   url: string | null;
   available: boolean;
   month: string;
+  scrapedAt: number;
 }
 
 const CHUNK = 300;
@@ -39,7 +40,7 @@ export async function loadMarketPrices(
   const missing: string[] = [];
   for (const ean of eans) {
     const hit = cache.get(ean);
-    if (hit && now < cacheValidUntil(hit.at)) {
+    if (hit && now < cacheValidUntil(hit.at, hit.rows.length > 0 ? Math.max(...hit.rows.map((r) => r.scrapedAt)) : null)) {
       if (hit.rows.length > 0) out.set(ean, hit.rows);
     } else missing.push(ean);
   }
@@ -54,7 +55,7 @@ export async function loadMarketPrices(
     for (const r of data ?? []) {
       fresh.get(r.ean)?.push({
         ean: r.ean, store: r.store, price: Number(r.price), listPrice: r.list_price === null ? null : Number(r.list_price),
-        name: r.name, brand: r.brand, url: r.url, available: r.available, month: r.month,
+        name: r.name, brand: r.brand, url: r.url, available: r.available, month: r.month, scrapedAt: Date.parse(r.scraped_at) || 0,
       });
     }
     if (cache.size > MAX_CACHED) cache.clear();
