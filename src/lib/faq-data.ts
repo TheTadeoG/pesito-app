@@ -66,7 +66,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Cómo le aviso a Pesito de un problema o le sugiero una función?",
         answer:
-          "Desde el botón de ayuda (?) de la barra de arriba, en cualquier plan: \"Contanos qué te falta\" para sugerencias y \"Reportar un problema\" para algo que no anda. Escribís el mensaje y Pesito recibe junto con él el nombre de tu negocio, tu email y la pantalla en la que estabas, para poder responderte. Podés mandar hasta 10 mensajes por día. Si es urgente, también podés escribirnos por WhatsApp desde el mismo menú.",
+          "Desde el botón de ayuda (?) de la barra de arriba, en cualquier plan: \"Sugerencias y problemas\": elegís si te falta algo o si algo no anda. Escribís el mensaje y Pesito recibe junto con él el nombre de tu negocio, tu email y la pantalla en la que estabas, para poder responderte. Podés mandar hasta 10 mensajes por día. Si es urgente, también podés escribirnos por WhatsApp desde el mismo menú.",
       },
     ],
   },

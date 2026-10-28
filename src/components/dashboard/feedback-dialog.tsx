@@ -44,8 +44,10 @@ export function FeedbackDialog({
   return <FeedbackForm kind={kind} orgName={orgName} onClose={onClose} />;
 }
 
-function FeedbackForm({ kind, orgName, onClose }: { kind: FeedbackKind; orgName: string; onClose: () => void }) {
+function FeedbackForm({ kind: initialKind, orgName, onClose }: { kind: FeedbackKind; orgName: string; onClose: () => void }) {
   const pathname = usePathname();
+  // Un solo formulario: arriba se elige si es una sugerencia o un problema.
+  const [kind, setKind] = useState<FeedbackKind>(initialKind);
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -64,7 +66,7 @@ function FeedbackForm({ kind, orgName, onClose }: { kind: FeedbackKind; orgName:
   }
 
   return (
-    <Dialog open onClose={onClose} title={sent ? "¡Gracias!" : text.title} description={sent ? undefined : text.description}>
+    <Dialog open onClose={onClose} title={sent ? "¡Gracias!" : "Sugerencias y problemas"} description={sent ? undefined : text.description}>
       {sent ? (
         <div className="space-y-4">
           <div className="flex items-start gap-3 rounded-xl bg-success-bg px-4 py-3">
@@ -89,6 +91,21 @@ function FeedbackForm({ kind, orgName, onClose }: { kind: FeedbackKind; orgName:
         </div>
       ) : (
         <form onSubmit={send} className="space-y-4">
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1" role="group" aria-label="Qué querés contarnos">
+            {(["suggestion", "problem"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                aria-pressed={kind === k}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  kind === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {k === "suggestion" ? "Me falta algo" : "Algo no anda"}
+              </button>
+            ))}
+          </div>
           <div>
             <Label htmlFor="feedback-message" required>
               {text.label}

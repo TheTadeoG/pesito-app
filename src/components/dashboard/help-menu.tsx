@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BookOpen, Bug, HelpCircle, Keyboard, Lightbulb, MessageCircle, Rocket } from "lucide-react";
+import { BookOpen, HelpCircle, Keyboard, Lightbulb, MessageCircle, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { FeedbackDialog } from "@/components/dashboard/feedback-dialog";
@@ -275,19 +275,7 @@ export function HelpMenu({ orgName, canOnboard }: { orgName: string; canOnboard:
             }}
           >
             <Lightbulb className="h-4 w-4 text-primary" />
-            Contanos qué te falta
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className={itemClass}
-            onClick={() => {
-              setOpen(false);
-              setFeedback("problem");
-            }}
-          >
-            <Bug className="h-4 w-4 text-primary" />
-            Reportar un problema
+            Sugerencias y problemas
           </button>
           <a
             role="menuitem"
