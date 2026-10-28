@@ -4,6 +4,7 @@ import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/database.types";
 import { brandFilter, brandMatches } from "@/lib/market-brands";
+import { crawlStore } from "@/lib/market-crawl";
 import {
   categoryPageUrl, dedupeByEan, fetchJson, fetchStorePrice, leafCategories, MARKET_STORES, parseVtexCatalogPage,
 } from "@/lib/market-prices";
@@ -85,4 +86,35 @@ export async function runMarketTest(): Promise<{ reports: StoreTestReport[]; row
 
   const { count } = await admin.from("market_prices").select("ean", { count: "exact", head: true }).eq("month", month);
   return { reports, rowsThisMonth: count ?? null };
+}
+
+export interface CrawlChunkReport {
+  stores: { store: string; pages: number; items: number; categoriesDone: number; errors: number; pending: number | null }[];
+  rowsThisMonth: number | null;
+}
+
+/**
+ * Corre ahora un tramo del recorrido de catálogos (hasta ~4 minutos), igual que el cron. Se puede
+ * apretar varias veces: cada vez sigue donde quedó la anterior.
+ */
+export async function runCrawlChunk(): Promise<CrawlChunkReport> {
+  await requirePlatformAdmin();
+  const admin = createAdminClient();
+  const month = new Date().toISOString().slice(0, 7) + "-01";
+  const brands = brandFilter(process.env.MARKET_BRANDS);
+  const until = Date.now() + 240_000;
+  const stats = await Promise.all(MARKET_STORES.map((store) => crawlStore(admin, store, month, until, brands)));
+  const stores = await Promise.all(
+    MARKET_STORES.map(async (store, i) => {
+      const { count } = await admin
+        .from("market_crawl")
+        .select("category", { count: "exact", head: true })
+        .eq("store", store.id)
+        .eq("month", month)
+        .eq("done", false);
+      return { store: store.label, pages: stats[i].pages, items: stats[i].items, categoriesDone: stats[i].categories, errors: stats[i].errors, pending: count ?? null };
+    })
+  );
+  const { count } = await admin.from("market_prices").select("ean", { count: "exact", head: true }).eq("month", month);
+  return { stores, rowsThisMonth: count ?? null };
 }

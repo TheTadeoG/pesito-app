@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { MarketTester } from "./tester";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export default async function PreciosAdminPage() {
   await requirePlatformAdmin();

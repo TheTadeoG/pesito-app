@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { runMarketTest, type StoreTestReport } from "./actions";
+import { runCrawlChunk, runMarketTest, type CrawlChunkReport, type StoreTestReport } from "./actions";
 
 export function MarketTester() {
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<{ reports: StoreTestReport[]; rowsThisMonth: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [crawling, setCrawling] = useState(false);
+  const [chunk, setChunk] = useState<CrawlChunkReport | null>(null);
 
   async function run() {
     setPending(true);
@@ -22,8 +24,40 @@ export function MarketTester() {
     }
   }
 
+  async function crawl() {
+    setCrawling(true);
+    setError(null);
+    try {
+      setChunk(await runCrawlChunk());
+    } catch {
+      setError("El recorrido se cortó (tardó demasiado). Lo que alcanzó a guardar queda guardado: apretá de nuevo para seguir.");
+    } finally {
+      setCrawling(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <div className="space-y-2 rounded-xl border border-border p-4">
+        <p className="text-sm font-semibold text-foreground">Recorrido de catálogos (marcas principales)</p>
+        <p className="text-sm text-muted-foreground">
+          Baja los catálogos de los 4 súper por categorías durante unos 4 minutos y guarda lo que sirve. Apretalo de nuevo para
+          seguir donde quedó, hasta que no queden categorías pendientes. Necesita MARKET_SCAN_ENABLED y MARKET_CATALOG_ENABLED en el cron; acá corre siempre.
+        </p>
+        <Button onClick={() => void crawl()} disabled={crawling || pending}>
+          {crawling ? "Recorriendo… no cierres esta página (hasta 4 minutos)" : "Correr el recorrido ahora"}
+        </Button>
+        {chunk && (
+          <div className="space-y-1 pt-2 text-sm text-muted-foreground">
+            <p>{`Precios guardados este mes en total: ${chunk.rowsThisMonth ?? "?"}.`}</p>
+            {chunk.stores.map((s) => (
+              <p key={s.store}>
+                {`${s.store}: ${s.pages} páginas, ${s.items} productos guardados, ${s.categoriesDone} categorías terminadas, ${s.pending ?? "?"} pendientes${s.errors > 0 ? `, ${s.errors} errores` : ""}.`}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
       <Button onClick={() => void run()} disabled={pending}>
         {pending ? "Probando los súper… (puede tardar un minuto)" : "Hacer una prueba chica ahora"}
       </Button>
