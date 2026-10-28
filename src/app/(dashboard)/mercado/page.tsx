@@ -3,9 +3,8 @@ import { fetchAll } from "@/lib/supabase/fetch-all";
 import { loadAlertSettings } from "@/lib/alert-settings";
 import { alertValue } from "@/lib/alert-config";
 import { loadMarketPrices, statsFor } from "@/lib/market-data";
-import { diffPct, normalizeEan, pricePosition, suggestPrice, MARKET_STORES } from "@/lib/market-prices";
-import { MarketSearch } from "./market-search";
-import { PricesTable, type PriceRow } from "./prices-table";
+import { diffPct, isInternalEan, normalizeEan, pricePosition, suggestPrice } from "@/lib/market-prices";
+import { MarketBoard, type BoardRow } from "./market-board";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan } from "@/lib/plan-access";
@@ -98,50 +97,60 @@ export default async function MercadoPage({ searchParams }: { searchParams: Prom
       ),
     ]);
     const limits = { highPct: alertValue(settings, "market-expensive"), lowPct: alertValue(settings, "market-cheap") };
-    const withEan = products.filter((p) => normalizeEan(p.barcode));
-    const map = await loadMarketPrices(supabase, organization.id, withEan.map((p) => p.barcode));
-    const rows: PriceRow[] = [];
+    const real = products.filter((p) => {
+      const e = normalizeEan(p.barcode);
+      return e !== null && !isInternalEan(e);
+    });
+    const internalCount = products.filter((p) => {
+      const e = normalizeEan(p.barcode);
+      return e !== null && isInternalEan(e);
+    }).length;
+    const map = await loadMarketPrices(supabase, organization.id, real.map((p) => p.barcode));
+    const rows: BoardRow[] = [];
     let lastMonth = "";
-    for (const p of withEan) {
+    for (const p of real) {
       const ean = normalizeEan(p.barcode) as string;
       const found = map.get(ean);
       const stats = statsFor(found);
       for (const r of found ?? []) if (r.month > lastMonth) lastMonth = r.month;
       const price = Number(p.price);
       const cost = p.cost === null ? null : Number(p.cost);
-      if (!found || !stats) {
-        // Todavía sin precios de súper: se lista igual (nombre y código), para poder buscarlo.
-        rows.push({ id: p.id, name: p.name, brand: p.brand, ean, price, stores: {}, min: null, max: null, median: null, diff: null, position: null, suggested: null, reason: null });
-        continue;
-      }
+      const stores = (found ?? [])
+        .map((r) => ({ store: r.store, price: r.price, url: r.url, available: r.available }))
+        .sort((x, y) => x.price - y.price);
+      const sug = stats && insights ? suggestPrice(stats, cost) : null;
+      const position = stats && price > 0 ? pricePosition(price, stats, limits) : null;
       rows.push({
-        id: p.id,
+        key: p.id,
         name: p.name,
         brand: p.brand,
         ean,
-        price,
-        stores: Object.fromEntries(found.map((r) => [r.store, r.price])),
-        min: stats.min,
-        max: stats.max,
-        median: stats.median,
-        diff: price > 0 ? diffPct(price, stats) : null,
-        position: price > 0 ? pricePosition(price, stats, limits) : null,
-        suggested: insights ? suggestPrice(stats, cost).price : null,
-        reason: insights ? suggestPrice(stats, cost).reason : null,
+        imageUrl: null,
+        stores,
+        hasPrices: stores.length > 0,
+        position,
+        emptyNote: "Todavía sin precios de supermercados.",
+        mine: {
+          price,
+          // Caro/barato y sugerido: Plan IA (sin el plan no llegan al navegador).
+          position: insights ? position : null,
+          diff: insights && stats && price > 0 ? diffPct(price, stats) : null,
+          suggested: sug ? sug.price : null,
+          reason: sug ? sug.reason : null,
+        },
       });
     }
     // Para quien no tiene el Plan IA: cuántos hay, sin el detalle.
     const hiddenHigh = rows.filter((r) => r.position === "caro" || r.position === "muy-caro").length;
     const hiddenLow = rows.filter((r) => r.position === "barato" || r.position === "muy-barato").length;
     prices = (
-      <PricesTable
-        rows={insights ? rows : rows.map((r) => ({ ...r, diff: null, position: null }))}
+      <MarketBoard
+        rows={insights ? rows : rows.map((r) => ({ ...r, position: null }))}
         insights={insights}
         initialFilter={insights && (filtro === "caro" || filtro === "barato") ? filtro : "todos"}
-        totalWithEan={withEan.length}
+        internalCount={internalCount}
         totalProducts={products.length}
         lastMonth={lastMonth || null}
-        stores={MARKET_STORES.map((s) => ({ id: s.id, label: s.label }))}
         locked={insights ? null : { plan: featureMinPlan.marketPriceInsights, high: hiddenHigh, low: hiddenLow }}
       />
     );
@@ -149,7 +158,6 @@ export default async function MercadoPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-8">
-      {canPrices && <MarketSearch insights={insights} />}
       <section className="space-y-3">{prices}</section>
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Notas de tu rubro</h2>

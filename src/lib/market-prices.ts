@@ -23,6 +23,14 @@ export function normalizeEan(raw: string | null | undefined): string | null {
   return /^(\d{8}|\d{12}|\d{13}|\d{14})$/.test(digits) ? digits : null;
 }
 
+/**
+ * Códigos que empiezan con 2 (200 a 299) son de uso interno de cada negocio (Pesito genera los suyos
+ * con 200…): no existen en ningún supermercado, así que no se buscan ni se muestran en Mercado.
+ */
+export function isInternalEan(ean: string): boolean {
+  return /^2\d{12}$/.test(ean);
+}
+
 export interface StorePrice {
   price: number;
   listPrice: number | null;

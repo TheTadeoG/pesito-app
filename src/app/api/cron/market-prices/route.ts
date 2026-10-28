@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/database.types";
 import { brandFilter } from "@/lib/market-brands";
 import { crawlStore } from "@/lib/market-crawl";
-import { fetchStorePrice, MARKET_STORES } from "@/lib/market-prices";
+import { fetchStorePrice, isInternalEan, MARKET_STORES } from "@/lib/market-prices";
 
 // Precios de supermercados por EAN (migración 0078). La llama un cron los días 1 a 10 de cada mes
 // (vercel.json) con "Authorization: Bearer $CRON_SECRET"; cada pasada completa un tramo de los EAN que
@@ -68,6 +68,15 @@ export async function GET(request: NextRequest) {
 
   for (const ean of eans) {
     if (Date.now() - started > DEADLINE_MS) break;
+    if (isInternalEan(ean)) {
+      // Código propio de un negocio (200-299): no existe en los súper. Se anota como "no está" y listo.
+      await admin.from("market_prices").upsert(
+        MARKET_STORES.map((store) => ({ ean, store: store.id, month, found: false, price: null })),
+        { onConflict: "ean,store,month", ignoreDuplicates: true }
+      );
+      done++;
+      continue;
+    }
     // Se saltea lo que ya está este mes (si una pasada anterior quedó a medias).
     const { data: have } = await admin.from("market_prices").select("store").eq("ean", ean).eq("month", month);
     const haveStores = new Set((have ?? []).map((r) => r.store));

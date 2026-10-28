@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {
-  categoryPageUrl, dedupeByEan, diffPct, fetchStorePrice, leafCategories, parseVtexCatalogPage, MARKET_STORES, normalizeEan, parseVtexProducts, pricePosition, priceStats, roundShelfPrice, suggestPrice,
+  isInternalEan, categoryPageUrl, dedupeByEan, diffPct, fetchStorePrice, leafCategories, parseVtexCatalogPage, MARKET_STORES, normalizeEan, parseVtexProducts, pricePosition, priceStats, roundShelfPrice, suggestPrice,
 } from "./market-prices.ts";
 
 let passed = 0;
@@ -111,6 +111,13 @@ test("url de página de categoría", () => {
     categoryPageUrl(MARKET_STORES[0], "1/10", 50),
     "https://www.carrefour.com.ar/api/catalog_system/pub/products/search?fq=C:/1/10/&_from=50&_to=99"
   );
+});
+
+test("códigos internos (200-299)", () => {
+  assert.equal(isInternalEan("2990000000972"), true);
+  assert.equal(isInternalEan("2000000000001"), true);
+  assert.equal(isInternalEan("7790895000782"), false);
+  assert.equal(isInternalEan("787985452315"), false);
 });
 
 setTimeout(() => console.log(`${passed} pruebas pasaron`), 200);
