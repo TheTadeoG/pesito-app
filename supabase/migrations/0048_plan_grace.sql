@@ -23,7 +23,7 @@ begin
   if not exists (select 1 from pg_constraint where conname = 'organization_subscriptions_grace_plan_check') then
     alter table public.organization_subscriptions
       add constraint organization_subscriptions_grace_plan_check
-      check (grace_plan is null or grace_plan in ('esencial', 'pro', 'ia'));
+      check (grace_plan is null or grace_plan in ('basico', 'pro', 'max'));
   end if;
 end $$;
 
