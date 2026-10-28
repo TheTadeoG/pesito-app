@@ -154,48 +154,55 @@ const EAN_PAUSE_MS = 250;
  */
 export async function scanEans(admin: Admin, month: string, limit: number, until: number) {
   const out = { considered: 0, done: 0, internal: 0, found: 0, missing: 0, failed: 0, error: false };
-  const { data: pending, error } = await admin.rpc("market_pending_eans", { p_month: month, p_stores: MARKET_STORES.length, p_limit: limit });
-  if (error) {
-    console.error("market-prices pending", error.message);
-    return { ...out, error: true };
-  }
-  const eans = (pending ?? []).map((r: { ean: string }) => r.ean);
-  out.considered = eans.length;
-  for (const ean of eans) {
-    if (Date.now() > until) break;
-    if (isInternalEan(ean)) {
-      // Código propio de un negocio (200-299): no existe en los súper. Se anota como "no está" y listo.
-      await admin.from("market_prices").upsert(
-        MARKET_STORES.map((store) => ({ ean, store: store.id, month, found: false, price: null })),
-        { onConflict: "ean,store,month", ignoreDuplicates: true }
-      );
-      out.done++;
-      out.internal++;
-      continue;
+  // La lista llega ordenada por código y los propios (que empiezan con 2) vienen primero: se anotan
+  // rápido y se vuelve a pedir la lista hasta llegar a los que sí están en los súper.
+  for (let round = 0; round < 6 && Date.now() < until && out.done - out.internal < limit; round++) {
+    const { data: pending, error } = await admin.rpc("market_pending_eans", { p_month: month, p_stores: MARKET_STORES.length, p_limit: limit });
+    if (error) {
+      console.error("market-prices pending", error.message);
+      return { ...out, error: true };
     }
-    // Se saltea lo que ya está este mes (si una pasada anterior quedó a medias o lo trajo el recorrido).
-    const { data: have } = await admin.from("market_prices").select("store").eq("ean", ean).eq("month", month);
-    const haveStores = new Set((have ?? []).map((r) => r.store));
-    // Los súper son sitios distintos: se les pregunta a la vez.
-    await Promise.all(
-      MARKET_STORES.filter((store) => !haveStores.has(store.id)).map(async (store) => {
-        try {
-          const p = await fetchStorePrice(store, ean);
-          const row: PriceInsert = p
-            ? { ean, store: store.id, month, found: true, price: p.price, list_price: p.listPrice, name: p.name, brand: p.brand, url: p.url, image_url: p.imageUrl, available: p.available }
-            : { ean, store: store.id, month, found: false, price: null };
-          const { error: upErr } = await admin.from("market_prices").upsert(row, { onConflict: "ean,store,month" });
-          if (upErr) throw new Error(upErr.message);
-          if (p) out.found++;
-          else out.missing++;
-        } catch (e) {
-          out.failed++;
-          console.error("market-prices", store.id, ean, e instanceof Error ? e.message : e);
-        }
-      })
-    );
-    await sleep(EAN_PAUSE_MS);
-    out.done++;
+    const eans = (pending ?? []).map((r: { ean: string }) => r.ean);
+    if (eans.length === 0) break;
+    out.considered += eans.length;
+    const before = out.done;
+    for (const ean of eans) {
+      if (Date.now() > until) break;
+      if (isInternalEan(ean)) {
+        // Código propio de un negocio (200-299): no existe en los súper. Se anota como "no está" y listo.
+        await admin.from("market_prices").upsert(
+          MARKET_STORES.map((store) => ({ ean, store: store.id, month, found: false, price: null })),
+          { onConflict: "ean,store,month", ignoreDuplicates: true }
+        );
+        out.done++;
+        out.internal++;
+        continue;
+      }
+      // Se saltea lo que ya está este mes (si una pasada anterior quedó a medias o lo trajo el recorrido).
+      const { data: have } = await admin.from("market_prices").select("store").eq("ean", ean).eq("month", month);
+      const haveStores = new Set((have ?? []).map((r) => r.store));
+      // Los súper son sitios distintos: se les pregunta a la vez.
+      await Promise.all(
+        MARKET_STORES.filter((store) => !haveStores.has(store.id)).map(async (store) => {
+          try {
+            const p = await fetchStorePrice(store, ean);
+            const row: PriceInsert = p
+              ? { ean, store: store.id, month, found: true, price: p.price, list_price: p.listPrice, name: p.name, brand: p.brand, url: p.url, image_url: p.imageUrl, available: p.available }
+              : { ean, store: store.id, month, found: false, price: null };
+            const { error: upErr } = await admin.from("market_prices").upsert(row, { onConflict: "ean,store,month" });
+            if (upErr) throw new Error(upErr.message);
+            if (p) out.found++;
+            else out.missing++;
+          } catch (e) {
+            out.failed++;
+            console.error("market-prices", store.id, ean, e instanceof Error ? e.message : e);
+          }
+        })
+      );
+      await sleep(EAN_PAUSE_MS);
+      out.done++;
+    }
+    if (out.done === before) break; // no se avanzó (se acabó el tiempo): no seguir pidiendo la lista
   }
   return out;
 }
