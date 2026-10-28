@@ -988,7 +988,7 @@ export function PosClient({
                       <p className="px-3.5 py-3 text-sm text-muted-foreground">
                         {query.trim()
                           ? `No encontramos productos que coincidan con "${query}".`
-                          : "Todavía no cargaste productos."}
+                          : "Aún no hay productos cargados."}
                       </p>
                     )}
                     {results.map((product, index) => (

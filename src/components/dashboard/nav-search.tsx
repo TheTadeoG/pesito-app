@@ -99,7 +99,7 @@ export function NavSearch({
           setQuery("");
         }}
         title="Ir a…"
-        description={hasCashRegister ? "Escribí el nombre de una pantalla." : "Escribí el nombre de una pantalla. Tu caja está cerrada."}
+        description={hasCashRegister ? "Escribí el nombre de una pantalla." : "Escribí el nombre de una pantalla. La caja está cerrada."}
       >
         <form
           onSubmit={(e) => {

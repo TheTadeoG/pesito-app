@@ -36,7 +36,7 @@ export function OpenCajaPrompt() {
             Necesitás abrir la caja del día antes de poder cobrar ventas.
           </p>
           <Button className="mt-2" onClick={() => setOpen(true)}>
-            Abrir Mi Caja (Enter)
+            Abrir caja (Enter)
           </Button>
         </CardContent>
       </Card>

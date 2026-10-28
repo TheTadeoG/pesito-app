@@ -116,7 +116,7 @@ export function OpenCajaFormDialog({ open, onClose }: { open: boolean; onClose: 
     <Dialog
       open={open}
       onClose={onClose}
-      title="Abrir Mi Caja"
+      title="Abrir caja"
       description="Abre tu sesión personal de caja. Cada usuario tiene su propia caja independiente. Ingresá el monto inicial con el que comenzás."
     >
       <OpenCajaFormContent onClose={onClose} />
@@ -147,13 +147,13 @@ export function OpenCajaDialog() {
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
             <Lock className="h-7 w-7" />
           </span>
-          <h2 className="text-lg font-semibold text-foreground">Tu caja está cerrada</h2>
+          <h2 className="text-lg font-semibold text-foreground">La caja está cerrada</h2>
           <p className="text-sm text-muted-foreground">
             Abrí tu caja con el efectivo con el que empezás el día para poder vender.
           </p>
           <Button className="mt-2" data-tour="open-caja" onClick={() => setOpen(true)}>
             <DollarSign className="h-4 w-4" />
-            Abrir Mi Caja (Enter)
+            Abrir caja (Enter)
           </Button>
         </CardContent>
       </Card>

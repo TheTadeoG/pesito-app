@@ -884,7 +884,7 @@ export function ProductosClient({
           {filtered.length === 0 ? (
             <p className="px-5 py-14 text-center text-sm text-muted-foreground">
               {products.length === 0
-                ? "Todavía no cargaste productos. Creá el primero."
+                ? "Aún no hay productos. Creá el primero."
                 : stockState === "idle" && idleLoading
                   ? "Calculando…"
                   : stockState &&

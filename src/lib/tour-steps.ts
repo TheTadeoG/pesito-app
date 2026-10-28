@@ -93,7 +93,7 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/caja",
     target: '[data-tour="open-caja"]',
     title: "Abrí tu caja",
-    text: "Tocá el botón «Abrir Mi Caja». Si ya la tenés abierta, seguimos de largo.",
+    text: "Tocá el botón «Abrir caja». Si ya la tenés abierta, seguimos de largo.",
     side: "bottom",
     advance: { type: "click" },
     ifMissing: "skip",
