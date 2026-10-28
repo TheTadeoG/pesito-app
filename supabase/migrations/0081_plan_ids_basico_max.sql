@@ -23,9 +23,23 @@ begin
 end $$;
 
 update public.organization_subscriptions
-set plan = case plan when 'esencial' then 'basico' when 'ia' then 'max' else plan end,
-    grace_plan = case grace_plan when 'esencial' then 'basico' when 'ia' then 'max' else grace_plan end
-where plan in ('esencial', 'ia') or grace_plan in ('esencial', 'ia');
+set plan = case plan when 'esencial' then 'basico' when 'ia' then 'max' else plan end
+where plan in ('esencial', 'ia');
+
+-- grace_plan existe sólo si se aplicó la 0048.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'organization_subscriptions' and column_name = 'grace_plan'
+  ) then
+    execute $q$
+      update public.organization_subscriptions
+      set grace_plan = case grace_plan when 'esencial' then 'basico' when 'ia' then 'max' else grace_plan end
+      where grace_plan in ('esencial', 'ia')
+    $q$;
+  end if;
+end $$;
 
 update public.plan_history
 set from_plan = case from_plan when 'esencial' then 'basico' when 'ia' then 'max' else from_plan end,
@@ -54,12 +68,21 @@ begin
   end loop;
 end $$;
 
+alter table public.organization_subscriptions drop constraint if exists organization_subscriptions_plan_check;
 alter table public.organization_subscriptions
-  drop constraint if exists organization_subscriptions_plan_check,
-  drop constraint if exists organization_subscriptions_grace_plan_check;
-alter table public.organization_subscriptions
-  add constraint organization_subscriptions_plan_check check (plan in ('gratis', 'basico', 'pro', 'max')),
-  add constraint organization_subscriptions_grace_plan_check check (grace_plan is null or grace_plan in ('basico', 'pro', 'max'));
+  add constraint organization_subscriptions_plan_check check (plan in ('gratis', 'basico', 'pro', 'max'));
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'organization_subscriptions' and column_name = 'grace_plan'
+  ) then
+    alter table public.organization_subscriptions drop constraint if exists organization_subscriptions_grace_plan_check;
+    alter table public.organization_subscriptions
+      add constraint organization_subscriptions_grace_plan_check check (grace_plan is null or grace_plan in ('basico', 'pro', 'max'));
+  end if;
+end $$;
 
 alter table public.plan_history
   drop constraint if exists plan_history_from_plan_check,
