@@ -205,7 +205,33 @@ export interface CatalogItem extends StorePrice {
 export interface CrawlCategory {
   /** Ruta de ids para filtrar: "12/45/301". */
   path: string;
+  /** "Rubro > Categoría" (el rubro es la categoría de arriba del árbol). */
   name: string;
+}
+
+// Rubros de los súper que no tienen nada que ver con un negocio de barrio (electro, bazar, jardín…):
+// no se recorren. Se compara sin tildes ni mayúsculas.
+const BLOCKED_ROOTS = [
+  "electro", "tecnolog", "bazar", "hogar", "textil", "mueble", "jardin", "aire libre", "automotor", "deporte", "juguete",
+  "ropa", "indumentaria", "calzado", "celular", "colchon", "libreria", "ferreteria", "herramienta", "iluminacion", "pintura",
+  "camping", "bicicleta", "audio", "computacion", "gamer", "decoracion", "viaje", "equipaje",
+];
+// Rubros que primero conviene bajar (lo que más vende un negocio de barrio).
+const PRIORITY_ROOTS = ["almacen", "bebida", "limpieza", "perfumeria", "lacteo", "fiambre", "congelado", "desayuno", "golosina", "snack", "bebe", "cuidado personal"];
+
+const plainName = (n: string) => n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+/** El rubro (primera parte de "Rubro > Categoría") es de los que no se recorren. */
+export function isBlockedCategory(name: string | null | undefined): boolean {
+  const root = plainName((name ?? "").split(" > ")[0]);
+  return BLOCKED_ROOTS.some((b) => root.includes(b));
+}
+
+/** Menor número = se baja antes. */
+export function categoryRank(name: string | null | undefined): number {
+  const root = plainName((name ?? "").split(" > ")[0]);
+  const i = PRIORITY_ROOTS.findIndex((p) => root.includes(p));
+  return i === -1 ? PRIORITY_ROOTS.length : 0;
 }
 
 interface VtexCategoryNode {
@@ -217,15 +243,16 @@ interface VtexCategoryNode {
 /** Categorías "hoja" del árbol de VTEX (`/api/catalog_system/pub/category/tree/<n>`), con su ruta de ids. */
 export function leafCategories(tree: unknown): CrawlCategory[] {
   const out: CrawlCategory[] = [];
-  const walk = (nodes: VtexCategoryNode[], path: string[]) => {
+  const walk = (nodes: VtexCategoryNode[], path: string[], root: string) => {
     for (const n of nodes) {
       if (typeof n.id !== "number") continue;
       const here = [...path, String(n.id)];
-      if (n.children && n.children.length > 0) walk(n.children, here);
-      else out.push({ path: here.join("/"), name: String(n.name ?? "").slice(0, 100) });
+      const top = root || String(n.name ?? "");
+      if (n.children && n.children.length > 0) walk(n.children, here, top);
+      else out.push({ path: here.join("/"), name: `${top} > ${String(n.name ?? "")}`.slice(0, 100) });
     }
   };
-  if (Array.isArray(tree)) walk(tree as VtexCategoryNode[], []);
+  if (Array.isArray(tree)) walk(tree as VtexCategoryNode[], [], "");
   return out;
 }
 

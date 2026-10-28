@@ -41,7 +41,7 @@ export function MarketTester() {
       <div className="space-y-2 rounded-xl border border-border p-4">
         <p className="text-sm font-semibold text-foreground">Recorrido de catálogos (marcas principales)</p>
         <p className="text-sm text-muted-foreground">
-          Baja los catálogos de los 4 súper por categorías durante unos 4 minutos y guarda lo que sirve. Apretalo de nuevo para
+          Baja los catálogos de los 4 súper por categorías durante unos 4 minutos y guarda lo que sirve; antes busca los códigos de barras de los productos de los negocios. Apretalo de nuevo para
           seguir donde quedó, hasta que no queden categorías pendientes. Necesita MARKET_SCAN_ENABLED y MARKET_CATALOG_ENABLED en el cron; acá corre siempre.
         </p>
         <Button onClick={() => void crawl()} disabled={crawling || pending}>
@@ -50,6 +50,7 @@ export function MarketTester() {
         {chunk && (
           <div className="space-y-1 pt-2 text-sm text-muted-foreground">
             <p>{`Precios guardados este mes en total: ${chunk.rowsThisMonth ?? "?"}.`}</p>
+            <p>{`Códigos de barras de los negocios: ${chunk.eans.done} de ${chunk.eans.considered} revisados, ${chunk.eans.found} precios encontrados${chunk.eans.failed > 0 ? `, ${chunk.eans.failed} errores` : ""}. Si «revisados» da 0, ya están todos.`}</p>
             {chunk.stores.map((s) => (
               <p key={s.store}>
                 {`${s.store}: ${s.pages} páginas, ${s.items} productos guardados, ${s.categoriesDone} categorías terminadas, ${s.pending ?? "?"} pendientes${s.errors > 0 ? `, ${s.errors} errores` : ""}.`}

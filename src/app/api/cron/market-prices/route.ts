@@ -1,10 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Database } from "@/lib/database.types";
 import { brandFilter } from "@/lib/market-brands";
-import { crawlStore } from "@/lib/market-crawl";
-import { fetchStorePrice, isInternalEan, MARKET_STORES } from "@/lib/market-prices";
+import { crawlStore, scanEans } from "@/lib/market-crawl";
+import { MARKET_STORES } from "@/lib/market-prices";
 
 // Precios de supermercados por EAN (migración 0078). La llama un cron los días 1 a 10 de cada mes
 // (vercel.json) con "Authorization: Bearer $CRON_SECRET"; cada pasada completa un tramo de los EAN que
@@ -14,9 +13,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 const EANS_PER_RUN = 120;
-const PAUSE_MS = 250;
-const DEADLINE_MS = 280_000;
-const CRAWL_DEADLINE_MS = 240_000; // el recorrido de catálogos usa hasta acá; el resto es para los EAN de los negocios
+const EAN_DEADLINE_MS = 110_000; // los EAN de los negocios usan hasta acá; el resto del tiempo es del recorrido de catálogos
+const CRAWL_DEADLINE_MS = 270_000;
 
 function authorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -25,8 +23,6 @@ function authorized(request: NextRequest): boolean {
   const expected = Buffer.from(`Bearer ${secret}`);
   return given.length === expected.length && timingSafeEqual(given, expected);
 }
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function GET(request: NextRequest) {
   if (!authorized(request)) return new NextResponse(null, { status: 401 });
@@ -41,7 +37,11 @@ export async function GET(request: NextRequest) {
   await admin.from("market_prices").delete().lt("month", keepFrom);
   await admin.from("market_crawl").delete().lt("month", keepFrom);
 
-  // 1) Catálogos completos (buscador). Apagado hasta MARKET_CATALOG_ENABLED=true.
+  // 1) Primero lo que más importa: los códigos de barras de los productos de los negocios.
+  const eanPass = await scanEans(admin, month, EANS_PER_RUN, started + EAN_DEADLINE_MS);
+  if (eanPass.error) return NextResponse.json({ error: "no se pudo leer la lista" }, { status: 500 });
+
+  // 2) Catálogos completos (buscador). Apagado hasta MARKET_CATALOG_ENABLED=true.
   let crawl: Record<string, { pages: number; items: number; categories: number; errors: number }> | null = null;
   if (process.env.MARKET_CATALOG_ENABLED === "true") {
     const until = started + CRAWL_DEADLINE_MS;
@@ -49,56 +49,5 @@ export async function GET(request: NextRequest) {
     crawl = Object.fromEntries(MARKET_STORES.map((store, i) => [store.id, results[i]]));
   }
 
-  // 2) Los códigos de barras de los negocios que todavía falten.
-  const { data: pending, error } = await admin.rpc("market_pending_eans", {
-    p_month: month,
-    p_stores: MARKET_STORES.length,
-    p_limit: EANS_PER_RUN,
-  });
-  if (error) {
-    console.error("market-prices pending", error.message);
-    return NextResponse.json({ error: "no se pudo leer la lista" }, { status: 500 });
-  }
-
-  const eans = (pending ?? []).map((r: { ean: string }) => r.ean);
-  let found = 0;
-  let missing = 0;
-  let failed = 0;
-  let done = 0;
-
-  for (const ean of eans) {
-    if (Date.now() - started > DEADLINE_MS) break;
-    if (isInternalEan(ean)) {
-      // Código propio de un negocio (200-299): no existe en los súper. Se anota como "no está" y listo.
-      await admin.from("market_prices").upsert(
-        MARKET_STORES.map((store) => ({ ean, store: store.id, month, found: false, price: null })),
-        { onConflict: "ean,store,month", ignoreDuplicates: true }
-      );
-      done++;
-      continue;
-    }
-    // Se saltea lo que ya está este mes (si una pasada anterior quedó a medias).
-    const { data: have } = await admin.from("market_prices").select("store").eq("ean", ean).eq("month", month);
-    const haveStores = new Set((have ?? []).map((r) => r.store));
-    for (const store of MARKET_STORES) {
-      if (haveStores.has(store.id)) continue;
-      try {
-        const p = await fetchStorePrice(store, ean);
-        const row: Database["public"]["Tables"]["market_prices"]["Insert"] = p
-          ? { ean, store: store.id, month, found: true, price: p.price, list_price: p.listPrice, name: p.name, brand: p.brand, url: p.url, image_url: p.imageUrl, available: p.available }
-          : { ean, store: store.id, month, found: false, price: null };
-        const { error: upErr } = await admin.from("market_prices").upsert(row, { onConflict: "ean,store,month" });
-        if (upErr) throw new Error(upErr.message);
-        if (p) found++;
-        else missing++;
-      } catch (e) {
-        failed++;
-        console.error("market-prices", store.id, ean, e instanceof Error ? e.message : e);
-      }
-      await sleep(PAUSE_MS);
-    }
-    done++;
-  }
-
-  return NextResponse.json({ enabled: true, month, crawl, considered: eans.length, done, found, missing, failed });
+  return NextResponse.json({ enabled: true, month, eans: eanPass, crawl });
 }

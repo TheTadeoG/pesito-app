@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {
-  isInternalEan, categoryPageUrl, dedupeByEan, diffPct, fetchStorePrice, leafCategories, parseVtexCatalogPage, MARKET_STORES, normalizeEan, parseVtexProducts, pricePosition, priceStats, roundShelfPrice, suggestPrice,
+  isBlockedCategory, categoryRank, isInternalEan, categoryPageUrl, dedupeByEan, diffPct, fetchStorePrice, leafCategories, parseVtexCatalogPage, MARKET_STORES, normalizeEan, parseVtexProducts, pricePosition, priceStats, roundShelfPrice, suggestPrice,
 } from "./market-prices.ts";
 
 let passed = 0;
@@ -86,6 +86,7 @@ test("categorías hoja con su ruta", () => {
     { name: "sin id" },
   ];
   assert.deepEqual(leafCategories(tree).map((c) => c.path), ["1/10", "1/11/110", "2"]);
+  assert.equal(leafCategories(tree)[1].name, "Bebidas > Saborizadas");
   assert.deepEqual(leafCategories({ x: 1 }), []);
 });
 
@@ -118,6 +119,16 @@ test("códigos internos (200-299)", () => {
   assert.equal(isInternalEan("2000000000001"), true);
   assert.equal(isInternalEan("7790895000782"), false);
   assert.equal(isInternalEan("787985452315"), false);
+});
+
+test("rubros que no se recorren y prioridad", () => {
+  assert.equal(isBlockedCategory("Electro y Tecnología > Televisores"), true);
+  assert.equal(isBlockedCategory("Bazar y Textil > Vasos"), true);
+  assert.equal(isBlockedCategory("Almacén > Aceites"), false);
+  assert.equal(isBlockedCategory("Bebidas > Gaseosas"), false);
+  assert.equal(isBlockedCategory(null), false);
+  assert.ok(categoryRank("Almacén > Aceites") < categoryRank("Mascotas > Perros"));
+  assert.ok(categoryRank("Limpieza > Lavandina") < categoryRank("Otros > Cosas"));
 });
 
 setTimeout(() => console.log(`${passed} pruebas pasaron`), 200);

@@ -4,7 +4,7 @@ import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/database.types";
 import { brandFilter, brandMatches } from "@/lib/market-brands";
-import { crawlStore } from "@/lib/market-crawl";
+import { crawlStore, scanEans } from "@/lib/market-crawl";
 import {
   categoryPageUrl, dedupeByEan, fetchJson, fetchStorePrice, leafCategories, MARKET_STORES, parseVtexCatalogPage,
 } from "@/lib/market-prices";
@@ -90,6 +90,7 @@ export async function runMarketTest(): Promise<{ reports: StoreTestReport[]; row
 
 export interface CrawlChunkReport {
   stores: { store: string; pages: number; items: number; categoriesDone: number; errors: number; pending: number | null }[];
+  eans: { considered: number; done: number; found: number; missing: number; failed: number };
   rowsThisMonth: number | null;
 }
 
@@ -102,7 +103,9 @@ export async function runCrawlChunk(): Promise<CrawlChunkReport> {
   const admin = createAdminClient();
   const month = new Date().toISOString().slice(0, 7) + "-01";
   const brands = brandFilter(process.env.MARKET_BRANDS);
-  const until = Date.now() + 240_000;
+  // Primero los códigos de barras de los productos de los negocios (lo que se compara); después los catálogos.
+  const eans = await scanEans(admin, month, 200, Date.now() + 70_000);
+  const until = Date.now() + 170_000;
   const stats = await Promise.all(MARKET_STORES.map((store) => crawlStore(admin, store, month, until, brands)));
   const stores = await Promise.all(
     MARKET_STORES.map(async (store, i) => {
@@ -116,5 +119,5 @@ export async function runCrawlChunk(): Promise<CrawlChunkReport> {
     })
   );
   const { count } = await admin.from("market_prices").select("ean", { count: "exact", head: true }).eq("month", month);
-  return { stores, rowsThisMonth: count ?? null };
+  return { stores, eans, rowsThisMonth: count ?? null };
 }
