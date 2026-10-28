@@ -77,6 +77,22 @@ export async function crawlStore(admin: Admin, store: MarketStore, month: string
       let from = cat.next_from;
       let done = false;
       let added = 0;
+      // Se juntan los productos de varias páginas y se guardan de a muchos (menos pedidos a la base).
+      const buffer = new Map<string, PriceInsert>();
+      const flush = async (): Promise<boolean> => {
+        if (buffer.size === 0) return true;
+        const batch = Array.from(buffer.values());
+        const { error: upErr } = await admin.from("market_prices").upsert(batch, { onConflict: "ean,store,month" });
+        if (upErr) {
+          stats.errors++;
+          console.error("market-crawl upsert", store.id, upErr.message);
+          return false;
+        }
+        buffer.clear();
+        added += batch.length;
+        stats.items += batch.length;
+        return true;
+      };
       while (Date.now() < until) {
         let json: unknown;
         try {
@@ -88,27 +104,24 @@ export async function crawlStore(admin: Admin, store: MarketStore, month: string
         }
         const { items, products } = parseVtexCatalogPage(json);
         stats.pages++;
-        const unique = dedupeByEan(items.filter((i) => brandMatches(i.brand, brands)));
-        if (unique.length > 0) {
-          const batch: PriceInsert[] = unique.map((i) => ({
+        for (const i of dedupeByEan(items.filter((it) => brandMatches(it.brand, brands)))) {
+          buffer.set(i.ean, {
             ean: i.ean, store: store.id, month, found: true, price: i.price, list_price: i.listPrice,
             name: i.name, brand: i.brand, url: i.url, image_url: i.imageUrl, available: i.available,
-          }));
-          const { error: upErr } = await admin.from("market_prices").upsert(batch, { onConflict: "ean,store,month" });
-          if (upErr) {
-            stats.errors++;
-            console.error("market-crawl upsert", store.id, upErr.message);
-            break;
-          }
-          added += unique.length;
-          stats.items += unique.length;
+          });
         }
+        if (buffer.size >= 300 && !(await flush())) break;
         from += CRAWL_PAGE_SIZE;
         if (products < CRAWL_PAGE_SIZE || from > CRAWL_MAX_FROM) {
           done = true;
           break;
         }
         await sleep(CRAWL_PAUSE_MS);
+      }
+      // Si no se pudo guardar, no se da la categoría por terminada ni se avanza: se reintenta.
+      if (!(await flush())) {
+        done = false;
+        from = cat.next_from;
       }
       await table()
         .update({ next_from: from, done, items: added, updated_at: new Date().toISOString() })
