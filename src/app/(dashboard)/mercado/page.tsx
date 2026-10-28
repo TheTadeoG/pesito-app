@@ -2,7 +2,7 @@ import { requireOrgContext } from "@/lib/org";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 import { loadAlertSettings } from "@/lib/alert-settings";
 import { alertValue } from "@/lib/alert-config";
-import { loadMarketPrices, statsFor } from "@/lib/market-data";
+import { loadMarketPricesWithStatus, statsFor } from "@/lib/market-data";
 import { diffPct, isInternalEan, normalizeEan, pricePosition, suggestPrice } from "@/lib/market-prices";
 import { MarketBoard, type BoardRow } from "./market-board";
 import { createClient } from "@/lib/supabase/server";
@@ -105,7 +105,7 @@ export default async function MercadoPage({ searchParams }: { searchParams: Prom
       const e = normalizeEan(p.barcode);
       return e !== null && isInternalEan(e);
     }).length;
-    const map = await loadMarketPrices(supabase, organization.id, real.map((p) => p.barcode));
+    const { map, error: loadError } = await loadMarketPricesWithStatus(supabase, organization.id, real.map((p) => p.barcode));
     const rows: BoardRow[] = [];
     let lastMonth = "";
     for (const p of real) {
@@ -149,6 +149,7 @@ export default async function MercadoPage({ searchParams }: { searchParams: Prom
         insights={insights}
         initialFilter={insights && (filtro === "caro" || filtro === "barato") ? filtro : "todos"}
         internalCount={internalCount}
+        loadError={loadError}
         totalProducts={products.length}
         lastMonth={lastMonth || null}
         locked={insights ? null : { plan: featureMinPlan.marketPriceInsights, high: hiddenHigh, low: hiddenLow }}

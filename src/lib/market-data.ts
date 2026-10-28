@@ -34,6 +34,16 @@ export async function loadMarketPrices(
   orgId: string,
   rawEans: (string | null | undefined)[]
 ): Promise<Map<string, MarketRow[]>> {
+  return (await loadMarketPricesWithStatus(supabase, orgId, rawEans)).map;
+}
+
+/** Igual que loadMarketPrices, pero dice si la base devolvió un error (para mostrarlo en pantalla). */
+export async function loadMarketPricesWithStatus(
+  supabase: SupabaseClient<Database>,
+  orgId: string,
+  rawEans: (string | null | undefined)[]
+): Promise<{ map: Map<string, MarketRow[]>; error: string | null }> {
+  let firstError: string | null = null;
   const eans = Array.from(new Set(rawEans.map(normalizeEan).filter((e): e is string => e !== null)));
   const out = new Map<string, MarketRow[]>();
   const now = Date.now();
@@ -49,6 +59,7 @@ export async function loadMarketPrices(
     const { data, error } = await supabase.rpc("market_prices_for", { p_org_id: orgId, p_eans: chunk });
     if (error) {
       console.error("market_prices_for", error.message);
+      firstError ??= error.message;
       continue;
     }
     const fresh = new Map<string, MarketRow[]>(chunk.map((e) => [e, []]));
@@ -64,7 +75,7 @@ export async function loadMarketPrices(
       if (rows.length > 0) out.set(ean, rows);
     }
   }
-  return out;
+  return { map: out, error: firstError };
 }
 
 export function statsFor(rows: MarketRow[] | undefined): PriceStats | null {

@@ -29,6 +29,7 @@ export function MarketBoard({
   insights,
   initialFilter,
   internalCount,
+  loadError,
   totalProducts,
   lastMonth,
   locked,
@@ -38,6 +39,8 @@ export function MarketBoard({
   initialFilter: Filter;
   /** Productos que quedan afuera por tener código propio (200-299). */
   internalCount: number;
+  /** Mensaje de la base si no se pudieron leer los precios. */
+  loadError: string | null;
   totalProducts: number;
   lastMonth: string | null;
   locked: { plan: Plan; high: number; low: number } | null;
@@ -119,6 +122,10 @@ export function MarketBoard({
           </span>
         )}
       </div>
+
+      {loadError && (
+        <p className="rounded-xl bg-danger-bg px-3 py-2 text-xs text-danger">{`No pudimos leer los precios de los supermercados: ${loadError}`}</p>
+      )}
 
       {tab === "mis" && (
         <MyProducts
