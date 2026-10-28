@@ -62,7 +62,7 @@ export const planAccents: Record<Plan, PlanAccent> = {
 };
 
 /**
- * Etiqueta chica ("PRO"/"IA") para marcar una función puntual como
+ * Etiqueta chica ("PRO"/"MAX") para marcar una función puntual como
  * exclusiva de ese plan — p. ej. las que se destraban temporalmente con
  * la prueba. Reutiliza el mismo tono suave que el ícono del plan (ya
  * pensado para leerse bien en claro y oscuro) en vez de un color fijo,
@@ -76,7 +76,7 @@ export function PlanTierBadge({ plan }: { plan: Plan }) {
         planAccents[plan].iconBg
       )}
     >
-      {plan === "ia" ? "IA" : plan}
+      {plan === "ia" ? "Max" : plan}
     </span>
   );
 }

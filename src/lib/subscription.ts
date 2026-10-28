@@ -6,9 +6,9 @@ export type Plan = "gratis" | "esencial" | "pro" | "ia";
 
 export const planLabels: Record<Plan, string> = {
   gratis: "Gratis",
-  esencial: "Esencial",
+  esencial: "Básico",
   pro: "Pro",
-  ia: "IA",
+  ia: "Max",
 };
 
 // Mismos planes y orden que la página de precios (src/components/marketing/pricing.tsx).
@@ -185,8 +185,8 @@ export const FREE_PLAN_MONTHLY_SALES_LIMIT = 150;
 
 /**
  * El tope de ventas por mes aplica sólo al Plan Gratis sin prueba vigente.
- * Cualquier plan pago (incluido Esencial) vende sin límite — antes se
- * miraba hasProAccess, y un negocio que pagaba Esencial quedaba con el
+ * Cualquier plan pago (incluido Básico) vende sin límite — antes se
+ * miraba hasProAccess, y un negocio que pagaba Básico quedaba con el
  * mismo tope que el gratis.
  */
 export function hasMonthlySalesLimit(subscription: SubscriptionInfo): boolean {

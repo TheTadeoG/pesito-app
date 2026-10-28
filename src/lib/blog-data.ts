@@ -273,7 +273,7 @@ const basePostsRaw: BlogPost[] = [
           "En Clientes tenés un panel: cuánto te deben en total, cuánto hace que debe cada uno (hasta 7 días, de 8 a 30 o más de 30), filtros para ver sólo los que se atrasaron y un botón para recordarles la deuda por WhatsApp con el mensaje ya escrito.",
           "En Reportes ves \"Quién te debe\": cada cliente con su deuda y hace cuántos días no paga.",
           "En la ficha de cada cliente tenés todas sus compras y pagos, por si hay que revisar algo.",
-          "Podés bajar tu lista de clientes con lo que debe cada uno a una planilla de Excel y, desde el Plan Esencial, cargar muchos clientes juntos desde una planilla. Las deudas no se cargan desde Excel: sólo cambian al vender a fiado o al registrar un cobro.",
+          "Podés bajar tu lista de clientes con lo que debe cada uno a una planilla de Excel y, desde el Plan Básico, cargar muchos clientes juntos desde una planilla. Las deudas no se cargan desde Excel: sólo cambian al vender a fiado o al registrar un cobro.",
         ],
       },
     ],
@@ -312,13 +312,13 @@ const basePostsRaw: BlogPost[] = [
       },
       {
         heading: "Cómo lo resolvés con Pesito",
-        paragraphs: ["En todos los planes, cada venta descuenta el stock y cada compra lo suma, sin pasos extra. Desde el Plan Esencial sumás el control de stock:"],
+        paragraphs: ["En todos los planes, cada venta descuenta el stock y cada compra lo suma, sin pasos extra. Desde el Plan Básico sumás el control de stock:"],
         list: [
           "Le ponés un stock mínimo a cada producto y Pesito te muestra los que están por acabarse, con un botón para cargar la compra.",
           "Los ajustes a mano (rotura, vencido, conteo) se registran con el motivo, y el historial de movimientos muestra cada entrada y salida.",
           "Ves el stock valorizado: cuánta plata tenés parada en mercadería, al costo y al precio de venta.",
           "Productos por unidad o por peso, con la cantidad exacta en kilos (en todos los planes).",
-          "Si tenés varias sucursales (Plan IA), cada una lleva su propio stock y podés pasar mercadería de una a otra.",
+          "Si tenés varias sucursales (Plan Max), cada una lleva su propio stock y podés pasar mercadería de una a otra.",
         ],
       },
     ],
@@ -401,13 +401,13 @@ const basePostsRaw: BlogPost[] = [
       },
       {
         heading: "Cómo lo resolvés con Pesito",
-        paragraphs: ["Cada usuario tiene su caja en todos los planes (1 en el Plan Gratis, hasta 2 en el Esencial y hasta 6 en el Pro):"],
+        paragraphs: ["Cada usuario tiene su caja en todos los planes (1 en el Plan Gratis, hasta 2 en el Básico y hasta 6 en el Pro):"],
         list: [
           "Cada usuario abre y cierra su caja con su monto inicial.",
           "Retiros e ingresos de efectivo se registran con su motivo, y los cobros de fiado y pagos a proveedores en efectivo también impactan en la caja.",
           "Al cerrar contás el efectivo (hay una calculadora de billetes) y Pesito te dice si hubo faltante o sobrante.",
           "Podés configurar una hora de cierre y el sistema le recuerda a cada uno que cierre su caja.",
-          "Desde el Plan Esencial, en Reportes ves las diferencias de caja por persona, y con el Plan Pro, desde En vivo ves en el momento quién tiene la caja abierta, cuánto efectivo tiene y cuánto vendió.",
+          "Desde el Plan Básico, en Reportes ves las diferencias de caja por persona, y con el Plan Pro, desde En vivo ves en el momento quién tiene la caja abierta, cuánto efectivo tiene y cuánto vendió.",
           "Tus empleados no necesitan email: les creás un usuario y contraseña desde Pesito.",
         ],
       },
@@ -447,7 +447,7 @@ const basePostsRaw: BlogPost[] = [
       },
       {
         heading: "Cómo lo resolvés con Pesito",
-        paragraphs: ["Las sucursales están en el Plan IA, que incluye hasta 2 (si tenés más, escribinos):"],
+        paragraphs: ["Las sucursales están en el Plan Max, que incluye hasta 2 (si tenés más, escribinos):"],
         list: [
           "Cada sucursal tiene su propio stock y sus cajas; vender descuenta del local de la caja.",
           "A cada vendedor le asignás su sucursal; vos cambiás de sucursal desde el menú.",
@@ -491,7 +491,7 @@ const basePostsRaw: BlogPost[] = [
       {
         heading: "Cómo lo resolvés con Pesito",
         paragraphs: [
-          "En todos los planes, Reportes te muestra lo vendido, el ticket promedio, las ventas por día, los medios de pago y los productos más vendidos. Desde el Plan Esencial ves las ventas de cada vendedor. Con el Plan Pro sumás los reportes avanzados: la ganancia estimada, los productos que más ganancia dejan, los que se están vendiendo a pérdida y la comparación con el período anterior.",
+          "En todos los planes, Reportes te muestra lo vendido, el ticket promedio, las ventas por día, los medios de pago y los productos más vendidos. Desde el Plan Básico ves las ventas de cada vendedor. Con el Plan Pro sumás los reportes avanzados: la ganancia estimada, los productos que más ganancia dejan, los que se están vendiendo a pérdida y la comparación con el período anterior.",
         ],
       },
     ],

@@ -47,7 +47,7 @@ const themes: Record<Plan, { panel: string; icon: string; tick: string }> = {
   },
 };
 
-const previousPlan: Partial<Record<Plan, string>> = { esencial: "Gratis", pro: "Esencial", ia: "Pro" };
+const previousPlan: Partial<Record<Plan, string>> = { esencial: "Gratis", pro: "Básico", ia: "Pro" };
 
 export interface CheckoutViewProps {
   plan: Plan;

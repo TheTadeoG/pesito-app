@@ -1,6 +1,6 @@
 import { formatCurrency } from "@/lib/utils";
 
-// "Reportes avanzados con IA" (Plan IA): un resumen en palabras que Pesito
+// "Reportes avanzados con IA" (Plan Max): un resumen en palabras que Pesito
 // arma solo con los números del período. No llama a ningún modelo: son
 // reglas fijas sobre datos que Reportes ya calculó, así que es gratis,
 // instantáneo y no manda datos del negocio a terceros.

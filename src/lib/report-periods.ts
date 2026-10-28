@@ -1,7 +1,7 @@
 import { argDateString, argMidnightUTC } from "@/lib/timezone";
 
 // Períodos de Reportes: atajos, rango personalizado (desde/hasta, Plan
-// Esencial) y con qué se compara (Plan Pro). Todo en días de Argentina.
+// Básico) y con qué se compara (Plan Pro). Todo en días de Argentina.
 
 export type ReportPeriod =
   | "today"

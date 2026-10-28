@@ -19,7 +19,7 @@ import {
 } from "@/lib/report-periods";
 import { cn } from "@/lib/utils";
 
-// Período de Reportes: atajos, "Más", fechas a medida (Plan Esencial) y con
+// Período de Reportes: atajos, "Más", fechas a medida (Plan Básico) y con
 // qué comparar (Plan Pro). Sin el plan se ven igual, con su etiqueta.
 export function PeriodSelector({
   query,
@@ -165,7 +165,7 @@ export function PeriodSelector({
           </form>
         ) : (
           <PlanLockNote plan="esencial">
-            Con el Plan Esencial elegís las fechas que quieras: del 1 al 15 del mes, una temporada o
+            Con el Plan Básico elegís las fechas que quieras: del 1 al 15 del mes, una temporada o
             un fin de semana largo.
           </PlanLockNote>
         )}

@@ -15,7 +15,7 @@ export interface StockBreakdown {
 /**
  * Cuánta plata hay en mercadería por marca y por proveedor (stock × costo de los productos activos).
  * Se calcula recién cuando se pide desde Reportes, para no cargar todos los productos en cada visita.
- * Plan Esencial (gestión de stock). No revalida páginas.
+ * Plan Básico (gestión de stock). No revalida páginas.
  */
 export async function loadStockBreakdown(): Promise<{ data?: StockBreakdown; error?: string }> {
   const { organization } = await requireOrgContext();

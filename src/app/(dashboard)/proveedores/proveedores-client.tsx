@@ -107,7 +107,7 @@ export function ProveedoresClient({
 }: {
   overview: SupplierOverview;
   customPaymentMethods?: string[];
-  // Cuenta corriente con proveedores: Plan Esencial (lib/plan-access.ts).
+  // Cuenta corriente con proveedores: Plan Básico (lib/plan-access.ts).
   accountsEnabled: boolean;
 }) {
   const { rows, todayKey } = overview;
@@ -519,7 +519,7 @@ export function ProveedoresClient({
         </div>
       ) : (
         <PlanLockNote plan="esencial">
-          Con el Plan Esencial llevás la cuenta corriente con cada proveedor: cuánto les debés, cuándo
+          Con el Plan Básico llevás la cuenta corriente con cada proveedor: cuánto les debés, cuándo
           vence cada compra, pagos parciales y el calendario de vencimientos.
         </PlanLockNote>
       )}

@@ -29,7 +29,7 @@ const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n).
 
 /**
  * Tabla de productos: una fila por producto, una columna por súper (el mejor precio en verde) y,
- * para quien tiene el Plan IA, cuánto se aparta tu precio de la mediana de los súper.
+ * para quien tiene el Plan Max, cuánto se aparta tu precio de la mediana de los súper.
  */
 export function MarketTable({ rows, showMine, insights }: { rows: MarketCardData[]; showMine: boolean; insights: boolean }) {
   return (

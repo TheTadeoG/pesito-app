@@ -71,7 +71,7 @@ export const featureMinPlan: Record<PlanFeature, Plan> = {
   // Factura electrónica con ARCA (cada negocio con su CUIT y su certificado).
   electronicInvoicing: "esencial",
   // Precios de supermercados por código de barras: verlos es Pro; la sugerencia de precio y los
-  // avisos de caro/barato contra ellos, Plan IA.
+  // avisos de caro/barato contra ellos, Plan Max.
   supermarketPrices: "pro",
   marketPriceInsights: "ia",
   restockRecommendations: "ia",

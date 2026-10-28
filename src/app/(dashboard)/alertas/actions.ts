@@ -115,7 +115,7 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
             })
         : null,
     ]);
-    // Contra los supermercados (Plan IA): sólo productos con código de barras y precio juntado.
+    // Contra los supermercados (Plan Max): sólo productos con código de barras y precio juntado.
     const wantsMarket = alertEnabled(settings, "market-expensive") || alertEnabled(settings, "market-cheap");
     if (wantsMarket && canUse(subscription, "marketPriceInsights")) {
       const prices = await loadMarketPrices(supabase, organization.id, withStock.map((p) => p.barcode));
@@ -133,7 +133,7 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
     counts.idleCount = idle?.count ?? 0;
     counts.idleCapital = idle?.capital ?? 0;
 
-    // Faltantes y sobrantes: los últimos cierres de todas las cajas (Esencial: control por empleado).
+    // Faltantes y sobrantes: los últimos cierres de todas las cajas (Básico: control por empleado).
     let cash: CashAlertCounts | null = null;
     if (
       isOrgAdmin(membership.role) &&
@@ -178,13 +178,13 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
   }
 }
 
-/** Guarda qué avisos están prendidos y con qué umbral (dueño o administrador, desde el Plan Esencial). */
+/** Guarda qué avisos están prendidos y con qué umbral (dueño o administrador, desde el Plan Básico). */
 export async function saveAlertSettings(raw: AlertSettings): Promise<{ error?: string }> {
   const { organization, membership } = await requireOrgContext();
   if (!isOrgAdmin(membership.role)) return { error: "Sólo el dueño o un administrador puede cambiar los avisos." };
   const supabase = await createClient();
   if (!canUse(await getSubscription(supabase, organization.id), "alertSettings")) {
-    return { error: "Configurar los avisos es del Plan Esencial en adelante." };
+    return { error: "Configurar los avisos es del Plan Básico en adelante." };
   }
   const settings = parseAlertSettings(raw);
   const { error } = await supabase.rpc("save_alert_settings", { p_org_id: organization.id, p_settings: settings as unknown as Json });

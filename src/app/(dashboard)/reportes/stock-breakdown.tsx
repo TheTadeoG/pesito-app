@@ -32,7 +32,7 @@ export function StockBreakdownSection({ locked }: { locked: boolean }) {
     return (
       <div className="col-span-2">
         <PlanLockNote plan={featureMinPlan.stockManagement}>
-          Con el Plan Esencial ves cuánta plata tenés en mercadería por marca y por proveedor.
+          Con el Plan Básico ves cuánta plata tenés en mercadería por marca y por proveedor.
         </PlanLockNote>
       </div>
     );

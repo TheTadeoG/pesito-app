@@ -193,7 +193,7 @@ interface ProductFormProps {
   // así el stock inicial entra por un único camino (la compra) y no se
   // duplica sumando el "stock inicial" del alta más la compra en sí.
   initialStockAsPurchase?: boolean;
-  /** Botón "Generar" junto al código de barras (Plan Esencial); `locked` si el plan no lo incluye. */
+  /** Botón "Generar" junto al código de barras (Plan Básico); `locked` si el plan no lo incluye. */
   barcodeGenerate?: { locked: boolean };
 }
 

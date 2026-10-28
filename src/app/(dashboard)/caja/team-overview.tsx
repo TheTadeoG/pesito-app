@@ -152,7 +152,7 @@ export function CajaResumen({
         ) : (
           <div className="py-3">
             <PlanLockNote plan={supplierPlan}>
-              Con el Plan Esencial ves cuánto le debés a cada proveedor, con compras a cuenta y pagos
+              Con el Plan Básico ves cuánto le debés a cada proveedor, con compras a cuenta y pagos
               parciales.
             </PlanLockNote>
           </div>

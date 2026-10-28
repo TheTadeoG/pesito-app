@@ -16,7 +16,7 @@ export interface StockRow {
   price: number;
   supplier: string | null;
   status: StockStatus;
-  /** Días que alcanza el stock (Plan IA): 0 sin stock, null si no se vendió en el período, undefined sin el plan. */
+  /** Días que alcanza el stock (Plan Max): 0 sin stock, null si no se vendió en el período, undefined sin el plan. */
   daysLeft: number | null | undefined;
   /** Stock × costo. */
   value: number;

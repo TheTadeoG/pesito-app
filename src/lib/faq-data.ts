@@ -31,7 +31,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Qué diferencia hay entre los planes?",
-        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores (con vencimientos y calendario de pagos), las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma hasta 2 sucursales con su propio stock y las ganancias separadas por sucursal, soporte prioritario 24/7 y herramientas que analizan tus ventas: sugerencia de precios cuando sube un costo, qué reponer y cuánto (con el pedido listo para WhatsApp) detección de productos de baja rotación, un resumen escrito de cada período en Reportes y novedades y precios de referencia de tu rubro, preparadas por Pesito. Además, desde el Esencial podés cargar todos tus productos y tus clientes juntos desde una planilla de Excel o CSV, y generar códigos de barras propios (que no se repiten) para los productos que no tienen e imprimir las etiquetas. Próximamente, el Esencial va a sumar productos con variantes (talles y colores), combos y kits; el Pro, control por usuario (todos los movimientos de stock y de caja de cada uno, con sus diferencias), inventarios físicos, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones. Cada plan tiene un máximo de productos activos: ${thousands(PRODUCT_LIMITS.gratis)} en el Gratis, ${thousands(PRODUCT_LIMITS.esencial)} en el Esencial, ${thousands(PRODUCT_LIMITS.pro)} en el Pro y ${thousands(PRODUCT_LIMITS.ia)} en el IA (los productos desactivados no cuentan). Pagando anual tenés un 20% de descuento. Promo de lanzamiento: el primer mes pagando mensual sale ${esencial.promoLabel} el Esencial, ${pro.promoLabel} el Pro y ${ia.promoLabel} el IA (para quien contrata un plan por primera vez); después, el precio normal.`,
+        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores (con vencimientos y calendario de pagos), las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma hasta 2 sucursales con su propio stock y las ganancias separadas por sucursal, soporte prioritario 24/7 y herramientas que analizan tus ventas: sugerencia de precios cuando sube un costo, qué reponer y cuánto (con el pedido listo para WhatsApp) detección de productos de baja rotación, un resumen escrito de cada período en Reportes y novedades y precios de referencia de tu rubro, preparadas por Pesito. Además, desde el Básico podés cargar todos tus productos y tus clientes juntos desde una planilla de Excel o CSV, y generar códigos de barras propios (que no se repiten) para los productos que no tienen e imprimir las etiquetas. Próximamente, el Básico va a sumar productos con variantes (talles y colores), combos y kits; el Pro, control por usuario (todos los movimientos de stock y de caja de cada uno, con sus diferencias), inventarios físicos, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones. Cada plan tiene un máximo de productos activos: ${thousands(PRODUCT_LIMITS.gratis)} en el Gratis, ${thousands(PRODUCT_LIMITS.esencial)} en el Básico, ${thousands(PRODUCT_LIMITS.pro)} en el Pro y ${thousands(PRODUCT_LIMITS.ia)} en el Max (los productos desactivados no cuentan). Pagando anual tenés un 20% de descuento. Promo de lanzamiento: el primer mes pagando mensual sale ${esencial.promoLabel} el Básico, ${pro.promoLabel} el Pro y ${ia.promoLabel} el Max (para quien contrata un plan por primera vez); después, el precio normal.`,
       },
       {
         question: "¿Cómo se pagan los planes?",
@@ -61,7 +61,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Pesito me avisa cuando algo necesita atención?",
         answer:
-          "Sí, con la campana de la barra de arriba. Muestra, dentro del sistema, el stock bajo, los productos que se venden a pérdida, los números para revisar (stock negativo, sin costo, sin mínimo), lo que te deben en fiado, los proveedores con deuda vencida, la hora de cierre de la caja o una caja que quedó abierta de un día anterior, y, a quien es dueño o administrador, los faltantes y sobrantes al cerrar la caja (con el Plan Esencial), los ingresos desde dispositivos nuevos y el estado del plan. Los avisos se separan en urgentes y no urgentes, y podés marcar uno como visto: no se cuenta de nuevo hasta que cambie. El número de la campana es la suma de los avisos de cada módulo, que también se ven en el menú lateral y arriba de cada pantalla. Desde el Plan Esencial podés prender y apagar cada aviso y elegir umbrales, y suma avisos de margen bajo y de costos sin actualizar; el Plan Pro avisa cuando sube el costo y no actualizaste el precio, y el Plan IA, la plata parada en productos que no se venden. Lo que tu plan no incluye se ve igual, con el plan que lo desbloquea. Por ahora los avisos se ven dentro de Pesito: no se mandan por email ni por WhatsApp.",
+          "Sí, con la campana de la barra de arriba. Muestra, dentro del sistema, el stock bajo, los productos que se venden a pérdida, los números para revisar (stock negativo, sin costo, sin mínimo), lo que te deben en fiado, los proveedores con deuda vencida, la hora de cierre de la caja o una caja que quedó abierta de un día anterior, y, a quien es dueño o administrador, los faltantes y sobrantes al cerrar la caja (con el Plan Básico), los ingresos desde dispositivos nuevos y el estado del plan. Los avisos se separan en urgentes y no urgentes, y podés marcar uno como visto: no se cuenta de nuevo hasta que cambie. El número de la campana es la suma de los avisos de cada módulo, que también se ven en el menú lateral y arriba de cada pantalla. Desde el Plan Básico podés prender y apagar cada aviso y elegir umbrales, y suma avisos de margen bajo y de costos sin actualizar; el Plan Pro avisa cuando sube el costo y no actualizaste el precio, y el Plan Max, la plata parada en productos que no se venden. Lo que tu plan no incluye se ve igual, con el plan que lo desbloquea. Por ahora los avisos se ven dentro de Pesito: no se mandan por email ni por WhatsApp.",
       },
       {
         question: "¿Cómo le aviso a Pesito de un problema o le sugiero una función?",
@@ -76,7 +76,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo usar lector de código de barras?",
         answer:
-          "Sí. Escaneás el producto y se suma al carrito al instante. Si un producto no tiene código, lo buscás por nombre en el mismo buscador. Pronto, desde el Plan Esencial, vas a poder generarle un código de barras e imprimir la etiqueta.",
+          "Sí. Escaneás el producto y se suma al carrito al instante. Si un producto no tiene código, lo buscás por nombre en el mismo buscador. Pronto, desde el Plan Básico, vas a poder generarle un código de barras e imprimir la etiqueta.",
       },
       {
         question: "¿Puedo vender por peso (fiambre, verdura, carne)?",
@@ -106,7 +106,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Cómo controlo el stock?",
         answer:
-          "En todos los planes, cada venta descuenta el stock sola y cada compra lo suma. Desde el Plan Esencial le ponés a cada producto un stock mínimo y Pesito te avisa cuáles están por acabarse, con la lista para reponer; y los ajustes a mano (roturas, vencidos, conteos) quedan registrados con el motivo en el historial de movimientos.",
+          "En todos los planes, cada venta descuenta el stock sola y cada compra lo suma. Desde el Plan Básico le ponés a cada producto un stock mínimo y Pesito te avisa cuáles están por acabarse, con la lista para reponer; y los ajustes a mano (roturas, vencidos, conteos) quedan registrados con el motivo en el historial de movimientos.",
       },
       {
         question: "¿Puedo subir los precios de todos los productos de una vez?",
@@ -128,7 +128,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Cada empleado tiene su propia caja?",
         answer:
-          "Sí. Cada usuario abre y cierra su caja con su monto inicial de efectivo. Durante el turno se registran los retiros e ingresos, y al cerrar se cuenta el efectivo (con una calculadora de billetes) y Pesito te muestra si hubo faltante o sobrante. El Plan Gratis tiene 1 usuario con su caja, el Esencial hasta 2 y el Pro hasta 6.",
+          "Sí. Cada usuario abre y cierra su caja con su monto inicial de efectivo. Durante el turno se registran los retiros e ingresos, y al cerrar se cuenta el efectivo (con una calculadora de billetes) y Pesito te muestra si hubo faltante o sobrante. El Plan Gratis tiene 1 usuario con su caja, el Básico hasta 2 y el Pro hasta 6.",
       },
       {
         question: "¿Mis empleados necesitan tener email?",
@@ -147,7 +147,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Cómo sé si falta plata en la caja?",
         answer:
-          "Al cerrar la caja contás el efectivo y Pesito lo compara con lo que debería haber (monto inicial + ventas en efectivo + cobros − retiros y pagos). Si no coincide, queda registrada la diferencia de ese vendedor. Desde el Plan Esencial, en los reportes ves los faltantes y sobrantes de cada persona.",
+          "Al cerrar la caja contás el efectivo y Pesito lo compara con lo que debería haber (monto inicial + ventas en efectivo + cobros − retiros y pagos). Si no coincide, queda registrada la diferencia de ese vendedor. Desde el Plan Básico, en los reportes ves los faltantes y sobrantes de cada persona.",
       },
     ],
   },
@@ -162,12 +162,12 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo cargar mis clientes desde Excel o bajarlos a una planilla?",
         answer:
-          "Sí. Quien administra el negocio puede bajar la lista de clientes a Excel desde Clientes (en todos los planes, incluido el Gratis), con lo que debe cada uno. La carga masiva de clientes desde una planilla de Excel o CSV está en el Plan Esencial: cargás nombre, razón social, teléfono, mail, documento, tipo de factura y notas, y antes de guardar ves cuántos son nuevos y cuántos ya existen. Si un cliente ya existe, por defecto se deja como está, y si querés elegís qué datos actualizar. Lo que cada cliente debe (el fiado), sus ventas y sus pagos nunca se modifican desde la planilla: el fiado sólo cambia al vender a fiado o al registrar un cobro. Por eso, Pesito no carga deudas anteriores desde Excel.",
+          "Sí. Quien administra el negocio puede bajar la lista de clientes a Excel desde Clientes (en todos los planes, incluido el Gratis), con lo que debe cada uno. La carga masiva de clientes desde una planilla de Excel o CSV está en el Plan Básico: cargás nombre, razón social, teléfono, mail, documento, tipo de factura y notas, y antes de guardar ves cuántos son nuevos y cuántos ya existen. Si un cliente ya existe, por defecto se deja como está, y si querés elegís qué datos actualizar. Lo que cada cliente debe (el fiado), sus ventas y sus pagos nunca se modifican desde la planilla: el fiado sólo cambia al vender a fiado o al registrar un cobro. Por eso, Pesito no carga deudas anteriores desde Excel.",
       },
       {
         question: "¿Puedo bajar mi stock o mi lista de productos a Excel?",
         answer:
-          "Sí. En Productos, \"Descargar Excel\" (en Acciones) abre una ventana donde elegís qué productos bajar (lo que estás viendo con los filtros, todos los activos o también los inactivos) y qué columnas querés: SKU, código de barras, marca, proveedor, stock, mínimo, cuánto falta para el mínimo, estado, costo, valor al costo y precio de venta. Está en todos los planes, incluido el Gratis. Con el Plan Esencial, la pestaña Stock también tiene su \"Descargar Excel\" (la lista que estás viendo o todos los productos), y con el Plan IA suma una columna con cuántos días alcanza el stock de cada producto. Es una planilla para mirar o compartir: no se vuelve a subir (para cargar o corregir productos hay una planilla de carga masiva aparte).",
+          "Sí. En Productos, \"Descargar Excel\" (en Acciones) abre una ventana donde elegís qué productos bajar (lo que estás viendo con los filtros, todos los activos o también los inactivos) y qué columnas querés: SKU, código de barras, marca, proveedor, stock, mínimo, cuánto falta para el mínimo, estado, costo, valor al costo y precio de venta. Está en todos los planes, incluido el Gratis. Con el Plan Básico, la pestaña Stock también tiene su \"Descargar Excel\" (la lista que estás viendo o todos los productos), y con el Plan Max suma una columna con cuántos días alcanza el stock de cada producto. Es una planilla para mirar o compartir: no se vuelve a subir (para cargar o corregir productos hay una planilla de carga masiva aparte).",
       },
       {
         question: "¿Puedo llevarme todos mis datos si dejo de usar Pesito?",

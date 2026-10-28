@@ -38,10 +38,10 @@ export function SubscriptionSection({
     monthlySalesCount !== null && monthlySalesCount >= FREE_PLAN_MONTHLY_SALES_LIMIT;
 
   // Durante la prueba, lo que realmente cambia es que se destraban las
-  // funciones exclusivas de Pro (no todo lo de Esencial, que hoy no tiene
+  // funciones exclusivas de Pro (no todo lo de Básico, que hoy no tiene
   // nada gateado en código aparte del plan en sí) — se enumeran aparte,
   // marcadas como "Pro" y con la fecha en que se apagan.
-  // Agrupadas por plan: la prueba es del Pro, que incluye lo del Esencial.
+  // Agrupadas por plan: la prueba es del Pro, que incluye lo del Básico.
   // Así se ve que parte de lo que se usa se conserva con el plan más barato.
   const trialGroups: { plan: Plan; features: string[] }[] = subscription.trialActive
     ? (["esencial", "pro"] as const).map((plan) => ({ plan, features: getPlanOwnFeatures(plan) }))
@@ -177,7 +177,7 @@ export function SubscriptionSection({
                         </span>
                       </div>
                       <p className="-mt-1 text-sm text-muted-foreground">
-                        {group.plan === "esencial" ? "Conservás:" : "Conservás todo lo del Plan Esencial, más:"}
+                        {group.plan === "esencial" ? "Conservás:" : "Conservás todo lo del Plan Básico, más:"}
                       </p>
                       <ul className="flex-1 space-y-1.5">
                         {group.features.map((feature) => (

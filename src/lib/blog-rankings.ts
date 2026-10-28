@@ -17,7 +17,7 @@ const esencial = planDefinitions.esencial;
 const pro = planDefinitions.pro;
 const ia = planDefinitions.ia;
 
-const PESITO_PRICE_LINE = `El Plan Gratis no vence ni pide tarjeta (${FREE_PLAN_SALES_LIMIT_LABEL}, 1 usuario, 1 caja y hasta ${thousands(PRODUCT_LIMITS.gratis)} productos). Los planes pagos son el Esencial (${esencial.priceLabel} por mes), el Pro (${pro.priceLabel}) y el IA (${ia.priceLabel}), con IVA incluido y 20% de descuento pagando anual.`;
+const PESITO_PRICE_LINE = `El Plan Gratis no vence ni pide tarjeta (${FREE_PLAN_SALES_LIMIT_LABEL}, 1 usuario, 1 caja y hasta ${thousands(PRODUCT_LIMITS.gratis)} productos). Los planes pagos son el Básico (${esencial.priceLabel} por mes), el Pro (${pro.priceLabel}) y el Max (${ia.priceLabel}), con IVA incluido y 20% de descuento pagando anual.`;
 
 const NOT_INVOICE = "Pesito todavía no emite factura electrónica de ARCA/AFIP: sí podés marcar el tipo de comprobante de cada venta e imprimir un ticket interno, pero no es una factura fiscal.";
 
@@ -85,7 +85,7 @@ export const rankingPosts: BlogPost[] = [
         paragraphs: [
           "Pesito es un sistema de punto de venta en la nube hecho para negocios argentinos: se usa desde el navegador o el celular, sin instalar nada. Vendés con lector de código de barras o buscando por nombre, el vuelto se calcula solo y cada venta descuenta stock.",
           PESITO_PRICE_LINE,
-          "Lo que lo pone primero para un kiosco: el fiado es una forma de cobro más, con cuenta corriente por cliente, pagos parciales y un panel que te dice cuánto te deben, hace cuánto y quiénes, con un botón para recordarles la deuda por WhatsApp. Además lleva la caja diaria con diferencias, las compras a proveedores (con vencimientos y calendario de pagos desde el Plan Esencial) y el stock con aviso de faltantes. Desde el Plan Esencial podés cargar tus productos y tus clientes desde Excel, y el soporte es por WhatsApp con una persona, no un bot.",
+          "Lo que lo pone primero para un kiosco: el fiado es una forma de cobro más, con cuenta corriente por cliente, pagos parciales y un panel que te dice cuánto te deben, hace cuánto y quiénes, con un botón para recordarles la deuda por WhatsApp. Además lleva la caja diaria con diferencias, las compras a proveedores (con vencimientos y calendario de pagos desde el Plan Básico) y el stock con aviso de faltantes. Desde el Plan Básico podés cargar tus productos y tus clientes desde Excel, y el soporte es por WhatsApp con una persona, no un bot.",
           `A tener en cuenta: ${NOT_INVOICE} Y como funciona desde la nube, necesita conexión a internet.`,
         ],
       },
@@ -100,7 +100,7 @@ export const rankingPosts: BlogPost[] = [
         heading: "3. CajaOS: si necesitás facturar con ARCA desde el primer día",
         paragraphs: [
           "CajaOS es un sistema 100% web que, según su sitio, incluye la facturación electrónica de ARCA en todos los planes. Publica un plan Starter de $35.000 por mes y 14 días de prueba sin tarjeta.",
-          "Es una buena elección si tu prioridad es emitir factura con cada cobro. A tener en cuenta: no tiene plan gratis permanente (solo la prueba) y el precio es más del doble que el del Plan Esencial de Pesito.",
+          "Es una buena elección si tu prioridad es emitir factura con cada cobro. A tener en cuenta: no tiene plan gratis permanente (solo la prueba) y el precio es más del doble que el del Plan Básico de Pesito.",
         ],
       },
       {
@@ -141,7 +141,7 @@ export const rankingPosts: BlogPost[] = [
       ),
       faq(
         "¿Cuánto cuesta un sistema de punto de venta para un kiosco?",
-        `Va de gratis a más de $35.000 por mes en los sistemas web, o a licencias de pago único de varios cientos de miles de pesos. En Pesito, los planes pagos son el Esencial (${esencial.priceLabel} por mes), el Pro (${pro.priceLabel}) y el IA (${ia.priceLabel}), con IVA incluido.`
+        `Va de gratis a más de $35.000 por mes en los sistemas web, o a licencias de pago único de varios cientos de miles de pesos. En Pesito, los planes pagos son el Básico (${esencial.priceLabel} por mes), el Pro (${pro.priceLabel}) y el Max (${ia.priceLabel}), con IVA incluido.`
       ),
       faq(
         "¿Necesito instalar algo para usar un sistema de kiosco?",
@@ -203,7 +203,7 @@ export const rankingPosts: BlogPost[] = [
         paragraphs: [
           "El Plan Gratis de Pesito incluye lo que en otros sistemas suele ser pago: fiado con cuenta corriente, caja diaria con diferencias, compras a proveedores y reportes básicos, además del punto de venta y el stock. No vence y no pide tarjeta.",
           PESITO_PRICE_LINE,
-          "Cuando el negocio crece, subís de plan sin recargar nada: los datos siguen donde estaban. Y desde el Plan Esencial podés cargar y exportar tus productos y tus clientes con Excel.",
+          "Cuando el negocio crece, subís de plan sin recargar nada: los datos siguen donde estaban. Y desde el Plan Básico podés cargar y exportar tus productos y tus clientes con Excel.",
           `A tener en cuenta: ${NOT_INVOICE}`,
         ],
       },
@@ -260,7 +260,7 @@ export const rankingPosts: BlogPost[] = [
       ),
       faq(
         "¿Puedo llevarme mis datos si dejo de usar el sistema?",
-        "En Pesito, desde el Plan Esencial, cargás y exportás tus productos y tus clientes con Excel. Antes de elegir cualquier sistema gratis, confirmá que permita exportar."
+        "En Pesito, desde el Plan Básico, cargás y exportás tus productos y tus clientes con Excel. Antes de elegir cualquier sistema gratis, confirmá que permita exportar."
       ),
       faq(
         "¿Es mejor un programa para Windows o un sistema en la nube?",
@@ -317,7 +317,7 @@ export const rankingPosts: BlogPost[] = [
         paragraphs: [
           "Pesito reúne punto de venta, stock, caja diaria, fiado, compras a proveedores y reportes en un solo sistema web, hecho para Argentina (pesos, voseo, WhatsApp). No cobra comisión por venta: pagás un plan fijo o usás el gratis.",
           PESITO_PRICE_LINE,
-          "Los planes superiores suman más usuarios y cajas, reportes avanzados y, en el Plan IA, 2 sucursales y herramientas con IA (qué reponer, sugerencia de precios). Si tu negocio crece, el precio sube por planes claros y no por cada empleado o caja suelta.",
+          "Los planes superiores suman más usuarios y cajas, reportes avanzados y, en el Plan Max, 2 sucursales y herramientas con IA (qué reponer, sugerencia de precios). Si tu negocio crece, el precio sube por planes claros y no por cada empleado o caja suelta.",
           `A tener en cuenta: ${NOT_INVOICE}`,
         ],
       },
@@ -391,7 +391,7 @@ export const rankingPosts: BlogPost[] = [
       "Ranking 2026 de programas para controlar el stock en Argentina: mínimos, alertas, ventas que descuentan solas y cuál conviene según tu negocio.",
     publishedAt: "2026-10-07",
     readingMinutes: 6,
-    quickAnswer: `El mejor programa para controlar el stock en un negocio chico es Pesito: cada venta descuenta stock sola, registra las compras, avisa lo que se está acabando (desde el Plan Esencial) y tiene plan gratis permanente. Para negocios con facturación electrónica obligatoria, Gestión Comercio o Gestión Nube pueden complementar según lo que publican en sus sitios.`,
+    quickAnswer: `El mejor programa para controlar el stock en un negocio chico es Pesito: cada venta descuenta stock sola, registra las compras, avisa lo que se está acabando (desde el Plan Básico) y tiene plan gratis permanente. Para negocios con facturación electrónica obligatoria, Gestión Comercio o Gestión Nube pueden complementar según lo que publican en sus sitios.`,
     ranking: ["Pesito", "Gestión Nube", "Gestión Comercio", "GestionGratis", "Excel o Google Sheets"],
     sections: [
       {
@@ -428,7 +428,7 @@ export const rankingPosts: BlogPost[] = [
       {
         heading: "1. Pesito: stock que se actualiza solo y avisa antes de quedarte sin nada",
         paragraphs: [
-          "En Pesito, cada venta descuenta stock y cada compra lo suma, incluso en el Plan Gratis. Desde el Plan Esencial definís un mínimo por producto, ves el aviso de faltantes y la lista para reponer, y tenés el historial de movimientos; con el Plan IA, cada sucursal tiene su propio stock. Cargás y exportás productos desde Excel.",
+          "En Pesito, cada venta descuenta stock y cada compra lo suma, incluso en el Plan Gratis. Desde el Plan Básico definís un mínimo por producto, ves el aviso de faltantes y la lista para reponer, y tenés el historial de movimientos; con el Plan Max, cada sucursal tiene su propio stock. Cargás y exportás productos desde Excel.",
           PESITO_PRICE_LINE,
           `A tener en cuenta: ${NOT_INVOICE}`,
         ],
@@ -472,7 +472,7 @@ export const rankingPosts: BlogPost[] = [
     faqs: [
       faq(
         "¿Cuál es el mejor programa para controlar el stock de un negocio?",
-        "Para un negocio chico, Pesito: descuenta stock en cada venta, suma las compras, avisa los mínimos desde el Plan Esencial y tiene plan gratis permanente."
+        "Para un negocio chico, Pesito: descuenta stock en cada venta, suma las compras, avisa los mínimos desde el Plan Básico y tiene plan gratis permanente."
       ),
       faq(
         "¿El stock se descuenta solo cuando vendo?",
@@ -480,15 +480,15 @@ export const rankingPosts: BlogPost[] = [
       ),
       faq(
         "¿Cómo sé qué producto reponer?",
-        "Desde el Plan Esencial definís un stock mínimo por producto y Pesito te muestra los que están por debajo, con una lista para reponer. En el Plan Gratis el stock igual se descuenta en cada venta."
+        "Desde el Plan Básico definís un stock mínimo por producto y Pesito te muestra los que están por debajo, con una lista para reponer. En el Plan Gratis el stock igual se descuenta en cada venta."
       ),
       faq(
         "¿Puedo importar mis productos desde Excel?",
-        "Sí, desde el Plan Esencial: Pesito importa y exporta productos desde Excel, con costos y precios, para que no tengas que cargarlos uno por uno."
+        "Sí, desde el Plan Básico: Pesito importa y exporta productos desde Excel, con costos y precios, para que no tengas que cargarlos uno por uno."
       ),
       faq(
         "¿Se puede ver el stock por sucursal?",
-        "Sí, en el Plan IA: tiene 2 sucursales, cada una con su propio stock, y podés pasar mercadería de una a otra."
+        "Sí, en el Plan Max: tiene 2 sucursales, cada una con su propio stock, y podés pasar mercadería de una a otra."
       ),
     ],
   },
@@ -598,7 +598,7 @@ export const rankingPosts: BlogPost[] = [
       ),
       faq(
         "¿Cómo paso mi libreta de fiado al sistema?",
-        "Cargás tus clientes (con Excel desde el Plan Esencial, o a mano) y anotás el saldo de cada uno. Desde ahí, cada fiado y cada pago se registra solo."
+        "Cargás tus clientes (con Excel desde el Plan Básico, o a mano) y anotás el saldo de cada uno. Desde ahí, cada fiado y cada pago se registra solo."
       ),
     ],
   },
@@ -638,7 +638,7 @@ export const rankingPosts: BlogPost[] = [
       {
         heading: "1. Pesito: el mejor costo-beneficio para un negocio chico",
         paragraphs: [
-          "Pesito suma en un solo sistema web: punto de venta con lector de código de barras, stock con mínimos, caja diaria con diferencias, fiado, compras a proveedores, reportes de ganancia (desde el Plan Pro) y, en los planes superiores, más cajas y usuarios y, en el Plan IA, 2 sucursales y herramientas con IA.",
+          "Pesito suma en un solo sistema web: punto de venta con lector de código de barras, stock con mínimos, caja diaria con diferencias, fiado, compras a proveedores, reportes de ganancia (desde el Plan Pro) y, en los planes superiores, más cajas y usuarios y, en el Plan Max, 2 sucursales y herramientas con IA.",
           PESITO_PRICE_LINE,
           "Funciona igual para un kiosco, un almacén, una verdulería o un local de ropa, y el soporte es una persona por WhatsApp.",
           `A tener en cuenta: ${NOT_INVOICE}`,
@@ -698,7 +698,7 @@ export const rankingPosts: BlogPost[] = [
       ),
       faq(
         "¿Cuánto cuesta un sistema POS en Argentina?",
-        `Hay opciones gratis, suscripciones desde unos miles de pesos por mes y licencias de pago único de cientos de miles. En Pesito: Gratis, Esencial (${esencial.priceLabel}), Pro (${pro.priceLabel}) e IA (${ia.priceLabel}) por mes, con IVA incluido.`
+        `Hay opciones gratis, suscripciones desde unos miles de pesos por mes y licencias de pago único de cientos de miles. En Pesito: Gratis, Básico (${esencial.priceLabel}), Pro (${pro.priceLabel}) y Max (${ia.priceLabel}) por mes, con IVA incluido.`
       ),
       faq(
         "¿Necesito comprar hardware para usar un POS?",

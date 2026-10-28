@@ -15,7 +15,7 @@ import { pageMetadata } from "@/lib/seo";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export const metadata = pageMetadata({
-  title: "Comparar planes: Gratis, Esencial, Pro e IA",
+  title: "Comparar planes: Gratis, Básico, Pro y Max",
   description:
     "Compará los planes de Pesito lado a lado: ventas por mes, usuarios, sucursales, caja, fiado, stock y reportes. Empezá gratis y cambiá cuando quieras.",
   path: "/comparar-planes",
@@ -79,7 +79,7 @@ export default function CompararPlanesPage() {
           <div className="mt-10 overflow-x-auto rounded-card border border-border bg-card">
             <table className="w-full min-w-[360px] border-collapse text-xs sm:text-sm">
               <caption className="sr-only">
-                Comparación de los planes Gratis, Esencial, Pro e IA de Pesito
+                Comparación de los planes Gratis, Básico, Pro y Max de Pesito
               </caption>
               <thead>
                 <tr className="border-b border-border">

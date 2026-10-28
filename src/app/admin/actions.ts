@@ -101,7 +101,7 @@ export interface MarketInsightInput {
   source: string;
 }
 
-/** Carga una nota del análisis de mercado (Plan IA). Sólo platform admin. */
+/** Carga una nota del análisis de mercado (Plan Max). Sólo platform admin. */
 export async function createMarketInsight(input: MarketInsightInput): Promise<ActionState> {
   await requirePlatformAdmin();
   const title = input.title.trim();

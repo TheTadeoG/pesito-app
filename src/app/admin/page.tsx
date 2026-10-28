@@ -858,7 +858,7 @@ export default async function AdminPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Análisis de mercado (Plan IA)</CardTitle>
+            <CardTitle className="text-base">Análisis de mercado (Plan Max)</CardTitle>
           </CardHeader>
           <CardContent>
             <MarketInsightsManager items={marketInsightsRaw ?? []} />

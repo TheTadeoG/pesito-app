@@ -158,7 +158,7 @@ export default async function ReportesPage({
   const supabase = await createClient();
   const isManager = membership.role === "owner" || membership.role === "admin";
   const subscription = await getSubscription(supabase, organization.id);
-  // Fechas a medida: desde el Plan Esencial (sin él, vuelve a 30 días).
+  // Fechas a medida: desde el Plan Básico (sin él, vuelve a 30 días).
   const canCustomRange = canUse(subscription, "customReportRange");
   const query = resolveReportQuery(params, { allowCustom: canCustomRange });
   const range = getReportRange(query);
@@ -584,7 +584,7 @@ export default async function ReportesPage({
       </Card>
     ) : (
       <PlanLockNote plan={featureMinPlan.aiReports}>
-        El Plan IA te escribe un resumen de cada período: cómo vendiste, tu mejor día y horario, qué te deja más plata y qué vendés a pérdida.
+        El Plan Max te escribe un resumen de cada período: cómo vendiste, tu mejor día y horario, qué te deja más plata y qué vendés a pérdida.
       </PlanLockNote>
     )
   );

@@ -34,7 +34,7 @@ export default async function ProductosPage({
   const supabase = await createClient();
   const { current: branch, branches } = await getBranchContext();
   const subscription = await getSubscription(supabase, organization.id);
-  // Pestaña Stock (mínimos, faltantes, reposición y movimientos): Plan Esencial.
+  // Pestaña Stock (mínimos, faltantes, reposición y movimientos): Plan Básico.
   const stockLocked = !canUse(subscription, "stockManagement");
 
   // Los productos se usan en las tres pestañas (tabla, stock bajo y conteo

@@ -53,7 +53,7 @@ export interface MarketSearchResult {
   items: MarketSearchItem[];
 }
 
-/** Busca por nombre en los catálogos de los supermercados (Plan Pro). La posición caro/barato es del Plan IA. */
+/** Busca por nombre en los catálogos de los supermercados (Plan Pro). La posición caro/barato es del Plan Max. */
 export async function searchMarket(query: string, page: number, pageSize: number): Promise<MarketSearchResult> {
   const q = typeof query === "string" ? query.trim().slice(0, 80) : "";
   if (q.length < 2) return { total: 0, items: [] };

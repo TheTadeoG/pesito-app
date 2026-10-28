@@ -201,7 +201,7 @@ export default async function CajaPage({
           <FaltantesAviso rows={recurringDiscrepancies} />
         ) : (
           <PlanLockNote plan={featureMinPlan.teamReports}>
-            Con el Plan Esencial ves las diferencias de caja de cada empleado: quién cierra con
+            Con el Plan Básico ves las diferencias de caja de cada empleado: quién cierra con
             faltantes seguido y cuánto suma.
           </PlanLockNote>
         )}

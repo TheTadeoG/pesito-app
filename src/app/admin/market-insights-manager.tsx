@@ -49,7 +49,7 @@ export function MarketInsightsManager({ items }: { items: MarketInsightRow[] }) 
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-3">
         <p className="text-xs text-muted-foreground">
-          Notas del análisis de mercado que ven los negocios del Plan IA. Cargá sólo información
+          Notas del análisis de mercado que ven los negocios del Plan Max. Cargá sólo información
           verificada y con fuente: la ven los clientes tal cual.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">

@@ -31,7 +31,7 @@ export function ExcelExportDialog({
   open: boolean;
   onClose: () => void;
   scopes: ExportScope[];
-  /** Plan IA: se puede incluir "Alcanza para (días)". */
+  /** Plan Max: se puede incluir "Alcanza para (días)". */
   withCover: boolean;
 }) {
   const available = EXCEL_COLUMNS.filter((c) => withCover || !c.ia);

@@ -194,11 +194,11 @@ export const rubroPages: RubroPage[] = [
     features: [
       {
         title: "Talles y colores (pronto)",
-        description: "Pronto vas a poder cargar talle y color como variantes de una misma prenda, desde el Plan Esencial. Hoy cada combinación se carga como un producto con su propio stock.",
+        description: "Pronto vas a poder cargar talle y color como variantes de una misma prenda, desde el Plan Básico. Hoy cada combinación se carga como un producto con su propio stock.",
       },
       {
         title: "Detección de baja rotación",
-        description: "Con el Plan IA ves qué prendas hace meses no se venden y cuánta plata tenés parada en ellas, para liquidarlas a tiempo.",
+        description: "Con el Plan Max ves qué prendas hace meses no se venden y cuánta plata tenés parada en ellas, para liquidarlas a tiempo.",
       },
       {
         title: "Cuenta corriente de clientes",

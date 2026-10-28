@@ -132,7 +132,7 @@ export default async function MercadoPage({ searchParams }: { searchParams: Prom
         emptyNote: "Todavía sin precios de supermercados.",
         mine: {
           price,
-          // Caro/barato y sugerido: Plan IA (sin el plan no llegan al navegador).
+          // Caro/barato y sugerido: Plan Max (sin el plan no llegan al navegador).
           position: insights ? position : null,
           diff: insights && stats && price > 0 ? diffPct(price, stats) : null,
           suggested: sug ? sug.price : null,
@@ -140,7 +140,7 @@ export default async function MercadoPage({ searchParams }: { searchParams: Prom
         },
       });
     }
-    // Para quien no tiene el Plan IA: cuántos hay, sin el detalle.
+    // Para quien no tiene el Plan Max: cuántos hay, sin el detalle.
     const hiddenHigh = rows.filter((r) => r.position === "caro" || r.position === "muy-caro").length;
     const hiddenLow = rows.filter((r) => r.position === "barato" || r.position === "muy-barato").length;
     prices = (

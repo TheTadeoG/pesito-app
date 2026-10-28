@@ -179,10 +179,10 @@ function MyProducts({
   return (
     <div className="space-y-3">
       {locked && withPrices > 0 && (
-        <PlanLockNote plan={locked.plan} cta="Ver el Plan IA">
+        <PlanLockNote plan={locked.plan} cta="Ver el Plan Max">
           {locked.high + locked.low > 0
-            ? `${locked.high > 0 ? `${locked.high} de tus productos están más caros que los supermercados` : ""}${locked.high > 0 && locked.low > 0 ? " y " : ""}${locked.low > 0 ? `${locked.low} más baratos` : ""}. Con el Plan IA ves cuáles, el precio sugerido y recibís avisos.`
-            : "Con el Plan IA ves si estás caro o barato frente a los supermercados, el precio sugerido y recibís avisos."}
+            ? `${locked.high > 0 ? `${locked.high} de tus productos están más caros que los supermercados` : ""}${locked.high > 0 && locked.low > 0 ? " y " : ""}${locked.low > 0 ? `${locked.low} más baratos` : ""}. Con el Plan Max ves cuáles, el precio sugerido y recibís avisos.`
+            : "Con el Plan Max ves si estás caro o barato frente a los supermercados, el precio sugerido y recibís avisos."}
         </PlanLockNote>
       )}
       {rows.length > 0 && withPrices === 0 && (

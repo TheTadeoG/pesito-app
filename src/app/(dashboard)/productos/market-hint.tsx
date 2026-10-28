@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/utils";
 
 /**
  * Bajo el código de barras del formulario: cuánto cuesta ese producto en los supermercados (Pro) y,
- * con el Plan IA, si el precio cargado está caro o barato y cuál sería el sugerido.
+ * con el Plan Max, si el precio cargado está caro o barato y cuál sería el sugerido.
  */
 export function MarketHintNote({ barcode, price, cost, onUse }: { barcode: string; price: string; cost: string; onUse: (price: string) => void }) {
   const ean = normalizeEan(barcode);
@@ -67,8 +67,8 @@ export function MarketHintNote({ barcode, price, cost, onUse }: { barcode: strin
         </p>
       )}
       {!insights && (
-        <PlanLockNote plan={insightsPlan} cta="Ver el Plan IA">
-          Con el Plan IA ves si estás caro o barato y el precio sugerido.
+        <PlanLockNote plan={insightsPlan} cta="Ver el Plan Max">
+          Con el Plan Max ves si estás caro o barato y el precio sugerido.
         </PlanLockNote>
       )}
     </div>

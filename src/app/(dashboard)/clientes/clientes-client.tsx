@@ -233,7 +233,7 @@ export function ClientesClient({
               <DropdownMenuItem onClick={() => (importLocked ? setImportLockedOpen(true) : setImportOpen(true))}>
                 <FileSpreadsheet className="h-4 w-4" />
                 Cargar desde Excel
-                {importLocked && <Badge tone="accent">Esencial</Badge>}
+                {importLocked && <Badge tone="accent">Básico</Badge>}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => void downloadCustomersExcel(customers, todayKey)}>
                 <Download className="h-4 w-4" />

@@ -75,7 +75,7 @@ function priceKeepingMargin(line: CartLine): number | null {
 
 function paymentMethodOptionsWithCustom(
   customMethods: string[],
-  // Cuenta corriente con proveedores: desde el Plan Esencial.
+  // Cuenta corriente con proveedores: desde el Plan Básico.
   allowAccount: boolean
 ): {
   value: PurchasePaymentMethod;
@@ -1069,7 +1069,7 @@ export function ComprasClient({
                         disabled={disabled}
                         title={
                           m.lockedPlan
-                            ? "La cuenta corriente con proveedores está en el Plan Esencial."
+                            ? "La cuenta corriente con proveedores está en el Plan Básico."
                             : disabled
                               ? "Abrí tu caja para pagar en efectivo"
                               : undefined

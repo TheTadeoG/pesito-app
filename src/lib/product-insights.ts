@@ -3,7 +3,7 @@ import type { Database } from "@/lib/database.types";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 import { withBranchStock, type Branch } from "@/lib/branches";
 
-// Funciones del Plan IA que salen de las ventas de cada producto: baja
+// Funciones del Plan Max que salen de las ventas de cada producto: baja
 // rotación, reposición y sugerencia de precios. Las ventas por producto
 // vienen resumidas de la base (product_sales_stats, 0050); acá sólo se
 // hacen las cuentas, sin consultas.

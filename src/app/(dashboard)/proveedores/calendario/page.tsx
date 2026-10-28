@@ -26,7 +26,7 @@ export default async function CalendarioProveedoresPage({
   if (!canUse(subscription, "supplierAccounts")) {
     return (
       <PlanLockNote plan="esencial">
-        Con el Plan Esencial ves en un calendario cuándo vence cada compra a cuenta y cuándo entrega
+        Con el Plan Básico ves en un calendario cuándo vence cada compra a cuenta y cuándo entrega
         cada proveedor.
       </PlanLockNote>
     );

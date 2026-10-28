@@ -112,7 +112,7 @@ export function BranchesManager({
         </form>
       ) : (
         <PlanLockNote plan="ia">
-          ¿Tenés otro local? Con el Plan IA manejás hasta 2 sucursales desde Pesito, cada una con su
+          ¿Tenés otro local? Con el Plan Max manejás hasta 2 sucursales desde Pesito, cada una con su
           propio stock y sus cajas.
         </PlanLockNote>
       )}

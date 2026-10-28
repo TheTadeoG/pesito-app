@@ -24,7 +24,7 @@ export interface ExcelColumn {
   id: string;
   label: string;
   width: number;
-  /** Sólo con el Plan IA (necesita las ventas por producto). */
+  /** Sólo con el Plan Max (necesita las ventas por producto). */
   ia?: boolean;
   cell: (r: StockRow) => Cell;
 }

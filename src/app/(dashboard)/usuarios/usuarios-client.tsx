@@ -273,7 +273,7 @@ export function UsuariosClient({
             <p className="text-sm text-muted-foreground">
               {hasBranches
                 ? "Es el local donde trabaja esa persona: su caja, sus ventas y el stock que descuenta son de esa sucursal. Los vendedores trabajan siempre en la suya; dueños y administradores pueden cambiar de sucursal desde el menú."
-                : "Si sumás más locales (Plan IA), acá elegís en qué sucursal trabaja cada persona: su caja, sus ventas y el stock que descuenta."}
+                : "Si sumás más locales (Plan Max), acá elegís en qué sucursal trabaja cada persona: su caja, sus ventas y el stock que descuenta."}
             </p>
           </div>
 

@@ -29,10 +29,10 @@ export interface ProductIssueCounts {
   staleCost: number;
   /** El costo subió y el precio quedó igual (Plan Pro; 0 si no se calculó). */
   costRise: number;
-  /** Productos con stock sin ventas en `thresholds.idleDays` días y la plata que hay ahí (Plan IA). */
+  /** Productos con stock sin ventas en `thresholds.idleDays` días y la plata que hay ahí (Plan Max). */
   idleCount: number;
   idleCapital: number;
-  /** Productos más caros / más baratos que la mediana de los supermercados (Plan IA; 0 si no se calculó). */
+  /** Productos más caros / más baratos que la mediana de los supermercados (Plan Max; 0 si no se calculó). */
   marketHigh: number;
   marketLow: number;
   thresholds: { marginPercent: number; staleDays: number; idleDays: number; marketHighPct: number; marketLowPct: number };

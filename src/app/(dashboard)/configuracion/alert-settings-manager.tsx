@@ -25,7 +25,7 @@ export function AlertSettingsManager({
   featureLocks,
 }: {
   initial: AlertSettings;
-  /** El plan incluye configurar los avisos (Esencial en adelante). */
+  /** El plan incluye configurar los avisos (Básico en adelante). */
   canConfigure: boolean;
   /** Plan que desbloquea cada aviso (null si ya lo tiene). */
   featureLocks: Record<string, Plan | null>;
@@ -136,7 +136,7 @@ export function AlertSettingsManager({
         Los avisos aparecen en la campana, en el menú lateral y arriba de cada módulo. Un aviso apagado no se calcula ni se cuenta.
       </p>
       {!canConfigure && (
-        <PlanLockNote plan="esencial" cta="Ver el Plan Esencial">
+        <PlanLockNote plan="esencial" cta="Ver el Plan Básico">
           Prendé y apagá cada aviso y elegí desde qué margen o cuántos días te avisamos. Hoy tenés los avisos básicos con valores estándar.
         </PlanLockNote>
       )}

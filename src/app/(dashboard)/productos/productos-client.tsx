@@ -203,7 +203,7 @@ export function ProductosClient({
   labelsLocked: boolean;
   /** Sólo quien administra el negocio carga o imprime en masa. */
   canManageCatalog: boolean;
-  /** Sin recomendaciones de reposición (Plan IA): "Comprar" va a Compras en vez de a Recomendaciones. */
+  /** Sin recomendaciones de reposición (Plan Max): "Comprar" va a Compras en vez de a Recomendaciones. */
   restockLocked: boolean;
   /** Viene de "Revisar números" (Stock): el filtro por estado ya puesto. */
   initialStockState: StockFilterState | null;
@@ -213,7 +213,7 @@ export function ProductosClient({
   idFilter: { label: string; ids: string[] } | null;
   /** Días de "sin ventas" configurados en Avisos (el mismo período que el aviso de plata parada). */
   idleDays: number;
-  /** Plan IA: se puede filtrar por "sin ventas". */
+  /** Plan Max: se puede filtrar por "sin ventas". */
   idleAllowed: boolean;
 }) {
   const router = useRouter();
@@ -228,7 +228,7 @@ export function ProductosClient({
   );
   // Sin costo cargado: dato que falta, no es del stock; va aparte, en Filtros.
   const [noCostOnly, setNoCostOnly] = useState(initialStockState === "nocost");
-  // Productos sin ventas en los últimos N días (Plan IA): se calculan recién al pedirlos.
+  // Productos sin ventas en los últimos N días (Plan Max): se calculan recién al pedirlos.
   const [idleIds, setIdleIds] = useState<Set<string> | null>(null);
   const [idleLoading, setIdleLoading] = useState(false);
   const [idleError, setIdleError] = useState<string | null>(null);
@@ -527,7 +527,7 @@ export function ProductosClient({
     return null;
   }
 
-  // Los "sin ventas" (Plan IA) se calculan al pedirlos, con los días configurados en Avisos.
+  // Los "sin ventas" (Plan Max) se calculan al pedirlos, con los días configurados en Avisos.
   async function loadIdle() {
     setIdleLoading(true);
     setIdleError(null);
@@ -645,14 +645,14 @@ export function ProductosClient({
                 >
                   <FileSpreadsheet className="h-4 w-4" />
                   Cargar desde Excel
-                  {importLocked && <Badge tone="accent">Esencial</Badge>}
+                  {importLocked && <Badge tone="accent">Básico</Badge>}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => (labelsLocked ? setLabelsLockedOpen(true) : setLabelsOpen(true))}
                 >
                   <ScanBarcode className="h-4 w-4" />
                   Etiquetas con código de barras
-                  {labelsLocked && <Badge tone="accent">Esencial</Badge>}
+                  {labelsLocked && <Badge tone="accent">Básico</Badge>}
                 </DropdownMenuItem>
               </>
             )}
@@ -738,10 +738,10 @@ export function ProductosClient({
                   <option value="">Todos · {products.length}</option>
                   {(
                     [
-                      ["out", stateCounts.out, stockAlertsLocked ? "Plan Esencial" : null],
-                      ["low", stateCounts.low, stockAlertsLocked ? "Plan Esencial" : null],
-                      ["idle", idleIds ? idleIds.size : null, idleAllowed ? null : "Plan IA"],
-                      ["nomin", stateCounts.nomin, stockAlertsLocked ? "Plan Esencial" : null],
+                      ["out", stateCounts.out, stockAlertsLocked ? "Plan Básico" : null],
+                      ["low", stateCounts.low, stockAlertsLocked ? "Plan Básico" : null],
+                      ["idle", idleIds ? idleIds.size : null, idleAllowed ? null : "Plan Max"],
+                      ["nomin", stateCounts.nomin, stockAlertsLocked ? "Plan Básico" : null],
                       ["negative", stateCounts.negative, null],
                     ] as const
                   ).map(([value, count, lockedBy]) => (
@@ -751,7 +751,7 @@ export function ProductosClient({
                   ))}
                 </Select>
                 {stockAlertsLocked && (
-                  <PlanLockNote plan="esencial" className="mt-2" cta="Ver el Plan Esencial">
+                  <PlanLockNote plan="esencial" className="mt-2" cta="Ver el Plan Básico">
                     Filtrá por sin stock, por agotarse y sin mínimo.
                   </PlanLockNote>
                 )}
@@ -1258,7 +1258,7 @@ export function ProductosClient({
               </p>
             ) : stockAlertsLocked ? (
               <PlanLockNote plan="esencial">
-                {`${lowStockProducts.length === 1 ? "Hay 1 producto" : `Hay ${lowStockProducts.length} productos`} por debajo del stock mínimo. Con el Plan Esencial ves cuáles son y te avisamos a tiempo para reponer.`}
+                {`${lowStockProducts.length === 1 ? "Hay 1 producto" : `Hay ${lowStockProducts.length} productos`} por debajo del stock mínimo. Con el Plan Básico ves cuáles son y te avisamos a tiempo para reponer.`}
               </PlanLockNote>
             ) : (
               <div>
@@ -1315,7 +1315,7 @@ export function ProductosClient({
                 </div>
                 {restockLocked && (
                   <PlanLockNote plan="ia">
-                    Con el Plan IA ves cuánto comprar de cada producto y a qué proveedor, con el pedido
+                    Con el Plan Max ves cuánto comprar de cada producto y a qué proveedor, con el pedido
                     listo para mandar por WhatsApp.
                   </PlanLockNote>
                 )}
