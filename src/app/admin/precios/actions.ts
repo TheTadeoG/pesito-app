@@ -90,7 +90,7 @@ export async function runMarketTest(): Promise<{ reports: StoreTestReport[]; row
 
 export interface CrawlChunkReport {
   stores: { store: string; pages: number; items: number; categoriesDone: number; errors: number; pending: number | null }[];
-  eans: { considered: number; done: number; found: number; missing: number; failed: number };
+  eans: { considered: number; done: number; internal: number; found: number; missing: number; failed: number };
   rowsThisMonth: number | null;
 }
 

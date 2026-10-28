@@ -153,7 +153,7 @@ const EAN_PAUSE_MS = 250;
  * tienen el precio del mes (los más importantes: son los que se comparan con los precios propios).
  */
 export async function scanEans(admin: Admin, month: string, limit: number, until: number) {
-  const out = { considered: 0, done: 0, found: 0, missing: 0, failed: 0, error: false };
+  const out = { considered: 0, done: 0, internal: 0, found: 0, missing: 0, failed: 0, error: false };
   const { data: pending, error } = await admin.rpc("market_pending_eans", { p_month: month, p_stores: MARKET_STORES.length, p_limit: limit });
   if (error) {
     console.error("market-prices pending", error.message);
@@ -170,6 +170,7 @@ export async function scanEans(admin: Admin, month: string, limit: number, until
         { onConflict: "ean,store,month", ignoreDuplicates: true }
       );
       out.done++;
+      out.internal++;
       continue;
     }
     // Se saltea lo que ya está este mes (si una pasada anterior quedó a medias o lo trajo el recorrido).

@@ -50,7 +50,7 @@ export function MarketTester() {
         {chunk && (
           <div className="space-y-1 pt-2 text-sm text-muted-foreground">
             <p>{`Precios guardados este mes en total: ${chunk.rowsThisMonth ?? "?"}.`}</p>
-            <p>{`Códigos de barras de los negocios: ${chunk.eans.done} de ${chunk.eans.considered} revisados, ${chunk.eans.found} precios encontrados${chunk.eans.failed > 0 ? `, ${chunk.eans.failed} errores` : ""}. Si «revisados» da 0, ya están todos.`}</p>
+            <p>{`Códigos de barras de los negocios: ${chunk.eans.done} de ${chunk.eans.considered} revisados: ${chunk.eans.internal} con código propio (se ignoran), ${chunk.eans.found} precios encontrados en los súper, ${chunk.eans.missing} consultas sin resultado${chunk.eans.failed > 0 ? `, ${chunk.eans.failed} errores` : ""}. Si «revisados» da 0, ya están todos.`}</p>
             {chunk.stores.map((s) => (
               <p key={s.store}>
                 {`${s.store}: ${s.pages} páginas, ${s.items} productos guardados, ${s.categoriesDone} categorías terminadas, ${s.pending ?? "?"} pendientes${s.errors > 0 ? `, ${s.errors} errores` : ""}.`}
