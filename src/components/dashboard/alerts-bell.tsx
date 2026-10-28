@@ -4,63 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  AlertTriangle,
   Bell,
   Check,
   CheckCheck,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  CreditCard,
-  HandCoins,
-  Info,
-  PackageX,
   RotateCcw,
   Settings2,
-  ShieldAlert,
-  Sparkles,
-  TrendingDown,
-  Truck,
-  Wallet,
-  Wrench,
-  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlanPill, upgradeHref } from "@/components/dashboard/pro-locked-card";
 import { useAlerts } from "@/components/dashboard/alerts-provider";
-import { alertPriority, type BellAlert, type BellTone } from "@/lib/bell-alerts";
+import { alertPriority, MODULE_LABEL, type AlertModule, type BellAlert } from "@/lib/bell-alerts";
 import { cn } from "@/lib/utils";
 
-const toneIcon: Record<BellTone, LucideIcon> = { danger: AlertTriangle, warning: AlertTriangle, info: Info };
-const toneClass: Record<BellTone, string> = {
-  danger: "bg-danger-bg text-danger",
-  warning: "bg-warning-bg text-warning",
-  info: "bg-accent text-accent-foreground",
-};
+const dotClass: Record<"urgent" | "normal" | "info", string> = { urgent: "bg-danger", normal: "bg-warning", info: "bg-muted-foreground/50" };
+const MODULE_ORDER: AlertModule[] = ["productos", "proveedores", "clientes", "caja", "plan", "seguridad"];
 
-// Un ícono propio por tipo de aviso (se reconoce de un vistazo); sin uno, el de su urgencia.
-const kindIcon: Record<string, LucideIcon> = {
-  "low-stock": PackageX,
-  "review-numbers": Wrench,
-  "selling-at-loss": TrendingDown,
-  fiado: HandCoins,
-  "suppliers-overdue": Truck,
-  "new-device": ShieldAlert,
-  "trial-ending": Sparkles,
-  "plan-past-due": CreditCard,
-  "plan-grace": CreditCard,
-  "plan-expiring": CreditCard,
-  "cash-stale": Wallet,
-  "cash-closing": Wallet,
-  "cash-soon": Wallet,
-};
-const toneAccent: Record<BellTone, string> = {
-  danger: "border-l-danger",
-  warning: "border-l-warning",
-  info: "border-l-primary",
-};
-
-function AlertCard({ alert: a, seen, onNavigate }: { alert: BellAlert; seen: boolean; onNavigate?: (a: BellAlert) => void }) {
+/** Un aviso, en una línea: puntito de urgencia, texto, atajo y "visto". El detalle queda en el tooltip. */
+function AlertRow({ alert: a, seen, onNavigate }: { alert: BellAlert; seen: boolean; onNavigate?: (a: BellAlert) => void }) {
   const { markSeen, unmarkSeen } = useAlerts();
   const pathname = usePathname();
   const router = useRouter();
@@ -78,79 +41,54 @@ function AlertCard({ alert: a, seen, onNavigate }: { alert: BellAlert; seen: boo
     router.push(`${url.pathname}${url.search}`);
   }
 
-  const Icon = kindIcon[a.id] ?? toneIcon[a.tone];
   const href = a.lockedPlan ? upgradeHref(a.lockedPlan) : a.href;
   const canMark = !a.pinned && !a.lockedPlan;
+  const priority = alertPriority(a) === "urgent" ? "urgent" : a.tone === "info" ? "info" : "normal";
+  const action = !a.lockedPlan ? a.actions?.[0] : undefined;
   return (
-    <li
-      className={cn(
-        "overflow-hidden rounded-xl border border-l-[3px] border-border bg-background/60",
-        toneAccent[a.tone],
-        seen && "opacity-60"
-      )}
-    >
+    <li className={cn("group flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-muted", seen && "opacity-60")}>
+      <span className={cn("h-2 w-2 shrink-0 rounded-full", dotClass[priority])} aria-hidden />
       <Link
         href={href}
         prefetch={false}
         onClick={(e) => go(e, href)}
-        className="group flex items-start gap-3 px-3 py-3 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+        title={a.detail}
+        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 text-sm font-medium leading-snug text-foreground focus-visible:outline-none"
       >
-        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", toneClass[a.tone])}>
-          <Icon className="h-[18px] w-[18px]" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
-            {a.title}
-            {a.lockedPlan && <PlanPill plan={a.lockedPlan} />}
-          </span>
-          {a.detail && <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{a.detail}</span>}
-        </span>
-        <ChevronRight className="mt-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        {a.title}
+        {a.lockedPlan && <PlanPill plan={a.lockedPlan} />}
       </Link>
-      {((a.actions && a.actions.length > 0 && !a.lockedPlan) || canMark) && (
-        <div className="flex flex-wrap items-center gap-1.5 px-3 pb-3 pl-[3.75rem]">
-          {!a.lockedPlan &&
-            a.actions?.map((act) => (
-              <Link
-                key={act.href + act.label}
-                href={act.href}
-                prefetch={false}
-                onClick={(e) => go(e, act.href)}
-                className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
-              >
-                {act.label}
-              </Link>
-            ))}
-          {canMark && (
-            <button
-              type="button"
-              onClick={() => (seen ? unmarkSeen(a) : markSeen(a))}
-              className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title={seen ? "Volver a avisarme" : "Ya lo vi: no lo cuentes hasta que cambie"}
-            >
-              {seen ? <RotateCcw className="h-3 w-3" /> : <Check className="h-3 w-3" />}
-              {seen ? "Volver a avisar" : "Visto"}
-            </button>
-          )}
-        </div>
+      {action && (
+        <Link
+          href={action.href}
+          prefetch={false}
+          onClick={(e) => go(e, action.href)}
+          className="shrink-0 rounded-full border border-border bg-card px-2 py-0.5 text-xs font-medium text-foreground hover:border-primary hover:text-primary"
+        >
+          {action.label}
+        </Link>
       )}
+      {canMark && (
+        <button
+          type="button"
+          onClick={() => (seen ? unmarkSeen(a) : markSeen(a))}
+          className="shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+          title={seen ? "Volver a avisarme" : "Ya lo vi: no lo cuentes hasta que cambie"}
+          aria-label={seen ? "Volver a avisar" : "Marcar como visto"}
+        >
+          {seen ? <RotateCcw className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+        </button>
+      )}
+      <Link href={href} prefetch={false} onClick={(e) => go(e, href)} aria-label="Abrir" tabIndex={-1} className="shrink-0 text-muted-foreground">
+        <ChevronRight className="h-4 w-4" />
+      </Link>
     </li>
   );
 }
 
-function GroupTitle({ children, count, tone }: { children: string; count: number; tone?: BellTone }) {
-  return (
-    <p className="flex items-center gap-1.5 px-1 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-      {tone && <span className={cn("h-1.5 w-1.5 rounded-full", tone === "danger" ? "bg-danger" : "bg-warning")} />}
-      {children}
-      <span className="font-medium normal-case tracking-normal">{`· ${count}`}</span>
-    </p>
-  );
-}
-
 /**
- * Lista de avisos por urgencia: Urgentes, No urgentes y Vistos (plegados). La usan la campana
- * y la tira de cada módulo con los avisos que les tocan.
+ * Lista de avisos por módulo: filtros arriba (Todos, Productos, Proveedores…), cada aviso en una
+ * línea, y los ya vistos plegados al final. La usan la campana y la tira de cada módulo.
  */
 export function AlertList({
   alerts,
@@ -163,11 +101,20 @@ export function AlertList({
 }) {
   const { markAllSeen, seen: seenAll } = useAlerts();
   const [showSeen, setShowSeen] = useState(false);
+  const [filter, setFilter] = useState<AlertModule | "todos">("todos");
   const seenIds = new Set(seenAll.map((a) => a.id));
   const unseen = alerts.filter((a) => !seenIds.has(a.id));
   const seen = alerts.filter((a) => seenIds.has(a.id));
-  const urgent = unseen.filter((a) => alertPriority(a) === "urgent");
-  const normal = unseen.filter((a) => alertPriority(a) !== "urgent");
+
+  // Módulos con avisos sin ver, los que tienen urgentes primero.
+  const modules = MODULE_ORDER.filter((m) => unseen.some((a) => a.module === m)).sort((x, y) => {
+    const ux = unseen.some((a) => a.module === x && alertPriority(a) === "urgent") ? 0 : 1;
+    const uy = unseen.some((a) => a.module === y && alertPriority(a) === "urgent") ? 0 : 1;
+    return ux - uy;
+  });
+  const active = filter !== "todos" && modules.includes(filter) ? filter : "todos";
+  const visibleModules = active === "todos" ? modules : [active];
+  const visibleSeen = active === "todos" ? seen : seen.filter((a) => a.module === active);
 
   if (alerts.length === 0) {
     return (
@@ -181,69 +128,78 @@ export function AlertList({
     );
   }
   return (
-    <div className={cn("max-h-[min(26rem,70vh)] overflow-y-auto p-2", className)}>
-      {unseen.length === 0 && (
-        <p className="flex items-center gap-2 px-2 py-4 text-sm text-muted-foreground">
-          <CheckCheck className="h-4 w-4 text-success" />
-          Viste todos los avisos.
-        </p>
+    <div className={cn("max-h-[min(26rem,70vh)] overflow-y-auto", className)}>
+      {modules.length > 1 && (
+        <div className="flex flex-wrap gap-1.5 border-b border-border px-3 py-2.5">
+          {(["todos", ...modules] as const).map((m) => {
+            const n = m === "todos" ? unseen.length : unseen.filter((a) => a.module === m).length;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setFilter(m)}
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                  active === m ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {`${m === "todos" ? "Todos" : MODULE_LABEL[m]} ${n}`}
+              </button>
+            );
+          })}
+        </div>
       )}
-      {urgent.length > 0 && (
-        <section>
-          <GroupTitle count={urgent.length} tone="danger">
-            Urgentes
-          </GroupTitle>
-          <ul className="space-y-2">
-            {urgent.map((a) => (
-              <AlertCard key={a.id} alert={a} seen={false} onNavigate={onNavigate} />
-            ))}
-          </ul>
-        </section>
-      )}
-      {normal.length > 0 && (
-        <section className={urgent.length > 0 ? "mt-3" : undefined}>
-          <GroupTitle count={normal.length} tone="warning">
-            No urgentes
-          </GroupTitle>
-          <ul className="space-y-2">
-            {normal.map((a) => (
-              <AlertCard key={a.id} alert={a} seen={false} onNavigate={onNavigate} />
-            ))}
-          </ul>
-        </section>
-      )}
-      <div className="mt-2 flex items-center justify-between gap-2 px-1">
-        {seen.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setShowSeen((v) => !v)}
-            aria-expanded={showSeen}
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showSeen && "rotate-180")} />
-            {`Vistos (${seen.length})`}
-          </button>
-        ) : (
-          <span />
+      <div className="p-2">
+        {unseen.length === 0 && (
+          <p className="flex items-center gap-2 px-2 py-4 text-sm text-muted-foreground">
+            <CheckCheck className="h-4 w-4 text-success" />
+            Viste todos los avisos.
+          </p>
         )}
-        {unseen.filter((a) => !a.pinned && !a.lockedPlan).length > 1 && (
-          <button
-            type="button"
-            onClick={markAllSeen}
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-          >
-            <CheckCheck className="h-3.5 w-3.5" />
-            Marcar todo como visto
-          </button>
+        {visibleModules.map((m) => {
+          const items = unseen
+            .filter((a) => a.module === m)
+            .sort((x, y) => Number(alertPriority(y) === "urgent") - Number(alertPriority(x) === "urgent"));
+          return (
+            <section key={m} className="mb-1">
+              <p className="px-2 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{MODULE_LABEL[m]}</p>
+              <ul>
+                {items.map((a) => (
+                  <AlertRow key={a.id} alert={a} seen={false} onNavigate={onNavigate} />
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+        <div className="mt-1 flex items-center justify-between gap-2 px-2">
+          {visibleSeen.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowSeen((v) => !v)}
+              aria-expanded={showSeen}
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showSeen && "rotate-180")} />
+              {`Vistos (${visibleSeen.length})`}
+            </button>
+          ) : (
+            <span />
+          )}
+          {unseen.filter((a) => !a.pinned && !a.lockedPlan).length > 1 && (
+            <button type="button" onClick={markAllSeen} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              <CheckCheck className="h-3.5 w-3.5" />
+              Marcar todo como visto
+            </button>
+          )}
+        </div>
+        {showSeen && visibleSeen.length > 0 && (
+          <ul className="mt-1">
+            {visibleSeen.map((a) => (
+              <AlertRow key={a.id} alert={a} seen onNavigate={onNavigate} />
+            ))}
+          </ul>
         )}
       </div>
-      {showSeen && seen.length > 0 && (
-        <ul className="mt-2 space-y-2">
-          {seen.map((a) => (
-            <AlertCard key={a.id} alert={a} seen onNavigate={onNavigate} />
-          ))}
-        </ul>
-      )}
     </div>
   );
 }
