@@ -3,13 +3,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { runCrawlChunk, runMarketTest, type CrawlChunkReport, type StoreTestReport } from "./actions";
+import { Input } from "@/components/ui/input";
+import { probeProduct, runCrawlChunk, runMarketTest, type CrawlChunkReport, type ProbeReport, type StoreTestReport } from "./actions";
 
 export function MarketTester() {
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<{ reports: StoreTestReport[]; rowsThisMonth: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [crawling, setCrawling] = useState(false);
+  const [code, setCode] = useState("7790895068096");
+  const [text, setText] = useState("coca cola zero 2.25");
+  const [probing, setProbing] = useState(false);
+  const [probe, setProbe] = useState<ProbeReport[] | null>(null);
   const [chunk, setChunk] = useState<CrawlChunkReport | null>(null);
 
   async function run() {
@@ -36,8 +41,48 @@ export function MarketTester() {
     }
   }
 
+  async function runProbe() {
+    setProbing(true);
+    setError(null);
+    try {
+      setProbe(await probeProduct(code, text));
+    } catch {
+      setError("La consulta falló. Probá de nuevo.");
+    } finally {
+      setProbing(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <div className="space-y-2 rounded-xl border border-border p-4">
+        <p className="text-sm font-semibold text-foreground">Probar un producto en vivo</p>
+        <p className="text-sm text-muted-foreground">
+          Pregunta a los 4 súper por un código de barras y por un texto, y muestra con qué código tiene ese producto cada uno. No guarda nada.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Código de barras" className="w-56" />
+          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Texto (ej. coca cola zero 2.25)" className="min-w-56 flex-1" />
+          <Button onClick={() => void runProbe()} disabled={probing}>
+            {probing ? "Consultando…" : "Consultar"}
+          </Button>
+        </div>
+        {probe && (
+          <div className="space-y-3 pt-2 text-sm">
+            {probe.map((r) => (
+              <div key={r.store} className="space-y-0.5">
+                <p className="font-semibold text-foreground">{r.store}</p>
+                <p className="text-muted-foreground">{`Por código: ${r.byCode}`}</p>
+                {r.byText.map((line, i) => (
+                  <p key={i} className="text-muted-foreground">{`· ${line}`}</p>
+                ))}
+                {r.error && <p className="text-danger">{r.error}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="space-y-2 rounded-xl border border-border p-4">
         <p className="text-sm font-semibold text-foreground">Recorrido de catálogos (marcas principales)</p>
         <p className="text-sm text-muted-foreground">

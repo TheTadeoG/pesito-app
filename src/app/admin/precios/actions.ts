@@ -6,7 +6,7 @@ import type { Database } from "@/lib/database.types";
 import { brandFilter, brandMatches } from "@/lib/market-brands";
 import { crawlStore, scanEans } from "@/lib/market-crawl";
 import {
-  categoryPageUrl, dedupeByEan, fetchJson, fetchStorePrice, leafCategories, MARKET_STORES, parseVtexCatalogPage,
+  categoryPageUrl, dedupeByEan, fetchJson, fetchStorePrice, leafCategories, MARKET_STORES, normalizeEan, parseVtexCatalogPage,
 } from "@/lib/market-prices";
 
 export interface StoreTestReport {
@@ -120,4 +120,42 @@ export async function runCrawlChunk(): Promise<CrawlChunkReport> {
   );
   const { count } = await admin.from("market_prices").select("ean", { count: "exact", head: true }).eq("month", month);
   return { stores, eans, rowsThisMonth: count ?? null };
+}
+
+export interface ProbeReport {
+  store: string;
+  byCode: string;
+  byText: string[];
+  error?: string;
+}
+
+/**
+ * Prueba un producto en vivo contra cada súper: por código de barras y por texto (para ver con qué
+ * código lo tiene cada uno). No guarda nada.
+ */
+export async function probeProduct(code: string, text: string): Promise<ProbeReport[]> {
+  await requirePlatformAdmin();
+  const ean = normalizeEan(code);
+  const q = text.trim().slice(0, 80);
+  return Promise.all(
+    MARKET_STORES.map(async (store): Promise<ProbeReport> => {
+      const r: ProbeReport = { store: store.label, byCode: "—", byText: [] };
+      try {
+        if (ean) {
+          const p = await fetchStorePrice(store, ean);
+          r.byCode = p ? `encontrado: ${p.name} — $${p.price}` : "ese código no está en este súper";
+        } else if (code.trim()) {
+          r.byCode = "código inválido (tiene que tener 8, 12, 13 o 14 dígitos)";
+        }
+        if (q) {
+          const json = await fetchJson(`https://${store.host}/api/catalog_system/pub/products/search?ft=${encodeURIComponent(q)}&_from=0&_to=5`);
+          r.byText = parseVtexCatalogPage(json).items.slice(0, 6).map((i) => `${i.ean} · ${i.name} — $${i.price}`);
+          if (r.byText.length === 0) r.byText = ["sin resultados"];
+        }
+      } catch (e) {
+        r.error = e instanceof Error ? e.message : String(e);
+      }
+      return r;
+    })
+  );
 }
