@@ -8,9 +8,9 @@ import type { Plan } from "@/lib/subscription";
 // de ser todos la misma tarjeta verde con distinto precio.
 export const planIcons: Record<Plan, LucideIcon> = {
   gratis: Sparkles,
-  esencial: Zap,
+  basico: Zap,
   pro: Crown,
-  ia: Bot,
+  max: Bot,
 };
 
 export interface PlanAccent {
@@ -31,7 +31,7 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeText: "text-muted-foreground",
     buttonVariant: "outline",
   },
-  esencial: {
+  basico: {
     iconBg: "bg-accent text-accent-foreground",
     border: "border-border",
     shadow: "",
@@ -51,7 +51,7 @@ export const planAccents: Record<Plan, PlanAccent> = {
     buttonVariant: "gold",
   },
   // IA: violeta — se distingue como el tope de gama, con onda "tecnológico".
-  ia: {
+  max: {
     iconBg: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400",
     border: "border-violet-300 dark:border-violet-500/40",
     shadow: "shadow-lg shadow-violet-500/10",
@@ -76,7 +76,7 @@ export function PlanTierBadge({ plan }: { plan: Plan }) {
         planAccents[plan].iconBg
       )}
     >
-      {plan === "ia" ? "Max" : plan}
+      {plan === "max" ? "Max" : plan}
     </span>
   );
 }

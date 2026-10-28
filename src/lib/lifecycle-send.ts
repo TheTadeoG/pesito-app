@@ -45,7 +45,7 @@ export function unsubscribeUrl(orgId: string): string {
   return `${siteUrl}/api/lifecycle/baja?o=${orgId}&t=${unsubscribeToken(orgId)}`;
 }
 
-const planInfo = (plan: "esencial" | "pro") => ({
+const planInfo = (plan: "basico" | "pro") => ({
   name: planDefinitions[plan].name,
   priceLabel: planDefinitions[plan].priceLabel,
   promoLabel: planDefinitions[plan].promoLabel,
@@ -61,7 +61,7 @@ export async function sendLifecycle(
     orgName: input.orgName,
     siteUrl,
     unsubscribeUrl: unsubscribeUrl(input.orgId),
-    plans: { esencial: planInfo("esencial"), pro: planInfo("pro") },
+    plans: { basico: planInfo("basico"), pro: planInfo("pro") },
     trialEndsAt: input.trialEndsAt,
     graceUntil: input.graceUntil,
   });

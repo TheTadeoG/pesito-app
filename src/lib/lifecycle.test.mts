@@ -73,7 +73,7 @@ const ctx = {
   orgName: "Kiosco Tadeo",
   siteUrl: "https://www.pesito.com.ar",
   unsubscribeUrl: "https://www.pesito.com.ar/api/lifecycle/baja?o=x&t=y",
-  plans: { esencial: { name: "Plan Básico", priceLabel: "$17.000", promoLabel: "$15.000" }, pro: { name: "Plan Pro", priceLabel: "$29.000" } },
+  plans: { basico: { name: "Plan Básico", priceLabel: "$17.000", promoLabel: "$15.000" }, pro: { name: "Plan Pro", priceLabel: "$29.000" } },
   trialEndsAt: iso(2 * DAY),
   graceUntil: iso(5 * DAY),
 };

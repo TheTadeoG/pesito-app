@@ -1,3 +1,4 @@
+import { normalizePlanParam } from "@/lib/plan-ids";
 import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { type NextRequest } from "next/server";
 import { cookies } from "next/headers";
@@ -46,8 +47,8 @@ export async function GET(request: NextRequest) {
 
         // Plan pago elegido en precios antes de venir con Google: se guarda en la
         // cuenta (igual que en el registro con email) para cobrarlo al crear el negocio.
-        const plan = searchParams.get("plan");
-        if (plan && ["esencial", "pro", "ia"].includes(plan) && !user.user_metadata?.selected_plan) {
+        const plan = normalizePlanParam(searchParams.get("plan"));
+        if (plan && ["basico", "pro", "max"].includes(plan) && !user.user_metadata?.selected_plan) {
           await supabase.auth.updateUser({
             data: { selected_plan: plan, selected_cycle: searchParams.get("cycle") === "anual" ? "anual" : "mensual" },
           });

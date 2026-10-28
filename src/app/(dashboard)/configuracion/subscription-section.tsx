@@ -44,7 +44,7 @@ export function SubscriptionSection({
   // Agrupadas por plan: la prueba es del Pro, que incluye lo del Básico.
   // Así se ve que parte de lo que se usa se conserva con el plan más barato.
   const trialGroups: { plan: Plan; features: string[] }[] = subscription.trialActive
-    ? (["esencial", "pro"] as const).map((plan) => ({ plan, features: getPlanOwnFeatures(plan) }))
+    ? (["basico", "pro"] as const).map((plan) => ({ plan, features: getPlanOwnFeatures(plan) }))
     : [];
 
   const trialDaysLeft =
@@ -177,7 +177,7 @@ export function SubscriptionSection({
                         </span>
                       </div>
                       <p className="-mt-1 text-sm text-muted-foreground">
-                        {group.plan === "esencial" ? "Conservás:" : "Conservás todo lo del Plan Básico, más:"}
+                        {group.plan === "basico" ? "Conservás:" : "Conservás todo lo del Plan Básico, más:"}
                       </p>
                       <ul className="flex-1 space-y-1.5">
                         {group.features.map((feature) => (

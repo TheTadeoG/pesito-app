@@ -1,3 +1,4 @@
+import { normalizePlanParam } from "@/lib/plan-ids";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
@@ -113,8 +114,8 @@ export async function updateSession(request: NextRequest) {
     if (!params.get("error") && !params.get("restablecida")) {
       const url = request.nextUrl.clone();
       url.search = "";
-      const plan = params.get("plan");
-      if (request.nextUrl.pathname === "/registro" && (plan === "esencial" || plan === "pro" || plan === "ia")) {
+      const plan = normalizePlanParam(params.get("plan"));
+      if (request.nextUrl.pathname === "/registro" && (plan === "basico" || plan === "pro" || plan === "max")) {
         url.pathname = "/suscribirse";
         url.searchParams.set("plan", plan);
         url.searchParams.set("ciclo", params.get("anual") === "1" ? "anual" : "mensual");

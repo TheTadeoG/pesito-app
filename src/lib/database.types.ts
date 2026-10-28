@@ -619,7 +619,7 @@ export interface Database {
       organization_subscriptions: {
         Row: {
           org_id: string;
-          plan: "gratis" | "esencial" | "pro" | "ia";
+          plan: "gratis" | "basico" | "pro" | "max";
           pro_trial_ends_at: string | null;
           updated_at: string;
           billing_cycle?: "mensual" | "anual" | null;
@@ -628,12 +628,12 @@ export interface Database {
           current_period_end?: string | null;
           grace_until?: string | null;
           payer_email?: string | null;
-          grace_plan?: "esencial" | "pro" | "ia" | null;
+          grace_plan?: "basico" | "pro" | "max" | null;
           plan_grace_until?: string | null;
         };
         Insert: {
           org_id: string;
-          plan?: "gratis" | "esencial" | "pro" | "ia";
+          plan?: "gratis" | "basico" | "pro" | "max";
           pro_trial_ends_at?: string | null;
           updated_at?: string;
           billing_cycle?: "mensual" | "anual" | null;
@@ -642,7 +642,7 @@ export interface Database {
           current_period_end?: string | null;
           grace_until?: string | null;
           payer_email?: string | null;
-          grace_plan?: "esencial" | "pro" | "ia" | null;
+          grace_plan?: "basico" | "pro" | "max" | null;
           plan_grace_until?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
@@ -700,16 +700,16 @@ export interface Database {
         Row: {
           id: string;
           org_id: string;
-          from_plan: "gratis" | "esencial" | "pro" | "ia";
-          to_plan: "gratis" | "esencial" | "pro" | "ia";
+          from_plan: "gratis" | "basico" | "pro" | "max";
+          to_plan: "gratis" | "basico" | "pro" | "max";
           changed_by: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           org_id: string;
-          from_plan: "gratis" | "esencial" | "pro" | "ia";
-          to_plan: "gratis" | "esencial" | "pro" | "ia";
+          from_plan: "gratis" | "basico" | "pro" | "max";
+          to_plan: "gratis" | "basico" | "pro" | "max";
           changed_by?: string | null;
           created_at?: string;
         };

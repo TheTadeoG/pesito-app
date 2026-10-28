@@ -88,7 +88,7 @@ export function PeriodSelector({
         >
           <CalendarRange className="h-3.5 w-3.5" />
           {query.period === "custom" ? rangeLabel : "Personalizado"}
-          {!canCustomRange && <PlanPill plan="esencial" />}
+          {!canCustomRange && <PlanPill plan="basico" />}
         </button>
       </div>
 
@@ -164,7 +164,7 @@ export function PeriodSelector({
             </div>
           </form>
         ) : (
-          <PlanLockNote plan="esencial">
+          <PlanLockNote plan="basico">
             Con el Plan Básico elegís las fechas que quieras: del 1 al 15 del mes, una temporada o
             un fin de semana largo.
           </PlanLockNote>

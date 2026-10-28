@@ -518,7 +518,7 @@ export function ProveedoresClient({
           )}
         </div>
       ) : (
-        <PlanLockNote plan="esencial">
+        <PlanLockNote plan="basico">
           Con el Plan Básico llevás la cuenta corriente con cada proveedor: cuánto les debés, cuándo
           vence cada compra, pagos parciales y el calendario de vencimientos.
         </PlanLockNote>

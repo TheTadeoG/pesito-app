@@ -1,5 +1,6 @@
 "use server";
 
+import { normalizePlanParam } from "@/lib/plan-ids";
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWelcome } from "@/lib/lifecycle-send";
@@ -72,8 +73,8 @@ export async function createKiosco(
   after(() => sendWelcome(createAdminClient(), slug, user.email));
 
   // Eligió un plan pago en precios: primero se cobra, después entra.
-  const selectedPlan = user.user_metadata?.selected_plan;
-  if (typeof selectedPlan === "string" && ["esencial", "pro", "ia"].includes(selectedPlan)) {
+  const selectedPlan = normalizePlanParam(user.user_metadata?.selected_plan);
+  if (typeof selectedPlan === "string" && ["basico", "pro", "max"].includes(selectedPlan)) {
     const cycle = user.user_metadata?.selected_cycle === "anual" ? "anual" : "mensual";
     redirect(`/suscribirse?plan=${selectedPlan}&ciclo=${cycle}&desde=alta`);
   }

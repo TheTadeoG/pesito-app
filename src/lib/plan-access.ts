@@ -44,42 +44,42 @@ export type PlanFeature =
 
 /** Plan mínimo que habilita cada función (los planes superiores la heredan). */
 export const featureMinPlan: Record<PlanFeature, Plan> = {
-  stockManagement: "esencial",
-  supplierAccounts: "esencial",
+  stockManagement: "basico",
+  supplierAccounts: "basico",
   bulkPriceChanges: "pro",
   priceRevert: "pro",
   profitReports: "pro",
-  customReportRange: "esencial",
+  customReportRange: "basico",
   liveView: "pro",
-  teamReports: "esencial",
+  teamReports: "basico",
   cashHistory: "pro",
-  branches: "ia",
-  productBundles: "esencial",
-  productVariants: "esencial",
-  productImport: "esencial",
-  customerImport: "esencial",
-  barcodeLabels: "esencial",
+  branches: "max",
+  productBundles: "basico",
+  productVariants: "basico",
+  productImport: "basico",
+  customerImport: "basico",
+  barcodeLabels: "basico",
   promotions: "pro",
   scales: "pro",
   onlineCatalog: "pro",
   priceSigns: "pro",
   physicalInventory: "pro",
   userActivity: "pro",
-  aiReports: "ia",
-  priceSuggestions: "ia",
-  marketAnalysis: "ia",
+  aiReports: "max",
+  priceSuggestions: "max",
+  marketAnalysis: "max",
   // Factura electrónica con ARCA (cada negocio con su CUIT y su certificado).
-  electronicInvoicing: "esencial",
+  electronicInvoicing: "basico",
   // Precios de supermercados por código de barras: verlos es Pro; la sugerencia de precio y los
   // avisos de caro/barato contra ellos, Plan Max.
   supermarketPrices: "pro",
-  marketPriceInsights: "ia",
-  restockRecommendations: "ia",
-  lowRotation: "ia",
+  marketPriceInsights: "max",
+  restockRecommendations: "max",
+  lowRotation: "max",
   // Los avisos básicos (stock bajo, venta a pérdida, números para revisar, fiado,
   // proveedores, caja y plan) son de todos los planes.
-  alertSettings: "esencial",
-  marginAlerts: "esencial",
+  alertSettings: "basico",
+  marginAlerts: "basico",
   costRiseAlert: "pro",
 };
 
@@ -130,9 +130,9 @@ export interface PlanLimits {
 
 export const planLimits: Record<Plan, PlanLimits> = {
   gratis: { users: 1, openRegisters: 1, branches: 1, products: PRODUCT_LIMITS.gratis },
-  esencial: { users: 2, openRegisters: 2, branches: 1, products: PRODUCT_LIMITS.esencial },
+  basico: { users: 2, openRegisters: 2, branches: 1, products: PRODUCT_LIMITS.basico },
   pro: { users: 6, openRegisters: 6, branches: 1, products: PRODUCT_LIMITS.pro },
-  ia: { users: 6, openRegisters: 6, branches: 2, products: PRODUCT_LIMITS.ia },
+  max: { users: 6, openRegisters: 6, branches: 2, products: PRODUCT_LIMITS.max },
 };
 
 /** Plan con el que funciona hoy el negocio: la prueba Pro cuenta como Pro. */

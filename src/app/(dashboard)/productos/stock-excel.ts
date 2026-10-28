@@ -25,7 +25,7 @@ export interface ExcelColumn {
   label: string;
   width: number;
   /** Sólo con el Plan Max (necesita las ventas por producto). */
-  ia?: boolean;
+  max?: boolean;
   cell: (r: StockRow) => Cell;
 }
 
@@ -43,7 +43,7 @@ export const EXCEL_COLUMNS: ExcelColumn[] = [
     id: "days",
     label: "Alcanza para (días)",
     width: 20,
-    ia: true,
+    max: true,
     // Sin ventas en el período no se puede estimar: la celda queda vacía.
     cell: (r) => num(r.daysLeft === null || r.daysLeft === undefined ? null : Math.floor(r.daysLeft), "#,##0"),
   },
@@ -60,7 +60,7 @@ export const EXCEL_COLUMNS: ExcelColumn[] = [
  */
 export async function downloadStockExcel(rows: readonly StockRow[], withCover: boolean, columnIds?: readonly string[]) {
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
-  const columns = EXCEL_COLUMNS.filter((c) => (withCover || !c.ia) && (!columnIds || columnIds.includes(c.id)));
+  const columns = EXCEL_COLUMNS.filter((c) => (withCover || !c.max) && (!columnIds || columnIds.includes(c.id)));
   const header: Cell[] = [
     { value: "Producto", fontWeight: "bold", backgroundColor: "#e5e7eb" },
     ...columns.map((c) => ({ value: c.label, fontWeight: "bold" as const, backgroundColor: "#e5e7eb" })),

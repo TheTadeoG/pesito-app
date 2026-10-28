@@ -1,5 +1,6 @@
 "use server";
 
+import { normalizePlanParam } from "@/lib/plan-ids";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -118,8 +119,8 @@ export async function signup(
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
   // Plan pago elegido en precios: se guarda en la cuenta para cobrarlo
   // apenas se cree el negocio (sobrevive a la confirmación por email).
-  const selectedPlan = String(formData.get("plan") ?? "");
-  const paidPlan = ["esencial", "pro", "ia"].includes(selectedPlan) ? selectedPlan : null;
+  const selectedPlan = String(normalizePlanParam(String(formData.get("plan") ?? "")));
+  const paidPlan = ["basico", "pro", "max"].includes(selectedPlan) ? selectedPlan : null;
   const selectedCycle = formData.get("cycle") === "anual" ? "anual" : "mensual";
 
   if (!email || !password || !firstName || !lastName || !phone || !businessName) {
@@ -285,10 +286,10 @@ export async function signInWithGoogle(formData: FormData): Promise<void> {
   if (ipLimit) redirect("/login?error=demasiados");
 
   const next = safeNextPath(String(formData.get("next") ?? ""), "/pos");
-  const plan = String(formData.get("plan") ?? "");
+  const plan = String(normalizePlanParam(String(formData.get("plan") ?? "")));
   const cycle = formData.get("cycle") === "anual" ? "anual" : "mensual";
   const params = new URLSearchParams({ next });
-  if (["esencial", "pro", "ia"].includes(plan)) {
+  if (["basico", "pro", "max"].includes(plan)) {
     params.set("plan", plan);
     params.set("cycle", cycle);
   }

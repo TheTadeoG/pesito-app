@@ -36,7 +36,7 @@ export interface BillingActionResult {
   checkoutId?: string;
 }
 
-const PAID: Plan[] = ["esencial", "pro", "ia"];
+const PAID: Plan[] = ["basico", "pro", "max"];
 
 /**
  * Arma el pago en Mercado Pago y devuelve el link (se abre en la misma pestaña):

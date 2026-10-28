@@ -1,3 +1,4 @@
+import { normalizePlanParam } from "@/lib/plan-ids";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   cancelPreapproval,
@@ -25,7 +26,7 @@ import type { Database, Json } from "@/lib/database.types";
 // escritura para los usuarios).
 
 export const GRACE_DAYS = 7;
-const PAID_PLANS: Plan[] = ["esencial", "pro", "ia"];
+const PAID_PLANS: Plan[] = ["basico", "pro", "max"];
 
 /** Monto de cada cobro: el mensual, o 12 meses con el descuento anual. */
 export function chargeAmount(plan: Plan, cycle: BillingCycle): number {
@@ -71,7 +72,8 @@ export function parseExternalReference(
   ref: string | null | undefined
 ): { orgId: string; plan: Plan; cycle: BillingCycle; oneTime: boolean } | null {
   if (!ref) return null;
-  const [orgId, plan, cycle, tag] = String(ref).split("|");
+  const [orgId, rawPlan, cycle, tag] = String(ref).split("|");
+  const plan = normalizePlanParam(rawPlan); // referencias de antes del cambio de nombres (esencial/ia)
   if (!/^[0-9a-f-]{36}$/i.test(orgId ?? "")) return null;
   if (!PAID_PLANS.includes(plan as Plan)) return null;
   if (cycle !== "mensual" && cycle !== "anual") return null;
@@ -106,7 +108,7 @@ function downgradeGraceFields(current: SubscriptionRow | null, newPlan: Plan) {
   const had: Plan = activeGrace?.plan ?? (lapsedToFree(current, now) ? "gratis" : current.plan);
   if (had !== "gratis" && planOrder.indexOf(newPlan) < planOrder.indexOf(had)) {
     return {
-      grace_plan: had as "esencial" | "pro" | "ia",
+      grace_plan: had as "basico" | "pro" | "max",
       plan_grace_until:
         activeGrace?.until ?? new Date(now.getTime() + PLAN_GRACE_DAYS * 24 * 60 * 60 * 1000).toISOString(),
     };

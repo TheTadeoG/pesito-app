@@ -42,9 +42,9 @@ export const FREE_PLAN_SALES_LIMIT_LABEL = "150 ventas por mes";
  */
 export const PRODUCT_LIMITS: Record<Plan, number> = {
   gratis: 1000,
-  esencial: 4000,
+  basico: 4000,
   pro: 12000,
-  ia: 20000,
+  max: 20000,
 };
 
 /** "4.000" (a mano: igual en el servidor y en el navegador). */
@@ -76,8 +76,8 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       `1 usuario, 1 caja y hasta ${products("gratis")}`,
     ],
   },
-  esencial: {
-    plan: "esencial",
+  basico: {
+    plan: "basico",
     name: "Plan Básico",
     price: 17000,
     priceLabel: "$17.000",
@@ -94,7 +94,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Control de caja por empleado",
       "Carga masiva de productos y clientes con Excel",
       "Códigos de barras propios y etiquetas para imprimir",
-      `Hasta ${products("esencial")}, 2 usuarios y 2 cajas`,
+      `Hasta ${products("basico")}, 2 usuarios y 2 cajas`,
     ],
     soon: [
       "Talles, combos y kits",
@@ -127,8 +127,8 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Ofertas y promociones",
     ],
   },
-  ia: {
-    plan: "ia",
+  max: {
+    plan: "max",
     name: "Plan Max",
     price: 34000,
     priceLabel: "$34.000",
@@ -138,7 +138,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
     badge: "Con IA",
     features: [
       "Todas las funciones del Plan Pro +",
-      `Hasta ${products("ia")} y 2 sucursales, cada una con su stock`,
+      `Hasta ${products("max")} y 2 sucursales, cada una con su stock`,
       "Soporte prioritario 24/7",
       "Sugerencia de precios cuando sube el costo",
       "Qué reponer y cuánto, con el pedido para WhatsApp",
@@ -154,9 +154,9 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
 // y en Configuración. El Plan Gratis (planDefinitions.gratis) se maneja
 // aparte porque no tiene CTA de "pasarse" — es el punto de partida.
 export const paidPlanDefinitions: PlanDefinition[] = [
-  planDefinitions.esencial,
+  planDefinitions.basico,
   planDefinitions.pro,
-  planDefinitions.ia,
+  planDefinitions.max,
 ];
 
 /**
@@ -177,10 +177,10 @@ export interface ComparisonRow {
   values: Record<Plan, ComparisonValue>;
 }
 
-const everyPlan: Record<Plan, ComparisonValue> = { gratis: true, esencial: true, pro: true, ia: true };
-const fromEsencial: Record<Plan, ComparisonValue> = { gratis: false, esencial: true, pro: true, ia: true };
-const onlyIa: Record<Plan, ComparisonValue> = { gratis: false, esencial: false, pro: false, ia: true };
-const fromPro: Record<Plan, ComparisonValue> = { gratis: false, esencial: false, pro: true, ia: true };
+const everyPlan: Record<Plan, ComparisonValue> = { gratis: true, basico: true, pro: true, max: true };
+const fromBasico: Record<Plan, ComparisonValue> = { gratis: false, basico: true, pro: true, max: true };
+const onlyMax: Record<Plan, ComparisonValue> = { gratis: false, basico: false, pro: false, max: true };
+const fromPro: Record<Plan, ComparisonValue> = { gratis: false, basico: false, pro: true, max: true };
 
 // Tabla de /comparar-planes, agrupada por tema. Tiene que decir lo mismo que
 // las features de cada plan de arriba: si cambia una, cambiar la otra.
@@ -190,20 +190,20 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     rows: [
       {
         label: "Ventas por mes",
-        values: { gratis: "150", esencial: "Ilimitadas", pro: "Ilimitadas", ia: "Ilimitadas" },
+        values: { gratis: "150", basico: "Ilimitadas", pro: "Ilimitadas", max: "Ilimitadas" },
       },
-      { label: "Usuarios", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
+      { label: "Usuarios", values: { gratis: "1", basico: "2", pro: "6", max: "6" } },
       {
         label: "Productos activos",
         values: {
           gratis: thousands(PRODUCT_LIMITS.gratis),
-          esencial: thousands(PRODUCT_LIMITS.esencial),
+          basico: thousands(PRODUCT_LIMITS.basico),
           pro: thousands(PRODUCT_LIMITS.pro),
-          ia: thousands(PRODUCT_LIMITS.ia),
+          max: thousands(PRODUCT_LIMITS.max),
         },
       },
-      { label: "Cajas", values: { gratis: "1", esencial: "2", pro: "6", ia: "6" } },
-      { label: "Sucursales", values: { gratis: "1", esencial: "1", pro: "1", ia: "2" } },
+      { label: "Cajas", values: { gratis: "1", basico: "2", pro: "6", max: "6" } },
+      { label: "Sucursales", values: { gratis: "1", basico: "1", pro: "1", max: "2" } },
     ],
   },
   {
@@ -215,31 +215,31 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Ticket de venta (no fiscal)", values: everyPlan },
       {
         label: "Generar e imprimir códigos de barras para productos que no tienen",
-        values: fromEsencial,
+        values: fromBasico,
       },
       {
         label: "Balanzas conectadas",
-        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
       },
       {
         label: "Carteles de precios para imprimir, siempre actualizados",
-        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
       },
       {
         label: "Catálogo online",
-        values: { gratis: false, esencial: false, pro: "Pronto (1)", ia: "Pronto (1)" },
+        values: { gratis: false, basico: false, pro: "Pronto (1)", max: "Pronto (1)" },
       },
       {
         label: "Combos y kits",
-        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: "Pronto", pro: "Pronto", max: "Pronto" },
       },
       {
         label: "Talles y colores (variantes)",
-        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: "Pronto", pro: "Pronto", max: "Pronto" },
       },
       {
         label: "Ofertas y promociones",
-        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
       },
     ],
   },
@@ -249,45 +249,45 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Stock que se actualiza con cada venta y compra", values: everyPlan },
       {
         label: "Carga masiva de productos desde Excel, con costos y precios",
-        values: fromEsencial,
+        values: fromBasico,
       },
       {
         label: "Carga masiva de clientes desde Excel (y bajar tu lista de clientes con lo que te deben)",
-        values: fromEsencial,
+        values: fromBasico,
       },
-      { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromEsencial },
+      { label: "Stock mínimo, aviso de faltantes y lista para reponer", values: fromBasico },
       { label: "Bajar tu lista de productos a una planilla de Excel (elegís qué productos y qué columnas)", values: everyPlan },
       { label: "Corregir costo y stock mínimo desde la lista y filtrar por estado del stock", values: everyPlan },
-      { label: "Historial de movimientos de stock", values: fromEsencial },
+      { label: "Historial de movimientos de stock", values: fromBasico },
       {
         label: "Avisos en la campana y en cada módulo (stock bajo, venta a pérdida, números para revisar, fiado, proveedores y caja), con urgentes y \"visto\"",
         values: everyPlan,
       },
-      { label: "Configurar los avisos, y avisos de margen bajo y de costos sin actualizar", values: fromEsencial },
+      { label: "Configurar los avisos, y avisos de margen bajo y de costos sin actualizar", values: fromBasico },
       { label: "Aviso cuando sube el costo y no actualizaste el precio", values: fromPro },
-      { label: "Aviso de plata parada en productos que no se venden", values: onlyIa },
+      { label: "Aviso de plata parada en productos que no se venden", values: onlyMax },
       {
         label: "Precios de supermercados (Carrefour, Jumbo, Disco y Vea) de tus productos con código de barras, actualizados una vez por mes",
-        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
       },
       {
         label: "Precio sugerido y avisos de si estás caro o barato frente a los supermercados",
-        values: { gratis: false, esencial: false, pro: false, ia: "Pronto" },
+        values: { gratis: false, basico: false, pro: false, max: "Pronto" },
       },
       {
         label: "Inventarios físicos: contás y el stock se ajusta solo",
-        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
       },
       { label: "Compras a proveedores", values: everyPlan },
       {
         label: "Factura electrónica con ARCA (con tu CUIT y tu certificado): Factura A, B o C con CAE, en ticket de 80 mm o A4",
-        values: { gratis: false, esencial: "Pronto", pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: "Pronto", pro: "Pronto", max: "Pronto" },
       },
       { label: "Historial de precios de cada producto", values: everyPlan },
-      { label: "Cuenta corriente con proveedores (vencimientos y calendario)", values: fromEsencial },
+      { label: "Cuenta corriente con proveedores (vencimientos y calendario)", values: fromBasico },
       { label: "Aumentos masivos de precios y costos, con deshacer", values: fromPro },
       { label: "Volver a un precio o costo anterior desde el historial", values: fromPro },
-      { label: "Pases de mercadería entre sucursales", values: onlyIa },
+      { label: "Pases de mercadería entre sucursales", values: onlyMax },
     ],
   },
   {
@@ -295,15 +295,15 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
     rows: [
       { label: "Caja diaria con cierre y arqueo", values: everyPlan },
       { label: "Clientes con fiado (cuenta corriente)", values: everyPlan },
-      { label: "Reportes con fechas a medida", values: fromEsencial },
+      { label: "Reportes con fechas a medida", values: fromBasico },
       { label: "Comparar con el período anterior o el año pasado", values: fromPro },
       { label: "En vivo: ventas del momento por sucursal y vendedor", values: fromPro },
-      { label: "Ventas y diferencias de caja por empleado", values: fromEsencial },
-      { label: "Avisos de faltantes y sobrantes al cerrar la caja, y de faltantes que se repiten", values: fromEsencial },
+      { label: "Ventas y diferencias de caja por empleado", values: fromBasico },
+      { label: "Avisos de faltantes y sobrantes al cerrar la caja, y de faltantes que se repiten", values: fromBasico },
       { label: "Historial completo de caja", values: fromPro },
       {
         label: "Control por usuario: todos sus movimientos de stock, caja y diferencias",
-        values: { gratis: false, esencial: false, pro: "Pronto", ia: "Pronto" },
+        values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
       },
     ],
   },
@@ -315,19 +315,19 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Comparación con el período anterior", values: fromPro },
       {
         label: "Ganancias separadas por sucursal",
-        values: onlyIa,
+        values: onlyMax,
       },
     ],
   },
   {
     title: "Soporte e inteligencia artificial",
     rows: [
-      { label: "Soporte prioritario", values: { gratis: false, esencial: false, pro: true, ia: "24/7" } },
-      { label: "Sugerencia de precios", values: onlyIa },
-      { label: "Recomendaciones de reposición", values: onlyIa },
-      { label: "Detección de productos de baja rotación", values: onlyIa },
-      { label: "Resumen escrito de cada período en Reportes", values: onlyIa },
-      { label: "Novedades y precios de referencia de tu rubro", values: onlyIa },
+      { label: "Soporte prioritario", values: { gratis: false, basico: false, pro: true, max: "24/7" } },
+      { label: "Sugerencia de precios", values: onlyMax },
+      { label: "Recomendaciones de reposición", values: onlyMax },
+      { label: "Detección de productos de baja rotación", values: onlyMax },
+      { label: "Resumen escrito de cada período en Reportes", values: onlyMax },
+      { label: "Novedades y precios de referencia de tu rubro", values: onlyMax },
     ],
   },
 ];

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
 import { chargeAmount, firstChargeAmount, isPromoEligible, type PaymentMethod } from "@/lib/billing";
+import { normalizePlanParam } from "@/lib/plan-ids";
 import { getPlanOwnFeatures } from "@/lib/plan-features";
 import { CheckoutView } from "@/app/suscribirse/checkout-view";
 
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const PAID: Plan[] = ["esencial", "pro", "ia"];
+const PAID: Plan[] = ["basico", "pro", "max"];
 
 function addMonths(date: Date, months: number) {
   const d = new Date(date);
@@ -45,7 +46,7 @@ export default async function SuscribirsePage({
   const { organization, membership } = await requireOrgContext();
   if (!isOrgAdmin(membership.role)) redirect("/planes");
 
-  const plan = PAID.find((p) => p === planParam);
+  const plan = PAID.find((p) => p === normalizePlanParam(planParam));
   if (!plan) redirect("/planes");
   const cycle: BillingCycle = ciclo === "anual" ? "anual" : "mensual";
   const method: PaymentMethod = metodo === "unico" ? "unico" : "debito";

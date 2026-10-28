@@ -751,7 +751,7 @@ export function ProductosClient({
                   ))}
                 </Select>
                 {stockAlertsLocked && (
-                  <PlanLockNote plan="esencial" className="mt-2" cta="Ver el Plan Básico">
+                  <PlanLockNote plan="basico" className="mt-2" cta="Ver el Plan Básico">
                     Filtrá por sin stock, por agotarse y sin mínimo.
                   </PlanLockNote>
                 )}
@@ -1257,7 +1257,7 @@ export function ProductosClient({
                 Ningún producto está por debajo de su stock mínimo.
               </p>
             ) : stockAlertsLocked ? (
-              <PlanLockNote plan="esencial">
+              <PlanLockNote plan="basico">
                 {`${lowStockProducts.length === 1 ? "Hay 1 producto" : `Hay ${lowStockProducts.length} productos`} por debajo del stock mínimo. Con el Plan Básico ves cuáles son y te avisamos a tiempo para reponer.`}
               </PlanLockNote>
             ) : (
@@ -1314,7 +1314,7 @@ export function ProductosClient({
                   </Link>
                 </div>
                 {restockLocked && (
-                  <PlanLockNote plan="ia">
+                  <PlanLockNote plan="max">
                     Con el Plan Max ves cuánto comprar de cada producto y a qué proveedor, con el pedido
                     listo para mandar por WhatsApp.
                   </PlanLockNote>

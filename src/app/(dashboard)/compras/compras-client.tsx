@@ -94,7 +94,7 @@ function paymentMethodOptionsWithCustom(
       value: "cuenta_corriente" as const,
       label: "Cuenta corriente",
       icon: Wallet,
-      lockedPlan: allowAccount ? undefined : ("esencial" as const),
+      lockedPlan: allowAccount ? undefined : ("basico" as const),
     },
   ];
 }

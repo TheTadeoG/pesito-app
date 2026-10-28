@@ -21,7 +21,7 @@ export const metadata = pageMetadata({
   path: "/comparar-planes",
 });
 
-const columns = [planDefinitions.gratis, planDefinitions.esencial, planDefinitions.pro, planDefinitions.ia];
+const columns = [planDefinitions.gratis, planDefinitions.basico, planDefinitions.pro, planDefinitions.max];
 const highlighted = "pro";
 const planFaqs = faqCategories.find((c) => c.title === "Empezar y planes")?.faqs ?? [];
 

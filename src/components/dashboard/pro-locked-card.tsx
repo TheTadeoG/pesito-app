@@ -12,9 +12,9 @@ import { planLabels, type Plan } from "@/lib/subscription";
 /** Color de cada plan (el mismo de las tarjetas de planes y la barra lateral). */
 export const planTone: Record<Plan, string> = {
   gratis: "bg-muted text-muted-foreground",
-  esencial: "bg-primary/10 text-primary",
+  basico: "bg-primary/10 text-primary",
   pro: "bg-amber-500/15 text-amber-600",
-  ia: "bg-violet-500/15 text-violet-500",
+  max: "bg-violet-500/15 text-violet-500",
 };
 
 /** Link a la pantalla de pago del plan (a quien no es dueño/admin lo manda a Planes). */

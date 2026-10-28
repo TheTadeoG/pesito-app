@@ -14,7 +14,7 @@ export interface LifecycleContext {
   siteUrl: string;
   /** Link para no recibir más estos correos. */
   unsubscribeUrl: string;
-  plans: { esencial: PlanInfo; pro: PlanInfo };
+  plans: { basico: PlanInfo; pro: PlanInfo };
   trialEndsAt?: string | null;
   graceUntil?: string | null;
 }
@@ -82,7 +82,7 @@ export function renderLifecycleEmail(template: LifecycleTemplate, ctx: Lifecycle
           .join("\n"),
       };
     case "trial_ending": {
-      const e = ctx.plans.esencial;
+      const e = ctx.plans.basico;
       return {
         subject: `Tu prueba del Plan Pro termina el ${date(ctx.trialEndsAt)}`,
         text: lines(

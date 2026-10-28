@@ -30,7 +30,7 @@ import { useMercadoPagoCheckout } from "@/app/(dashboard)/configuracion/use-mp-c
 // los textos con los colores del tema se leen bien en claro y en oscuro.
 const themes: Record<Plan, { panel: string; icon: string; tick: string }> = {
   gratis: { panel: "", icon: "", tick: "" },
-  esencial: {
+  basico: {
     panel: "from-emerald-500/20 via-emerald-500/10 to-teal-500/5",
     icon: "bg-primary text-primary-foreground shadow-primary/30",
     tick: "bg-emerald-500/20 text-emerald-600",
@@ -40,14 +40,14 @@ const themes: Record<Plan, { panel: string; icon: string; tick: string }> = {
     icon: "bg-amber-500 text-amber-950 shadow-amber-500/30",
     tick: "bg-amber-500/20 text-amber-600",
   },
-  ia: {
+  max: {
     panel: "from-violet-500/25 via-violet-500/10 to-fuchsia-500/5",
     icon: "bg-violet-500 text-white shadow-violet-500/30",
     tick: "bg-violet-500/20 text-violet-500",
   },
 };
 
-const previousPlan: Partial<Record<Plan, string>> = { esencial: "Gratis", pro: "Básico", ia: "Pro" };
+const previousPlan: Partial<Record<Plan, string>> = { basico: "Gratis", pro: "Básico", max: "Pro" };
 
 export interface CheckoutViewProps {
   plan: Plan;

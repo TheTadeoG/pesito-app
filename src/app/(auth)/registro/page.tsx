@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SignupForm } from "@/app/(auth)/registro/signup-form";
 import { CheckoutSummary } from "@/app/(auth)/registro/checkout-summary";
+import { normalizePlanParam } from "@/lib/plan-ids";
 import { planDefinitions } from "@/lib/plan-features";
 import type { Plan } from "@/lib/subscription";
 import { siteUrl } from "@/lib/utils";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/registro", languages: { "es-AR": `${siteUrl}/registro` } },
 };
 
-const CHECKOUT_PLANS = ["esencial", "pro", "ia"] as const;
+const CHECKOUT_PLANS = ["basico", "pro", "max"] as const;
 
 function resolvePlan(value: string | undefined): Plan | null {
   return CHECKOUT_PLANS.includes(value as (typeof CHECKOUT_PLANS)[number])
@@ -27,7 +28,7 @@ export default async function RegistroPage({
   searchParams: Promise<{ plan?: string; anual?: string }>;
 }) {
   const { plan: planParam, anual } = await searchParams;
-  const plan = resolvePlan(planParam);
+  const plan = resolvePlan(normalizePlanParam(planParam));
 
   if (plan) {
     const planName = planDefinitions[plan].name;

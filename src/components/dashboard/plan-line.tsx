@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 // Color del texto de cada plan (el mismo acento que en precios).
 const planTagColors: Record<Plan, string> = {
   gratis: "text-muted-foreground",
-  esencial: "text-primary",
+  basico: "text-primary",
   pro: "text-amber-600",
-  ia: "text-violet-500",
+  max: "text-violet-500",
 };
 
 /** Plan actual, discreto: ícono y nombre con el color del plan. */

@@ -136,7 +136,7 @@ export function AlertSettingsManager({
         Los avisos aparecen en la campana, en el menú lateral y arriba de cada módulo. Un aviso apagado no se calcula ni se cuenta.
       </p>
       {!canConfigure && (
-        <PlanLockNote plan="esencial" cta="Ver el Plan Básico">
+        <PlanLockNote plan="basico" cta="Ver el Plan Básico">
           Prendé y apagá cada aviso y elegí desde qué margen o cuántos días te avisamos. Hoy tenés los avisos básicos con valores estándar.
         </PlanLockNote>
       )}

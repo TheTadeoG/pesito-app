@@ -58,7 +58,7 @@ const columns = [
   {
     id: "pesito" as const,
     label: "Pesito",
-    price: `Desde ${planDefinitions.esencial.priceLabel}/mes`,
+    price: `Desde ${planDefinitions.basico.priceLabel}/mes`,
     priceSub: "y un plan gratis para arrancar",
   },
   {

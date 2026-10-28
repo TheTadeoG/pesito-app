@@ -2,17 +2,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { argDateString, argMidnightUTC } from "@/lib/timezone";
 
-export type Plan = "gratis" | "esencial" | "pro" | "ia";
+export type Plan = "gratis" | "basico" | "pro" | "max";
 
 export const planLabels: Record<Plan, string> = {
   gratis: "Gratis",
-  esencial: "Básico",
+  basico: "Básico",
   pro: "Pro",
-  ia: "Max",
+  max: "Max",
 };
 
 // Mismos planes y orden que la página de precios (src/components/marketing/pricing.tsx).
-export const planOrder: Plan[] = ["gratis", "esencial", "pro", "ia"];
+export const planOrder: Plan[] = ["gratis", "basico", "pro", "max"];
 
 export type BillingCycle = "mensual" | "anual";
 export type PaymentStatus = "active" | "past_due" | "cancelled";
@@ -134,7 +134,7 @@ export async function getSubscription(
   return {
     plan,
     proTrialEndsAt,
-    hasProAccess: plan === "pro" || plan === "ia" || trialActive,
+    hasProAccess: plan === "pro" || plan === "max" || trialActive,
     trialActive,
     billing:
       data && data.payment_status

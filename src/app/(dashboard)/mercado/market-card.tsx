@@ -43,7 +43,7 @@ export function MarketTable({ rows, showMine, insights }: { rows: MarketCardData
               <th key={s.id} className="px-3 py-2.5 text-right">{s.label}</th>
             ))}
             {showMine && (
-              <th className="px-3 py-2.5 text-right">{insights ? "Vs. súper" : <PlanPill plan="ia" />}</th>
+              <th className="px-3 py-2.5 text-right">{insights ? "Vs. súper" : <PlanPill plan="max" />}</th>
             )}
           </tr>
         </thead>

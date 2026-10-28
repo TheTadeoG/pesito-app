@@ -10,7 +10,7 @@ export interface FaqCategory {
   faqs: Faq[];
 }
 
-const { esencial, pro, ia } = planDefinitions;
+const { basico, pro, max } = planDefinitions;
 
 // Fuente única de las preguntas frecuentes: la landing muestra las
 // destacadas (featuredFaqs) y /preguntas-frecuentes todas, por tema. Las
@@ -31,7 +31,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Qué diferencia hay entre los planes?",
-        answer: `El ${esencial.name} (${esencial.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores (con vencimientos y calendario de pagos), las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo y hasta 6 usuarios y 6 cajas. El ${ia.name} (${ia.priceLabel} por mes) suma hasta 2 sucursales con su propio stock y las ganancias separadas por sucursal, soporte prioritario 24/7 y herramientas que analizan tus ventas: sugerencia de precios cuando sube un costo, qué reponer y cuánto (con el pedido listo para WhatsApp) detección de productos de baja rotación, un resumen escrito de cada período en Reportes y novedades y precios de referencia de tu rubro, preparadas por Pesito. Además, desde el Básico podés cargar todos tus productos y tus clientes juntos desde una planilla de Excel o CSV, y generar códigos de barras propios (que no se repiten) para los productos que no tienen e imprimir las etiquetas. Próximamente, el Básico va a sumar productos con variantes (talles y colores), combos y kits; el Pro, control por usuario (todos los movimientos de stock y de caja de cada uno, con sus diferencias), inventarios físicos, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones. Cada plan tiene un máximo de productos activos: ${thousands(PRODUCT_LIMITS.gratis)} en el Gratis, ${thousands(PRODUCT_LIMITS.esencial)} en el Básico, ${thousands(PRODUCT_LIMITS.pro)} en el Pro y ${thousands(PRODUCT_LIMITS.ia)} en el Max (los productos desactivados no cuentan). Pagando anual tenés un 20% de descuento. Promo de lanzamiento: el primer mes pagando mensual sale ${esencial.promoLabel} el Básico, ${pro.promoLabel} el Pro y ${ia.promoLabel} el Max (para quien contrata un plan por primera vez); después, el precio normal.`,
+        answer: `El ${basico.name} (${basico.priceLabel} por mes) suma ventas ilimitadas, el control de stock con mínimos y reposición, la cuenta corriente con tus proveedores (con vencimientos y calendario de pagos), las ventas y diferencias de caja de cada empleado, y hasta 2 usuarios y 2 cajas. El ${pro.name} (${pro.priceLabel} por mes) suma los aumentos masivos de precios y costos, los reportes avanzados (ganancias, ventas a pérdida, comparación de períodos e historial de caja), la pantalla En vivo y hasta 6 usuarios y 6 cajas. El ${max.name} (${max.priceLabel} por mes) suma hasta 2 sucursales con su propio stock y las ganancias separadas por sucursal, soporte prioritario 24/7 y herramientas que analizan tus ventas: sugerencia de precios cuando sube un costo, qué reponer y cuánto (con el pedido listo para WhatsApp) detección de productos de baja rotación, un resumen escrito de cada período en Reportes y novedades y precios de referencia de tu rubro, preparadas por Pesito. Además, desde el Básico podés cargar todos tus productos y tus clientes juntos desde una planilla de Excel o CSV, y generar códigos de barras propios (que no se repiten) para los productos que no tienen e imprimir las etiquetas. Próximamente, el Básico va a sumar productos con variantes (talles y colores), combos y kits; el Pro, control por usuario (todos los movimientos de stock y de caja de cada uno, con sus diferencias), inventarios físicos, balanzas conectadas, carteles de precios para imprimir, un catálogo online y ofertas y promociones. Cada plan tiene un máximo de productos activos: ${thousands(PRODUCT_LIMITS.gratis)} en el Gratis, ${thousands(PRODUCT_LIMITS.basico)} en el Básico, ${thousands(PRODUCT_LIMITS.pro)} en el Pro y ${thousands(PRODUCT_LIMITS.max)} en el Max (los productos desactivados no cuentan). Pagando anual tenés un 20% de descuento. Promo de lanzamiento: el primer mes pagando mensual sale ${basico.promoLabel} el Básico, ${pro.promoLabel} el Pro y ${max.promoLabel} el Max (para quien contrata un plan por primera vez); después, el precio normal.`,
       },
       {
         question: "¿Cómo se pagan los planes?",
@@ -114,7 +114,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Puedo registrar las compras a mis proveedores?",
-        answer: `Sí, en todos los planes. Al cargar una compra se suma el stock y se actualiza el costo, y la pagás en efectivo desde la caja o con otro medio. Desde el ${esencial.name} también podés dejarla en la cuenta corriente del proveedor y ver cuánto le debés a cada uno.`,
+        answer: `Sí, en todos los planes. Al cargar una compra se suma el stock y se actualiza el costo, y la pagás en efectivo desde la caja o con otro medio. Desde el ${basico.name} también podés dejarla en la cuenta corriente del proveedor y ver cuánto le debés a cada uno.`,
       },
       {
         question: "¿Me dice cuánto gano de verdad?",
@@ -142,7 +142,7 @@ export const faqCategories: FaqCategory[] = [
       },
       {
         question: "¿Sirve si tengo varias sucursales?",
-        answer: `Sí, con el ${ia.name}, que incluye hasta 2 sucursales. Cada sucursal tiene su propio stock y sus cajas, cada vendedor trabaja en la suya y podés pasar mercadería de una sucursal a otra. Desde En vivo ves cuánto vende cada una en el momento. Si tenés más sucursales, escribinos por WhatsApp.`,
+        answer: `Sí, con el ${max.name}, que incluye hasta 2 sucursales. Cada sucursal tiene su propio stock y sus cajas, cada vendedor trabaja en la suya y podés pasar mercadería de una sucursal a otra. Desde En vivo ves cuánto vende cada una en el momento. Si tenés más sucursales, escribinos por WhatsApp.`,
       },
       {
         question: "¿Cómo sé si falta plata en la caja?",

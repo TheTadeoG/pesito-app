@@ -19,7 +19,7 @@ const org = (id: string, over: Partial<OrgActivity> = {}): OrgActivity => ({
   member_count: 1,
   ...over,
 });
-const price = (plan: string, cycle: "mensual" | "anual" | null) => ({ esencial: 17000, pro: 29000, ia: 34000 }[plan] ?? 0) * (cycle === "anual" ? 0.8 : 1);
+const price = (plan: string, cycle: "mensual" | "anual" | null) => ({ basico: 17000, pro: 29000, max: 34000 }[plan] ?? 0) * (cycle === "anual" ? 0.8 : 1);
 let passed = 0;
 const test = (name: string, fn: () => void) => {
   fn();
@@ -62,7 +62,7 @@ test("prueba Pro: activas, por vencer, vencidas sin pagar y convertidas", () => 
     ["a", { plan: "gratis", trialEndsAt: iso(5 * DAY), paidViaMp: false, cycle: null }], // activa
     ["b", { plan: "gratis", trialEndsAt: iso(2 * DAY), paidViaMp: false, cycle: null }], // por vencer
     ["c", { plan: "gratis", trialEndsAt: iso(-3 * DAY), paidViaMp: false, cycle: null }], // venció sin pagar
-    ["d", { plan: "esencial", trialEndsAt: iso(-3 * DAY), paidViaMp: true, cycle: "anual" }], // convirtió
+    ["d", { plan: "basico", trialEndsAt: iso(-3 * DAY), paidViaMp: true, cycle: "anual" }], // convirtió
     ["e", { plan: "pro", trialEndsAt: iso(-3 * DAY), paidViaMp: false, cycle: null }], // plan a mano: no cuenta
   ]);
   const r = computeFunnel({ signedUpOwners: 5, activity, subscriptions: subs, monthlyPrice: price, now: NOW });

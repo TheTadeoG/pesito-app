@@ -34,7 +34,7 @@ export function ExcelExportDialog({
   /** Plan Max: se puede incluir "Alcanza para (días)". */
   withCover: boolean;
 }) {
-  const available = EXCEL_COLUMNS.filter((c) => withCover || !c.ia);
+  const available = EXCEL_COLUMNS.filter((c) => withCover || !c.max);
   const [scopeId, setScopeId] = useState(scopes[0]?.id ?? "");
   const [selected, setSelected] = useState<Set<string>>(new Set(available.map((c) => c.id)));
   const [busy, setBusy] = useState(false);
