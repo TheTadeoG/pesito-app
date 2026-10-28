@@ -10,7 +10,7 @@ import type { PricePosition } from "@/lib/market-prices";
 import type { Plan } from "@/lib/subscription";
 import { cn } from "@/lib/utils";
 import { searchMarket, type MarketSearchResult } from "./actions";
-import { MarketCard, type MarketCardData } from "./market-card";
+import { MarketTable, type MarketCardData } from "./market-card";
 
 export interface BoardRow extends MarketCardData {
   /** Para los filtros. */
@@ -132,12 +132,13 @@ export function MarketBoard({
           rows={rows}
           text={text}
           filter={insights ? filter : "todos"}
+          insights={insights}
           locked={locked}
           internalCount={internalCount}
           totalProducts={totalProducts}
         />
       )}
-      {tab === "super" && <SuperSearch text={text} />}
+      {tab === "super" && <SuperSearch text={text} insights={insights} />}
     </div>
   );
 }
@@ -146,12 +147,14 @@ function MyProducts({
   rows,
   text,
   filter,
+  insights,
   locked,
   internalCount,
   totalProducts,
 }: {
   rows: BoardRow[];
   text: string;
+  insights: boolean;
   filter: Filter;
   locked: { plan: Plan; high: number; low: number } | null;
   internalCount: number;
@@ -197,11 +200,7 @@ function MyProducts({
           ) : shown.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">Nada coincide con la búsqueda.</p>
           ) : (
-            <div className="divide-y divide-border">
-              {page.map((r) => (
-                <MarketCard key={r.key} data={r} />
-              ))}
-            </div>
+            <MarketTable rows={page} showMine insights={insights} />
           )}
           <PaginationBar
             total={shown.length}
@@ -222,7 +221,7 @@ function MyProducts({
   );
 }
 
-function SuperSearch({ text }: { text: string }) {
+function SuperSearch({ text, insights }: { text: string; insights: boolean }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = usePageSize("pesito-mercado-search-size", 25);
@@ -286,11 +285,11 @@ function SuperSearch({ text }: { text: string }) {
             No encontramos productos con eso. Puede que sea de una marca que no juntamos o que todavía no hayamos bajado los catálogos del mes.
           </p>
         )}
-        <div className={cn("divide-y divide-border", loading && "opacity-60")}>
-          {cards.map((c) => (
-            <MarketCard key={c.key} data={c} />
-          ))}
-        </div>
+        {cards.length > 0 && (
+          <div className={cn(loading && "opacity-60")}>
+            <MarketTable rows={cards} showMine={cards.some((c) => c.mine)} insights={insights} />
+          </div>
+        )}
         {result && result.total > 0 && (
           <PaginationBar
             total={result.total}

@@ -1,7 +1,7 @@
 "use client";
 
-import { Package } from "lucide-react";
-import { positionLabels, storeLabel, type PricePosition } from "@/lib/market-prices";
+import { PlanPill } from "@/components/dashboard/pro-locked-card";
+import { MARKET_STORES, type PricePosition } from "@/lib/market-prices";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export interface MarketCardData {
@@ -17,81 +17,99 @@ export interface MarketCardData {
   emptyNote?: string;
 }
 
-const positionTone: Record<PricePosition, string> = {
-  "muy-barato": "bg-accent text-accent-foreground",
-  barato: "bg-accent text-accent-foreground",
-  "en-rango": "bg-success-bg text-success",
-  caro: "bg-warning-bg text-warning",
-  "muy-caro": "bg-danger-bg text-danger",
+const diffTone: Record<PricePosition, string> = {
+  "muy-barato": "text-sky-700 dark:text-sky-400",
+  barato: "text-sky-700 dark:text-sky-400",
+  "en-rango": "text-success",
+  caro: "text-warning",
+  "muy-caro": "text-danger",
 };
 
-/** Tarjeta de un producto: foto, nombre, precio en cada súper (el más barato resaltado) y, si es tuyo, cómo estás. */
-export function MarketCard({ data }: { data: MarketCardData }) {
-  const { mine } = data;
+const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n).toLocaleString("es-AR", { maximumFractionDigits: 1 })}%`;
+
+/**
+ * Tabla de productos: una fila por producto, una columna por súper (el mejor precio en verde) y,
+ * para quien tiene el Plan IA, cuánto se aparta tu precio de la mediana de los súper.
+ */
+export function MarketTable({ rows, showMine, insights }: { rows: MarketCardData[]; showMine: boolean; insights: boolean }) {
   return (
-    <div className="flex gap-3 py-3 first:pt-0 last:pb-0">
-      {data.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={data.imageUrl} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-lg border border-border bg-white object-contain" />
-      ) : (
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          <Package className="h-6 w-6" />
-        </div>
-      )}
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">{data.name}</p>
-            <p className="text-xs text-muted-foreground">{`${data.brand ? `${data.brand} · ` : ""}${data.ean}`}</p>
-          </div>
-          {mine && (
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Tu precio</p>
-              <p className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(mine.price)}</p>
-            </div>
-          )}
-        </div>
-
-        {data.stores.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {data.stores.map((s, i) => {
-              const chip = (
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded-full border px-2 py-0.5 text-xs tabular-nums",
-                    i === 0 ? "border-success/40 bg-success-bg font-semibold text-success" : "border-border text-muted-foreground",
-                    !s.available && "line-through opacity-60"
-                  )}
-                >
-                  {`${storeLabel(s.store)} ${formatCurrency(s.price)}`}
-                </span>
-              );
-              return s.url ? (
-                <a key={s.store} href={s.url} target="_blank" rel="noopener noreferrer nofollow" title="Ver en la tienda">
-                  {chip}
-                </a>
-              ) : (
-                <span key={s.store}>{chip}</span>
-              );
-            })}
-          </div>
-        ) : (
-          data.emptyNote && <p className="text-xs text-muted-foreground">{data.emptyNote}</p>
-        )}
-
-        {mine && mine.position && mine.diff !== null && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-semibold", positionTone[mine.position])}>
-              {`${positionLabels[mine.position]} (${mine.diff > 0 ? "+" : ""}${mine.diff}%)`}
-            </span>
-            {mine.suggested !== null && mine.suggested !== mine.price && (
-              <span className="text-xs text-muted-foreground" title={mine.reason ?? undefined}>
-                {`Sugerido: ${formatCurrency(mine.suggested)}`}
-              </span>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[44rem] text-sm">
+        <thead>
+          <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="px-3 py-2.5 text-left">Producto</th>
+            {showMine && <th className="px-3 py-2.5 text-right">Tu precio</th>}
+            {MARKET_STORES.map((s) => (
+              <th key={s.id} className="px-3 py-2.5 text-right">{s.label}</th>
+            ))}
+            {showMine && (
+              <th className="px-3 py-2.5 text-right">{insights ? "Vs. súper" : <PlanPill plan="ia" />}</th>
             )}
-          </div>
-        )}
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const prices = new Map(r.stores.map((s) => [s.store, s]));
+            const best = r.stores.length > 0 ? Math.min(...r.stores.map((s) => s.price)) : null;
+            const m = r.mine;
+            return (
+              <tr key={r.key} className="border-b border-border last:border-0">
+                <td className="px-3 py-3">
+                  <div className="font-semibold text-foreground">{r.name}</div>
+                  <div className="text-xs text-muted-foreground">{`${r.brand ? `${r.brand} · ` : ""}${r.ean}`}</div>
+                </td>
+                {showMine && (
+                  <td className="px-3 py-3 text-right font-bold tabular-nums text-foreground">{m ? formatCurrency(m.price) : "—"}</td>
+                )}
+                {MARKET_STORES.map((s) => {
+                  const p = prices.get(s.id);
+                  if (!p) return <td key={s.id} className="px-3 py-3 text-right text-muted-foreground/50">—</td>;
+                  const cell = (
+                    <span
+                      className={cn(
+                        "tabular-nums",
+                        p.price === best ? "font-bold text-success" : "text-muted-foreground",
+                        !p.available && "line-through opacity-60"
+                      )}
+                    >
+                      {formatCurrency(p.price)}
+                    </span>
+                  );
+                  return (
+                    <td key={s.id} className="px-3 py-3 text-right">
+                      {p.url ? (
+                        <a href={p.url} target="_blank" rel="noopener noreferrer nofollow" title="Ver en la tienda" className="hover:underline">
+                          {cell}
+                        </a>
+                      ) : (
+                        cell
+                      )}
+                    </td>
+                  );
+                })}
+                {showMine && (
+                  <td className="px-3 py-3 text-right tabular-nums">
+                    {r.stores.length === 0 ? (
+                      <span className="text-xs text-muted-foreground">sin datos</span>
+                    ) : insights && m?.position && m.diff !== null ? (
+                      <div>
+                        <span className={cn("font-semibold", diffTone[m.position])}>{signed(m.diff)}</span>
+                        {m.suggested !== null && m.suggested !== m.price && (
+                          <div className="text-xs text-muted-foreground" title={m.reason ?? undefined}>
+                            {`Sugerido ${formatCurrency(m.suggested)}`}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/50">—</span>
+                    )}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
