@@ -202,7 +202,11 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
         >
           {!(showHints && !closing) && <Wallet className="h-4 w-4 shrink-0" />}
           {closing ? "Cerrar caja" : "Caja"}
-          <ModuleBadge module="caja" />
+          {/* Sobre el verde/ámbar el fondo de aviso se pierde: píldora blanca. */}
+          <ModuleBadge
+            module="caja"
+            className="!bg-white px-1.5 text-[10px] leading-none shadow-sm ring-1 ring-black/10 !text-red-600"
+          />
           {!closing && <AltHint href="/caja" className="border-white/40 bg-transparent text-white opacity-80" />}
         </Link>
       </div>
