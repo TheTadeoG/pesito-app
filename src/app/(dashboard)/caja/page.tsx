@@ -1,4 +1,7 @@
 import { ReportesTabs } from "@/components/dashboard/reportes-tabs";
+import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
+import { getReportRange, resolveReportQuery } from "@/lib/report-periods";
+import { argDateString } from "@/lib/timezone";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import type { ReactNode } from "react";
 import { requireOrgContext } from "@/lib/org";
@@ -26,7 +29,7 @@ const LIMITED_HISTORY = 5;
 export default async function CajaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sucursal?: string }>;
+  searchParams: Promise<{ sucursal?: string; period?: string; desde?: string; hasta?: string }>;
 }) {
   const { userId, email, organization, membership } = await requireOrgContext();
   const supabase = await createClient();
@@ -45,6 +48,23 @@ export default async function CajaPage({
   const fullHistory = canUse(subscription, "cashHistory");
   const canTeam = canUse(subscription, "teamReports");
   const canSupplierAccounts = canUse(subscription, "supplierAccounts");
+  // El historial de cierres se filtra por período, con el mismo selector que Reportes y Ventas.
+  const canCustomRange = canUse(subscription, "customReportRange");
+  const periodQuery = resolveReportQuery(params, { allowCustom: canCustomRange });
+  const range = getReportRange(periodQuery);
+  const periodBar = (
+    <PeriodSelector
+      query={periodQuery}
+      sellerId={null}
+      rangeLabel={range.label.replace(/^del |^el /, "")}
+      today={argDateString()}
+      canCustomRange={canCustomRange}
+      canCompare={false}
+      showCompare={false}
+      basePath="/caja"
+      extraParams={{ sucursal: filterBranchId ?? "" }}
+    />
+  );
 
   // Todo lo que no depende de otra consulta va en paralelo; después, el
   // efectivo y el desglose de todas las cajas en una sola consulta.
@@ -70,6 +90,8 @@ export default async function CajaPage({
       .eq("org_id", organization.id)
       .eq("status", "cerrada")
       .match(branchMatch)
+      .gte("closed_at", range.start.toISOString())
+      .lt("closed_at", range.end.toISOString())
       .order("closed_at", { ascending: false })
       .limit(fullHistory ? 20 : LIMITED_HISTORY),
     getMemberLabelsById(supabase, organization.id),
@@ -213,6 +235,7 @@ export default async function CajaPage({
     return (
       <div className="space-y-6">
         <ReportesTabs active="caja" />
+        {periodBar}
         {teamOverview}
         <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
       </div>
@@ -318,6 +341,7 @@ export default async function CajaPage({
   return (
     <div className="space-y-6">
       <ReportesTabs active="caja" />
+        {periodBar}
       <ManageCaja
         cashRegisterId={register.id}
         openingAmount={openingAmount}

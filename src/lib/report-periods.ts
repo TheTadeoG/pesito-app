@@ -92,17 +92,23 @@ export function resolveReportQuery(
 }
 
 /** Link a Reportes con el período, la comparación y, si hay, el vendedor. */
+/** Período (y fechas a medida) como parámetros de URL, igual en Reportes, Ventas y Caja. */
+export function periodParams(query: ReportQuery): URLSearchParams {
+  const params = new URLSearchParams({ period: query.period });
+  if (query.period === "custom" && query.from && query.to) {
+    params.set("desde", query.from);
+    params.set("hasta", query.to);
+  }
+  return params;
+}
+
 export function reportesHref(
   query: ReportQuery,
   sellerId: string | null = null,
   branchId: string | null = null
 ): string {
-  const params = new URLSearchParams({ period: query.period });
+  const params = periodParams(query);
   if (query.tab && query.tab !== "resumen") params.set("tab", query.tab);
-  if (query.period === "custom" && query.from && query.to) {
-    params.set("desde", query.from);
-    params.set("hasta", query.to);
-  }
   if (query.compare === "year") params.set("comparar", "anio");
   if (query.compare === "none") params.set("comparar", "no");
   if (sellerId) params.set("vendedor", sellerId);

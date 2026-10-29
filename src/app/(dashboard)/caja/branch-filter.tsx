@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Store } from "lucide-react";
 import { Select } from "@/components/ui/select";
 
@@ -14,6 +14,15 @@ export function BranchFilter({
   value: string | null;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Cambia la sucursal sin perder el período elegido arriba.
+  function go(branchId: string) {
+    const p = new URLSearchParams(searchParams.toString());
+    if (branchId) p.set("sucursal", branchId);
+    else p.delete("sucursal");
+    const qs = p.toString();
+    router.push(qs ? `/caja?${qs}` : "/caja");
+  }
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
       <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
@@ -24,7 +33,7 @@ export function BranchFilter({
         <Select
           aria-label="Filtrar por sucursal"
           value={value ?? ""}
-          onChange={(e) => router.push(e.target.value ? `/caja?sucursal=${e.target.value}` : "/caja")}
+          onChange={(e) => go(e.target.value)}
           className={value ? "border-primary bg-accent" : undefined}
         >
           <option value="">Todas las sucursales</option>

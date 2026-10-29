@@ -593,6 +593,8 @@ export default async function ReportesPage({
   return (
     <div className="space-y-6">
       <ReportesTabs active={query.tab ?? "resumen"} query={query} />
+      {/* Otros reportes (fiado, stock) son del negocio entero: no dependen del período. */}
+      {query.tab !== "otros" && (
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector
           query={query}
@@ -623,6 +625,7 @@ export default async function ReportesPage({
           />
         )}
       </div>
+      )}
       {sellerLabel && (
         <p className="text-sm text-muted-foreground">
           Mostrando sólo las ventas y cajas de{" "}

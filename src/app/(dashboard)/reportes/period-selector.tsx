@@ -12,6 +12,7 @@ import {
   compareOptions,
   morePeriodOptions,
   periodOptions,
+  periodParams,
   reportesHref,
   MAX_CUSTOM_DAYS,
   type CompareMode,
@@ -29,6 +30,9 @@ export function PeriodSelector({
   today,
   canCustomRange,
   canCompare,
+  basePath,
+  extraParams,
+  showCompare = true,
 }: {
   query: ReportQuery;
   sellerId: string | null;
@@ -39,14 +43,24 @@ export function PeriodSelector({
   today: string;
   canCustomRange: boolean;
   canCompare: boolean;
+  /** Fuera de Reportes (Ventas, Caja): la página a la que van los links, con sus filtros en extraParams. */
+  basePath?: string;
+  extraParams?: Record<string, string>;
+  /** Comparar con otro período sólo tiene sentido en Reportes. */
+  showCompare?: boolean;
 }) {
   const router = useRouter();
   const [customOpen, setCustomOpen] = useState(false);
   const [from, setFrom] = useState(query.from ?? "");
   const [to, setTo] = useState(query.to ?? today);
   const [error, setError] = useState<string | null>(null);
-  const withPeriod = (period: ReportQuery["period"]) =>
-    reportesHref({ ...query, period, from: null, to: null }, sellerId, branchId);
+  const hrefFor = (q: ReportQuery) => {
+    if (!basePath) return reportesHref(q, sellerId, branchId);
+    const params = periodParams(q);
+    for (const [k, v] of Object.entries(extraParams ?? {})) if (v) params.set(k, v);
+    return `${basePath}?${params.toString()}`;
+  };
+  const withPeriod = (period: ReportQuery["period"]) => hrefFor({ ...query, period, from: null, to: null });
   const inMore = morePeriodOptions.some((o) => o.value === query.period);
 
   function applyCustom(e: React.FormEvent) {
@@ -56,7 +70,7 @@ export function PeriodSelector({
     const days = (new Date(b).getTime() - new Date(a).getTime()) / 86400000 + 1;
     if (days > MAX_CUSTOM_DAYS) return setError("Elegí un rango de hasta un año.");
     setCustomOpen(false);
-    router.push(reportesHref({ ...query, period: "custom", from: a, to: b }, sellerId, branchId));
+    router.push(hrefFor({ ...query, period: "custom", from: a, to: b }));
   }
 
   return (
@@ -109,6 +123,7 @@ export function PeriodSelector({
         ))}
       </select>
 
+      {showCompare && (
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         Comparar con
         {canCompare ? (
@@ -136,12 +151,13 @@ export function PeriodSelector({
           </Link>
         )}
       </label>
+      )}
 
       <Dialog
         open={customOpen}
         onClose={() => setCustomOpen(false)}
         title="Fechas a medida"
-        description="Elegí desde y hasta qué día ver los reportes (hasta un año)."
+        description="Elegí desde y hasta qué día ver (hasta un año)."
       >
         {canCustomRange ? (
           <form onSubmit={applyCustom} className="space-y-4">
@@ -160,7 +176,7 @@ export function PeriodSelector({
               <Button type="button" variant="outline" onClick={() => setCustomOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">Ver reportes</Button>
+              <Button type="submit">Ver</Button>
             </div>
           </form>
         ) : (

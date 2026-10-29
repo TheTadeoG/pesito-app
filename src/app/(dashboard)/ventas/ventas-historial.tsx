@@ -43,6 +43,7 @@ export function VentasHistorial({
   page,
   pageSize,
   filters,
+  periodQuery,
   paymentLabels,
   branches,
   canVoid,
@@ -55,6 +56,8 @@ export function VentasHistorial({
   page: number;
   pageSize: number;
   filters: Filters;
+  /** El período elegido arriba, ya como parámetros de URL (period, desde, hasta). */
+  periodQuery: string;
   paymentLabels: Record<string, string>;
   branches: { id: string; name: string }[];
   canVoid: boolean;
@@ -71,9 +74,7 @@ export function VentasHistorial({
   const go = useCallback(
     (next: Partial<Filters> & { pagina?: number; tam?: number }) => {
       const merged = { ...filters, ...next };
-      const p = new URLSearchParams();
-      if (merged.desde) p.set("desde", merged.desde);
-      if (merged.hasta) p.set("hasta", merged.hasta);
+      const p = new URLSearchParams(periodQuery);
       if (merged.medio) p.set("medio", merged.medio);
       if (merged.estado) p.set("estado", merged.estado);
       if (merged.q) p.set("q", merged.q);
@@ -83,7 +84,7 @@ export function VentasHistorial({
       if (next.pagina) p.set("pagina", String(next.pagina));
       router.push(`/ventas?${p.toString()}`);
     },
-    [filters, pageSize, router]
+    [filters, pageSize, periodQuery, router]
   );
 
   async function openDetail(id: string) {
@@ -106,16 +107,8 @@ export function VentasHistorial({
               e.preventDefault();
               go({ ...f });
             }}
-            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6"
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
           >
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Desde</label>
-              <Input type="date" value={f.desde} onChange={(e) => setF({ ...f, desde: e.target.value })} />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Hasta</label>
-              <Input type="date" value={f.hasta} onChange={(e) => setF({ ...f, hasta: e.target.value })} />
-            </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Medio de pago</label>
               <Select value={f.medio} onChange={(e) => setF({ ...f, medio: e.target.value })}>
@@ -160,7 +153,7 @@ export function VentasHistorial({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push("/ventas")}
+                onClick={() => router.push(`/ventas?${periodQuery}`)}
               >
                 Limpiar
               </Button>

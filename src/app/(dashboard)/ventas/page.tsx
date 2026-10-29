@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { isOrgAdmin } from "@/lib/roles";
 import { getBranchContext } from "@/lib/branches";
 import { ReportesTabs } from "@/components/dashboard/reportes-tabs";
+import { getSubscription } from "@/lib/subscription";
+import { canUse } from "@/lib/plan-access";
+import { getReportRange, periodParams, resolveReportQuery } from "@/lib/report-periods";
+import { argDateString } from "@/lib/timezone";
+import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { VentasHistorial, type HistorialRow } from "./ventas-historial";
 
 const paymentLabels: Record<string, string> = {
@@ -14,24 +19,24 @@ const paymentLabels: Record<string, string> = {
   fiado: "Fiado",
 };
 const PAGE_SIZES = [25, 50, 100, 200];
-const DAY = 24 * 60 * 60 * 1000;
-
-/** Hoy en Argentina (UTC-3, sin horario de verano) como YYYY-MM-DD. */
-const argDay = (offsetDays = 0) => new Date(Date.now() - 3 * 60 * 60 * 1000 - offsetDays * DAY).toISOString().slice(0, 10);
-const isDay = (v: string | undefined): v is string => Boolean(v && /^\d{4}-\d{2}-\d{2}$/.test(v));
 
 export default async function VentasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ desde?: string; hasta?: string; medio?: string; estado?: string; q?: string; pagina?: string; tam?: string; sucursal?: string }>;
+  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; medio?: string; estado?: string; q?: string; pagina?: string; tam?: string; sucursal?: string }>;
 }) {
   const sp = await searchParams;
   const { organization, membership } = await requireOrgContext();
   const supabase = await createClient();
   const admin = isOrgAdmin(membership.role);
 
-  const desde = isDay(sp.desde) ? sp.desde : argDay(29);
-  const hasta = isDay(sp.hasta) ? sp.hasta : argDay(0);
+  // El mismo selector de período que Reportes (hoy, 7 días, 30 días, este mes, fechas a medida…).
+  const subscription = await getSubscription(supabase, organization.id);
+  const canCustomRange = canUse(subscription, "customReportRange");
+  const periodQuery = resolveReportQuery(sp, { allowCustom: canCustomRange });
+  const range = getReportRange(periodQuery);
+  const desde = argDateString(range.start);
+  const hasta = argDateString(new Date(range.end.getTime() - 1));
   const medio = sp.medio && paymentLabels[sp.medio] ? sp.medio : "";
   const estado = sp.estado === "completada" || sp.estado === "anulada" ? sp.estado : "";
   const q = (sp.q ?? "").trim().slice(0, 60);
@@ -98,18 +103,30 @@ export default async function VentasPage({
   return (
     <div className="space-y-6">
       <ReportesTabs active="ventas" />
+      <PeriodSelector
+        query={periodQuery}
+        sellerId={null}
+        rangeLabel={range.label.replace(/^del |^el /, "")}
+        today={argDateString()}
+        canCustomRange={canCustomRange}
+        canCompare={false}
+        showCompare={false}
+        basePath="/ventas"
+        extraParams={{ medio, estado, q, sucursal, ...(pageSize !== 25 ? { tam: String(pageSize) } : {}) }}
+      />
       <VentasHistorial
-      rows={rows}
-      total={total}
-      page={page}
-      pageSize={pageSize}
-      filters={{ desde, hasta, medio, estado, q, sucursal }}
-      paymentLabels={paymentLabels}
-      branches={hasBranches ? branchContext.branches.map((b) => ({ id: b.id, name: b.name })) : []}
-      canVoid={admin}
-      canExport={admin}
-      orgName={organization.name}
-      error={error}
+        rows={rows}
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        filters={{ desde, hasta, medio, estado, q, sucursal }}
+        periodQuery={periodParams(periodQuery).toString()}
+        paymentLabels={paymentLabels}
+        branches={hasBranches ? branchContext.branches.map((b) => ({ id: b.id, name: b.name })) : []}
+        canVoid={admin}
+        canExport={admin}
+        orgName={organization.name}
+        error={error}
       />
     </div>
   );
