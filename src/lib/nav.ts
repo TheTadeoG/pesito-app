@@ -7,7 +7,6 @@ import {
   LayoutGrid,
   LifeBuoy,
   Radio,
-  Receipt,
   Settings,
   ShoppingBag,
   ShoppingCart,
@@ -16,7 +15,6 @@ import {
   TrendingDown,
   Users,
   UserCog,
-  Wallet,
 } from "lucide-react";
 
 export interface NavItem {
@@ -35,6 +33,8 @@ export interface NavItem {
   // que apuntan al mismo path (ej. Configuración vs. Planes, las dos
   // pestañas de /configuracion).
   activeTab?: string | null;
+  // Otras rutas que también lo marcan activo (ej. Reportes incluye Ventas y Caja).
+  alsoActiveOn?: string[];
 }
 
 export interface NavSection {
@@ -49,8 +49,6 @@ export const navSections: NavSection[] = [
     title: "Mostrador",
     items: [
       { href: "/pos", label: "Punto de Venta", icon: ShoppingCart },
-      { href: "/ventas", label: "Ventas", icon: Receipt },
-      { href: "/caja", label: "Caja", icon: Wallet },
     ],
   },
   {
@@ -71,7 +69,7 @@ export const navSections: NavSection[] = [
   {
     title: "Análisis",
     items: [
-      { href: "/reportes", label: "Reportes", icon: BarChart3 },
+      { href: "/reportes", label: "Reportes", icon: BarChart3, alsoActiveOn: ["/ventas", "/caja"] },
       { href: "/en-vivo", label: "En vivo", icon: Radio, adminOnly: true, feature: "liveView" },
     ],
   },
@@ -102,7 +100,9 @@ export const navSections: NavSection[] = [
 // path, no quedan los dos "activos" a la vez.
 export function isNavItemActive(item: NavItem, pathname: string, tabParam: string | null): boolean {
   const [itemPath] = item.href.split("?");
-  const pathMatches = pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+  const pathMatches = [itemPath, ...(item.alsoActiveOn ?? [])].some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`)
+  );
   if (!pathMatches) return false;
   if (item.activeTab === undefined) return true;
   return item.activeTab === tabParam;

@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { navSections } from "@/lib/nav";
+import { Receipt, Wallet } from "lucide-react";
 import { NAV_SHORTCUTS, digitFromCode } from "@/lib/shortcuts";
 import { useShortcutHints } from "@/lib/shortcut-hints";
 
@@ -24,12 +25,16 @@ export function NavSearch({
   const [query, setQuery] = useState("");
 
   const destinations = useMemo(
-    () =>
-      navSections.flatMap((section) =>
+    () => [
+      ...navSections.flatMap((section) =>
         section.items
           .filter((item) => !item.adminOnly || canSeeAdminItems)
           .map((item) => ({ ...item, group: section.title }))
       ),
+      // Viven dentro de Reportes (solapas Ventas y Caja), sin renglón propio en el menú.
+      { href: "/ventas", label: "Historial de ventas", icon: Receipt, group: "Reportes" },
+      { href: "/caja", label: "Caja y cierres", icon: Wallet, group: "Reportes" },
+    ],
     [canSeeAdminItems]
   );
 

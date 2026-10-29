@@ -31,7 +31,7 @@ import { featureMinPlan } from "@/lib/plan-access";
 import { planLabels, type Plan } from "@/lib/subscription";
 import { cn, formatCurrency } from "@/lib/utils";
 import { paymentLabels } from "@/lib/payment-labels";
-import { reportesHref, type ReportQuery } from "@/lib/report-periods";
+import { reportesHref, type ReportQuery, type ReportTab } from "@/lib/report-periods";
 
 const WIDGETS = [
   { id: "tiles", label: "Indicadores principales" },
@@ -51,6 +51,22 @@ const WIDGETS = [
 
 type WidgetId = (typeof WIDGETS)[number]["id"];
 const ALL_WIDGET_IDS = WIDGETS.map((w) => w.id);
+// En qué solapa de Reportes va cada tarjeta.
+const WIDGET_TAB: Record<WidgetId, ReportTab> = {
+  tiles: "resumen",
+  revenue: "resumen",
+  payments: "resumen",
+  periodComparison: "resumen",
+  topQty: "ventas",
+  topMargin: "ventas",
+  topCustomers: "ventas",
+  sellers: "ventas",
+  lossProducts: "ventas",
+  recentSales: "ventas",
+  cashDiff: "caja",
+  fiadoDebtors: "otros",
+  stockValue: "otros",
+};
 const STORAGE_KEY = "pesito-reportes-widgets";
 
 export interface CashDiffRow {
@@ -208,6 +224,9 @@ export function ReportesDashboard({
     hidden.add("fiadoDebtors");
     hidden.add("stockValue");
   }
+  // Cada solapa muestra sólo lo suyo.
+  const tab = query.tab ?? "resumen";
+  for (const id of ALL_WIDGET_IDS) if (WIDGET_TAB[id] !== tab) hidden.add(id);
   const isVisible = (id: WidgetId) => visible.has(id) && !hidden.has(id);
   const availableWidgets = WIDGETS.filter((w) => !hidden.has(w.id));
 
@@ -229,7 +248,7 @@ export function ReportesDashboard({
 
   return (
     <div className="space-y-6">
-      {lockedGroups.length > 0 && (
+      {tab === "resumen" && lockedGroups.length > 0 && (
         <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1 space-y-1.5 text-sm">
             <p className="flex items-center gap-2 font-semibold text-foreground">

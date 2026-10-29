@@ -25,6 +25,7 @@ import { canUse, featureMinPlan } from "@/lib/plan-access";
 import { buildReportInsights } from "@/lib/report-insights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
+import { ReportesTabs } from "@/components/dashboard/reportes-tabs";
 import { Sparkles } from "lucide-react";
 
 const paymentLabels: Record<string, string> = {
@@ -149,7 +150,7 @@ async function rpcOverview(
 export default async function ReportesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; comparar?: string; vendedor?: string; sucursal?: string }>;
+  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; comparar?: string; vendedor?: string; sucursal?: string; tab?: string }>;
 }) {
   const params = await searchParams;
   const vendedorParam = params.vendedor;
@@ -591,6 +592,7 @@ export default async function ReportesPage({
 
   return (
     <div className="space-y-6">
+      <ReportesTabs active={query.tab ?? "resumen"} query={query} />
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector
           query={query}
@@ -648,10 +650,12 @@ export default async function ReportesPage({
         data={data}
         query={query}
         afterTiles={
-          <>
-            {branchTable}
-            {summaryBlock}
-          </>
+          query.tab === undefined || query.tab === "resumen" ? (
+            <>
+              {branchTable}
+              {summaryBlock}
+            </>
+          ) : null
         }
       />
     </div>

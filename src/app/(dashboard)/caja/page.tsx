@@ -1,3 +1,4 @@
+import { ReportesTabs } from "@/components/dashboard/reportes-tabs";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import type { ReactNode } from "react";
 import { requireOrgContext } from "@/lib/org";
@@ -212,6 +213,7 @@ export default async function CajaPage({
   if (!register) {
     return (
       <div className="space-y-6">
+        <ReportesTabs active="caja" sub="dia" />
         <OpenCajaDialog />
         {teamOverview}
         <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
@@ -317,6 +319,7 @@ export default async function CajaPage({
 
   return (
     <div className="space-y-6">
+      <ReportesTabs active="caja" sub="dia" />
       <ManageCaja
         cashRegisterId={register.id}
         openingAmount={openingAmount}

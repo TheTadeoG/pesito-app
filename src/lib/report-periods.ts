@@ -15,8 +15,14 @@ export type ReportPeriod =
 
 export type CompareMode = "previous" | "year" | "none";
 
+/** Solapas de Reportes ("resumen" es la de entrada y no va en la URL). */
+export type ReportTab = "resumen" | "ventas" | "caja" | "otros";
+export const reportTabs: ReportTab[] = ["resumen", "ventas", "caja", "otros"];
+
 export interface ReportQuery {
   period: ReportPeriod | "custom";
+  /** Solapa abierta; sin ella, "resumen". */
+  tab?: ReportTab;
   /** YYYY-MM-DD, sólo con period "custom". */
   from: string | null;
   to: string | null;
@@ -64,9 +70,10 @@ export function resolvePeriod(value: string | string[] | undefined): ReportPerio
  * del plan) vuelve a "30 días".
  */
 export function resolveReportQuery(
-  params: { period?: string; desde?: string; hasta?: string; comparar?: string },
+  params: { period?: string; desde?: string; hasta?: string; comparar?: string; tab?: string },
   options: { allowCustom: boolean }
 ): ReportQuery {
+  const tab: ReportTab = reportTabs.includes(params.tab as ReportTab) ? (params.tab as ReportTab) : "resumen";
   const compare: CompareMode =
     params.comparar === "anio" ? "year" : params.comparar === "no" ? "none" : "previous";
   if (params.period === "custom" && options.allowCustom) {
@@ -76,11 +83,11 @@ export function resolveReportQuery(
       const [a, b] = from <= to ? [from, to] : [to, from];
       const days = Math.round((argMidnightUTC(b).getTime() - argMidnightUTC(a).getTime()) / DAY_MS) + 1;
       if (days <= MAX_CUSTOM_DAYS && b <= argDateString()) {
-        return { period: "custom", from: a, to: b, compare };
+        return { period: "custom", from: a, to: b, compare, tab };
       }
     }
   }
-  return { period: resolvePeriod(params.period), from: null, to: null, compare };
+  return { period: resolvePeriod(params.period), from: null, to: null, compare, tab };
 }
 
 /** Link a Reportes con el período, la comparación y, si hay, el vendedor. */
@@ -90,6 +97,7 @@ export function reportesHref(
   branchId: string | null = null
 ): string {
   const params = new URLSearchParams({ period: query.period });
+  if (query.tab && query.tab !== "resumen") params.set("tab", query.tab);
   if (query.period === "custom" && query.from && query.to) {
     params.set("desde", query.from);
     params.set("hasta", query.to);

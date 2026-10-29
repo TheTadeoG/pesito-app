@@ -2,6 +2,7 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { isOrgAdmin } from "@/lib/roles";
 import { getBranchContext } from "@/lib/branches";
+import { ReportesTabs } from "@/components/dashboard/reportes-tabs";
 import { VentasHistorial, type HistorialRow } from "./ventas-historial";
 
 const paymentLabels: Record<string, string> = {
@@ -95,7 +96,9 @@ export default async function VentasPage({
   }
 
   return (
-    <VentasHistorial
+    <div className="space-y-6">
+      <ReportesTabs active="ventas" sub="historial" />
+      <VentasHistorial
       rows={rows}
       total={total}
       page={page}
@@ -107,6 +110,7 @@ export default async function VentasPage({
       canExport={admin}
       orgName={organization.name}
       error={error}
-    />
+      />
+    </div>
   );
 }
