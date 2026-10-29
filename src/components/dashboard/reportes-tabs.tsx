@@ -9,14 +9,9 @@ const TABS: { id: ReportTab; label: string }[] = [
   { id: "otros", label: "Otros reportes" },
 ];
 
-// Dentro de Ventas y de Caja hay dos vistas: el análisis (números y
-// rankings, en /reportes) y lo que se opera o consulta (historial de ventas
-// en /ventas, caja del día en /caja).
+// Ventas es sólo el historial (/ventas). Dentro de Caja hay dos vistas: el
+// análisis (en /reportes) y la caja del día (/caja).
 const SUBS: Partial<Record<ReportTab, { id: string; label: string; href: (q?: ReportQuery) => string }[]>> = {
-  ventas: [
-    { id: "analisis", label: "Análisis", href: (q) => tabHref("ventas", q) },
-    { id: "historial", label: "Historial de ventas", href: () => "/ventas" },
-  ],
   caja: [
     { id: "analisis", label: "Análisis", href: (q) => tabHref("caja", q) },
     { id: "dia", label: "Caja y cierres", href: () => "/caja" },
@@ -24,6 +19,7 @@ const SUBS: Partial<Record<ReportTab, { id: string; label: string; href: (q?: Re
 };
 
 function tabHref(tab: ReportTab, query?: ReportQuery) {
+  if (tab === "ventas") return "/ventas";
   if (query) return reportesHref({ ...query, tab });
   return tab === "resumen" ? "/reportes" : `/reportes?tab=${tab}`;
 }

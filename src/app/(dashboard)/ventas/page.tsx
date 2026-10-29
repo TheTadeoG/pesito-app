@@ -97,7 +97,7 @@ export default async function VentasPage({
 
   return (
     <div className="space-y-6">
-      <ReportesTabs active="ventas" sub="historial" />
+      <ReportesTabs active="ventas" />
       <VentasHistorial
       rows={rows}
       total={total}
