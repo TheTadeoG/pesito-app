@@ -63,7 +63,7 @@ const WIDGET_TAB: Record<WidgetId, ReportTab> = {
   sellers: "resumen",
   lossProducts: "resumen",
   recentSales: "resumen",
-  cashDiff: "caja",
+  cashDiff: "resumen",
   fiadoDebtors: "otros",
   stockValue: "otros",
 };

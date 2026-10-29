@@ -592,7 +592,7 @@ export default async function ReportesPage({
 
   return (
     <div className="space-y-6">
-      <ReportesTabs active={query.tab ?? "resumen"} sub="analisis" query={query} />
+      <ReportesTabs active={query.tab ?? "resumen"} query={query} />
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector
           query={query}

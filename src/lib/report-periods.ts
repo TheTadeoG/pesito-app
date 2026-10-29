@@ -17,8 +17,8 @@ export type CompareMode = "previous" | "year" | "none";
 
 /** Solapas de Reportes ("resumen" es la de entrada y no va en la URL). */
 export type ReportTab = "resumen" | "ventas" | "caja" | "otros";
-/** Las que se abren dentro de /reportes: "ventas" es el historial, en /ventas. */
-export const reportTabs: ReportTab[] = ["resumen", "caja", "otros"];
+/** Las que se abren dentro de /reportes: Ventas y Caja son /ventas y /caja. */
+export const reportTabs: ReportTab[] = ["resumen", "otros"];
 
 export interface ReportQuery {
   period: ReportPeriod | "custom";

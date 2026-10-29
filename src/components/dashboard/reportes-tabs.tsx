@@ -9,18 +9,9 @@ const TABS: { id: ReportTab; label: string }[] = [
   { id: "otros", label: "Otros reportes" },
 ];
 
-// Ventas es sólo el historial (/ventas). Caja abre en la caja del día y el
-// historial de cierres (/caja), con el análisis (en /reportes) al lado.
-const SUBS: Partial<Record<ReportTab, { id: string; label: string; href: (q?: ReportQuery) => string }[]>> = {
-  caja: [
-    { id: "dia", label: "Caja y cierres", href: () => "/caja" },
-    { id: "analisis", label: "Análisis", href: (q) => (q ? reportesHref({ ...q, tab: "caja" }) : "/reportes?tab=caja") },
-  ],
-};
-
 function tabHref(tab: ReportTab, query?: ReportQuery) {
   if (tab === "ventas") return "/ventas";
-  // Caja abre en la caja y el historial de cierres; el análisis es la otra vista.
+  // Caja: la caja del día, el resumen del equipo y el historial de cierres.
   if (tab === "caja") return "/caja";
   if (query) return reportesHref({ ...query, tab });
   return tab === "resumen" ? "/reportes" : `/reportes?tab=${tab}`;
@@ -28,18 +19,15 @@ function tabHref(tab: ReportTab, query?: ReportQuery) {
 
 /**
  * Solapas de Reportes. Se muestran arriba de /reportes, /ventas y /caja: las
- * tres son "Reportes" en el menú. `sub` marca la vista de adentro.
+ * tres son "Reportes" en el menú.
  */
 export function ReportesTabs({
   active,
-  sub = "dia",
   query,
 }: {
   active: ReportTab;
-  sub?: string;
   query?: ReportQuery;
 }) {
-  const subs = SUBS[active];
   return (
     <div className="space-y-3">
       <nav aria-label="Reportes" className="-mx-1 flex gap-1 overflow-x-auto border-b border-border px-1">
@@ -60,24 +48,6 @@ export function ReportesTabs({
           </Link>
         ))}
       </nav>
-      {subs && (
-        <div className="inline-flex gap-0.5 rounded-xl border border-border bg-muted p-0.5">
-          {subs.map((s) => (
-            <Link
-              key={s.id}
-              href={s.href(query)}
-              prefetch={false}
-              aria-current={s.id === sub ? "page" : undefined}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                s.id === sub ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {s.label}
-            </Link>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

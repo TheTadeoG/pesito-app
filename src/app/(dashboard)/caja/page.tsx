@@ -7,7 +7,6 @@ import { getCashRegisterSummaries, sumCashBreakdown, type PaymentBreakdownRow } 
 import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan } from "@/lib/plan-access";
-import { OpenCajaDialog } from "@/app/(dashboard)/caja/open-caja-dialog";
 import { ManageCaja, type TurnoMovement } from "@/app/(dashboard)/caja/manage-caja";
 import { CajaHistorial, type CajaHistorialRow } from "@/app/(dashboard)/caja/historial";
 import {
@@ -213,8 +212,7 @@ export default async function CajaPage({
   if (!register) {
     return (
       <div className="space-y-6">
-        <ReportesTabs active="caja" sub="dia" />
-        <OpenCajaDialog />
+        <ReportesTabs active="caja" />
         {teamOverview}
         <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
       </div>
@@ -319,7 +317,7 @@ export default async function CajaPage({
 
   return (
     <div className="space-y-6">
-      <ReportesTabs active="caja" sub="dia" />
+      <ReportesTabs active="caja" />
       <ManageCaja
         cashRegisterId={register.id}
         openingAmount={openingAmount}
