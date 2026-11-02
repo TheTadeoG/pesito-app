@@ -34,6 +34,8 @@ interface Filters {
   hasta: string;
   medio: string;
   estado: string;
+  /** "si" facturadas, "no" sin factura electrónica, "" todas. */
+  factura: string;
   q: string;
   sucursal: string;
 }
@@ -82,6 +84,7 @@ export function VentasHistorial({
       const p = new URLSearchParams(periodQuery);
       if (merged.medio) p.set("medio", merged.medio);
       if (merged.estado) p.set("estado", merged.estado);
+      if (merged.factura) p.set("factura", merged.factura);
       if (merged.q) p.set("q", merged.q);
       if (merged.sucursal) p.set("sucursal", merged.sucursal);
       const size = next.tam ?? pageSize;
@@ -146,6 +149,16 @@ export function VentasHistorial({
                 <option value="anulada">Anuladas</option>
               </Select>
             </div>
+            {canInvoice && (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Factura electrónica</label>
+                <Select value={f.factura} onChange={(e) => setF({ ...f, factura: e.target.value })}>
+                  <option value="">Todas</option>
+                  <option value="si">Facturadas</option>
+                  <option value="no">Sin facturar</option>
+                </Select>
+              </div>
+            )}
             {branches.length > 0 && (
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Sucursal</label>
@@ -160,10 +173,10 @@ export function VentasHistorial({
               </div>
             )}
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Cliente</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Buscar</label>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} placeholder="Buscar por nombre del cliente…" className="pl-9" />
+                <Input value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} placeholder="Cliente, CUIT o DNI, Nº de comprobante, CAE o importe…" className="pl-9" />
               </div>
             </div>
             <div className="flex items-end gap-2">

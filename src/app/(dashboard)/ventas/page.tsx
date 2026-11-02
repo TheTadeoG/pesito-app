@@ -9,6 +9,7 @@ import { getReportRange, periodParams, resolveReportQuery } from "@/lib/report-p
 import { argDateString } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { getInvoicingConfig } from "@/lib/actions/invoicing";
+import { parseSalesSearch } from "@/lib/sales-search";
 import { VentasHistorial, type HistorialRow } from "./ventas-historial";
 
 const paymentLabels: Record<string, string> = {
@@ -24,7 +25,7 @@ const PAGE_SIZES = [25, 50, 100, 200];
 export default async function VentasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; medio?: string; estado?: string; q?: string; pagina?: string; tam?: string; sucursal?: string }>;
+  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; medio?: string; estado?: string; factura?: string; q?: string; pagina?: string; tam?: string; sucursal?: string }>;
 }) {
   const sp = await searchParams;
   const { organization, membership } = await requireOrgContext();
@@ -40,6 +41,7 @@ export default async function VentasPage({
   const hasta = argDateString(new Date(range.end.getTime() - 1));
   const medio = sp.medio && paymentLabels[sp.medio] ? sp.medio : "";
   const estado = sp.estado === "completada" || sp.estado === "anulada" ? sp.estado : "";
+  const factura = sp.factura === "si" || sp.factura === "no" ? sp.factura : "";
   const q = (sp.q ?? "").trim().slice(0, 60);
   const pageSize = PAGE_SIZES.includes(Number(sp.tam)) ? Number(sp.tam) : 25;
   const page = Math.max(0, Math.floor(Number(sp.pagina) || 0));
@@ -47,21 +49,49 @@ export default async function VentasPage({
   const hasBranches = admin && branchContext.branches.length > 1;
   const sucursal = hasBranches && branchContext.branches.some((b) => b.id === sp.sucursal) ? (sp.sucursal as string) : "";
 
-  // Búsqueda por nombre de cliente: primero los clientes que coinciden.
-  let customerIds: string[] | null = null;
+  // Buscador: cliente (nombre, CUIT o DNI), número de comprobante, CAE o importe. Se arma una lista de
+  // condiciones (ventas de esos clientes, ventas de esos comprobantes, ventas de ese importe); con algo
+  // escrito que no coincide con nada, no hay resultados.
+  const orParts: string[] = [];
   if (q) {
-    const safe = q.replace(/[%_,()]/g, " ");
-    const { data: found } = await supabase.from("customers").select("id").eq("org_id", organization.id).ilike("name", `%${safe}%`).limit(150);
-    customerIds = (found ?? []).map((c) => c.id);
+    const parsed = parseSalesSearch(q);
+    const [customersFound, vouchersFound] = await Promise.all([
+      parsed.text
+        ? supabase
+            .from("customers")
+            .select("id")
+            .eq("org_id", organization.id)
+            .or(`name.ilike.%${parsed.text}%,razon_social.ilike.%${parsed.text}%,document.ilike.%${parsed.text}%`)
+            .limit(150)
+        : Promise.resolve({ data: [] as { id: string }[] }),
+      parsed.voucherNumber !== null || parsed.cae
+        ? supabase
+            .from("arca_vouchers")
+            .select("sale_id")
+            .eq("org_id", organization.id)
+            .not("sale_id", "is", null)
+            .or([parsed.voucherNumber !== null ? `number.eq.${parsed.voucherNumber}` : null, parsed.cae ? `cae.eq.${parsed.cae}` : null].filter(Boolean).join(","))
+            .limit(150)
+        : Promise.resolve({ data: [] as { sale_id: string | null }[] }),
+    ]);
+    const customerIds = (customersFound.data ?? []).map((c) => c.id);
+    const saleIds = (vouchersFound.data ?? []).map((v) => v.sale_id).filter((id): id is string => Boolean(id));
+    if (customerIds.length > 0) orParts.push(`customer_id.in.(${customerIds.join(",")})`);
+    if (saleIds.length > 0) orParts.push(`id.in.(${saleIds.join(",")})`);
+    if (parsed.amount !== null) orParts.push(`total.eq.${parsed.amount}`);
   }
+  const nothingMatches = q !== "" && orParts.length === 0;
 
   let rows: HistorialRow[] = [];
   let total = 0;
   let error: string | null = null;
-  if (!(customerIds && customerIds.length === 0)) {
+  if (!nothingMatches) {
+    const cols = "id, created_at, total, payment_method, invoice_type, status, customer_id";
+    // Facturadas / sin facturar: se cruza con las facturas autorizadas de cada venta.
+    const selectCols = (factura === "si" ? `${cols}, arca_vouchers!inner(id)` : factura === "no" ? `${cols}, arca_vouchers(id)` : cols) as typeof cols;
     let query = supabase
       .from("sales")
-      .select("id, created_at, total, payment_method, invoice_type, status, customer_id", { count: "exact" })
+      .select(selectCols, { count: "exact" })
       .eq("org_id", organization.id)
       .gte("created_at", `${desde}T00:00:00-03:00`)
       .lte("created_at", `${hasta}T23:59:59.999-03:00`)
@@ -71,7 +101,9 @@ export default async function VentasPage({
     if (medio) query = query.eq("payment_method", medio as "efectivo");
     if (estado) query = query.eq("status", estado);
     if (sucursal) query = query.eq("branch_id", sucursal);
-    if (customerIds) query = query.in("customer_id", customerIds);
+    if (orParts.length > 0) query = query.or(orParts.join(","));
+    if (factura !== "") query = query.eq("arca_vouchers.kind", "invoice").eq("arca_vouchers.status", "authorized");
+    if (factura === "no") query = query.is("arca_vouchers", null);
     const { data, count, error: e } = await query;
     if (e) error = "No pudimos cargar las ventas. Probá de nuevo.";
     total = count ?? 0;
@@ -115,14 +147,14 @@ export default async function VentasPage({
         canCompare={false}
         showCompare={false}
         basePath="/ventas"
-        extraParams={{ medio, estado, q, sucursal, ...(pageSize !== 25 ? { tam: String(pageSize) } : {}) }}
+        extraParams={{ medio, estado, factura, q, sucursal, ...(pageSize !== 25 ? { tam: String(pageSize) } : {}) }}
       />
       <VentasHistorial
         rows={rows}
         total={total}
         page={page}
         pageSize={pageSize}
-        filters={{ desde, hasta, medio, estado, q, sucursal }}
+        filters={{ desde, hasta, medio, estado, factura, q, sucursal }}
         periodQuery={periodParams(periodQuery).toString()}
         paymentLabels={paymentLabels}
         branches={hasBranches ? branchContext.branches.map((b) => ({ id: b.id, name: b.name })) : []}

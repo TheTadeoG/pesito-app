@@ -5,7 +5,7 @@ import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { invoiceLabels } from "@/lib/invoice-labels";
+import { voucherBadge } from "@/lib/sale-vouchers";
 import type { SaleDetail } from "@/lib/actions/sales";
 
 export function SaleDetailDialog({
@@ -47,9 +47,12 @@ export function SaleDetailDialog({
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <Badge>{paymentLabels[sale.payment_method] ?? sale.payment_method}</Badge>
-            {sale.invoice_type && sale.invoice_type !== "consumidor_final" && (
-              <Badge tone="accent">{invoiceLabels[sale.invoice_type] ?? sale.invoice_type}</Badge>
-            )}
+            {/* La factura que realmente se emitió (no el tipo a pedir guardado en la venta). */}
+            {sale.vouchers
+              .filter((v) => v.kind === "invoice" && v.status === "authorized")
+              .map((v) => (
+                <Badge key={v.id} tone="accent">{voucherBadge(v.voucherClass, v.environment)}</Badge>
+              ))}
             {sale.status === "anulada" && <Badge tone="danger">Anulada</Badge>}
           </div>
 
