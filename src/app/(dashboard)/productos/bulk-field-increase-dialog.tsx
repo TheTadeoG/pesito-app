@@ -1,5 +1,6 @@
 "use client";
 
+import { markCatalogDirty } from "@/lib/pos-catalog-store";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Undo2 } from "lucide-react";
@@ -53,6 +54,7 @@ function RecentBulkChanges({ field }: { field: "price" | "cost" }) {
     setRevertingId(row.id);
     setError(null);
     const result = await revertBulkChange(row.id, withLinked ? row.linked?.id : undefined);
+    if (!result.error) markCatalogDirty();
     setRevertingId(null);
     if (result.error) {
       setError(result.error);
@@ -266,6 +268,7 @@ export function BulkFieldIncreaseDialog({
       setError(result.error);
       return;
     }
+    markCatalogDirty();
     showSuccess(
       result.priceUpdatedCount !== undefined
         ? "Costos y precios actualizados"

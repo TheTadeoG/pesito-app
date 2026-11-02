@@ -188,3 +188,24 @@ export async function saveCopy(key: string, copy: CatalogCopy, cookieValue: stri
   }
   return true;
 }
+
+// Cuando se cambia algo del catálogo desde Productos (precio, datos, activar), el POS tiene que enterarse al
+// toque: sin esto, abrir el POS enseguida usaba la copia local sin preguntarle nada a la base (hasta 1 minuto).
+const DIRTY_KEY = "pesito-pos-catalog-dirty";
+
+export function markCatalogDirty() {
+  try {
+    window.localStorage.setItem(DIRTY_KEY, String(Date.now()));
+  } catch {
+    // sin localStorage: el POS se actualiza igual con su ritmo normal
+  }
+}
+
+/** ¿Hubo cambios en Productos después de la última consulta del POS? */
+export function isCatalogDirty(checkedAt: number): boolean {
+  try {
+    return Number(window.localStorage.getItem(DIRTY_KEY) ?? 0) > checkedAt;
+  } catch {
+    return false;
+  }
+}

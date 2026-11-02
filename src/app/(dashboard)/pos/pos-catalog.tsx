@@ -14,6 +14,7 @@ import {
 } from "@/lib/pos-catalog-merge";
 import {
   COPY_VERSION,
+  isCatalogDirty,
   loadCopy,
   parseCopy,
   readLocalRaw,
@@ -188,7 +189,8 @@ export function PosCatalog({
           // Si la copia estaba en IndexedDB, se muestra ya.
           setLoaded((current) => current ?? copy.products);
           const meta = readMeta(cacheKey);
-          if (meta && Date.now() - meta.checkedAt < MIN_RECHECK_MS) return; // se acaba de consultar
+          // Se acaba de consultar y nada cambió en Productos desde entonces: alcanza la copia.
+          if (meta && Date.now() - meta.checkedAt < MIN_RECHECK_MS && !isCatalogDirty(meta.checkedAt)) return;
         }
 
         let result: Result | null;
@@ -269,7 +271,9 @@ export function PosCatalog({
       void sync();
     }
     function onVisible() {
-      if (document.visibilityState === "visible" && Date.now() - lastSync.current > RESYNC_MS) void sync();
+      if (document.visibilityState !== "visible") return;
+      const meta = readMeta(cacheKey);
+      if (Date.now() - lastSync.current > RESYNC_MS || (meta && isCatalogDirty(meta.checkedAt))) void sync();
     }
     document.addEventListener("visibilitychange", onVisible);
     return () => {

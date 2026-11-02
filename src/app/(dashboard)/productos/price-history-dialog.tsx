@@ -1,5 +1,6 @@
 "use client";
 
+import { markCatalogDirty } from "@/lib/pos-catalog-store";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Undo2 } from "lucide-react";
@@ -49,6 +50,7 @@ function HistoryList({
     setRevertingId(row.id);
     setError(null);
     const result = await revertProductField(product.id, field, value);
+    if (!result.error) markCatalogDirty();
     setRevertingId(null);
     if (result.error) {
       setError(result.error);

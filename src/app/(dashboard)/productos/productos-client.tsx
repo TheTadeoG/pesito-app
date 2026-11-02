@@ -1,5 +1,6 @@
 "use client";
 
+import { markCatalogDirty } from "@/lib/pos-catalog-store";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -502,6 +503,7 @@ export function ProductosClient({
       return;
     setBusyId(product.id);
     await deleteProduct(product.id);
+    markCatalogDirty();
     setBusyId(null);
   }
 
@@ -510,6 +512,7 @@ export function ProductosClient({
     setActiveOverrides((current) => ({ ...current, [product.id]: nextActive }));
     setBusyId(product.id);
     const result = await toggleProductActive(product.id, nextActive);
+    if (!result.error) markCatalogDirty();
     setBusyId(null);
     if (result.error) {
       setActiveOverrides((current) => {

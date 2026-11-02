@@ -1,5 +1,6 @@
 "use client";
 
+import { markCatalogDirty } from "@/lib/pos-catalog-store";
 import { useMemo, useRef, useState } from "react";
 import { ImageIcon, Loader2, Plus, Search, X } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
@@ -409,6 +410,7 @@ export function ProductForm({
     };
 
     const result = await saveProduct(input);
+    if (!result.error) markCatalogDirty();
     setPending(false);
 
     if (result.error) {
