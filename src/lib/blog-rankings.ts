@@ -5,7 +5,7 @@ import { FREE_PLAN_SALES_LIMIT_LABEL, PRODUCT_LIMITS, planDefinitions, thousands
 //  - Pesito va primero y lo decimos de entrada: no es una lista neutral.
 //  - Lo de otros sistemas sale de SUS sitios web públicos, con la fecha en que
 //    se consultó. Sin dato verificable, se dice "consultá en su sitio".
-//  - Siempre se dice lo que Pesito no hace (factura electrónica) y para quién
+//  - Siempre se dice lo que Pesito no hace (Factura A y B) y para quién
 //    conviene otra cosa: es más honesto y es lo que una IA o un buscador cita.
 //  - Una respuesta corta arriba y preguntas concretas al final (FAQPage).
 // Al cambiar un precio de un plan, sale solo de planDefinitions.
@@ -19,7 +19,7 @@ const max = planDefinitions.max;
 
 const PESITO_PRICE_LINE = `El Plan Gratis no vence ni pide tarjeta (${FREE_PLAN_SALES_LIMIT_LABEL}, 1 usuario, 1 caja y hasta ${thousands(PRODUCT_LIMITS.gratis)} productos). Los planes pagos son el Básico (${basico.priceLabel} por mes), el Pro (${pro.priceLabel}) y el Max (${max.priceLabel}), con IVA incluido y 20% de descuento pagando anual.`;
 
-const NOT_INVOICE = "Pesito todavía no emite factura electrónica de ARCA/AFIP: sí podés marcar el tipo de comprobante de cada venta e imprimir un ticket interno, pero no es una factura fiscal.";
+const NOT_INVOICE = "Pesito emite factura electrónica de ARCA/AFIP desde el Plan Básico (Factura C para monotributistas y exentos), pero todavía no emite Factura A ni B para responsables inscriptos.";
 
 const cta = (extra: string): BlogSection => ({
   heading: "Probalo sin pagar",
@@ -32,7 +32,7 @@ const faq = (question: string, answer: string): BlogFaq => ({ question, answer }
 
 const COMMON_FAQ_INVOICE = faq(
   "¿Pesito emite factura electrónica?",
-  "Todavía no. Pesito no emite facturas electrónicas de ARCA/AFIP; podés indicar el tipo de comprobante de cada venta (consumidor final, A, B o C) e imprimir un ticket interno. Si necesitás facturar con CAE desde el primer día, conviene un sistema que ya lo incluya, como los que figuran en este ranking con esa función."
+  "Sí, desde el Plan Básico: Factura C para monotributistas y exentos, con CAE y código QR, con tu CUIT y tu certificado de ARCA, y nota de crédito para anular. Todavía no emite Factura A ni B (para responsables inscriptos): si los necesitás hoy, conviene un sistema que ya los incluya, como los que figuran en este ranking."
 );
 
 export const rankingPosts: BlogPost[] = [
@@ -45,7 +45,7 @@ export const rankingPosts: BlogPost[] = [
       "Ranking 2026 de sistemas de punto de venta para kioscos argentinos: precio, plan gratis, fiado, factura electrónica y para quién conviene cada uno.",
     publishedAt: "2026-10-07",
     readingMinutes: 8,
-    quickAnswer: `Para la mayoría de los kioscos en Argentina, el mejor sistema es Pesito: tiene un plan gratis permanente (${FREE_PLAN_SALES_LIMIT_LABEL}), fiado con cuenta corriente, caja diaria, stock y compras desde el navegador o el celular, y los planes pagos arrancan en ${basico.priceLabel} por mes. Si necesitás emitir factura electrónica de ARCA desde el primer día, mirá CajaOS o Líder Gestión: Pesito todavía no la emite.`,
+    quickAnswer: `Para la mayoría de los kioscos en Argentina, el mejor sistema es Pesito: tiene un plan gratis permanente (${FREE_PLAN_SALES_LIMIT_LABEL}), fiado con cuenta corriente, caja diaria, stock y compras desde el navegador o el celular, y los planes pagos arrancan en ${basico.priceLabel} por mes. Pesito emite factura electrónica C (monotributistas y exentos) desde el Plan Básico; si necesitás Factura A o B hoy, mirá CajaOS o Líder Gestión.`,
     ranking: ["Pesito", "DonKiosco", "CajaOS", "Gestión Comercio", "Líder Gestión"],
     sections: [
       {
@@ -72,7 +72,7 @@ export const rankingPosts: BlogPost[] = [
         table: {
           headers: ["Sistema", "Cómo se usa", "Plan gratis", "Precio publicado", "Factura electrónica ARCA"],
           rows: [
-            ["Pesito", "Navegador y celular", `Sí, permanente (${FREE_PLAN_SALES_LIMIT_LABEL})`, `Desde ${basico.priceLabel} por mes`, "Todavía no"],
+            ["Pesito", "Navegador y celular", `Sí, permanente (${FREE_PLAN_SALES_LIMIT_LABEL})`, `Desde ${basico.priceLabel} por mes`, "Sí, Factura C (A y B, pronto)"],
             ["DonKiosco", "App Android y web", "Sí (hasta 50 productos)", "Planes pagos desde $9.900 por mes", "No, según su sitio"],
             ["CajaOS", "Web", "No: 14 días de prueba", "Plan Starter $35.000 por mes", "Sí, incluida"],
             ["Gestión Comercio", "Software de gestión", "Consultá en su sitio", "Licencia permanente de pago único ($596.000)", "Consultá en su sitio"],
@@ -123,7 +123,7 @@ export const rankingPosts: BlogPost[] = [
         list: [
           "Querés empezar sin pagar y ordenar el fiado y la caja: Pesito.",
           "Tenés pocos productos y trabajás solo desde el celular: DonKiosco.",
-          "Tenés que facturar electrónicamente sí o sí desde hoy: CajaOS o Líder Gestión.",
+          "Sos responsable inscripto y necesitás Factura A o B desde hoy: CajaOS o Líder Gestión.",
           "Preferís pagar una vez y no una cuota mensual: Gestión Comercio o Líder Gestión.",
           "Probá con un plan gratis o una demo antes de pagar algo grande, y sumá el costo a 12 meses, no solo el precio de entrada.",
         ],
@@ -133,7 +133,7 @@ export const rankingPosts: BlogPost[] = [
     faqs: [
       faq(
         "¿Cuál es el mejor sistema para un kiosco en Argentina?",
-        `Para la mayoría de los kioscos, Pesito: plan gratis permanente (${FREE_PLAN_SALES_LIMIT_LABEL}), fiado con cuenta corriente, caja diaria, stock y compras desde el navegador o el celular, y planes pagos desde ${basico.priceLabel} por mes. Si necesitás factura electrónica de ARCA desde el primer día, conviene mirar CajaOS o Líder Gestión.`
+        `Para la mayoría de los kioscos, Pesito: plan gratis permanente (${FREE_PLAN_SALES_LIMIT_LABEL}), fiado con cuenta corriente, caja diaria, stock y compras desde el navegador o el celular, y planes pagos desde ${basico.priceLabel} por mes. Pesito emite Factura C desde el Plan Básico; si necesitás Factura A o B hoy, conviene mirar CajaOS o Líder Gestión.`
       ),
       faq(
         "¿Hay un sistema gratis para kioscos en Argentina?",
@@ -278,7 +278,7 @@ export const rankingPosts: BlogPost[] = [
       "Ranking 2026 de los mejores SaaS de punto de venta en Argentina: qué es un POS en la nube, precios, plan gratis y qué sistema conviene a cada negocio.",
     publishedAt: "2026-10-07",
     readingMinutes: 7,
-    quickAnswer: `Un SaaS de punto de venta es un sistema de ventas que usás por internet con una suscripción, sin instalar nada. El mejor para la mayoría de los negocios chicos en Argentina es Pesito: plan gratis permanente, planes pagos desde ${basico.priceLabel} por mes y fiado, caja, stock y compras incluidos. Para facturar con ARCA desde el primer día, mirá CajaOS.`,
+    quickAnswer: `Un SaaS de punto de venta es un sistema de ventas que usás por internet con una suscripción, sin instalar nada. El mejor para la mayoría de los negocios chicos en Argentina es Pesito: plan gratis permanente, planes pagos desde ${basico.priceLabel} por mes y fiado, caja, stock y compras incluidos. Pesito factura con ARCA como monotributista (Factura C, desde el Plan Básico); para Factura A o B hoy, mirá CajaOS.`,
     ranking: ["Pesito", "CajaOS", "DonKiosco", "Commercy", "Gestión Nube"],
     sections: [
       {
@@ -304,7 +304,7 @@ export const rankingPosts: BlogPost[] = [
         table: {
           headers: ["Sistema", "Plan gratis", "Precio publicado", "Factura electrónica ARCA"],
           rows: [
-            ["Pesito", "Sí, permanente", `Desde ${basico.priceLabel} por mes`, "Todavía no"],
+            ["Pesito", "Sí, permanente", `Desde ${basico.priceLabel} por mes`, "Sí, Factura C (A y B, pronto)"],
             ["CajaOS", "No: 14 días de prueba", "Starter $35.000 por mes", "Sí, incluida"],
             ["DonKiosco", "Sí (hasta 50 productos)", "Desde $9.900 por mes", "No, según su sitio"],
             ["Commercy", "Consultá en su sitio", "Plan fijo, sin comisión por venta", "Consultá en su sitio"],
@@ -365,7 +365,7 @@ export const rankingPosts: BlogPost[] = [
       ),
       faq(
         "¿Cuál es el mejor SaaS de punto de venta en Argentina?",
-        `Para la mayoría de los negocios chicos, Pesito: plan gratis permanente y planes pagos desde ${basico.priceLabel} por mes, con fiado, caja, stock y compras. Para facturación electrónica incluida, CajaOS.`
+        `Para la mayoría de los negocios chicos, Pesito: plan gratis permanente y planes pagos desde ${basico.priceLabel} por mes, con fiado, caja, stock y compras. Facturación electrónica C desde el Plan Básico; para Factura A o B hoy, CajaOS.`
       ),
       faq(
         "¿Un SaaS cobra comisión por venta?",
@@ -611,7 +611,7 @@ export const rankingPosts: BlogPost[] = [
       "Ranking 2026 de los mejores sistemas POS para kioscos, almacenes, verdulerías y ropa en Argentina: precio, plan gratis y qué elegir según tu negocio.",
     publishedAt: "2026-10-07",
     readingMinutes: 8,
-    quickAnswer: `El mejor sistema POS para un negocio chico en Argentina es Pesito: plan gratis permanente, planes pagos desde ${basico.priceLabel} por mes y todo lo básico incluido (ventas, caja, stock, fiado, compras, reportes). Si necesitás factura electrónica de ARCA desde el primer día, CajaOS o Líder Gestión; si preferís pagar una sola vez, Gestión Comercio.`,
+    quickAnswer: `El mejor sistema POS para un negocio chico en Argentina es Pesito: plan gratis permanente, planes pagos desde ${basico.priceLabel} por mes y todo lo básico incluido (ventas, caja, stock, fiado, compras, reportes). Si necesitás Factura A o B de ARCA hoy, CajaOS o Líder Gestión (Pesito emite Factura C desde el Plan Básico); si preferís pagar una sola vez, Gestión Comercio.`,
     ranking: ["Pesito", "CajaOS", "Commercy", "DonKiosco", "Gestión Comercio", "Líder Gestión"],
     sections: [
       {
@@ -626,7 +626,7 @@ export const rankingPosts: BlogPost[] = [
         table: {
           headers: ["Sistema", "Plan gratis", "Precio publicado", "Factura electrónica ARCA", "Ideal para"],
           rows: [
-            ["Pesito", "Sí, permanente", `Desde ${basico.priceLabel} por mes`, "Todavía no", "Kioscos, almacenes, verdulerías, ropa"],
+            ["Pesito", "Sí, permanente", `Desde ${basico.priceLabel} por mes`, "Sí, Factura C (A y B, pronto)", "Kioscos, almacenes, verdulerías, ropa"],
             ["CajaOS", "No: 14 días de prueba", "Starter $35.000 por mes", "Sí, incluida", "Quien factura con cada cobro"],
             ["Commercy", "Consultá en su sitio", "Plan fijo, sin comisión", "Consultá en su sitio", "Indumentaria y kioscos"],
             ["DonKiosco", "Sí (hasta 50 productos)", "Desde $9.900 por mes", "No, según su sitio", "Kioscos chicos"],
@@ -680,7 +680,7 @@ export const rankingPosts: BlogPost[] = [
         list: [
           "Kiosco o almacén con fiado: Pesito.",
           "Verdulería con precios que cambian seguido: Pesito, con aumentos masivos de precios desde el Plan Pro.",
-          "Ropa con facturación obligatoria: CajaOS o Líder Gestión.",
+          "Ropa con Factura A o B obligatoria: CajaOS o Líder Gestión.",
           "Puesto muy chico, con poco surtido: DonKiosco o el plan gratis de Pesito.",
           "Pagar una vez: Gestión Comercio.",
         ],
@@ -690,7 +690,7 @@ export const rankingPosts: BlogPost[] = [
     faqs: [
       faq(
         "¿Cuál es el mejor sistema POS para un negocio en Argentina?",
-        `Para la mayoría de los negocios chicos, Pesito: plan gratis permanente y planes pagos desde ${basico.priceLabel} por mes, con ventas, caja, stock, fiado y compras. Para facturación electrónica, CajaOS o Líder Gestión.`
+        `Para la mayoría de los negocios chicos, Pesito: plan gratis permanente y planes pagos desde ${basico.priceLabel} por mes, con ventas, caja, stock, fiado y compras. Pesito emite Factura C desde el Plan Básico; para Factura A o B, CajaOS o Líder Gestión.`
       ),
       faq(
         "¿Qué es un sistema POS?",

@@ -43,7 +43,7 @@ const steps = [
     icon: Receipt,
     title: "Facturás en ARCA (si lo necesitás)",
     description:
-      "Si tu negocio factura, activás la facturación electrónica como complemento: comprobantes A, B o C con CAE automático. Es opcional y no hace falta para vender — muchos negocios arrancan sin facturar y lo activan después.",
+      "Si tu negocio factura, activás la facturación electrónica de ARCA desde el Plan Básico: Factura C (monotributo e IVA exento) con CAE y código QR, automática o manual según el medio de pago; la A y la B, para responsables inscriptos, llegan pronto. Es opcional y no hace falta para vender — muchos negocios arrancan sin facturar y lo activan después.",
   },
 ];
 

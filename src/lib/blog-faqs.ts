@@ -3,7 +3,7 @@ import { FREE_PLAN_SALES_LIMIT_LABEL } from "@/lib/plan-features";
 
 // Preguntas y respuestas concretas de cada nota (se muestran al final y salen
 // como FAQPage en el JSON-LD). Cada respuesta se entiende sola y nombra a
-// Pesito sólo con funciones que existen; lo que falta (factura electrónica) se
+// Pesito sólo con funciones que existen; lo que falta (Factura A y B) se
 // dice. Planes: ver plan-features.ts.
 const f = (question: string, answer: string): BlogFaq => ({ question, answer });
 
@@ -20,7 +20,7 @@ export const blogFaqs: Record<string, BlogFaq[]> = {
   ],
   "factura-a-b-c-diferencia": [
     f("¿Cuál es la diferencia entre factura A, B y C?", "La A la emite un responsable inscripto a otro responsable inscripto; la B, un responsable inscripto a un consumidor final; y la C la emiten los monotributistas. El tipo depende de la condición frente al IVA de quien vende y de quien compra."),
-    f("¿Pesito emite factura electrónica?", "Todavía no. Pesito no emite facturas electrónicas de ARCA/AFIP; podés indicar el tipo de comprobante de cada venta e imprimir un ticket interno, que no es una factura fiscal."),
+    f("¿Pesito emite factura electrónica?", "Sí, desde el Plan Básico: Factura C para monotributistas y exentos, con CAE y código QR, con tu CUIT y tu certificado de ARCA, y nota de crédito para anular. Todavía no emite Factura A ni B (para responsables inscriptos). Las ventas sin factura llevan un comprobante interno X, que no es fiscal."),
     f("¿Un monotributista tiene que emitir factura C?", "Sí: el monotributista emite factura C a sus clientes. Consultá con tu contador o en ARCA los plazos y los casos de excepción de tu actividad."),
   ],
   "como-elegir-sistema-para-tu-comercio": [

@@ -92,12 +92,14 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Avisos configurables, de margen bajo y de costos sin actualizar",
       "Cuentas corrientes de clientes y proveedores, con vencimientos y calendario de pagos",
       "Control de caja por empleado",
+      "Factura electrónica con ARCA (Factura C para monotributistas e IVA exento), con nota de crédito",
       "Carga masiva de productos y clientes con Excel",
       "Códigos de barras propios y etiquetas para imprimir",
       `Hasta ${products("basico")}, 2 usuarios y 2 cajas`,
     ],
     soon: [
       "Talles, combos y kits",
+      "Factura A y B para responsables inscriptos",
     ],
   },
   pro: {
@@ -281,9 +283,15 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       { label: "Historial de ventas: ver, reimprimir el ticket, anular con motivo (la venta nunca se borra) y exportar a Excel (CSV)", values: everyPlan },
       { label: "Compras a proveedores", values: everyPlan },
       {
-        label: "Factura electrónica con ARCA (con tu CUIT y tu certificado): Factura A, B o C con CAE, en ticket de 80 mm o A4",
+        label: "Factura electrónica con ARCA para monotributistas e IVA exento (Factura C, con tu CUIT y tu certificado): CAE y código QR, ticket de 80 mm o A4, automática o manual según el medio de pago, y nota de crédito al anular",
+        values: fromBasico,
+      },
+      { label: "Buscar clientes en ARCA por CUIT, CUIL o DNI", values: fromBasico },
+      {
+        label: "Factura A y B para responsables inscriptos (con el IVA de cada producto)",
         values: { gratis: false, basico: "Pronto", pro: "Pronto", max: "Pronto" },
       },
+      { label: "Comprobante interno X (no fiscal) con numeración propia, para las ventas sin factura", values: everyPlan },
       { label: "Historial de precios de cada producto", values: everyPlan },
       { label: "Cuenta corriente con proveedores (vencimientos y calendario)", values: fromBasico },
       { label: "Aumentos masivos de precios y costos, con deshacer", values: fromPro },

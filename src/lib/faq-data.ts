@@ -96,7 +96,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Imprime tickets? ¿Hace factura electrónica?",
         answer:
-          "Podés imprimir un ticket de cada venta (es un comprobante interno, no una factura fiscal). Pesito todavía no emite facturas electrónicas de ARCA/AFIP; sí podés marcar a qué tipo de comprobante corresponde cada venta (consumidor final, A, B o C) y guardar los datos fiscales de tus clientes.",
+          `Sí. Cada venta se imprime en ticket: si no se factura, es un comprobante interno X numerado (no fiscal). Desde el ${basico.name}, Pesito emite factura electrónica de ARCA/AFIP con tu CUIT y tu certificado: Factura C para monotributistas y exentos, con CAE y código QR, en ticket de 80 mm o en hoja A4, y con nota de crédito cuando anulás una venta facturada. Elegís, por cada medio de pago, si se factura sola o a mano. Todavía no emite Factura A ni B (para responsables inscriptos): llegan pronto.`,
       },
     ],
   },

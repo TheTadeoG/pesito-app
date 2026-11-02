@@ -343,6 +343,7 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
   - Google Ads: cuenta vinculada a Analytics (`G-D1HHB4MG1Q`); activar etiquetación automática, marcar `sign_up` y `purchase` como eventos clave en Analytics, importarlos como conversiones en Ads y tener activo el uso compartido "Productos y servicios de Google".
   - Banner de consentimiento de cookies y actualizar `/privacidad` (hoy dice que no hay cookies de publicidad; ya menciona Analytics y Clarity).
   - Opcional: mandar `purchase` desde el servidor (Measurement Protocol) para no perder pagos si la persona no vuelve a `/suscribirse/listo`.
+- [ ] Factura A y B para responsables inscriptos — Plan Básico (`electronicInvoicing`). «Pronto» en `plan-features.ts` (card del Básico y `planComparison`), `faq-data.ts`, `blog-faqs.ts`, `blog-rankings.ts`, `comparacion-data.ts`, `como-funciona` y `llms.txt`. Necesita guardar el IVA de cada producto.
 - [ ] Combos y kits — Plan Esencial (`productBundles`). En la card del Esencial: "Talles, combos y kits".
 - [ ] Talles y colores como variantes de un producto — Plan Esencial (`productVariants`). Mencionado también en /como-funciona, /comparacion y /pesito-para/indumentaria.
 - [ ] Ofertas y promociones — Plan Pro (`promotions`).
@@ -669,4 +670,5 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - El ticket X puede ocultar el nombre del negocio y el número (migración 0085, Ajustes → Tu negocio → Comprobante X).
 - Hecho: nota de crédito al anular una venta facturada (`voidInvoicedSale`: primero la nota en ARCA, recién autorizada se anula la venta; reintentable sin duplicar).
 - Hecho: «Buscar en ARCA» (Padrón A5/A13) en la ficha del cliente: completa nombre y muestra condición IVA y domicilio; requiere autorizar `ws_sr_constancia_inscripcion` y `ws_sr_padron_a13` en ARCA (`src/lib/actions/padron.ts`).
-- Falta (Funciones pendientes): Responsable Inscripto (Factura A/B: IVA por producto), receptor con condición IVA del cliente (luego `void_sale_audited`), certificado de producción. Los textos públicos siguen diciendo «Pronto».
+- Producción: certificado, conexión y primera factura real hechos (2026-11-02). Textos públicos actualizados en el mismo commit (plan-features con filas nuevas y Plan Básico, faq-data, blog-faqs, blog-rankings, comparacion-data, como-funciona, llms.txt): la factura electrónica C existe desde el Plan Básico; A y B quedan como «Pronto».
+- Falta (Funciones pendientes): Responsable Inscripto (Factura A/B: IVA por producto, guardado por producto), condición IVA del cliente guardada en su ficha, notas de crédito parciales (devoluciones de un producto), reportes fiscales (libro IVA ventas).
