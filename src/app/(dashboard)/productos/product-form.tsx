@@ -156,6 +156,7 @@ function PriceWithIvaField({
               />
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground">Se guarda y se cobra el precio final (con IVA). La alícuota sólo ayuda a calcularlo.</p>
         </div>
       ) : (
         <Input
