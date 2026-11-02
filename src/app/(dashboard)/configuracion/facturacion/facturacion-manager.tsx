@@ -1,6 +1,7 @@
 "use client";
 
 import { certificateFromFile } from "@/lib/arca/cert-file";
+import { SceneDownload, SceneDrop, ScenePuntoVenta, SceneRelation, SceneSearch, SceneUpload } from "@/app/(dashboard)/configuracion/facturacion/arca-scenes";
 import { AUTO_INVOICE_METHODS } from "@/lib/arca/auto-invoice";
 import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { useState, useTransition } from "react";
@@ -43,23 +44,14 @@ export interface ArcaStatusView {
 
 type Env = "test" | "production";
 
-const stepTitle = "text-sm font-semibold text-foreground";
 
-function Step({ n, title, done, disabled, children }: { n: number; title: string; done: boolean; disabled?: boolean; children: React.ReactNode }) {
+// Un paso del asistente: título grande, un dibujo animado (opcional) y muy poco texto.
+function WizardStep({ title, scene, children }: { title: string; scene?: React.ReactNode; children?: React.ReactNode }) {
   return (
-    <div className={cn("flex gap-3", disabled && "opacity-60")}>
-      <span
-        className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-          done ? "bg-success text-white" : "bg-accent text-accent-foreground"
-        )}
-      >
-        {done ? <CheckCircle2 className="h-4 w-4" /> : n}
-      </span>
-      <div className="min-w-0 flex-1 space-y-2.5">
-        <p className={stepTitle}>{title}</p>
-        {children}
-      </div>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      {scene}
+      <div className="space-y-3 text-sm text-muted-foreground">{children}</div>
     </div>
   );
 }
@@ -180,8 +172,24 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
     run(() => saveArcaCertificate({ environment: env, certificate: pem }), `Certificado «${file.name}» guardado.`, () => setCertificate(""));
   }
 
+  // Asistente de ARCA: un paso por pantalla. Arranca donde quedó la persona.
+  const stepsFor = (e: Env) => (e === "production" ? ["pv", "solicitud", "descargar", "subir", "bajar", "cert", "autorizar"] : ["solicitud", "copiar", "wsass", "cert", "autorizar"]);
+  const startStep = (e: Env) => {
+    const c = status.credentials[e];
+    const list = stepsFor(e);
+    if (c?.has_certificate) return "autorizar";
+    if (c?.has_key && c.csr_pem) return list[list.indexOf("solicitud") + 1];
+    return list[0];
+  };
+  const [wizard, setWizard] = useState<string>(() => startStep(env));
+  const steps = stepsFor(env);
+  const stepIndex = Math.max(0, steps.indexOf(wizard));
+  const goNext = () => setWizard(steps[Math.min(steps.length - 1, stepIndex + 1)]);
+  const goBack = () => setWizard(steps[Math.max(0, stepIndex - 1)]);
+
   function switchEnv(next: Env) {
     setEnv(next);
+    setWizard(startStep(next));
     const c = status.credentials[next];
     setSalesPoint(String(c?.sales_point ?? ""));
     setCsr(c?.csr_pem ?? null);
@@ -232,37 +240,6 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{`Antes de empezar: lo que tiene que estar listo en ARCA (${env === "test" ? "pruebas" : "producción"})`}</CardTitle>
-          <CardDescription>ARCA pide tres cosas distintas. Si falta alguna, la conexión falla aunque lo demás esté bien. Hacelas en este orden: la A (el punto de venta) antes de generar la solicitud del paso 2; la B y la C, siguiendo los pasos de abajo.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ol className="space-y-3 text-sm">
-            {(env === "production"
-              ? [
-                  { t: "Clave fiscal nivel 3 (o más)", d: "Es con la que entrás a ARCA. Los certificados digitales no se pueden administrar con un nivel menor." },
-                  { t: "Un punto de venta para Web Services", d: "En «Administración de Puntos de Venta y Domicilios» → «A/B/M de Puntos de Venta» → Agregar. Sistema: «Factura Electrónica – Monotributo – Web Services» (Responsable inscripto: «RECE para aplicativo y Web Services»). Hacelo ahora, antes del paso 2. Anotá el número: es el que te pide el paso 2." },
-                  { t: "El certificado, y su permiso para facturar", d: "Se crea en «Administración de Certificados Digitales» (paso 2). Después hay que autorizar ese certificado para el servicio «Facturación Electrónica» en «Administrador de Relaciones» (paso 3). Son dos pasos: tener el certificado no alcanza. Y acordate del alias que le pongas." },
-                ]
-              : [
-                  { t: "Clave fiscal nivel 2 (o más) y el servicio WSASS", d: "WSASS es el servicio de ARCA para certificados de prueba. Si no aparece entre tus servicios, agregalo desde «Administrador de Relaciones»." },
-                  { t: "El certificado de pruebas", d: "Se crea en WSASS con la solicitud de abajo (paso 2)." },
-                  { t: "Su permiso para facturar", d: "En WSASS, «Crear autorización a servicio»: el alias, tu CUIT y el servicio «wsfe» (paso 3). El punto de venta no hace falta en pruebas." },
-                ]
-            ).map((item, i) => (
-              <li key={item.t} className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/40 text-xs font-bold text-primary">{"ABC"[i]}</span>
-                <span>
-                  <span className="block font-medium text-foreground">{item.t}</span>
-                  <span className="block text-muted-foreground">{item.d}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle className="text-base">1. Datos del negocio</CardTitle>
           <CardDescription>Salen impresos en cada comprobante.</CardDescription>
         </CardHeader>
@@ -305,167 +282,178 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{`2. Certificado de ARCA (${env === "test" ? "pruebas" : "producción"}), paso a paso`}</CardTitle>
-          <CardDescription>
-            Vas a bajar un archivo de acá, subirlo a ARCA, bajar el certificado que te da y subirlo de vuelta. No hace falta abrir, copiar ni editar nada.
-          </CardDescription>
+          <CardTitle className="text-base">2. Conectar con ARCA</CardTitle>
+          <CardDescription>Un paso por vez. Cada uno dice qué tocar.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <AliasNote alias={alias} />
+        <CardContent className="space-y-5">
+          <div className="flex items-center gap-1.5" aria-label={`Paso ${stepIndex + 1} de ${steps.length}`}>
+            {steps.map((id, i) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setWizard(id)}
+                aria-label={`Ir al paso ${i + 1}`}
+                className={cn("h-1.5 flex-1 rounded-full transition-colors", i < stepIndex ? "bg-primary/60" : i === stepIndex ? "bg-primary" : "bg-muted")}
+              />
+            ))}
+          </div>
+          <p className="text-xs font-medium text-muted-foreground">{`Paso ${stepIndex + 1} de ${steps.length}`}</p>
 
-          <Step n={1} done={hasCsr} title="Generá tu solicitud">
-            <p className="text-sm text-muted-foreground">Con tu CUIT y el número del punto de venta que diste de alta en ARCA (punto A de la lista de arriba).</p>
-            {env === "production" && (
-              <details className="rounded-xl border border-border px-3.5 py-2.5 text-sm">
-                <summary className="cursor-pointer font-medium text-foreground">¿Todavía no creaste el punto de venta?</summary>
-                <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
-                  <li>En ARCA, abrí <b>Administración de Puntos de Venta y Domicilios</b> → <b>A/B/M de Puntos de Venta</b> → <b>Agregar</b>.</li>
-                  <li>Poné un número que no uses (por ejemplo <b>3</b>) y un nombre de fantasía.</li>
-                  <li>En <b>Sistema</b> elegí <b>«Factura Electrónica – Monotributo – Web Services»</b> (Responsable inscripto: «RECE para aplicativo y Web Services»).</li>
-                  <li>Elegí el domicilio y aceptá. Después volvé acá y escribí ese mismo número.</li>
-                </ol>
-              </details>
-            )}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="arca-cuit">CUIT (sin guiones)</Label>
-                <Input id="arca-cuit" inputMode="numeric" maxLength={11} value={taxId} onChange={(e) => setTaxId(e.target.value.replace(/\D/g, ""))} />
-              </div>
-              <div>
-                <Label htmlFor="arca-pv">Punto de venta</Label>
-                <Input id="arca-pv" inputMode="numeric" value={salesPoint} onChange={(e) => setSalesPoint(e.target.value.replace(/\D/g, ""))} placeholder="Ej: 3" />
-              </div>
-            </div>
-            <Button
-              disabled={pending || !profileDone}
-              title={profileDone ? undefined : "Guardá primero los datos del negocio (paso 1)"}
-              onClick={() =>
-                run(() => generateArcaCsr({ environment: env, taxId, salesPoint: Number(salesPoint) }), "Solicitud generada. Seguí con el paso 2.", (r) => {
-                  setCsr(r.csr ?? null);
-                })
-              }
-            >
-              {hasCsr ? "Generar una solicitud nueva" : "Generar solicitud"}
-            </Button>
-            {hasCsr && <p className="text-xs text-muted-foreground">Si generás otra, el certificado que ya tengas deja de servir y hay que pedir uno nuevo.</p>}
-          </Step>
-
-          <Step n={2} done={false} disabled={!hasCsr} title="Descargá el archivo de la solicitud">
-            {hasCsr && csr ? (
-              <>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    onClick={() => {
-                      const url = URL.createObjectURL(new Blob([csr], { type: "application/pkcs10" }));
-                      const link = document.createElement("a");
-                      link.href = url;
-                      link.download = `pesito-${env === "test" ? "pruebas" : "produccion"}.csr`;
-                      link.click();
-                      URL.revokeObjectURL(url);
-                    }}
-                  >
-                    <Download className="h-4 w-4" />
-                    Descargar archivo .csr
-                  </Button>
-                  {env === "test" && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        void navigator.clipboard.writeText(csr).then(() => {
-                          setCopied(true);
-                          window.setTimeout(() => setCopied(false), 2000);
-                        });
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                      {copied ? "Copiada" : "Copiar el texto (para WSASS)"}
-                    </Button>
-                  )}
-                </div>
-                <details className="text-xs text-muted-foreground">
-                  <summary className="cursor-pointer">Ver el contenido (no hace falta)</summary>
-                  <textarea readOnly value={csr} rows={5} className="mt-2 w-full rounded-xl border border-border bg-muted/40 p-3 font-mono text-xs text-foreground" />
-                </details>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Primero generá la solicitud.</p>
-            )}
-          </Step>
-
-          <Step n={3} done={false} disabled={!hasCsr} title="En ARCA, subí ese archivo y bajá tu certificado">
-            {env === "test" ? (
-              <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
-                <li>Entrá a ARCA con tu clave fiscal y abrí el servicio <b>WSASS - Autogestión Certificados Homologación</b>. Si no aparece, agregalo desde «Administrador de Relaciones».</li>
-                <li>En «Nuevo Certificado», en <b>alias</b> escribí <AliasInline alias={alias} /> y pegá la solicitud (el botón «Copiar el texto» de arriba). Tocá «Crear DN y Obtener Certificado».</li>
-                <li>Aparece el certificado en pantalla: copialo y guardalo como un archivo de texto con extensión <b>.crt</b>, o pegalo en el cuadro de abajo.</li>
-              </ol>
-            ) : (
-              <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
-                <li>Entrá a ARCA con tu clave fiscal y abrí <b>Administración de Certificados Digitales</b>. Si no aparece, agregalo desde «Administrador de Relaciones».</li>
-                <li>Tocá <b>«Agregar alias»</b>.</li>
-                <li>En <b>Alias</b> escribí <AliasInline alias={alias} />. <b>Anotalo</b>: lo vas a necesitar de nuevo en el paso 3.</li>
-                <li>En <b>Solicitud de certificado</b> elegí el archivo <b>.csr</b> que descargaste en el paso 2 y aceptá.</li>
-                <li>En la lista, junto a tu alias, tocá <b>«Descargar»</b>: se baja un archivo <b>.crt</b>. No lo abras: va directo al paso 4.</li>
-              </ol>
-            )}
-          </Step>
-
-          <Step n={4} done={hasCert} disabled={!hasCsr} title="Subí el certificado acá">
-            <CertDrop
-              disabled={!hasCsr || pending}
-              onFile={(file) => void handleCertFile(file)}
-              hasCert={hasCert}
-            />
-            {hasCert && <p className="text-sm text-success">Ya hay un certificado cargado para este entorno. Si subís otro, lo reemplaza.</p>}
-            <details className="text-xs text-muted-foreground">
-              <summary className="cursor-pointer">Prefiero pegar el texto</summary>
-              <div className="mt-2 space-y-2">
-                <textarea
-                  value={certificate}
-                  onChange={(e) => setCertificate(e.target.value)}
-                  rows={5}
-                  placeholder="-----BEGIN CERTIFICATE-----"
-                  disabled={!hasCsr}
-                  className="w-full rounded-xl border border-border bg-card p-3 font-mono text-xs text-foreground outline-none focus:border-primary disabled:opacity-50"
-                />
-                <Button size="sm" disabled={pending || !hasCsr || certificate.trim().length < 50} onClick={() => run(() => saveArcaCertificate({ environment: env, certificate }), "Certificado guardado.", () => setCertificate(""))}>
-                  Guardar certificado
-                </Button>
-              </div>
-            </details>
-          </Step>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">3. Autorizá tu alias para facturar</CardTitle>
-          <CardDescription>
-            Es el paso que más se olvida: tener el certificado no alcanza, ARCA tiene que saber que ese alias puede usar el servicio de facturación.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <AliasNote alias={alias} />
-          {env === "test" ? (
-            <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
-              <li>En WSASS, entrá a <b>«Crear autorización a servicio»</b>.</li>
-              <li>Elegí tu CUIT, el servicio <b>wsfe - Facturación Electrónica</b> y el alias <AliasInline alias={alias} />.</li>
-              <li>Aceptá. En pruebas no hace falta punto de venta.</li>
-            </ol>
-          ) : (
-            <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
-              <li>En ARCA, abrí <b>Administrador de Relaciones de Clave Fiscal</b> y tocá <b>«Nueva relación»</b>.</li>
-              <li>Servicio: ARCA → <b>WebServices</b> → <b>«Facturación Electrónica»</b>.</li>
-              <li>En <b>Representante</b>, elegí tu alias <AliasInline alias={alias} /> (el que anotaste).</li>
-              <li>Confirmá. Puede tardar unos minutos en aplicarse.</li>
-            </ol>
+          {wizard === "pv" && (
+            <WizardStep title="Creá tu punto de venta en ARCA" scene={<ScenePuntoVenta />}>
+              <p>Dalo de alta para <b>Web Services</b> y anotá el número.</p>
+            </WizardStep>
           )}
+
+          {wizard === "solicitud" && (
+            <WizardStep title="Generá tu solicitud">
+              <div className="grid gap-3 text-foreground sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="arca-cuit">CUIT (sin guiones)</Label>
+                  <Input id="arca-cuit" inputMode="numeric" maxLength={11} value={taxId} onChange={(e) => setTaxId(e.target.value.replace(/\D/g, ""))} />
+                </div>
+                <div>
+                  <Label htmlFor="arca-pv">Punto de venta</Label>
+                  <Input id="arca-pv" inputMode="numeric" value={salesPoint} onChange={(e) => setSalesPoint(e.target.value.replace(/\D/g, ""))} placeholder="Ej: 3" />
+                </div>
+              </div>
+              <Button
+                disabled={pending || !profileDone}
+                title={profileDone ? undefined : "Guardá primero los datos del negocio (paso 1)"}
+                onClick={() =>
+                  run(() => generateArcaCsr({ environment: env, taxId, salesPoint: Number(salesPoint) }), "Solicitud generada.", (r) => {
+                    setCsr(r.csr ?? null);
+                    goNext();
+                  })
+                }
+              >
+                {hasCsr ? "Generar una solicitud nueva" : "Generar solicitud"}
+              </Button>
+              {hasCsr && <p className="text-xs">Si generás otra, el certificado que ya tengas deja de servir.</p>}
+            </WizardStep>
+          )}
+
+          {wizard === "descargar" && (
+            <WizardStep title="Descargá el archivo" scene={<SceneDownload />}>
+              {csr ? (
+                <Button
+                  onClick={() => {
+                    const url = URL.createObjectURL(new Blob([csr], { type: "application/pkcs10" }));
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `pesito-${env === "test" ? "pruebas" : "produccion"}.csr`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar archivo .csr
+                </Button>
+              ) : (
+                <p>Primero generá la solicitud.</p>
+              )}
+            </WizardStep>
+          )}
+
+          {wizard === "copiar" && (
+            <WizardStep title="Copiá la solicitud">
+              <p>WSASS pide pegar el texto, no subir el archivo.</p>
+              <Button
+                disabled={!csr}
+                onClick={() => {
+                  if (!csr) return;
+                  void navigator.clipboard.writeText(csr).then(() => {
+                    setCopied(true);
+                    window.setTimeout(() => setCopied(false), 2000);
+                  });
+                }}
+              >
+                <Copy className="h-4 w-4" />
+                {copied ? "Copiada" : "Copiar solicitud"}
+              </Button>
+            </WizardStep>
+          )}
+
+          {wizard === "subir" && (
+            <WizardStep title="Subila a ARCA" scene={<SceneUpload />}>
+              <p>
+                <b>Administración de Certificados Digitales</b> → <b>Agregar alias</b>. Alias: <AliasInline alias={alias} />. Elegí el archivo.
+              </p>
+              <AliasNote alias={alias} />
+            </WizardStep>
+          )}
+
+          {wizard === "wsass" && (
+            <WizardStep title="Pegala en ARCA (WSASS)" scene={<SceneSearch query="WSASS - Autogestión Certificados Homologación" />}>
+              <p>
+                <b>Nuevo Certificado</b>. Alias: <AliasInline alias={alias} />. Pegá la solicitud y tocá <b>Crear DN y Obtener Certificado</b>. Guardá el resultado como archivo <b>.crt</b>.
+              </p>
+              <AliasNote alias={alias} />
+            </WizardStep>
+          )}
+
+          {wizard === "bajar" && (
+            <WizardStep title="Bajá tu certificado" scene={<SceneDownload />}>
+              <p>
+                En la lista, tocá <b>Descargar</b> junto a <AliasInline alias={alias} />. No lo abras.
+              </p>
+            </WizardStep>
+          )}
+
+          {wizard === "cert" && (
+            <WizardStep title="Subí el certificado" scene={<SceneDrop />}>
+              <CertDrop disabled={!hasCsr || pending} onFile={(file) => void handleCertFile(file)} hasCert={hasCert} />
+              {hasCert && <p className="text-sm text-success">Certificado cargado.</p>}
+              <details className="text-xs">
+                <summary className="cursor-pointer">Prefiero pegar el texto</summary>
+                <div className="mt-2 space-y-2">
+                  <textarea
+                    value={certificate}
+                    onChange={(e) => setCertificate(e.target.value)}
+                    rows={5}
+                    placeholder="-----BEGIN CERTIFICATE-----"
+                    className="w-full rounded-xl border border-border bg-card p-3 font-mono text-xs text-foreground outline-none focus:border-primary"
+                  />
+                  <Button size="sm" disabled={pending || certificate.trim().length < 50} onClick={() => run(() => saveArcaCertificate({ environment: env, certificate }), "Certificado guardado.", () => setCertificate(""))}>
+                    Guardar certificado
+                  </Button>
+                </div>
+              </details>
+            </WizardStep>
+          )}
+
+          {wizard === "autorizar" && (
+            <WizardStep title="Autorizá tu alias" scene={<SceneRelation />}>
+              {env === "test" ? (
+                <p>
+                  En WSASS: <b>Crear autorización a servicio</b> → servicio <b>wsfe</b> → alias <AliasInline alias={alias} />.
+                </p>
+              ) : (
+                <p>
+                  <b>Administrador de Relaciones</b> → <b>Nueva relación</b> → <b>Facturación Electrónica</b>. Representante: <AliasInline alias={alias} />.
+                </p>
+              )}
+              <AliasNote alias={alias} />
+              <p className="text-xs">Puede tardar unos minutos. Después seguí con el paso 3.</p>
+            </WizardStep>
+          )}
+
+          <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
+            <Button variant="outline" disabled={stepIndex === 0} onClick={goBack}>
+              Atrás
+            </Button>
+            {stepIndex < steps.length - 1 && (
+              <Button disabled={(wizard === "solicitud" && !hasCsr) || (wizard === "cert" && !hasCert)} onClick={goNext}>
+                {wizard === "pv" ? "Ya lo creé" : "Siguiente"}
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">4. Probar la conexión y activar</CardTitle>
+          <CardTitle className="text-base">3. Probar la conexión y activar</CardTitle>
           <CardDescription>Entramos a ARCA con tu certificado y miramos que tu punto de venta esté habilitado.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

@@ -840,3 +840,38 @@ html:has(body.driver-active),
   border-top: 1px dashed #000;
   margin: 4px 0;
 }
+
+/* Esquemas animados de la guía de ARCA (arca-scenes.tsx). Se apagan con «reducir movimiento». */
+@keyframes arca-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+@keyframes arca-type {
+  0% { clip-path: inset(0 100% 0 0); }
+  45%, 100% { clip-path: inset(0 0 0 0); }
+}
+@keyframes arca-appear {
+  0%, 45% { opacity: 0; }
+  60%, 100% { opacity: 1; }
+}
+@keyframes arca-fly {
+  0%, 10% { transform: translate(0, -34px); opacity: 0; }
+  45%, 100% { transform: translate(0, 0); opacity: 1; }
+}
+@keyframes arca-drop {
+  0%, 20% { transform: translateY(-22px); opacity: 0; }
+  55%, 100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes arca-drag {
+  0%, 10% { transform: translate(0, -2px); }
+  60%, 100% { transform: translate(0, 26px); }
+}
+.arca-pulse { animation: arca-pulse 1.6s ease-in-out infinite; }
+.arca-type { animation: arca-type 3.2s steps(24, end) infinite; }
+.arca-appear { animation: arca-appear 3.2s ease-out infinite; }
+.arca-fly { animation: arca-fly 3.2s ease-out infinite; }
+.arca-drop { animation: arca-drop 3.2s ease-out infinite; }
+.arca-drag { animation: arca-drag 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .arca-pulse, .arca-type, .arca-appear, .arca-fly, .arca-drop, .arca-drag { animation: none; opacity: 1; clip-path: none; transform: none; }
+}
