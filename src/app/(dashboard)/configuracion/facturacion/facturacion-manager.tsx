@@ -458,7 +458,6 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
               <li>Servicio: ARCA → <b>WebServices</b> → <b>«Facturación Electrónica»</b>.</li>
               <li>En <b>Representante</b>, elegí tu alias <AliasInline alias={alias} /> (el que anotaste).</li>
               <li>Confirmá. Puede tardar unos minutos en aplicarse.</li>
-              <li>Opcional, para buscar datos de clientes por CUIT: repetí con los servicios <b>ws_sr_constancia_inscripcion</b> y <b>ws_sr_padron_a13</b>.</li>
             </ol>
           )}
         </CardContent>
