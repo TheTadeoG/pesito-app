@@ -31,6 +31,7 @@ import { resolveInvoiceType } from "@/lib/invoice-labels";
 import { suggestBilletes } from "@/lib/billetes";
 import { useToast } from "@/components/toast/toast-provider";
 import { emitCashDelta, markSaleCompleted } from "@/lib/cash-events";
+import type { InvoicingConfig } from "@/lib/actions/invoicing";
 import { SaleDoneDialog, type SaleReceipt } from "@/app/(dashboard)/pos/sale-done-dialog";
 import {
   checkoutSale,
@@ -113,6 +114,8 @@ interface PosClientProps {
   products: ProductLite[];
   customers: CustomerLite[];
   autoInvoiceByPayment: boolean;
+  /** Facturación electrónica (ARCA): si está lista y con qué medios de pago factura sola. */
+  invoicing: InvoicingConfig;
   customPaymentMethods: string[];
   onSaleCompleted: (recentSales: SaleRow[]) => void;
 }
@@ -124,6 +127,7 @@ export function PosClient({
   products: serverProducts,
   customers: serverCustomers,
   autoInvoiceByPayment,
+  invoicing,
   customPaymentMethods,
   onSaleCompleted,
 }: PosClientProps) {
@@ -521,6 +525,8 @@ export function PosClient({
     const methodLabel = (value: string) =>
       paymentMethodsWithCustom(customPaymentMethods).find((m) => m.value === value)?.label ?? value;
     setLastReceipt({
+      saleId: result.saleId,
+      paymentMethod: method,
       orgName,
       soldAt: new Date().toISOString(),
       lines: cart.map((item) =>
@@ -1850,7 +1856,7 @@ export function PosClient({
         )}
       </Dialog>
 
-      <SaleDoneDialog receipt={lastReceipt} onClose={closeReceipt} />
+      <SaleDoneDialog receipt={lastReceipt} onClose={closeReceipt} invoicing={invoicing} />
     </div>
   );
 }

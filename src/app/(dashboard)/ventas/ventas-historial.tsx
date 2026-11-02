@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Download, Eye, Printer, Search } from "lucide-react";
+import { Ban, Download, Eye, FileText, Printer, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { SaleDetailDialog } from "@/components/dashboard/sale-detail-dialog";
 import { TicketPrint } from "@/components/dashboard/ticket-print";
 import { VoidSaleDialog } from "@/components/dashboard/void-sale-dialog";
 import { getSaleDetail, type SaleDetail } from "@/lib/actions/sales";
+import { issueSaleInvoice } from "@/lib/actions/invoicing";
 import { receiptFromSale } from "@/lib/sale-receipt";
 import type { SaleReceipt } from "@/app/(dashboard)/pos/sale-done-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -48,6 +49,7 @@ export function VentasHistorial({
   branches,
   canVoid,
   canExport,
+  canInvoice,
   orgName,
   error,
 }: {
@@ -62,6 +64,8 @@ export function VentasHistorial({
   branches: { id: string; name: string }[];
   canVoid: boolean;
   canExport: boolean;
+  /** La facturación electrónica está lista: se puede facturar a mano una venta sin factura. */
+  canInvoice: boolean;
   orgName: string;
   error: string | null;
 }) {
@@ -70,6 +74,7 @@ export function VentasHistorial({
   const [detail, setDetail] = useState<{ loading: boolean; sale: SaleDetail | null } | null>(null);
   const [voidTarget, setVoidTarget] = useState<{ id: string; total: number } | null>(null);
   const [printing, setPrinting] = useState<SaleReceipt | null>(null);
+  const [invoicing, setInvoicing] = useState<{ working: boolean; error: string | null }>({ working: false, error: null });
 
   const go = useCallback(
     (next: Partial<Filters> & { pagina?: number; tam?: number }) => {
@@ -88,9 +93,22 @@ export function VentasHistorial({
   );
 
   async function openDetail(id: string) {
+    setInvoicing((cur) => (cur.error ? { working: false, error: null } : cur));
     setDetail({ loading: true, sale: null });
     const res = await getSaleDetail(id);
     setDetail({ loading: false, sale: res.sale ?? null });
+  }
+
+  async function invoiceSale(id: string) {
+    setInvoicing({ working: true, error: null });
+    const res = await issueSaleInvoice(id);
+    if (res.status === "authorized") {
+      setInvoicing({ working: false, error: null });
+      await openDetail(id);
+      router.refresh();
+    } else {
+      setInvoicing({ working: false, error: res.error ?? "No pudimos facturar." });
+    }
   }
 
   const pageTotal = rows.filter((r) => !r.voided).reduce((n, r) => n + r.total, 0);
@@ -256,6 +274,13 @@ export function VentasHistorial({
                   Anular venta
                 </Button>
               )}
+              {canInvoice && !hasInvoice && !sale.voided && sale.status !== "anulada" && (
+                <Button disabled={invoicing.working} onClick={() => void invoiceSale(sale.id)}>
+                  <FileText className="h-4 w-4" />
+                  {invoicing.working ? "Facturando…" : "Facturar esta venta"}
+                </Button>
+              )}
+              {invoicing.error && <p className="w-full text-right text-xs text-danger">{invoicing.error}</p>}
               {hasInvoice && !sale.voided && (
                 <p className="w-full text-right text-xs text-muted-foreground">
                   Esta venta tiene una factura electrónica: no se anula a secas, se corrige con una nota de crédito.

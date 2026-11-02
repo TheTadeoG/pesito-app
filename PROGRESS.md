@@ -664,4 +664,5 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 
 ## Facturación ARCA (estado 2026-11-02)
 - Hecho: conexión (CSR, certificado, prueba), comprobante de prueba autorizado en homologación, ver e imprimir (ticket y A4, QR en el navegador, documento guardado al emitir), facturación automática por medio de pago (migración 0083, `auto_invoice_methods`; sin tildar = todo manual).
-- Falta (Funciones pendientes): emitir al cobrar según esa configuración y botón «Facturar» manual en la venta, receptor con CUIT del cliente, nota de crédito al anular (luego `void_sale_audited`), certificado de producción. Los textos públicos siguen diciendo «Pronto».
+- Hecho (2026-11-02): emitir al cobrar (`issueSaleInvoice`, `src/lib/actions/invoicing.ts`): automático según los medios elegidos, botón «Facturar» en la venta cobrada y en Ventas → detalle. Una venta nunca genera dos facturas (clave `sale-<id>`, `recover` si ARCA no confirmó). Monotributo/exento (Factura C); descuento y recargo repartidos entre las líneas; receptor Consumidor Final con CUIT o DNI del cliente si lo tiene.
+- Falta (Funciones pendientes): Responsable Inscripto (Factura A/B: IVA por producto), receptor con condición IVA del cliente, nota de crédito al anular (luego `void_sale_audited`), certificado de producción. Los textos públicos siguen diciendo «Pronto».

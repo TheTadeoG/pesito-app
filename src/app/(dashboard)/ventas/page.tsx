@@ -8,6 +8,7 @@ import { canUse } from "@/lib/plan-access";
 import { getReportRange, periodParams, resolveReportQuery } from "@/lib/report-periods";
 import { argDateString } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
+import { getInvoicingConfig } from "@/lib/actions/invoicing";
 import { VentasHistorial, type HistorialRow } from "./ventas-historial";
 
 const paymentLabels: Record<string, string> = {
@@ -100,6 +101,8 @@ export default async function VentasPage({
     }));
   }
 
+  const invoicing = await getInvoicingConfig(organization.id).catch(() => ({ enabled: false, autoMethods: [] as string[] }));
+
   return (
     <div className="space-y-6">
       <ReportesTabs active="ventas" />
@@ -125,6 +128,7 @@ export default async function VentasPage({
         branches={hasBranches ? branchContext.branches.map((b) => ({ id: b.id, name: b.name })) : []}
         canVoid={admin}
         canExport={admin}
+        canInvoice={invoicing.enabled}
         orgName={organization.name}
         error={error}
       />

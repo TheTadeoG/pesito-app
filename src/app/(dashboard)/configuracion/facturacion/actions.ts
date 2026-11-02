@@ -12,7 +12,8 @@ import { canUse, featureLockedMessage } from "@/lib/plan-access";
 import { checkCertificate, cleanSubjectText, createCsr, isValidCuit } from "@/lib/arca/csr";
 import { decryptSecret, encryptionConfigured, encryptSecret } from "@/lib/arca/crypto";
 import { getOrgArca } from "@/lib/arca/client";
-import { ArcaError, toArcaSafeErrorMetadata, type ArcaEnvironment } from "facturas";
+import { arcaMessage } from "@/lib/arca/errors";
+import type { ArcaEnvironment } from "facturas";
 
 export interface ArcaResult {
   error?: string;
@@ -33,21 +34,6 @@ async function guard(bucket: string, max: number) {
   const { error } = await supabase.rpc("rate_limit_hit", { p_org_id: organization.id, p_bucket: bucket, p_max: max, p_window_seconds: 3600 });
   if (error) return { error: "Hiciste muchos intentos seguidos. Probá de nuevo en un rato." } as const;
   return { userId, org: organization, admin: createAdminClient() } as const;
-}
-
-/** Mensaje para la persona; el detalle técnico va al registro del servidor, sin secretos. */
-function arcaMessage(e: unknown): string {
-  if (e instanceof ArcaError) {
-    console.error("arca", JSON.stringify(toArcaSafeErrorMetadata(e)));
-    const code = (e as { code?: string }).code ?? "";
-    if (code.includes("AUTHENTICATION")) {
-      return "ARCA no aceptó el certificado. Revisá que lo hayas autorizado para el servicio «Facturación Electrónica» y que sea del entorno elegido.";
-    }
-    if (code.includes("TRANSPORT")) return "No pudimos comunicarnos con ARCA. Probá de nuevo en un rato.";
-    return `ARCA respondió con un error (${code || "desconocido"}). ${e.message}`.slice(0, 300);
-  }
-  console.error("arca", e instanceof Error ? e.message : e);
-  return "No pudimos completar la operación con ARCA. Probá de nuevo.";
 }
 
 export interface ArcaProfileInput {

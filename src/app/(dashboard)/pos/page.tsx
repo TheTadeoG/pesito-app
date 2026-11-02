@@ -7,6 +7,7 @@ import { POS_CACHE_COOKIE, posCacheCookieValue } from "@/lib/pos-cache-cookie";
 import { OpenCajaPrompt } from "@/app/(dashboard)/pos/open-caja-prompt";
 import { getRecentSaleRows } from "@/app/(dashboard)/pos/recent-sales";
 import { fetchAll } from "@/lib/supabase/fetch-all";
+import { getInvoicingConfig } from "@/lib/actions/invoicing";
 
 export default async function PosPage() {
   const { userId, organization } = await requireOrgContext();
@@ -34,7 +35,7 @@ export default async function PosPage() {
   const cookieStore = await cookies();
   const hasLocalCopy =
     cookieStore.get(POS_CACHE_COOKIE)?.value === posCacheCookieValue(organization.id, openRegister.branch_id ?? null);
-  const [customers, recentSales, { data: customPaymentMethods }, initialProducts] = await Promise.all([
+  const [customers, recentSales, { data: customPaymentMethods }, initialProducts, invoicing] = await Promise.all([
     fetchAll((from, to) =>
       supabase
         .from("customers")
@@ -49,6 +50,8 @@ export default async function PosPage() {
     hasLocalCopy
       ? Promise.resolve(null)
       : fetchCatalogForPos(supabase, organization.id, openRegister.branch_id ?? null).catch(() => null),
+    // Si la facturación está lista y con qué medios factura sola (dos consultas chicas; sin secretos).
+    getInvoicingConfig(organization.id).catch(() => ({ enabled: false, autoMethods: [] as string[] })),
   ]);
 
   return (
@@ -60,6 +63,7 @@ export default async function PosPage() {
       cashRegisterId={openRegister.id}
       customers={customers.map((c) => ({ ...c, balance: Number(c.balance) }))}
       autoInvoiceByPayment={organization.auto_invoice_by_payment}
+      invoicing={invoicing}
       customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
       recentSales={recentSales}
     />

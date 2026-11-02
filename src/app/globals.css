@@ -333,8 +333,13 @@ body {
 }
 
 @media print {
-  body:has(> .ticket-print) > *:not(.ticket-print),
+  body:has(> .ticket-print) > *:not(.ticket-print):not(.voucher-print-a4),
   body:has(> .voucher-print-a4) > *:not(.voucher-print-a4) {
+    display: none !important;
+  }
+
+  /* Imprimiendo un comprobante con el ticket de la venta todavía en pantalla: sale sólo el comprobante. */
+  body:has(> .voucher-print) > .ticket-print:not(.voucher-print) {
     display: none !important;
   }
 

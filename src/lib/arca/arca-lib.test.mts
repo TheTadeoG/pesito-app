@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import forge from "node-forge";
 import { decryptSecret, encryptSecret, encryptionConfigured } from "./crypto.ts";
+import { invoiceLines, receiverFromDocument } from "./sale-invoice.ts";
 import { checkCertificate, cleanSubjectText, createCsr, isValidCuit } from "./csr.ts";
 
 const key = Buffer.alloc(32, 7).toString("base64");
@@ -56,3 +57,20 @@ assert.equal(checkCertificate({ certificatePem: certFor("20123456786"), privateK
 assert.equal(checkCertificate({ certificatePem: "basura", privateKeyPem, taxId: "20123456786" }).ok, false);
 
 console.log("pruebas de arca (cifrado, CSR y certificado): ok");
+
+// Venta -> comprobante: la suma de las líneas da el total cobrado (con descuento o recargo), al centavo.
+{
+  const lines = [
+    { name: "Coca 500", quantity: 3, subtotal: 3000 },
+    { name: "Alfajor", quantity: 1, subtotal: 1000 },
+    { name: "Yerba", quantity: 1, subtotal: 2333.33 },
+  ];
+  for (const total of [6333.33, 5700, 6966.67, 1.01]) {
+    assert.equal(invoiceLines(lines, total).reduce((n, l) => n + l.amount, 0), Math.round(total * 100));
+  }
+  assert.deepEqual(invoiceLines([], 100), []);
+}
+assert.deepEqual(receiverFromDocument("20-12345678-9"), { cuit: "20123456789" });
+assert.deepEqual(receiverFromDocument("30.123.456"), { dni: "30123456" });
+assert.deepEqual(receiverFromDocument("abc"), {});
+assert.deepEqual(receiverFromDocument(null), {});
