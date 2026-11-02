@@ -86,14 +86,13 @@ export async function saveArcaAutoMethods(methods: string[]): Promise<ArcaResult
 }
 
 /** Genera la clave y la solicitud de certificado (CSR) del entorno; la clave queda cifrada en el servidor. */
-export async function generateArcaCsr(input: { environment: string; taxId: string; salesPoint: number }): Promise<ArcaResult & { csr?: string }> {
+// El certificado es del CUIT (sirve para cualquier punto de venta): el punto de venta se elige aparte, al final.
+export async function generateArcaCsr(input: { environment: string; taxId: string }): Promise<ArcaResult & { csr?: string }> {
   const g = await guard("arca_setup", 60);
   if ("error" in g) return { error: g.error };
   if (!isEnv(input.environment)) return { error: "Entorno inválido." };
   const taxId = input.taxId.replace(/\D/g, "");
   if (!isValidCuit(taxId)) return { error: "El CUIT no es válido (11 dígitos)." };
-  const salesPoint = Math.floor(Number(input.salesPoint));
-  if (!Number.isInteger(salesPoint) || salesPoint < 1 || salesPoint > 99999) return { error: "El punto de venta tiene que ser un número entre 1 y 99999." };
   const { data: profile } = await g.admin.from("arca_settings").select("legal_name").eq("org_id", g.org.id).maybeSingle();
   const { privateKeyPem, csrPem } = createCsr({
     taxId,
@@ -105,7 +104,6 @@ export async function generateArcaCsr(input: { environment: string; taxId: strin
       org_id: g.org.id,
       environment: input.environment,
       tax_id: taxId,
-      sales_point: salesPoint,
       key_enc: encryptSecret(privateKeyPem),
       csr_pem: csrPem,
       certificate_pem: null,
@@ -145,8 +143,29 @@ export async function saveArcaCertificate(input: { environment: string; certific
   return { ok: true };
 }
 
+/** Punto de venta con el que se emite (el certificado sirve para cualquiera): se elige entre los habilitados o se escribe. */
+export async function saveArcaSalesPoint(input: { environment: string; salesPoint: number }): Promise<ArcaResult> {
+  const g = await guard("arca_setup", 60);
+  if ("error" in g) return { error: g.error };
+  if (!isEnv(input.environment)) return { error: "Entorno inválido." };
+  const salesPoint = Math.floor(Number(input.salesPoint));
+  if (!Number.isInteger(salesPoint) || salesPoint < 1 || salesPoint > 99999) return { error: "El punto de venta tiene que ser un número entre 1 y 99999." };
+  const { data: cred } = await g.admin.from("arca_credentials").select("org_id").eq("org_id", g.org.id).eq("environment", input.environment).maybeSingle();
+  if (!cred) return { error: "Primero generá la solicitud de certificado." };
+  // Con otro punto de venta hay que volver a probar la conexión (verifica que esté habilitado) y no se factura hasta entonces.
+  const { error } = await g.admin
+    .from("arca_credentials")
+    .update({ sales_point: salesPoint, verified_at: null, updated_at: new Date().toISOString() })
+    .eq("org_id", g.org.id)
+    .eq("environment", input.environment);
+  if (error) return { error: "No pudimos guardar el punto de venta." };
+  await g.admin.from("arca_settings").update({ enabled: false }).eq("org_id", g.org.id).eq("active_environment", input.environment);
+  revalidatePath("/configuracion");
+  return { ok: true };
+}
+
 /** Inicia sesión en ARCA con el certificado y pide los puntos de venta habilitados: prueba toda la cadena. */
-export async function testArcaConnection(environment: string): Promise<ArcaResult & { salesPoints?: { number: number; type: string; blocked: boolean }[] }> {
+export async function testArcaConnection(environment: string): Promise<ArcaResult & { salesPoints?: { number: number; type: string; blocked: boolean }[]; needsSalesPoint?: boolean }> {
   const g = await guard("arca_test", 20);
   if ("error" in g) return { error: g.error };
   if (!isEnv(environment)) return { error: "Entorno inválido." };
@@ -169,6 +188,8 @@ export async function testArcaConnection(environment: string): Promise<ArcaResul
         salesPoints,
       };
     }
+    // La conexión anda, pero sin punto de venta elegido todavía no se da por lista: se ofrecen los habilitados.
+    if (!res.arca.salesPoint) return { ok: true, salesPoints, needsSalesPoint: true };
     await g.admin.from("arca_credentials").update({ verified_at: new Date().toISOString() }).eq("org_id", g.org.id).eq("environment", environment);
     revalidatePath("/configuracion");
     return { ok: true, salesPoints };
@@ -184,7 +205,7 @@ export async function setArcaEnabled(input: { enabled: boolean; environment: str
   if (!isEnv(input.environment)) return { error: "Entorno inválido." };
   if (input.enabled) {
     const { data: cred } = await g.admin.from("arca_credentials").select("verified_at").eq("org_id", g.org.id).eq("environment", input.environment).maybeSingle();
-    if (!cred?.verified_at) return { error: "Antes probá la conexión con ARCA en este entorno." };
+    if (!cred?.verified_at) return { error: "Antes elegí el punto de venta y probá la conexión con ARCA en este entorno." };
     const { data: s } = await g.admin.from("arca_settings").select("issuer_condition, legal_name").eq("org_id", g.org.id).maybeSingle();
     if (!s?.issuer_condition || !s.legal_name) return { error: "Completá los datos del negocio." };
   }

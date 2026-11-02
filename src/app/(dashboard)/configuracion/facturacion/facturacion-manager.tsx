@@ -16,6 +16,7 @@ import {
   generateArcaCsr,
   issueArcaTestVoucher,
   saveArcaCertificate,
+  saveArcaSalesPoint,
   saveArcaAutoMethods,
   saveArcaProfile,
   setArcaEnabled,
@@ -316,27 +317,22 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                 </li>
               </ul>
               {!cond && <p className="text-xs">Elegí tu condición frente al IVA en el paso 1 y te marco la que te toca.</p>}
-              <p>Anotá el número que le pongas.</p>
+              <p>Anotá el número que le pongas: lo vas a elegir en el último paso.</p>
             </WizardStep>
           )}
 
           {wizard === "solicitud" && (
             <WizardStep title="Generá tu solicitud">
-              <div className="grid gap-3 text-foreground sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="arca-cuit">CUIT (sin guiones)</Label>
-                  <Input id="arca-cuit" inputMode="numeric" maxLength={11} value={taxId} onChange={(e) => setTaxId(e.target.value.replace(/\D/g, ""))} />
-                </div>
-                <div>
-                  <Label htmlFor="arca-pv">Punto de venta</Label>
-                  <Input id="arca-pv" inputMode="numeric" value={salesPoint} onChange={(e) => setSalesPoint(e.target.value.replace(/\D/g, ""))} placeholder="Ej: 3" />
-                </div>
+              <div className="max-w-xs text-foreground">
+                <Label htmlFor="arca-cuit">CUIT (sin guiones)</Label>
+                <Input id="arca-cuit" inputMode="numeric" maxLength={11} value={taxId} onChange={(e) => setTaxId(e.target.value.replace(/\D/g, ""))} />
               </div>
+              <p className="text-xs">El certificado es de tu CUIT y sirve para cualquier punto de venta. El punto de venta lo elegís al final.</p>
               <Button
                 disabled={pending || !profileDone}
                 title={profileDone ? undefined : "Guardá primero los datos del negocio (paso 1)"}
                 onClick={() =>
-                  run(() => generateArcaCsr({ environment: env, taxId, salesPoint: Number(salesPoint) }), "Solicitud generada.", (r) => {
+                  run(() => generateArcaCsr({ environment: env, taxId }), "Solicitud generada.", (r) => {
                     setCsr(r.csr ?? null);
                     goNext();
                   })
@@ -497,6 +493,42 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
               <li>El CUIT de acá, el de tu clave fiscal y el del alias tienen que ser el mismo.</li>
             </ul>
           </details>
+          <div className="space-y-2 rounded-xl border border-border px-3.5 py-3">
+            <Label htmlFor="arca-pv">Punto de venta con el que facturás</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input id="arca-pv" inputMode="numeric" className="w-28" value={salesPoint} onChange={(e) => setSalesPoint(e.target.value.replace(/\D/g, ""))} placeholder="Ej: 3" />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pending || !hasCsr || !salesPoint}
+                onClick={() => run(() => saveArcaSalesPoint({ environment: env, salesPoint: Number(salesPoint) }), "Punto de venta guardado. Probá la conexión.")}
+              >
+                Guardar
+              </Button>
+              {cred?.sales_point && <span className="text-xs text-muted-foreground">{`Guardado: ${cred.sales_point}`}</span>}
+            </div>
+            {points && points.filter((p) => !p.blocked).length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                <span>Habilitados en ARCA:</span>
+                {points
+                  .filter((p) => !p.blocked)
+                  .map((p) => (
+                    <button
+                      key={p.number}
+                      type="button"
+                      onClick={() => {
+                        setSalesPoint(String(p.number));
+                        run(() => saveArcaSalesPoint({ environment: env, salesPoint: p.number }), `Punto de venta ${p.number} guardado. Probá la conexión.`);
+                      }}
+                      className="rounded-full border border-border px-2.5 py-1 font-medium text-foreground hover:border-primary hover:bg-accent"
+                    >
+                      {`Usar el ${p.number}`}
+                    </button>
+                  ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">El certificado sirve para cualquier punto de venta: elegí el que diste de alta para Web Services. Podés cambiarlo cuando quieras.</p>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
