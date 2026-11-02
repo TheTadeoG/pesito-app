@@ -3,7 +3,7 @@
 import { AUTO_INVOICE_METHODS } from "@/lib/arca/auto-invoice";
 import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { useState, useTransition } from "react";
-import { CheckCircle2, Copy } from "lucide-react";
+import { CheckCircle2, Copy, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -214,19 +214,37 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className={stepTitle}>Tu solicitud (CSR)</p>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(csr).then(() => {
-                      setCopied(true);
-                      window.setTimeout(() => setCopied(false), 2000);
-                    });
-                  }}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  {copied ? "Copiada" : "Copiar"}
-                </button>
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(csr).then(() => {
+                        setCopied(true);
+                        window.setTimeout(() => setCopied(false), 2000);
+                      });
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {copied ? "Copiada" : "Copiar"}
+                  </button>
+                  {/* Producción pide subir el archivo .csr; en pruebas se pega el texto. */}
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    onClick={() => {
+                      const url = URL.createObjectURL(new Blob([csr], { type: "application/pkcs10" }));
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = `pesito-${env === "test" ? "pruebas" : "produccion"}.csr`;
+                      link.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Descargar .csr
+                  </button>
+                </div>
               </div>
               <textarea readOnly value={csr} rows={6} className="w-full rounded-xl border border-border bg-muted/40 p-3 font-mono text-xs text-foreground" />
               {env === "test" ? (
