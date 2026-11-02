@@ -215,7 +215,7 @@ export async function issueArcaTestVoucher(): Promise<TestVoucherResult> {
       salesPoint: arca.salesPoint,
       to: { condition: "consumidor_final" },
       items: arca.issuerCondition === "responsable_inscripto" ? [{ gross: 100, vat: 21, description: "Prueba de Pesito" }] : [{ amount: 100, description: "Prueba de Pesito" }],
-      idempotencyKey: key,
+      // idempotencyKey lo reserva el SDK (ARCA_INPUT_RESERVED_FIELD): la clave de abajo es sólo de nuestro registro.
     } as Parameters<typeof arca.client.issue>[0]);
     if (outcome.kind !== "authorized") {
       await g.admin.from("arca_vouchers").insert({ org_id: g.org.id, environment: "test", status: outcome.kind, idempotency_key: key, total_cents: 100, created_by: g.userId, detail: JSON.parse(JSON.stringify({ kind: outcome.kind })) });
