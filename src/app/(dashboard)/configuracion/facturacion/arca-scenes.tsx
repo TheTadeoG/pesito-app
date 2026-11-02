@@ -86,20 +86,28 @@ export function SceneUpload() {
   );
 }
 
-/** Descargar el certificado de la lista. */
+/** Descargar el certificado: primero «Ver» en la lista y, a la derecha, aparece «Descargar». */
 export function SceneDownload() {
   return (
-    <Frame label="Descargar el certificado de la lista">
-      <text x="26" y="52" fontSize="8" fontWeight="600" fill={C.fg}>Certificados</text>
-      <rect x="26" y="60" width="268" height="24" rx="6" fill={C.muted} />
-      <text x="34" y="76" fontSize="8" fill={C.fg}>pesito</text>
-      <rect x="228" y="64" width="58" height="16" rx="6" fill={C.primary} />
-      <text x="237" y="75" fontSize="8" fill="#fff">Descargar</text>
-      <Pulse x={226} y={62} w={62} h={20} />
-      <rect x="26" y="90" width="268" height="24" rx="6" fill={C.muted} />
+    <Frame label="Tocar Ver junto al alias y, a la derecha, Descargar">
+      <text x="26" y="50" fontSize="8" fontWeight="600" fill={C.fg}>Certificados</text>
+      <rect x="26" y="58" width="150" height="24" rx="6" fill={C.muted} />
+      <text x="34" y="74" fontSize="8" fill={C.fg}>pesito</text>
+      <rect x="132" y="62" width="36" height="16" rx="6" fill={C.card} stroke={C.primary} />
+      <text x="142" y="73" fontSize="8" fontWeight="600" fill={C.fg}>Ver</text>
+      <Pulse x={130} y={60} w={40} h={20} />
+      <rect x="26" y="88" width="150" height="24" rx="6" fill={C.muted} />
+      <rect x="26" y="118" width="150" height="24" rx="6" fill={C.muted} />
+      <g className="arca-appear">
+        <rect x="190" y="50" width="104" height="104" rx="8" fill={C.card} stroke={C.border} />
+        <text x="200" y="66" fontSize="7" fill={C.sub}>Certificado pesito</text>
+        <rect x="200" y="74" width="84" height="16" rx="6" fill={C.primary} />
+        <text x="214" y="85" fontSize="8" fill="#fff">Descargar</text>
+        <rect x="198" y="72" width="88" height="20" rx="7" fill="none" stroke={C.primary} strokeWidth="2.5" className="arca-pulse" />
+      </g>
       <g className="arca-drop">
-        <rect x="120" y="118" width="80" height="30" rx="5" fill={C.accent} stroke={C.primary} />
-        <text x="132" y="137" fontSize="9" fontWeight="600" fill={C.fg}>pesito.crt</text>
+        <rect x="204" y="112" width="76" height="28" rx="5" fill={C.accent} stroke={C.primary} />
+        <text x="216" y="130" fontSize="9" fontWeight="600" fill={C.fg}>pesito.crt</text>
       </g>
     </Frame>
   );

@@ -410,13 +410,13 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
           {wizard === "bajar" && (
             <WizardStep title="Bajá tu certificado" scene={<SceneDownload />}>
               <p>
-                En la lista, tocá <b>Descargar</b> junto a <AliasInline alias={alias} />. No lo abras.
+                En la lista, tocá <b>Ver</b> junto a <AliasInline alias={alias} />. A la derecha aparece <b>Descargar</b>: tocalo. No abras el archivo.
               </p>
             </WizardStep>
           )}
 
           {wizard === "cert" && (
-            <WizardStep title="Subí el certificado" scene={<SceneDrop />}>
+            <WizardStep title="Subí el certificado .crt que descargaste de ARCA" scene={<SceneDrop />}>
               <CertDrop disabled={!hasCsr || pending} onFile={(file) => void handleCertFile(file)} hasCert={hasCert} />
               {hasCert && <p className="text-sm text-success">Certificado cargado.</p>}
               <details className="text-xs">
