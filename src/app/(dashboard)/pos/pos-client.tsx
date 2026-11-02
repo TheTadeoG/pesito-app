@@ -606,8 +606,12 @@ export function PosClient({
       ...current,
       { id: result.id!, name, invoice_type: null, balance: 0 },
     ]);
+    // El cliente nuevo queda elegido y el buscador se cierra (antes quedaba desplegado con todos los clientes).
     setCustomerId(result.id);
     setCustomerQuery("");
+    setBrowseCustomers(false);
+    setShowCustomerSearch(false);
+    setCustomerHighlightedIndex(-1);
     setNewCustomerName("");
     setShowNewCustomer(false);
   }
