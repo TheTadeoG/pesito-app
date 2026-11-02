@@ -30,6 +30,8 @@ export interface HistorialRow {
   internalNumber: number | null;
   /** «Factura C 00003-00000142» si la venta tiene factura electrónica autorizada. */
   voucher: string | null;
+  /** Nota de crédito electrónica de la venta (si se anuló una venta facturada). */
+  creditNote: string | null;
 }
 
 interface Filters {
@@ -37,8 +39,8 @@ interface Filters {
   hasta: string;
   medio: string;
   estado: string;
-  /** "si" facturadas, "no" sin factura electrónica, "" todas. */
-  factura: string;
+  /** "factura", "nc" (nota de crédito), "x" (sin factura electrónica) o "" todos. */
+  comprobante: string;
   q: string;
   sucursal: string;
 }
@@ -90,7 +92,7 @@ export function VentasHistorial({
       const p = new URLSearchParams(periodQuery);
       if (merged.medio) p.set("medio", merged.medio);
       if (merged.estado) p.set("estado", merged.estado);
-      if (merged.factura) p.set("factura", merged.factura);
+      if (merged.comprobante) p.set("comprobante", merged.comprobante);
       if (merged.q) p.set("q", merged.q);
       if (merged.sucursal) p.set("sucursal", merged.sucursal);
       const size = next.tam ?? pageSize;
@@ -157,11 +159,12 @@ export function VentasHistorial({
             </div>
             {canInvoice && (
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Factura electrónica</label>
-                <Select value={f.factura} onChange={(e) => setF({ ...f, factura: e.target.value })}>
-                  <option value="">Todas</option>
-                  <option value="si">Facturadas</option>
-                  <option value="no">Sin facturar</option>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Tipo de comprobante</label>
+                <Select value={f.comprobante} onChange={(e) => setF({ ...f, comprobante: e.target.value })}>
+                  <option value="">Todos</option>
+                  <option value="factura">Facturas electrónicas</option>
+                  <option value="nc">Notas de crédito</option>
+                  <option value="x">Comprobante X (no fiscal)</option>
                 </Select>
               </div>
             )}
@@ -240,8 +243,9 @@ export function VentasHistorial({
                         <Badge>{paymentLabels[r.paymentMethod] ?? r.paymentMethod}</Badge>
                       </td>
                       <td className="px-3 py-3 text-xs text-muted-foreground">
-                        {r.voided ? <Badge tone="danger">Anulada</Badge> : (r.voucher ?? internalNumberLabel(r.internalNumber))}
-                        {r.voided && r.voucher ? ` · ${r.voucher}` : ""}
+                        {r.voided && <Badge tone="danger">Anulada</Badge>}
+                        {r.voucher ? <p>{r.voucher}</p> : !r.voided && <p>{internalNumberLabel(r.internalNumber)}</p>}
+                        {r.creditNote && <p className="font-medium text-foreground">{r.creditNote}</p>}
                       </td>
                       <td className={`px-3 py-3 text-right font-semibold tabular-nums ${r.voided ? "text-muted-foreground line-through" : "text-foreground"}`}>{formatCurrency(r.total)}</td>
                       <td className="px-3 py-3">
@@ -249,8 +253,8 @@ export function VentasHistorial({
                           <Button variant="outline" size="icon" aria-label="Ver detalle" title="Ver detalle" onClick={() => void openDetail(r.id)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {canVoid && !r.voided && !r.voucher && (
-                            <Button variant="outline" size="icon" aria-label="Anular venta" title="Anular venta" onClick={() => setVoidTarget({ id: r.id, total: r.total })}>
+                          {canVoid && !r.voided && (
+                            <Button variant="outline" size="icon" aria-label={r.voucher ? "Anular con nota de crédito" : "Anular venta"} title={r.voucher ? "Anular con nota de crédito" : "Anular venta"} onClick={() => setVoidTarget({ id: r.id, total: r.total, creditNote: Boolean(r.voucher) })}>
                               <Ban className="h-4 w-4 text-danger" />
                             </Button>
                           )}

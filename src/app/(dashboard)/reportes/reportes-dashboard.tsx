@@ -174,11 +174,14 @@ export function ReportesDashboard({
   data,
   query,
   afterTiles = null,
+  filters = null,
 }: {
   data: ReportesData;
   query: ReportQuery;
   /** Algo que va justo debajo de los indicadores (ej. ventas por sucursal). */
   afterTiles?: React.ReactNode;
+  /** Período, vendedor y sucursal: van arriba, en la misma fila que «Personalizar». */
+  filters?: React.ReactNode;
 }) {
   const [visible, setVisible] = useState<Set<WidgetId>>(new Set(ALL_WIDGET_IDS));
   // "Quién te debe" puede ser muy largo: paginado, con el total arriba.
@@ -277,8 +280,10 @@ export function ReportesDashboard({
         </div>
       )}
 
-      <div className="flex justify-end">
-        <Button variant="outline" size="sm" onClick={() => setShowCustomize(true)}>
+      {/* Filtros a la izquierda y «Personalizar» en la misma fila, a la derecha (antes quedaba suelto debajo). */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-3">{filters}</div>
+        <Button variant="outline" size="sm" className="shrink-0" onClick={() => setShowCustomize(true)}>
           <Settings2 className="h-4 w-4" />
           Personalizar
         </Button>

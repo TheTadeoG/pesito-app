@@ -25,7 +25,7 @@ const PAGE_SIZES = [25, 50, 100, 200];
 export default async function VentasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; medio?: string; estado?: string; factura?: string; q?: string; pagina?: string; tam?: string; sucursal?: string }>;
+  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; medio?: string; estado?: string; comprobante?: string; q?: string; pagina?: string; tam?: string; sucursal?: string }>;
 }) {
   const sp = await searchParams;
   const { organization, membership } = await requireOrgContext();
@@ -41,7 +41,8 @@ export default async function VentasPage({
   const hasta = argDateString(new Date(range.end.getTime() - 1));
   const medio = sp.medio && paymentLabels[sp.medio] ? sp.medio : "";
   const estado = sp.estado === "completada" || sp.estado === "anulada" ? sp.estado : "";
-  const factura = sp.factura === "si" || sp.factura === "no" ? sp.factura : "";
+  // Tipo de comprobante: facturas, notas de crédito o comprobante X (ventas sin factura electrónica).
+  const comprobante = sp.comprobante === "factura" || sp.comprobante === "nc" || sp.comprobante === "x" ? sp.comprobante : "";
   const q = (sp.q ?? "").trim().slice(0, 60);
   const pageSize = PAGE_SIZES.includes(Number(sp.tam)) ? Number(sp.tam) : 25;
   const page = Math.max(0, Math.floor(Number(sp.pagina) || 0));
@@ -89,8 +90,8 @@ export default async function VentasPage({
   let error: string | null = null;
   if (!nothingMatches) {
     const cols = "id, created_at, total, payment_method, invoice_type, status, customer_id, internal_number";
-    // Facturadas / sin facturar: se cruza con las facturas autorizadas de cada venta.
-    const selectCols = (factura === "si" ? `${cols}, arca_vouchers!inner(id)` : factura === "no" ? `${cols}, arca_vouchers(id)` : cols) as typeof cols;
+    // Por tipo de comprobante: se cruza con los comprobantes autorizados de cada venta.
+    const selectCols = (comprobante === "factura" || comprobante === "nc" ? `${cols}, arca_vouchers!inner(id)` : comprobante === "x" ? `${cols}, arca_vouchers(id)` : cols) as typeof cols;
     let query = supabase
       .from("sales")
       .select(selectCols, { count: "exact" })
@@ -104,8 +105,8 @@ export default async function VentasPage({
     if (estado) query = query.eq("status", estado);
     if (sucursal) query = query.eq("branch_id", sucursal);
     if (orParts.length > 0) query = query.or(orParts.join(","));
-    if (factura !== "") query = query.eq("arca_vouchers.kind", "invoice").eq("arca_vouchers.status", "authorized");
-    if (factura === "no") query = query.is("arca_vouchers", null);
+    if (comprobante !== "") query = query.eq("arca_vouchers.kind", comprobante === "nc" ? "credit_note" : "invoice").eq("arca_vouchers.status", "authorized");
+    if (comprobante === "x") query = query.is("arca_vouchers", null);
     const { data, count, error: e } = await query;
     if (e) error = "No pudimos cargar las ventas. Probá de nuevo.";
     total = count ?? 0;
@@ -120,9 +121,12 @@ export default async function VentasPage({
     ]);
     const names = new Map((customers.data ?? []).map((c) => [c.id, c.name]));
     const voucherBySale = new Map<string, string>();
+    const creditNoteBySale = new Map<string, string>();
     for (const v of vouchers.data ?? []) {
-      if (!v.sale_id || v.kind !== "invoice") continue;
-      voucherBySale.set(v.sale_id, `${v.voucher_class ? `Factura ${v.voucher_class}` : "Factura"}${v.sales_point && v.number ? ` ${String(v.sales_point).padStart(5, "0")}-${String(v.number).padStart(8, "0")}` : ""}`);
+      if (!v.sale_id || (v.kind !== "invoice" && v.kind !== "credit_note")) continue;
+      const numberText = v.sales_point && v.number ? ` ${String(v.sales_point).padStart(5, "0")}-${String(v.number).padStart(8, "0")}` : "";
+      if (v.kind === "invoice") voucherBySale.set(v.sale_id, `${v.voucher_class ? `Factura ${v.voucher_class}` : "Factura"}${numberText}`);
+      else creditNoteBySale.set(v.sale_id, `${v.voucher_class ? `Nota de crédito ${v.voucher_class}` : "Nota de crédito"}${numberText}`);
     }
     rows = sales.map((s) => ({
       id: s.id,
@@ -133,6 +137,7 @@ export default async function VentasPage({
       voided: s.status === "anulada",
       internalNumber: s.internal_number,
       voucher: voucherBySale.get(s.id) ?? null,
+      creditNote: creditNoteBySale.get(s.id) ?? null,
     }));
   }
 
@@ -150,14 +155,14 @@ export default async function VentasPage({
         canCompare={false}
         showCompare={false}
         basePath="/ventas"
-        extraParams={{ medio, estado, factura, q, sucursal, ...(pageSize !== 25 ? { tam: String(pageSize) } : {}) }}
+        extraParams={{ medio, estado, comprobante, q, sucursal, ...(pageSize !== 25 ? { tam: String(pageSize) } : {}) }}
       />
       <VentasHistorial
         rows={rows}
         total={total}
         page={page}
         pageSize={pageSize}
-        filters={{ desde, hasta, medio, estado, factura, q, sucursal }}
+        filters={{ desde, hasta, medio, estado, comprobante, q, sucursal }}
         periodQuery={periodParams(periodQuery).toString()}
         paymentLabels={paymentLabels}
         branches={hasBranches ? branchContext.branches.map((b) => ({ id: b.id, name: b.name })) : []}

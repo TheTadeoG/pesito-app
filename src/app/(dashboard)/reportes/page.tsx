@@ -599,6 +599,9 @@ export default async function ReportesPage({
   return (
     <div className="space-y-6">
       <ReportesTabs active={query.tab ?? "resumen"} query={query} />
+      <ReportesDashboard
+        filters={
+          <>
       {/* Otros reportes (fiado, stock) son del negocio entero: no dependen del período. */}
       {query.tab !== "otros" && (
       <div className="flex flex-wrap items-center gap-3">
@@ -655,7 +658,8 @@ export default async function ReportesPage({
           </Link>
         </p>
       )}
-      <ReportesDashboard
+          </>
+        }
         data={data}
         query={query}
         afterTiles={

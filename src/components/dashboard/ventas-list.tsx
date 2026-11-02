@@ -36,7 +36,7 @@ export function VentasList({
   emptyLabel?: string;
 }) {
   const router = useRouter();
-  const [voidTarget, setVoidTarget] = useState<{ id: string; total: number } | null>(null);
+  const [voidTarget, setVoidTarget] = useState<{ id: string; total: number; creditNote?: boolean } | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailSale, setDetailSale] = useState<SaleDetail | null>(null);
@@ -52,7 +52,8 @@ export function VentasList({
   }
 
   function handleVoid(sale: SaleRow) {
-    setVoidTarget({ id: sale.id, total: sale.total });
+    // Con factura electrónica se anula emitiendo la nota de crédito.
+    setVoidTarget({ id: sale.id, total: sale.total, creditNote: Boolean(sale.voucher) });
   }
 
   if (sales.length === 0) {
@@ -112,8 +113,8 @@ export function VentasList({
                   e.stopPropagation();
                   handleVoid(sale);
                 }}
-                aria-label="Anular venta"
-                title="Anular venta"
+                aria-label={sale.voucher ? "Anular con nota de crédito" : "Anular venta"}
+                title={sale.voucher ? "Anular con nota de crédito" : "Anular venta"}
               >
                 <Ban className="h-4 w-4 text-danger" />
               </Button>
@@ -132,6 +133,7 @@ export function VentasList({
 
       <VoidSaleDialog
         sale={voidTarget}
+        creditNote={voidTarget?.creditNote}
         onClose={() => setVoidTarget(null)}
         onVoided={() => {
           setVoidTarget(null);
