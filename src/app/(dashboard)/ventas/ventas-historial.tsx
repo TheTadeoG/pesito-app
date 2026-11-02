@@ -80,7 +80,7 @@ export function VentasHistorial({
   const router = useRouter();
   const [f, setF] = useState(filters);
   const [detail, setDetail] = useState<{ loading: boolean; sale: SaleDetail | null } | null>(null);
-  const [voidTarget, setVoidTarget] = useState<{ id: string; total: number } | null>(null);
+  const [voidTarget, setVoidTarget] = useState<{ id: string; total: number; creditNote?: boolean } | null>(null);
   const [printing, setPrinting] = useState<SaleReceipt | null>(null);
   const [invoicing, setInvoicing] = useState<{ working: boolean; error: string | null }>({ working: false, error: null });
 
@@ -300,10 +300,11 @@ export function VentasHistorial({
                 </Button>
               )}
               {invoicing.error && <p className="w-full text-right text-xs text-danger">{invoicing.error}</p>}
-              {hasInvoice && !sale.voided && (
-                <p className="w-full text-right text-xs text-muted-foreground">
-                  Esta venta tiene una factura electrónica: no se anula a secas, se corrige con una nota de crédito.
-                </p>
+              {canVoid && hasInvoice && !sale.voided && sale.status !== "anulada" && (
+                <Button variant="danger" onClick={() => setVoidTarget({ id: sale.id, total: sale.total, creditNote: true })}>
+                  <Ban className="h-4 w-4" />
+                  Anular con nota de crédito
+                </Button>
               )}
             </>
           )
@@ -312,6 +313,7 @@ export function VentasHistorial({
 
       <VoidSaleDialog
         sale={voidTarget}
+        creditNote={voidTarget?.creditNote}
         onClose={() => setVoidTarget(null)}
         onVoided={() => {
           setVoidTarget(null);

@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { isOrgAdmin } from "@/lib/roles";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -184,4 +186,127 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
   } catch (e) {
     return { error: arcaMessage(e) };
   }
+}
+
+export interface VoidInvoicedResult {
+  error?: string;
+}
+
+/**
+ * Anula una venta con factura electrónica: primero emite la nota de crédito por el total en ARCA y, recién
+ * cuando ARCA la autoriza, anula la venta (stock, caja y cuenta del cliente) con su motivo. Es segura de repetir:
+ *  - si la nota ya está autorizada, sólo falta anular la venta;
+ *  - si ARCA no confirmó (indeterminado), se le pregunta por esa reserva antes de emitir otra.
+ * Sólo dueño o administrador.
+ */
+export async function voidInvoicedSale(saleId: string, reason: string): Promise<VoidInvoicedResult> {
+  const { userId, organization, membership } = await requireOrgContext();
+  if (!isOrgAdmin(membership.role)) return { error: "Sólo el dueño o un administrador puede anular ventas." };
+  const cleanReason = reason.trim().slice(0, 300);
+  if (cleanReason.length < 3) return { error: "Escribí el motivo de la anulación." };
+
+  const supabase = await createClient();
+  const subscription = await getSubscription(supabase, organization.id);
+  if (!canUse(subscription, "electronicInvoicing")) return { error: featureLockedMessage("electronicInvoicing") };
+  const { error: limited } = await supabase.rpc("rate_limit_hit", { p_org_id: organization.id, p_bucket: "arca_issue", p_max: 600, p_window_seconds: 3600 });
+  if (limited) return { error: "Hiciste muchos intentos seguidos. Probá de nuevo en un rato." };
+
+  const { data: sale } = await supabase.from("sales").select("id, status, total").eq("id", saleId).eq("org_id", organization.id).maybeSingle();
+  if (!sale) return { error: "No encontramos la venta." };
+  if (sale.status === "anulada") return { error: "La venta ya está anulada." };
+
+  const admin = createAdminClient();
+  const { data: vouchers } = await admin
+    .from("arca_vouchers")
+    .select("id, kind, status, idempotency_key, environment, sales_point, voucher_type, number, items, receiver")
+    .eq("org_id", organization.id)
+    .eq("sale_id", saleId)
+    .order("created_at");
+  const invoice = (vouchers ?? []).find((v) => v.kind === "invoice" && v.status === "authorized");
+  const notes = (vouchers ?? []).filter((v) => v.kind === "credit_note");
+  const noteAuthorized = notes.some((v) => v.status === "authorized");
+
+  if (invoice && !noteAuthorized) {
+    if (invoice.sales_point == null || invoice.voucher_type == null || invoice.number == null) return { error: "La factura de esta venta no tiene sus datos completos." };
+    const res = await getOrgArca(organization.id, invoice.environment);
+    if ("error" in res) return { error: res.error };
+    const { arca } = res;
+    const { data: settings } = await admin.from("arca_settings").select("issuer_condition, legal_name, address, gross_income, activity_start").eq("org_id", organization.id).maybeSingle();
+
+    const open = notes.find((v) => v.status === "indeterminate" || v.status === "conflict");
+    const attempt = notes.filter((v) => v.status === "rejected" || v.status === "error").length;
+    const key = open?.idempotency_key ?? (attempt === 0 ? `nc-${saleId}` : `nc-${saleId}-r${attempt}`);
+
+    try {
+      const outcome = open
+        ? await arca.client.recover(key)
+        : await arca.client.issueCreditNote(
+            { for: { salesPoint: invoice.sales_point, voucherType: invoice.voucher_type, number: invoice.number }, all: true } as Parameters<typeof arca.client.issueCreditNote>[0],
+            { idempotencyKey: key }
+          );
+      const base = {
+        org_id: organization.id,
+        sale_id: saleId,
+        environment: invoice.environment,
+        kind: "credit_note" as const,
+        idempotency_key: key,
+        total_cents: Math.round(Number(sale.total) * 100),
+        receiver: invoice.receiver as Json,
+        items: invoice.items as Json,
+        created_by: userId,
+      };
+      if (outcome.kind !== "authorized") {
+        const detail = JSON.parse(JSON.stringify({ kind: outcome.kind })) as Json;
+        const status = outcome.kind === "rejected" ? ("rejected" as const) : ("indeterminate" as const);
+        if (open) await admin.from("arca_vouchers").update({ detail }).eq("id", open.id);
+        else await admin.from("arca_vouchers").insert({ ...base, status, detail });
+        if (outcome.kind === "rejected") {
+          const reasons = outcome.issues.map((i) => i.message ?? i.code).filter(Boolean).join("; ");
+          return { error: `ARCA rechazó la nota de crédito: ${reasons || "sin detalle"}. La venta no se anuló.` };
+        }
+        return { error: "ARCA todavía no confirmó la nota de crédito. La venta no se anuló; reintentá en un momento (no se duplica)." };
+      }
+
+      const v = outcome.voucher as IssuedVoucher;
+      const storedItems = Array.isArray(invoice.items) ? (invoice.items as { description: string; quantity: number; amount: number; unitPrice: string }[]) : [];
+      const built = buildStoredDocument({
+        voucher: v,
+        items: storedItems.map((l) => ({ amount: l.amount, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice })) as Parameters<typeof buildStoredDocument>[0]["items"],
+        issuer: {
+          legalName: settings?.legal_name ?? null,
+          address: settings?.address ?? null,
+          grossIncome: settings?.gross_income ?? null,
+          activityStart: settings?.activity_start ?? null,
+          condition: settings?.issuer_condition === "exento" ? "exento" : "monotributo",
+          taxId: arca.taxId,
+        },
+        receiver: (invoice.receiver as { name?: string | null } | null)?.name ? { name: (invoice.receiver as { name: string }).name } : undefined,
+        saleConditions: "Contado",
+      });
+      const fields = {
+        status: "authorized" as const,
+        sales_point: v.salesPoint,
+        voucher_type: v.voucherType,
+        voucher_class: v.voucherClass,
+        number: v.number,
+        cae: v.cae,
+        cae_expiry: v.caeExpiry,
+        qr: v.qr ?? null,
+        detail: JSON.parse(JSON.stringify("document" in built ? { document: built.document } : { documentError: built.error })) as Json,
+      };
+      if (open) await admin.from("arca_vouchers").update(fields).eq("id", open.id);
+      else await admin.from("arca_vouchers").insert({ ...base, ...fields });
+    } catch (e) {
+      return { error: `${arcaMessage(e)} La venta no se anuló.` };
+    }
+  }
+
+  // Con la nota de crédito autorizada (o una venta sin factura) la base deja anular. Si esto falla, la nota ya
+  // está emitida: reintentar sólo anula la venta.
+  const { error } = await supabase.rpc("void_sale_audited", { p_sale_id: saleId, p_reason: cleanReason });
+  if (error) {
+    return { error: `${invoice && !noteAuthorized ? "La nota de crédito se emitió, pero " : ""}no pudimos anular la venta: ${error.message}. Probá de nuevo: no se emite otra nota.` };
+  }
+  for (const path of ["/ventas", "/reportes", "/productos", "/pos", "/clientes", "/caja"]) revalidatePath(path);
+  return {};
 }

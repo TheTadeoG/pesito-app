@@ -191,9 +191,9 @@ export default async function ConfiguracionPage({
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Comprobante X (ticket sin factura)</CardTitle>
+                <CardTitle className="text-base">Comprobante X (ticket no fiscal)</CardTitle>
                 <CardDescription>
-                  Es el ticket interno de una venta que no se factura. Elegí qué lleva impreso; las facturas electrónicas llevan siempre los datos que exige ARCA.
+                  Es el ticket no fiscal de una venta que no se factura. Elegí qué lleva impreso; las facturas electrónicas llevan siempre los datos que exige ARCA.
                 </CardDescription>
               </CardHeader>
               <CardContent>

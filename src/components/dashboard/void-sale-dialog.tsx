@@ -6,6 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/toast/toast-provider";
 import { voidSale } from "@/lib/actions/sales";
+import { voidInvoicedSale } from "@/lib/actions/invoicing";
 import { formatCurrency } from "@/lib/utils";
 
 /**
@@ -16,16 +17,19 @@ export function VoidSaleDialog({
   sale,
   onClose,
   onVoided,
+  creditNote,
 }: {
   sale: { id: string; total: number } | null;
   onClose: () => void;
   onVoided: () => void;
+  /** La venta tiene factura electrónica: se anula emitiendo antes la nota de crédito en ARCA. */
+  creditNote?: boolean;
 }) {
   if (!sale) return null;
-  return <VoidForm sale={sale} onClose={onClose} onVoided={onVoided} />;
+  return <VoidForm sale={sale} onClose={onClose} onVoided={onVoided} creditNote={creditNote} />;
 }
 
-function VoidForm({ sale, onClose, onVoided }: { sale: { id: string; total: number }; onClose: () => void; onVoided: () => void }) {
+function VoidForm({ sale, onClose, onVoided, creditNote = false }: { sale: { id: string; total: number }; onClose: () => void; onVoided: () => void; creditNote?: boolean }) {
   const { showSuccess } = useToast();
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,12 +40,12 @@ function VoidForm({ sale, onClose, onVoided }: { sale: { id: string; total: numb
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const res = await voidSale(sale.id, reason);
+      const res = creditNote ? await voidInvoicedSale(sale.id, reason) : await voidSale(sale.id, reason);
       if (res.error) {
         setError(res.error);
         return;
       }
-      showSuccess("Venta anulada", "Se repuso el stock y quedó registrado el motivo.");
+      showSuccess("Venta anulada", creditNote ? "Se emitió la nota de crédito y se repuso el stock." : "Se repuso el stock y quedó registrado el motivo.");
       onVoided();
     });
   }
@@ -49,6 +53,12 @@ function VoidForm({ sale, onClose, onVoided }: { sale: { id: string; total: numb
   return (
     <Dialog open onClose={onClose} title="Anular venta" description={`Venta de ${formatCurrency(sale.total)}`}>
       <form onSubmit={submit} className="space-y-4">
+        {creditNote && (
+          <p className="rounded-xl bg-warning-bg px-3 py-2 text-sm text-foreground">
+            Esta venta tiene una <b>factura electrónica</b>. Primero se emite en ARCA una <b>nota de crédito</b> por el total (es un
+            comprobante fiscal real y no se puede deshacer) y, cuando ARCA la autoriza, se anula la venta.
+          </p>
+        )}
         <p className="rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">
           Se repone el stock vendido y se ajustan la caja y la cuenta del cliente. La venta <b>no se borra</b>: queda en el
           historial como «Anulada», con quién la anuló, cuándo y por qué. No se puede deshacer.
@@ -74,7 +84,7 @@ function VoidForm({ sale, onClose, onVoided }: { sale: { id: string; total: numb
             Cancelar
           </Button>
           <Button type="submit" variant="danger" disabled={pending || !ok}>
-            {pending ? "Anulando…" : "Anular venta"}
+            {pending ? (creditNote ? "Emitiendo la nota de crédito…" : "Anulando…") : creditNote ? "Emitir nota de crédito y anular" : "Anular venta"}
           </Button>
         </div>
       </form>
