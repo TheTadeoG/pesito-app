@@ -233,14 +233,14 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{`Antes de empezar: lo que tiene que estar listo en ARCA (${env === "test" ? "pruebas" : "producción"})`}</CardTitle>
-          <CardDescription>ARCA pide tres cosas distintas. Si falta alguna, la conexión falla aunque lo demás esté bien. Más abajo está el detalle de cada una.</CardDescription>
+          <CardDescription>ARCA pide tres cosas distintas. Si falta alguna, la conexión falla aunque lo demás esté bien. Hacelas en este orden: la A (el punto de venta) antes de generar la solicitud del paso 2; la B y la C, siguiendo los pasos de abajo.</CardDescription>
         </CardHeader>
         <CardContent>
           <ol className="space-y-3 text-sm">
             {(env === "production"
               ? [
                   { t: "Clave fiscal nivel 3 (o más)", d: "Es con la que entrás a ARCA. Los certificados digitales no se pueden administrar con un nivel menor." },
-                  { t: "Un punto de venta para Web Services", d: "En «Administración de Puntos de Venta y Domicilios» → «A/B/M de Puntos de Venta» → Agregar. Sistema: «Factura Electrónica – Monotributo – Web Services» (Responsable inscripto: «RECE para aplicativo y Web Services»). Anotá el número: es el que va en el paso 2." },
+                  { t: "Un punto de venta para Web Services", d: "En «Administración de Puntos de Venta y Domicilios» → «A/B/M de Puntos de Venta» → Agregar. Sistema: «Factura Electrónica – Monotributo – Web Services» (Responsable inscripto: «RECE para aplicativo y Web Services»). Hacelo ahora, antes del paso 2. Anotá el número: es el que te pide el paso 2." },
                   { t: "El certificado, y su permiso para facturar", d: "Se crea en «Administración de Certificados Digitales» (paso 2). Después hay que autorizar ese certificado para el servicio «Facturación Electrónica» en «Administrador de Relaciones» (paso 3). Son dos pasos: tener el certificado no alcanza. Y acordate del alias que le pongas." },
                 ]
               : [
@@ -250,7 +250,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                 ]
             ).map((item, i) => (
               <li key={item.t} className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">{i + 1}</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/40 text-xs font-bold text-primary">{"ABC"[i]}</span>
                 <span>
                   <span className="block font-medium text-foreground">{item.t}</span>
                   <span className="block text-muted-foreground">{item.d}</span>
@@ -314,7 +314,18 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
           <AliasNote alias={alias} />
 
           <Step n={1} done={hasCsr} title="Generá tu solicitud">
-            <p className="text-sm text-muted-foreground">Con tu CUIT y el número de punto de venta que diste de alta en ARCA.</p>
+            <p className="text-sm text-muted-foreground">Con tu CUIT y el número del punto de venta que diste de alta en ARCA (punto A de la lista de arriba).</p>
+            {env === "production" && (
+              <details className="rounded-xl border border-border px-3.5 py-2.5 text-sm">
+                <summary className="cursor-pointer font-medium text-foreground">¿Todavía no creaste el punto de venta?</summary>
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
+                  <li>En ARCA, abrí <b>Administración de Puntos de Venta y Domicilios</b> → <b>A/B/M de Puntos de Venta</b> → <b>Agregar</b>.</li>
+                  <li>Poné un número que no uses (por ejemplo <b>3</b>) y un nombre de fantasía.</li>
+                  <li>En <b>Sistema</b> elegí <b>«Factura Electrónica – Monotributo – Web Services»</b> (Responsable inscripto: «RECE para aplicativo y Web Services»).</li>
+                  <li>Elegí el domicilio y aceptá. Después volvé acá y escribí ese mismo número.</li>
+                </ol>
+              </details>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="arca-cuit">CUIT (sin guiones)</Label>
