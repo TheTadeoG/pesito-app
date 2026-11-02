@@ -12,7 +12,7 @@ const C = {
   accent: "var(--accent, #d1fae5)",
 };
 
-function Frame({ children, label }: { children: React.ReactNode; label: string }) {
+function Frame({ children, label, url = "arca.gob.ar" }: { children: React.ReactNode; label: string; url?: string }) {
   return (
     <svg viewBox="0 0 320 170" role="img" aria-label={label} className="mx-auto w-full max-w-md rounded-xl border border-border bg-muted/40">
       <rect x="10" y="10" width="300" height="150" rx="10" fill={C.card} stroke={C.border} />
@@ -22,7 +22,7 @@ function Frame({ children, label }: { children: React.ReactNode; label: string }
       <circle cx="35" cy="21" r="3" fill="#fbbf24" />
       <circle cx="46" cy="21" r="3" fill="#34d399" />
       <rect x="62" y="15" width="150" height="12" rx="6" fill={C.card} stroke={C.border} />
-      <text x="72" y="24" fontSize="7" fill={C.sub}>arca.gob.ar</text>
+      <text x="72" y="24" fontSize="7" fill={C.sub}>{url}</text>
       {children}
     </svg>
   );
@@ -82,6 +82,23 @@ export function SceneUpload() {
       <text x="190" y="113" fontSize="14" fill={C.primary} className="arca-appear">✓</text>
       <rect x="236" y="134" width="58" height="16" rx="6" fill={C.primary} />
       <text x="247" y="145" fontSize="8" fill="#fff">Aceptar</text>
+    </Frame>
+  );
+}
+
+/** Descargar la solicitud (.csr) desde Pesito. */
+export function SceneCsr() {
+  return (
+    <Frame label="Descargar el archivo .csr desde Pesito" url="pesito.com.ar">
+      <text x="26" y="52" fontSize="8" fontWeight="600" fill={C.fg}>Pesito · Facturación</text>
+      <text x="26" y="68" fontSize="7" fill={C.sub}>Tu solicitud está lista</text>
+      <rect x="26" y="78" width="130" height="20" rx="6" fill={C.primary} />
+      <text x="38" y="91" fontSize="8" fill="#fff">Descargar archivo .csr</text>
+      <Pulse x={24} y={76} w={134} h={24} />
+      <g className="arca-drop">
+        <rect x="190" y="96" width="76" height="30" rx="5" fill={C.accent} stroke={C.primary} />
+        <text x="202" y="115" fontSize="9" fontWeight="600" fill={C.fg}>pesito.csr</text>
+      </g>
     </Frame>
   );
 }
@@ -151,7 +168,7 @@ export function SceneRelation() {
 /** Arrastrar el .crt a Pesito. */
 export function SceneDrop() {
   return (
-    <Frame label="Arrastrar el archivo .crt a la zona de carga">
+    <Frame label="Arrastrar el archivo .crt a la zona de carga" url="pesito.com.ar">
       <text x="26" y="52" fontSize="8" fontWeight="600" fill={C.fg}>Pesito · Facturación</text>
       <rect x="26" y="60" width="268" height="80" rx="10" fill="none" stroke={C.primary} strokeWidth="2" strokeDasharray="6 4" />
       <text x="160" y="134" fontSize="8" textAnchor="middle" fill={C.sub}>Arrastrá acá el archivo .crt</text>

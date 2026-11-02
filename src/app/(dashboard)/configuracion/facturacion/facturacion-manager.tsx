@@ -1,7 +1,7 @@
 "use client";
 
 import { certificateFromFile } from "@/lib/arca/cert-file";
-import { SceneDownload, SceneDrop, ScenePuntoVenta, SceneRelation, SceneSearch, SceneTree, SceneUpload } from "@/app/(dashboard)/configuracion/facturacion/arca-scenes";
+import { SceneCsr, SceneDownload, SceneDrop, ScenePuntoVenta, SceneRelation, SceneSearch, SceneTree, SceneUpload } from "@/app/(dashboard)/configuracion/facturacion/arca-scenes";
 import { AUTO_INVOICE_METHODS } from "@/lib/arca/auto-invoice";
 import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { useState, useTransition } from "react";
@@ -345,7 +345,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
           )}
 
           {wizard === "descargar" && (
-            <WizardStep title="Descargá el archivo" scene={<SceneDownload />}>
+            <WizardStep title="Descargá el archivo" scene={<SceneCsr />}>
               {csr ? (
                 <Button
                   onClick={() => {
