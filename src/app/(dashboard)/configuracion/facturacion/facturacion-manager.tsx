@@ -343,7 +343,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                       role="radio"
                       aria-checked={!on}
                       onClick={() => set(false)}
-                      className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors", !on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                      className={cn("w-[6.5rem] rounded-lg py-1.5 text-center text-xs font-semibold transition-colors", !on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
                     >
                       Manual
                     </button>
@@ -352,7 +352,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                       role="radio"
                       aria-checked={on}
                       onClick={() => set(true)}
-                      className={cn("flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors", on ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                      className={cn("flex w-[6.5rem] items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-semibold transition-colors", on ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
                     >
                       {on && <CheckCircle2 className="h-3.5 w-3.5" />}
                       Automática
