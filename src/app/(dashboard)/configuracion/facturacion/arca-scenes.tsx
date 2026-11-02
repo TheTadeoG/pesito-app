@@ -49,7 +49,7 @@ export function SceneSearch({ query }: { query: string }) {
 }
 
 /** Alta del punto de venta. */
-export function ScenePuntoVenta() {
+export function ScenePuntoVenta({ system = "Factura Electrónica – Monotributo – Web Services" }: { system?: string }) {
   return (
     <Frame label="Alta de punto de venta">
       <text x="26" y="52" fontSize="8" fontWeight="600" fill={C.fg}>Alta de Punto de Venta</text>
@@ -58,7 +58,7 @@ export function ScenePuntoVenta() {
       <text x="76" y="69" fontSize="8" fill={C.fg} className="arca-type">3</text>
       <text x="26" y="92" fontSize="7" fill={C.sub}>Sistema</text>
       <rect x="70" y="84" width="224" height="14" rx="4" fill={C.accent} stroke={C.primary} />
-      <text x="76" y="94" fontSize="7" fill={C.fg}>Factura Electrónica – Monotributo – Web Services</text>
+      <text x="76" y="94" fontSize="7" fill={C.fg}>{system}</text>
       <Pulse x={68} y={82} w={228} h={18} />
       <rect x="236" y="128" width="58" height="18" rx="6" fill={C.primary} />
       <text x="248" y="140" fontSize="8" fill="#fff">Aceptar</text>

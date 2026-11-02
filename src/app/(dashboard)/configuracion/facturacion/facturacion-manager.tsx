@@ -300,8 +300,23 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
           <p className="text-xs font-medium text-muted-foreground">{`Paso ${stepIndex + 1} de ${steps.length}`}</p>
 
           {wizard === "pv" && (
-            <WizardStep title="Creá tu punto de venta en ARCA" scene={<ScenePuntoVenta />}>
-              <p>Dalo de alta para <b>Web Services</b> y anotá el número.</p>
+            <WizardStep
+              title="Creá tu punto de venta en ARCA"
+              scene={<ScenePuntoVenta system={cond === "responsable_inscripto" || cond === "exento" ? "RECE para aplicativo y web services" : "Factura Electrónica – Monotributo – Web Services"} />}
+            >
+              <p>
+                En <b>Administración de Puntos de Venta y Domicilios</b>, agregá uno. En <b>Sistema</b> elegí el que corresponde a tu condición:
+              </p>
+              <ul className="space-y-1.5">
+                <li className={cn("rounded-lg border px-3 py-2", cond === "monotributo" || !cond ? "border-primary/50 bg-accent/40 text-foreground" : "border-border opacity-60")}>
+                  <b>Monotributista:</b> «Factura Electrónica – Monotributo – Web Services»
+                </li>
+                <li className={cn("rounded-lg border px-3 py-2", cond === "responsable_inscripto" || cond === "exento" || !cond ? "border-primary/50 bg-accent/40 text-foreground" : "border-border opacity-60")}>
+                  <b>Responsable inscripto (o IVA exento):</b> «RECE para aplicativo y web services»
+                </li>
+              </ul>
+              {!cond && <p className="text-xs">Elegí tu condición frente al IVA en el paso 1 y te marco la que te toca.</p>}
+              <p>Anotá el número que le pongas.</p>
             </WizardStep>
           )}
 
