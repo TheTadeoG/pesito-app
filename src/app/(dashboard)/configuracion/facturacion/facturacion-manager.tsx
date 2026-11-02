@@ -1,5 +1,6 @@
 "use client";
 
+import { AUTO_INVOICE_METHODS } from "@/lib/arca/auto-invoice";
 import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { useState, useTransition } from "react";
 import { CheckCircle2, Copy } from "lucide-react";
@@ -13,6 +14,7 @@ import {
   generateArcaCsr,
   issueArcaTestVoucher,
   saveArcaCertificate,
+  saveArcaAutoMethods,
   saveArcaProfile,
   setArcaEnabled,
   testArcaConnection,
@@ -28,6 +30,7 @@ export interface ArcaStatusView {
     activity_start: string | null;
     active_environment: "test" | "production";
     enabled: boolean;
+    auto_invoice_methods: string[];
   } | null;
   credentials: Partial<
     Record<
@@ -71,6 +74,9 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
   const [voucher, setVoucher] = useState<TestVoucherResult["voucher"] | null>(null);
   const [viewVoucher, setViewVoucher] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // Facturación automática por medio de pago
+  const [autoMethods, setAutoMethods] = useState<string[]>(s?.auto_invoice_methods ?? []);
+  const toggleAuto = (id: string) => setAutoMethods((cur) => (cur.includes(id) ? cur.filter((m) => m !== id) : [...cur, id]));
 
   function run<T extends { error?: string }>(fn: () => Promise<T>, okText: string, after?: (r: T) => void) {
     setMsg(null);
@@ -309,6 +315,38 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
             </div>
           )}
           <VoucherDialog voucherId={viewVoucher} onClose={() => setViewVoucher(null)} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Facturación automática por medio de pago</CardTitle>
+          <CardDescription>
+            Elegí con qué medios de pago Pesito emite la factura sola al cobrar. Los que dejes sin tildar se facturan a mano, con el botón «Facturar» en la venta.
+            Si no tildás ninguno, todo es manual.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="divide-y divide-border rounded-xl border border-border">
+            {AUTO_INVOICE_METHODS.map((m) => {
+              const on = autoMethods.includes(m.id);
+              return (
+                <label key={m.id} className="flex cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
+                  <span className="min-w-0">
+                    <span className="block font-medium text-foreground">{m.label}</span>
+                    {m.note && <span className="block text-xs text-muted-foreground">{m.note}</span>}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className={cn("text-xs font-medium", on ? "text-success" : "text-muted-foreground")}>{on ? "Automática" : "Manual"}</span>
+                    <input type="checkbox" checked={on} onChange={() => toggleAuto(m.id)} className="h-4 w-4 accent-primary" />
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          <Button disabled={pending} onClick={() => run(() => saveArcaAutoMethods(autoMethods), "Guardado.")}>
+            Guardar
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -1,5 +1,6 @@
 "use server";
 
+import { autoInvoiceMethodIds } from "@/lib/arca/auto-invoice";
 import { buildStoredDocument } from "@/lib/arca/voucher-doc";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -81,6 +82,19 @@ export async function saveArcaProfile(input: ArcaProfileInput): Promise<ArcaResu
     { onConflict: "org_id" }
   );
   if (error) return { error: "No pudimos guardar los datos." };
+  revalidatePath("/configuracion");
+  return { ok: true };
+}
+
+export async function saveArcaAutoMethods(methods: string[]): Promise<ArcaResult> {
+  const g = await guard("arca_setup", 60);
+  if ("error" in g) return { error: g.error };
+  const clean = autoInvoiceMethodIds.filter((m) => methods.includes(m));
+  const { error } = await g.admin.from("arca_settings").upsert(
+    { org_id: g.org.id, auto_invoice_methods: [...clean], updated_at: new Date().toISOString(), updated_by: g.userId },
+    { onConflict: "org_id" }
+  );
+  if (error) return { error: "No pudimos guardar el cambio." };
   revalidatePath("/configuracion");
   return { ok: true };
 }

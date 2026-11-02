@@ -850,6 +850,7 @@ export interface Database {
           activity_start: string | null;
           active_environment: "test" | "production";
           enabled: boolean;
+          auto_invoice_methods: string[];
           updated_at: string;
           updated_by: string | null;
         };
@@ -862,6 +863,7 @@ export interface Database {
           activity_start?: string | null;
           active_environment?: "test" | "production";
           enabled?: boolean;
+          auto_invoice_methods?: string[];
           updated_at?: string;
           updated_by?: string | null;
         };
