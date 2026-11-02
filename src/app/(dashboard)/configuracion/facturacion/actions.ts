@@ -159,7 +159,10 @@ export async function testArcaConnection(environment: string): Promise<ArcaResul
       blocked?: boolean;
     }[];
     const salesPoints = list.map((p) => ({ number: Number(p.number), type: String(p.type ?? ""), blocked: Boolean(p.blocked) }));
-    if (res.arca.salesPoint && !salesPoints.some((p) => p.number === res.arca.salesPoint && !p.blocked)) {
+    // En pruebas ARCA no hereda los puntos de venta de producción: la lista suele venir vacía y igual
+    // acepta comprobantes de prueba. Ahí la conexión vale y el comprobante de prueba confirma el número.
+    const emptyInTest = environment === "test" && salesPoints.length === 0;
+    if (res.arca.salesPoint && !emptyInTest && !salesPoints.some((p) => p.number === res.arca.salesPoint && !p.blocked)) {
       return {
         error: `Pudimos entrar a ARCA, pero el punto de venta ${res.arca.salesPoint} no está habilitado para Web Services en este entorno. Los habilitados son: ${salesPoints.filter((p) => !p.blocked).map((p) => p.number).join(", ") || "ninguno"}.`,
         salesPoints,
