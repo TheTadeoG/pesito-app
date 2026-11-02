@@ -53,18 +53,28 @@ export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
   const config = await getInvoicingConfig(organization.id);
   if (!config.enabled) return { error: "La búsqueda en ARCA se activa cuando la facturación está lista (Ajustes → Facturación)." };
   const { data: settings } = await createAdminClient().from("arca_settings").select("active_environment").eq("org_id", organization.id).maybeSingle();
-  const res = await getOrgArca(organization.id, settings?.active_environment ?? "test");
+  const environment = settings?.active_environment ?? "test";
+  const res = await getOrgArca(organization.id, environment);
   if ("error" in res) return { error: res.error };
 
   try {
     let taxId = digits;
     if (digits.length !== 11) {
       const found = await res.arca.client.padron.getTaxIdByDocument(digits);
-      if (!found || found.taxIds.length === 0) return { error: "ARCA no encontró un CUIL para ese DNI." };
+      if (!found || found.taxIds.length === 0) {
+        return { error: environment === "test" ? "ARCA (entorno de pruebas) no encontró un CUIL para ese DNI: el padrón de pruebas tiene muy pocos datos." : "ARCA no encontró un CUIL para ese DNI." };
+      }
       taxId = found.taxIds[0];
     }
     const t = await res.arca.client.padron.getTaxpayerDetails(taxId);
-    if (!t) return { error: "ARCA no encontró a esa persona o empresa." };
+    if (!t) {
+      return {
+        error:
+          environment === "test"
+            ? "ARCA (entorno de pruebas) no encontró a esa persona o empresa. El padrón de pruebas tiene muy pocos datos: en producción busca en el padrón real."
+            : "ARCA no encontró a esa persona o empresa.",
+      };
+    }
     const address = [t.address?.street, t.address?.city, t.address?.province].filter(Boolean).join(", ");
     return {
       taxpayer: {
