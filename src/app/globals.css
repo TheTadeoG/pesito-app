@@ -813,3 +813,30 @@ html:has(body.driver-active),
 .driver-active * {
   scroll-behavior: auto !important;
 }
+
+/* Vista previa en pantalla de un comprobante (el estilo de impresión está arriba, en @media print). */
+.voucher-preview .ticket-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.voucher-preview .ticket-line {
+  margin-bottom: 3px;
+}
+.voucher-preview .ticket-center {
+  text-align: center;
+}
+.voucher-preview .ticket-bold {
+  font-weight: 700;
+}
+.voucher-preview .ticket-big {
+  font-size: 13px;
+}
+.voucher-preview .ticket-small {
+  font-size: 9px;
+}
+.voucher-preview hr {
+  border: 0;
+  border-top: 1px dashed #000;
+  margin: 4px 0;
+}

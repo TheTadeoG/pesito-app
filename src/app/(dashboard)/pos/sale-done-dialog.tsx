@@ -158,6 +158,25 @@ export function SaleDoneDialog({
         if (!e.repeat) window.print();
         return;
       }
+      // F: factura en ticket 80 mm (o facturar / reintentar si todavía no está). A: factura en hoja A4.
+      if (canInvoice && saleId && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const key = e.key.toLowerCase();
+        const doneId = invoice?.phase === "done" ? invoice.voucherId : undefined;
+        if (key === "f" || key === "a") {
+          if (key === "f" && !doneId && invoice?.phase !== "working") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!e.repeat) void emit(saleId);
+            return;
+          }
+          if (doneId) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!e.repeat) setViewVoucher({ id: doneId, format: key === "a" ? "a4" : "ticket" });
+            return;
+          }
+        }
+      }
       if (e.key === "Enter" || e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -169,7 +188,7 @@ export function SaleDoneDialog({
     }
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [receipt, viewVoucher, onClose]);
+  }, [receipt, viewVoucher, onClose, canInvoice, saleId, invoice, emit]);
 
   useEffect(() => {
     if (receipt) newSaleRef.current?.focus();
@@ -217,10 +236,12 @@ export function SaleDoneDialog({
                     <Button type="button" size="sm" variant="outline" onClick={() => invoice.voucherId && setViewVoucher({ id: invoice.voucherId, format: "ticket" })}>
                       <FileText className="h-4 w-4" />
                       Factura en ticket 80 mm
+                      <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">F</kbd>
                     </Button>
                     <Button type="button" size="sm" variant="outline" onClick={() => invoice.voucherId && setViewVoucher({ id: invoice.voucherId, format: "a4" })}>
                       <FileText className="h-4 w-4" />
                       Factura en hoja A4
+                      <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">A</kbd>
                     </Button>
                   </div>
                 </div>
@@ -231,6 +252,7 @@ export function SaleDoneDialog({
                   <p className="text-xs text-muted-foreground">La venta quedó cobrada. Podés reintentar ahora o facturarla después desde Ventas.</p>
                   <Button type="button" size="sm" variant="outline" onClick={() => void emit(saleId)}>
                     Reintentar
+                    <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">F</kbd>
                   </Button>
                 </div>
               )}
@@ -240,6 +262,7 @@ export function SaleDoneDialog({
                   <Button type="button" size="sm" variant="outline" onClick={() => void emit(saleId)}>
                     <FileText className="h-4 w-4" />
                     Facturar
+                    <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">F</kbd>
                   </Button>
                 </div>
               )}

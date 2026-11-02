@@ -251,6 +251,24 @@ export function VoucherDialog({
     };
   }, [printing]);
 
+  // Atajos: P imprime, T ticket 80 mm, A hoja A4.
+  useEffect(() => {
+    if (!voucherId || !data?.document) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      const k = e.key.toLowerCase();
+      if (k === "p") {
+        e.preventDefault();
+        setPrinting(true);
+      } else if (k === "t" || k === "a") {
+        e.preventDefault();
+        pick(k === "a" ? "a4" : "ticket");
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [voucherId, data]);
+
   function pick(next: VoucherFormat) {
     setFormat(next);
     try {
@@ -274,18 +292,20 @@ export function VoucherDialog({
                   className={cn("rounded-lg px-3 py-1.5 text-sm font-medium", format === f ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
                 >
                   {f === "ticket" ? "Ticket 80 mm" : "Hoja A4"}
+                  <kbd className="ml-1.5 hidden rounded border border-border px-1 font-mono text-[10px] text-muted-foreground sm:inline">{f === "ticket" ? "T" : "A"}</kbd>
                 </button>
               ))}
             </div>
             <Button disabled={!data?.document} onClick={() => setPrinting(true)}>
               <Printer className="h-4 w-4" />
               Imprimir
+              <kbd className="ml-1 hidden rounded border border-white/40 px-1.5 font-mono text-[10px] font-medium sm:inline">P</kbd>
             </Button>
           </div>
           {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
           {!data && !error && <p className="py-8 text-center text-sm text-muted-foreground">Cargando…</p>}
           {data && (
-            <div className="max-h-[60vh] overflow-auto rounded-xl border border-border bg-white p-3 text-black">
+            <div className="voucher-preview max-h-[60vh] overflow-auto rounded-xl border border-border bg-white p-3 text-black">
               <div className={format === "ticket" ? "mx-auto max-w-[300px] font-mono text-[11px] leading-snug" : ""}>
                 <VoucherDocumentView data={data} format={format} />
               </div>
