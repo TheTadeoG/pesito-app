@@ -43,6 +43,8 @@ export interface CheckoutInput {
 export interface CheckoutResult {
   error?: string;
   saleId?: string;
+  /** Número del comprobante interno X de la venta (para el ticket). */
+  internalNumber?: number | null;
   // Lo que cambió con la venta, para que el POS se actualice sin volver a
   // renderizarse entero (eso bajaba otra vez todo el catálogo y todos los
   // clientes: ~700 KB por venta en un negocio mediano).
@@ -114,12 +116,20 @@ export async function checkoutSale(input: CheckoutInput): Promise<CheckoutResult
     }[];
   };
 
+  // El número X lo asigna la base al crear la venta: una lectura chica de una fila.
+  let internalNumber: number | null = null;
+  if (result.sale_id) {
+    const { data: numbered } = await supabase.from("sales").select("internal_number").eq("id", result.sale_id).maybeSingle();
+    internalNumber = numbered?.internal_number ?? null;
+  }
+
   const productIds = Array.from(
     new Set(input.items.map((i) => i.product_id).filter((id): id is string => Boolean(id)))
   );
 
   return {
     saleId: result.sale_id,
+    internalNumber,
     // Un producto sin fila en la sucursal quedó en 0.
     stockByProduct: {
       ...Object.fromEntries(productIds.map((id) => [id, 0])),

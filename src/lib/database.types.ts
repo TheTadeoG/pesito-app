@@ -381,6 +381,7 @@ export interface Database {
           voided_at: string | null;
           voided_by: string | null;
           void_reason: string | null;
+          internal_number: number | null;
         };
         Insert: {
           id?: string;
@@ -400,6 +401,7 @@ export interface Database {
           voided_at?: string | null;
           voided_by?: string | null;
           void_reason?: string | null;
+          internal_number?: number | null;
         };
         Update: Partial<Database["public"]["Tables"]["sales"]["Insert"]>;
         Relationships: [];

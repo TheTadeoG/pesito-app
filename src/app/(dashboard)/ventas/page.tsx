@@ -78,6 +78,8 @@ export default async function VentasPage({
     const saleIds = (vouchersFound.data ?? []).map((v) => v.sale_id).filter((id): id is string => Boolean(id));
     if (customerIds.length > 0) orParts.push(`customer_id.in.(${customerIds.join(",")})`);
     if (saleIds.length > 0) orParts.push(`id.in.(${saleIds.join(",")})`);
+    // El número a secas también busca el comprobante interno X.
+    if (parsed.voucherNumber !== null) orParts.push(`internal_number.eq.${parsed.voucherNumber}`);
     if (parsed.amount !== null) orParts.push(`total.eq.${parsed.amount}`);
   }
   const nothingMatches = q !== "" && orParts.length === 0;
@@ -86,7 +88,7 @@ export default async function VentasPage({
   let total = 0;
   let error: string | null = null;
   if (!nothingMatches) {
-    const cols = "id, created_at, total, payment_method, invoice_type, status, customer_id";
+    const cols = "id, created_at, total, payment_method, invoice_type, status, customer_id, internal_number";
     // Facturadas / sin facturar: se cruza con las facturas autorizadas de cada venta.
     const selectCols = (factura === "si" ? `${cols}, arca_vouchers!inner(id)` : factura === "no" ? `${cols}, arca_vouchers(id)` : cols) as typeof cols;
     let query = supabase
@@ -129,6 +131,7 @@ export default async function VentasPage({
       paymentMethod: s.payment_method,
       total: Number(s.total),
       voided: s.status === "anulada",
+      internalNumber: s.internal_number,
       voucher: voucherBySale.get(s.id) ?? null,
     }));
   }

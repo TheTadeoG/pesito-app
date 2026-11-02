@@ -18,6 +18,7 @@ export function receiptFromSale(sale: SaleDetail, orgName: string, paymentLabels
     payments,
     cashReceived: null,
     customerName: sale.customerName === "Consumidor Final" ? null : sale.customerName,
+    internalNumber: sale.internal_number,
     copy: true,
     voided: sale.status === "anulada",
   };

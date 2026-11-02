@@ -47,6 +47,8 @@ export interface SaleDetail {
   payments: SalePaymentLine[];
   /** Quién, cuándo y por qué se anuló (la venta nunca se borra). */
   voided: { at: string; by: string | null; reason: string | null } | null;
+  /** Número del comprobante interno X (null en ventas anteriores a la numeración). */
+  internal_number: number | null;
   /** Comprobantes electrónicos de ARCA de esta venta (factura y notas de crédito). */
   vouchers: SaleVoucherInfo[];
 }
@@ -60,7 +62,7 @@ export async function getSaleDetail(
   const { data: sale } = await supabase
     .from("sales")
     .select(
-      "id, created_at, status, payment_method, invoice_type, subtotal, discount, surcharge, total, customer_id, voided_at, voided_by, void_reason"
+      "id, created_at, status, payment_method, invoice_type, subtotal, discount, surcharge, total, customer_id, voided_at, voided_by, void_reason, internal_number"
     )
     .eq("id", saleId)
     .eq("org_id", organization.id)
@@ -90,6 +92,7 @@ export async function getSaleDetail(
   return {
     sale: {
       id: sale.id,
+      internal_number: sale.internal_number,
       created_at: sale.created_at,
       status: sale.status,
       payment_method: sale.payment_method,

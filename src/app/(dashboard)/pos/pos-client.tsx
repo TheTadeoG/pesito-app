@@ -529,6 +529,7 @@ export function PosClient({
       paymentMethodsWithCustom(customPaymentMethods).find((m) => m.value === value)?.label ?? value;
     setLastReceipt({
       saleId: result.saleId,
+      internalNumber: result.internalNumber,
       paymentMethod: method,
       orgName,
       soldAt: new Date().toISOString(),

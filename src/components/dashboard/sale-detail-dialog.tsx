@@ -5,7 +5,7 @@ import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { INTERNAL_VOUCHER_LABEL } from "@/lib/internal-voucher";
+import { internalNumberLabel } from "@/lib/internal-voucher";
 import { voucherBadge } from "@/lib/sale-vouchers";
 import type { SaleDetail } from "@/lib/actions/sales";
 
@@ -54,7 +54,7 @@ export function SaleDetailDialog({
               .map((v) => (
                 <Badge key={v.id} tone="accent">{voucherBadge(v.voucherClass, v.environment)}</Badge>
               ))}
-            {!sale.vouchers.some((v) => v.kind === "invoice" && v.status === "authorized") && <Badge>{INTERNAL_VOUCHER_LABEL}</Badge>}
+            {!sale.vouchers.some((v) => v.kind === "invoice" && v.status === "authorized") && <Badge>{internalNumberLabel(sale.internal_number)}</Badge>}
             {sale.status === "anulada" && <Badge tone="danger">Anulada</Badge>}
           </div>
 
