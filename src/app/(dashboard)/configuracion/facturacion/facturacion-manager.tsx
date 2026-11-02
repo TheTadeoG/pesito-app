@@ -167,7 +167,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
   }
 
   // Alias que se sugiere en ARCA: el mismo en todos los pasos para no perderlo.
-  const alias = env === "test" ? "pesito-pruebas" : "pesito-produccion";
+  const alias = "pesito";
 
   // Un archivo .crt/.cer/.pem arrastrado o elegido: se lee acá y se guarda enseguida (el servidor comprueba que corresponda).
   async function handleCertFile(file: File) {
