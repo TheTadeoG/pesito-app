@@ -76,7 +76,6 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
   const [copied, setCopied] = useState(false);
   // Facturación automática por medio de pago
   const [autoMethods, setAutoMethods] = useState<string[]>(s?.auto_invoice_methods ?? []);
-  const toggleAuto = (id: string) => setAutoMethods((cur) => (cur.includes(id) ? cur.filter((m) => m !== id) : [...cur, id]));
 
   function run<T extends { error?: string }>(fn: () => Promise<T>, okText: string, after?: (r: T) => void) {
     setMsg(null);
