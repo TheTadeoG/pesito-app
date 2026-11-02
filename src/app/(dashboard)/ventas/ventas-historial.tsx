@@ -13,6 +13,7 @@ import { SaleDetailDialog } from "@/components/dashboard/sale-detail-dialog";
 import { TicketPrint } from "@/components/dashboard/ticket-print";
 import { VoidSaleDialog } from "@/components/dashboard/void-sale-dialog";
 import { getSaleDetail, type SaleDetail } from "@/lib/actions/sales";
+import { INTERNAL_VOUCHER_LABEL } from "@/lib/internal-voucher";
 import { issueSaleInvoice } from "@/lib/actions/invoicing";
 import { receiptFromSale } from "@/lib/sale-receipt";
 import type { SaleReceipt } from "@/app/(dashboard)/pos/sale-done-dialog";
@@ -234,7 +235,7 @@ export function VentasHistorial({
                         <Badge>{paymentLabels[r.paymentMethod] ?? r.paymentMethod}</Badge>
                       </td>
                       <td className="px-3 py-3 text-xs text-muted-foreground">
-                        {r.voided ? <Badge tone="danger">Anulada</Badge> : (r.voucher ?? "Ticket interno")}
+                        {r.voided ? <Badge tone="danger">Anulada</Badge> : (r.voucher ?? INTERNAL_VOUCHER_LABEL)}
                         {r.voided && r.voucher ? ` · ${r.voucher}` : ""}
                       </td>
                       <td className={`px-3 py-3 text-right font-semibold tabular-nums ${r.voided ? "text-muted-foreground line-through" : "text-foreground"}`}>{formatCurrency(r.total)}</td>
