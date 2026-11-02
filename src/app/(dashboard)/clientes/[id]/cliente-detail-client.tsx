@@ -11,6 +11,14 @@ import { CustomerForm } from "@/app/(dashboard)/clientes/customer-form";
 import { PaymentDialog } from "@/app/(dashboard)/clientes/payment-dialog";
 import type { Customer } from "@/lib/types";
 
+const taxConditionLabels: Record<string, string> = {
+  responsable_inscripto: "Responsable inscripto",
+  monotributo: "Monotributo",
+  exento: "IVA exento",
+  no_alcanzado: "IVA no alcanzado",
+  consumidor_final: "Consumidor final",
+};
+
 export function ClienteDetailClient({
   customer,
   customPaymentMethods = [],
@@ -40,6 +48,16 @@ export function ClienteDetailClient({
               {[customer.phone, customer.email, customer.document].filter(Boolean).join(" · ") ||
                 "Sin datos de contacto"}
             </p>
+            {(customer.address || customer.city || customer.tax_condition) && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {[
+                  [customer.address, customer.city, customer.postal_code, customer.province].filter(Boolean).join(", "),
+                  customer.tax_condition ? taxConditionLabels[customer.tax_condition] : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
             {customer.notes && (
               <p className="mt-1 text-sm text-muted-foreground">{customer.notes}</p>
             )}

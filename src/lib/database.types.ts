@@ -292,6 +292,12 @@ export interface Database {
           phone: string | null;
           email: string | null;
           document: string | null;
+          /** Domicilio y condición fiscal (0086). undefined si falta la migración. */
+          address?: string | null;
+          city?: string | null;
+          postal_code?: string | null;
+          province?: string | null;
+          tax_condition?: "responsable_inscripto" | "monotributo" | "exento" | "no_alcanzado" | "consumidor_final" | null;
           notes: string | null;
           balance: number;
           invoice_type: "consumidor_final" | "factura_a" | "factura_b" | "factura_c" | null;
@@ -305,6 +311,11 @@ export interface Database {
           phone?: string | null;
           email?: string | null;
           document?: string | null;
+          address?: string | null;
+          city?: string | null;
+          postal_code?: string | null;
+          province?: string | null;
+          tax_condition?: "responsable_inscripto" | "monotributo" | "exento" | "no_alcanzado" | "consumidor_final" | null;
           notes?: string | null;
           balance?: number;
           invoice_type?: "consumidor_final" | "factura_a" | "factura_b" | "factura_c" | null;

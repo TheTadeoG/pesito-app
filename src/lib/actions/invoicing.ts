@@ -104,7 +104,7 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
 
   const [{ data: items }, customerRes] = await Promise.all([
     supabase.from("sale_items").select("product_name, quantity, subtotal").eq("sale_id", saleId).order("id"),
-    sale.customer_id ? supabase.from("customers").select("name, razon_social, document").eq("id", sale.customer_id).maybeSingle() : Promise.resolve({ data: null }),
+    sale.customer_id ? supabase.from("customers").select("name, razon_social, document, address, city, postal_code, province").eq("id", sale.customer_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const lines = invoiceLines((items ?? []).map((i) => ({ name: i.product_name, quantity: Number(i.quantity), subtotal: Number(i.subtotal) })), Number(sale.total));
   if (lines.length === 0) return { error: "La venta no tiene importe para facturar." };
@@ -164,7 +164,12 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
         condition: settings.issuer_condition,
         taxId: arca.taxId,
       },
-      receiver: customer ? { name: customer.razon_social ?? customer.name } : undefined,
+      receiver: customer
+        ? {
+            name: customer.razon_social ?? customer.name,
+            ...(customer.address ? { address: [customer.address, customer.city, customer.postal_code, customer.province].filter(Boolean).join(", ") } : {}),
+          }
+        : undefined,
       saleConditions: saleConditionLabel[sale.payment_method] ?? "Contado",
       observations: "observations" in outcome ? (outcome as { observations?: { code?: string | number }[] }).observations : undefined,
     });

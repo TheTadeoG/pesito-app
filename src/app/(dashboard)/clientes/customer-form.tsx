@@ -31,6 +31,12 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
   const [email, setEmail] = useState(customer?.email ?? "");
   const [document, setDocument] = useState(customer?.document ?? "");
   const [notes, setNotes] = useState(customer?.notes ?? "");
+  // Domicilio y condición fiscal (se completan solos al buscar el CUIT en ARCA).
+  const [address, setAddress] = useState(customer?.address ?? "");
+  const [city, setCity] = useState(customer?.city ?? "");
+  const [postalCode, setPostalCode] = useState(customer?.postal_code ?? "");
+  const [province, setProvince] = useState(customer?.province ?? "");
+  const [taxCondition, setTaxCondition] = useState<CustomerFormInput["taxCondition"]>(customer?.tax_condition ?? "");
   const [invoiceType, setInvoiceType] = useState<InvoiceType>(
     customer?.invoice_type ?? "consumidor_final"
   );
@@ -66,11 +72,16 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
     const t = res.taxpayer;
     setFound(t);
     setDocument(t.taxId);
-    // Completa lo que falta, sin pisar lo que ya escribiste.
+    // El nombre se completa sólo si estaba vacío; el domicilio y la condición fiscal vienen de ARCA, que es la fuente.
     if (t.name) {
       setRazonSocial((cur) => cur || t.name!);
       setName((cur) => cur || t.name!);
     }
+    if (t.street) setAddress(t.street);
+    if (t.city) setCity(t.city);
+    if (t.postalCode) setPostalCode(t.postalCode);
+    if (t.province) setProvince(t.province);
+    if (t.conditionCode) setTaxCondition(t.conditionCode);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -85,6 +96,11 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
       phone: phoneNumber.trim() ? `${phoneCountry.dialCode} ${phoneNumber.trim()}` : "",
       email,
       document,
+      address,
+      city,
+      postalCode,
+      province,
+      taxCondition,
       notes,
       invoiceType,
     };
@@ -179,6 +195,41 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
             )}
           </div>
         )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2">
+            <Label htmlFor="c-address">Domicilio</Label>
+            <Input id="c-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Calle y número" />
+          </div>
+          <div>
+            <Label htmlFor="c-city">Localidad</Label>
+            <Input id="c-city" value={city} onChange={(e) => setCity(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="c-postal">Código postal</Label>
+            <Input id="c-postal" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="Ej: C1425" />
+          </div>
+          <div>
+            <Label htmlFor="c-province">Provincia</Label>
+            <Input id="c-province" value={province} onChange={(e) => setProvince(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="c-tax">Condición frente al IVA</Label>
+            <select
+              id="c-tax"
+              value={taxCondition}
+              onChange={(e) => setTaxCondition(e.target.value as CustomerFormInput["taxCondition"])}
+              className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">Sin dato</option>
+              <option value="consumidor_final">Consumidor final</option>
+              <option value="monotributo">Monotributo</option>
+              <option value="responsable_inscripto">Responsable inscripto</option>
+              <option value="exento">IVA exento</option>
+              <option value="no_alcanzado">IVA no alcanzado</option>
+            </select>
+          </div>
+        </div>
 
         <div>
           <Label htmlFor="c-email">Email</Label>

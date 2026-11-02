@@ -15,6 +15,11 @@ export interface CustomerFormInput {
   phone: string;
   email: string;
   document: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  province: string;
+  taxCondition: "" | "responsable_inscripto" | "monotributo" | "exento" | "no_alcanzado" | "consumidor_final";
   notes: string;
   invoiceType: "consumidor_final" | "factura_a" | "factura_b" | "factura_c";
 }
@@ -34,6 +39,11 @@ export async function saveCustomer(input: CustomerFormInput): Promise<ActionStat
     phone: input.phone.trim() || null,
     email: input.email.trim() || null,
     document: input.document.trim() || null,
+    address: input.address.trim().slice(0, 200) || null,
+    city: input.city.trim().slice(0, 100) || null,
+    postal_code: input.postalCode.trim().slice(0, 12) || null,
+    province: input.province.trim().slice(0, 60) || null,
+    tax_condition: input.taxCondition || null,
     notes: input.notes.trim() || null,
     invoice_type: input.invoiceType,
   };

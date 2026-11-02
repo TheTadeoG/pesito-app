@@ -13,8 +13,15 @@ export interface TaxpayerInfo {
   taxId: string;
   name: string | null;
   address: string | null;
+  /** Domicilio fiscal por partes, para completar la ficha del cliente. */
+  street: string | null;
+  city: string | null;
+  postalCode: string | null;
+  province: string | null;
   /** «Monotributo», «Responsable inscripto»… tal como figura en ARCA. */
   condition: string | null;
+  /** Código para guardarlo en el cliente (responsable_inscripto, monotributo…). */
+  conditionCode: "responsable_inscripto" | "monotributo" | "exento" | "no_alcanzado" | "consumidor_final" | null;
   active: boolean | null;
 }
 
@@ -107,7 +114,12 @@ export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
         taxId,
         name: t.name ?? null,
         address: address || null,
+        street: t.address?.street ?? null,
+        city: t.address?.city ?? null,
+        postalCode: t.address?.postalCode ?? null,
+        province: t.address?.province ?? null,
         condition: t.condition ? (conditionLabel[t.condition] ?? t.condition) : null,
+        conditionCode: t.condition ?? null,
         active: t.taxes.length > 0 ? t.taxes.some((x) => x.state === "AC") : null,
       },
     };
