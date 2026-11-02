@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { CheckCircle2, FileText, Printer } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { INTERNAL_VOUCHER_LEGEND, internalNumberLabel } from "@/lib/internal-voucher";
+import { INTERNAL_VOUCHER_LEGEND, internalTicketTitle } from "@/lib/internal-voucher";
 import { VoucherDialog, type VoucherFormat } from "@/components/dashboard/voucher-view";
 import { issueSaleInvoice, type InvoicingConfig } from "@/lib/actions/invoicing";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -41,8 +41,8 @@ export function Ticket({ receipt }: { receipt: SaleReceipt }) {
   return (
     <div className="ticket-print">
       {receipt.voided && <p className="ticket-center ticket-bold ticket-big">VENTA ANULADA</p>}
-      <p className="ticket-center ticket-bold ticket-big">{receipt.orgName}</p>
-      <p className="ticket-center ticket-bold">{`COMPROBANTE ${internalNumberLabel(receipt.internalNumber)}`}</p>
+      {receipt.orgName && <p className="ticket-center ticket-bold ticket-big">{receipt.orgName}</p>}
+      <p className="ticket-center ticket-bold">{internalTicketTitle(receipt.internalNumber)}</p>
       {receipt.copy && <p className="ticket-center ticket-bold">COPIA</p>}
       <p className="ticket-center">{formatDateTime(receipt.soldAt)}</p>
       {receipt.customerName && <p className="ticket-center">Cliente: {receipt.customerName}</p>}

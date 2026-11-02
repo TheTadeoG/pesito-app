@@ -56,6 +56,7 @@ export function VentasHistorial({
   canExport,
   canInvoice,
   orgName,
+  ticketShowNumber,
   error,
 }: {
   rows: HistorialRow[];
@@ -72,6 +73,8 @@ export function VentasHistorial({
   /** La facturación electrónica está lista: se puede facturar a mano una venta sin factura. */
   canInvoice: boolean;
   orgName: string;
+  /** El ticket interno X lleva su número correlativo (Ajustes → Tu negocio). */
+  ticketShowNumber: boolean;
   error: string | null;
 }) {
   const router = useRouter();
@@ -280,7 +283,7 @@ export function VentasHistorial({
         actions={
           sale && (
             <>
-              <Button variant="outline" onClick={() => setPrinting(receiptFromSale(sale, orgName, paymentLabels))}>
+              <Button variant="outline" onClick={() => setPrinting(receiptFromSale(sale, orgName, paymentLabels, ticketShowNumber))}>
                 <Printer className="h-4 w-4" />
                 Reimprimir ticket (no fiscal)
               </Button>

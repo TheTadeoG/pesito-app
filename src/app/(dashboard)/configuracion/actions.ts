@@ -50,6 +50,20 @@ export async function updateAutoInvoiceSetting(enabled: boolean): Promise<Action
   return { success: true };
 }
 
+/** Qué lleva el comprobante interno X: el nombre del negocio y su número correlativo (sólo dueño o administrador). */
+export async function updateTicketOptions(options: { showOrgName: boolean; showNumber: boolean }): Promise<ActionState> {
+  const { organization, membership } = await requireOrgContext();
+  if (!isOrgAdmin(membership.role)) return { error: "Sólo el dueño o un administrador puede cambiar esto." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ ticket_show_org_name: options.showOrgName, ticket_show_number: options.showNumber })
+    .eq("id", organization.id);
+  if (error) return { error: "No pudimos guardar el cambio (¿falta aplicar la migración 0085?)." };
+  revalidatePath("/configuracion");
+  return { success: true };
+}
+
 /** Hora de cierre ("HH:MM", Argentina) para recordar cerrar la caja; null la desactiva. */
 export async function updateCashCloseTime(time: string | null): Promise<ActionState> {
   const { organization, membership } = await requireOrgContext();

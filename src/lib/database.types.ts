@@ -20,6 +20,9 @@ export interface Database {
           auto_invoice_by_payment: boolean;
           /** "HH:MM:SS" en hora de Argentina (0041). undefined si falta la migración. */
           cash_close_time?: string | null;
+          /** Qué lleva el comprobante interno X (0085). undefined si falta la migración: se muestran los dos. */
+          ticket_show_org_name?: boolean;
+          ticket_show_number?: boolean;
           /** Ajustes de la recomendación de compra (0052). undefined si falta la migración. */
           restock_target_days?: number;
           restock_window_days?: number;
@@ -36,6 +39,8 @@ export interface Database {
           phone?: string | null;
           auto_invoice_by_payment?: boolean;
           cash_close_time?: string | null;
+          ticket_show_org_name?: boolean;
+          ticket_show_number?: boolean;
           restock_target_days?: number;
           restock_window_days?: number;
           restock_safety_days?: number;

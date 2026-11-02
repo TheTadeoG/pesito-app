@@ -59,7 +59,9 @@ export default async function PosPage() {
       orgId={organization.id}
       branchId={openRegister.branch_id ?? null}
       initialProducts={initialProducts}
-      orgName={organization.name}
+      // El nombre y el número del comprobante X se pueden ocultar (Ajustes → Tu negocio).
+      orgName={organization.ticket_show_org_name === false ? "" : organization.name}
+      ticketShowNumber={organization.ticket_show_number !== false}
       cashRegisterId={openRegister.id}
       customers={customers.map((c) => ({ ...c, balance: Number(c.balance) }))}
       autoInvoiceByPayment={organization.auto_invoice_by_payment}

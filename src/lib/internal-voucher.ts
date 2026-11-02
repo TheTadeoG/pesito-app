@@ -9,3 +9,8 @@ export const INTERNAL_VOUCHER_LEGEND = "DOCUMENTO NO VÁLIDO COMO FACTURA";
 export function internalNumberLabel(n: number | null | undefined): string {
   return n ? `X 0001-${String(n).padStart(8, "0")}` : INTERNAL_VOUCHER_LABEL;
 }
+
+/** Título del ticket interno: «COMPROBANTE X 0001-00000012», o sólo «COMPROBANTE X» si no se muestra el número. */
+export function internalTicketTitle(n: number | null | undefined): string {
+  return n ? `COMPROBANTE ${internalNumberLabel(n)}` : "COMPROBANTE X";
+}

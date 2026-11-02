@@ -116,6 +116,8 @@ interface PosClientProps {
   autoInvoiceByPayment: boolean;
   /** Facturación electrónica (ARCA): si está lista y con qué medios de pago factura sola. */
   invoicing: InvoicingConfig;
+  /** El ticket interno X lleva su número correlativo. */
+  ticketShowNumber: boolean;
   customPaymentMethods: string[];
   onSaleCompleted: (recentSales: SaleRow[]) => void;
   /** Una venta recién cobrada quedó facturada: la lista de ventas recientes lo muestra al toque. */
@@ -130,6 +132,7 @@ export function PosClient({
   customers: serverCustomers,
   autoInvoiceByPayment,
   invoicing,
+  ticketShowNumber,
   customPaymentMethods,
   onSaleCompleted,
   onSaleInvoiced,
@@ -529,7 +532,7 @@ export function PosClient({
       paymentMethodsWithCustom(customPaymentMethods).find((m) => m.value === value)?.label ?? value;
     setLastReceipt({
       saleId: result.saleId,
-      internalNumber: result.internalNumber,
+      internalNumber: ticketShowNumber ? result.internalNumber : null,
       paymentMethod: method,
       orgName,
       soldAt: new Date().toISOString(),

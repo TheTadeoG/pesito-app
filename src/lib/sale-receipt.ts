@@ -2,7 +2,13 @@ import type { SaleReceipt } from "@/app/(dashboard)/pos/sale-done-dialog";
 import type { SaleDetail } from "@/lib/actions/sales";
 
 /** Arma el ticket para reimprimir una venta del historial. */
-export function receiptFromSale(sale: SaleDetail, orgName: string, paymentLabels: Record<string, string>): SaleReceipt {
+export function receiptFromSale(
+  sale: SaleDetail,
+  orgName: string,
+  paymentLabels: Record<string, string>,
+  /** Ajustes del comprobante X (Ajustes → Tu negocio): el número se puede ocultar. */
+  showNumber = true
+): SaleReceipt {
   const payments =
     sale.payments.length > 0
       ? sale.payments.map((p) => ({ label: paymentLabels[p.method] ?? p.method, amount: p.amount }))
@@ -18,7 +24,7 @@ export function receiptFromSale(sale: SaleDetail, orgName: string, paymentLabels
     payments,
     cashReceived: null,
     customerName: sale.customerName === "Consumidor Final" ? null : sale.customerName,
-    internalNumber: sale.internal_number,
+    internalNumber: showNumber ? sale.internal_number : null,
     copy: true,
     voided: sale.status === "anulada",
   };

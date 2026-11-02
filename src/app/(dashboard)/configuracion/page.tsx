@@ -8,6 +8,7 @@ import { formatDateTime } from "@/lib/utils";
 import { roleLabels } from "@/lib/roles";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
 import { AccountIds } from "@/app/(dashboard)/configuracion/account-ids";
+import { TicketOptions } from "@/app/(dashboard)/configuracion/ticket-options";
 import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
 import { CashCloseTimeForm } from "@/app/(dashboard)/configuracion/cash-close-time-form";
 import { normalizeCloseTime } from "@/lib/cash-reminder";
@@ -127,6 +128,13 @@ export default async function ConfiguracionPage({
             </div>
 
             <AutoInvoiceToggle initialEnabled={organization.auto_invoice_by_payment} />
+
+            {isOrgAdmin(membership.role) && (
+              <TicketOptions
+                initialShowOrgName={organization.ticket_show_org_name !== false}
+                initialShowNumber={organization.ticket_show_number !== false}
+              />
+            )}
           </CardContent>
         </Card>
 

@@ -164,7 +164,8 @@ export default async function VentasPage({
         canVoid={admin}
         canExport={admin}
         canInvoice={invoicing.enabled}
-        orgName={organization.name}
+        orgName={organization.ticket_show_org_name === false ? "" : organization.name}
+        ticketShowNumber={organization.ticket_show_number !== false}
         error={error}
       />
     </div>
