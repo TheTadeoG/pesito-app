@@ -31,9 +31,17 @@ const conditionLabel: Record<string, string> = {
   consumidor_final: "Consumidor final",
 };
 
-/** ¿Se puede buscar en ARCA? Sólo con la facturación lista (el Padrón usa el mismo certificado). */
+/**
+ * Negocio de Pesito cuyo certificado de producción hace las consultas del Padrón para todos (ARCA_PADRON_ORG_ID):
+ * así cualquier negocio, con o sin facturación, completa un cliente con sólo escribir el CUIT, sin cargar
+ * certificados. El Padrón sólo lee: no emite nada ni toca la cuenta de quien consulta.
+ */
+const PROVIDER_ORG_ID = process.env.ARCA_PADRON_ORG_ID?.trim() || null;
+
+/** ¿Se puede buscar en ARCA? Con el certificado compartido de Pesito, siempre; si no, con la facturación del negocio lista. */
 export async function arcaLookupAvailable(): Promise<boolean> {
   const { organization } = await requireOrgContext();
+  if (PROVIDER_ORG_ID) return true;
   return (await getInvoicingConfig(organization.id)).enabled;
 }
 
@@ -50,18 +58,30 @@ export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
   const { error: limited } = await supabase.rpc("rate_limit_hit", { p_org_id: organization.id, p_bucket: "arca_padron", p_max: 120, p_window_seconds: 3600 });
   if (limited) return { error: "Hiciste muchas búsquedas seguidas. Probá de nuevo en un rato." };
 
-  const config = await getInvoicingConfig(organization.id);
-  if (!config.enabled) return { error: "La búsqueda en ARCA se activa cuando la facturación está lista (Ajustes → Facturación)." };
-  // El Padrón sólo lee (no emite nada): si ya hay certificado de producción se usa ese aunque la facturación esté
-  // en pruebas, porque el padrón de pruebas de ARCA casi no tiene datos reales.
-  const admin = createAdminClient();
-  const [{ data: settings }, { data: prod }] = await Promise.all([
-    admin.from("arca_settings").select("active_environment").eq("org_id", organization.id).maybeSingle(),
-    admin.from("arca_credentials").select("certificate_pem, key_enc").eq("org_id", organization.id).eq("environment", "production").maybeSingle(),
-  ]);
-  const environment = prod?.certificate_pem && prod.key_enc ? "production" : (settings?.active_environment ?? "test");
-  const res = await getOrgArca(organization.id, environment);
-  if ("error" in res) return { error: res.error };
+  let environment: "test" | "production";
+  let res: Awaited<ReturnType<typeof getOrgArca>>;
+  if (PROVIDER_ORG_ID) {
+    // Certificado compartido de Pesito: no se le pide nada al negocio que consulta.
+    environment = "production";
+    res = await getOrgArca(PROVIDER_ORG_ID, "production");
+    if ("error" in res) {
+      console.error("padron: el certificado compartido no está disponible:", res.error);
+      return { error: "La búsqueda en ARCA no está disponible en este momento. Cargá los datos a mano." };
+    }
+  } else {
+    const config = await getInvoicingConfig(organization.id);
+    if (!config.enabled) return { error: "La búsqueda en ARCA se activa cuando la facturación está lista (Ajustes → Facturación)." };
+    // El Padrón sólo lee (no emite nada): si ya hay certificado de producción se usa ese aunque la facturación esté
+    // en pruebas, porque el padrón de pruebas de ARCA casi no tiene datos reales.
+    const admin = createAdminClient();
+    const [{ data: settings }, { data: prod }] = await Promise.all([
+      admin.from("arca_settings").select("active_environment").eq("org_id", organization.id).maybeSingle(),
+      admin.from("arca_credentials").select("certificate_pem, key_enc").eq("org_id", organization.id).eq("environment", "production").maybeSingle(),
+    ]);
+    environment = prod?.certificate_pem && prod.key_enc ? "production" : (settings?.active_environment ?? "test");
+    res = await getOrgArca(organization.id, environment);
+    if ("error" in res) return { error: res.error };
+  }
 
   try {
     let taxId = digits;
@@ -93,6 +113,10 @@ export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
     };
   } catch (e) {
     if (e instanceof ArcaError && String((e as { code?: string }).code ?? "").includes("AUTHENTICATION")) {
+      if (PROVIDER_ORG_ID) {
+        console.error("padron: el certificado compartido no está autorizado para el Padrón");
+        return { error: "La búsqueda en ARCA no está disponible en este momento. Cargá los datos a mano." };
+      }
       return {
         error:
           environment === "production"
