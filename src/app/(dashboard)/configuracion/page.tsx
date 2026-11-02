@@ -9,7 +9,6 @@ import { roleLabels } from "@/lib/roles";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
 import { AccountIds } from "@/app/(dashboard)/configuracion/account-ids";
 import { TicketOptions } from "@/app/(dashboard)/configuracion/ticket-options";
-import { AutoInvoiceToggle } from "@/app/(dashboard)/configuracion/auto-invoice-toggle";
 import { CashCloseTimeForm } from "@/app/(dashboard)/configuracion/cash-close-time-form";
 import { normalizeCloseTime } from "@/lib/cash-reminder";
 import { isOrgAdmin } from "@/lib/roles";
@@ -126,15 +125,6 @@ export default async function ConfiguracionPage({
               <Badge>Moneda: {organization.currency}</Badge>
               <Badge>#{organization.org_code}</Badge>
             </div>
-
-            <AutoInvoiceToggle initialEnabled={organization.auto_invoice_by_payment} />
-
-            {isOrgAdmin(membership.role) && (
-              <TicketOptions
-                initialShowOrgName={organization.ticket_show_org_name !== false}
-                initialShowNumber={organization.ticket_show_number !== false}
-              />
-            )}
           </CardContent>
         </Card>
 
@@ -180,23 +170,41 @@ export default async function ConfiguracionPage({
           </>
         )}
 
-        {section === "facturacion" &&
-          (!canUse(subscription, "electronicInvoicing") ? (
-            <ProLockedCard
-              title="Facturación electrónica"
-              plan={featureMinPlan.electronicInvoicing}
-              preview="list"
-              description="Emití facturas con CAE desde Pesito, con tu CUIT y tu certificado de ARCA."
-            />
-          ) : arcaError ? (
-            <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{arcaError}</p>
-          ) : !encryptionConfigured() ? (
-            <p className="rounded-xl bg-warning-bg px-3 py-2 text-sm text-foreground">
-              La facturación todavía no está activada en el servidor. Falta cargar la variable ARCA_ENCRYPTION_KEY.
-            </p>
-          ) : (
-            arcaStatus && <FacturacionManager status={arcaStatus} orgName={organization.name} />
-          ))}
+        {section === "facturacion" && (
+          <>
+            {!canUse(subscription, "electronicInvoicing") ? (
+              <ProLockedCard
+                title="Facturación electrónica"
+                plan={featureMinPlan.electronicInvoicing}
+                preview="list"
+                description="Emití facturas con CAE desde Pesito, con tu CUIT y tu certificado de ARCA."
+              />
+            ) : arcaError ? (
+              <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{arcaError}</p>
+            ) : !encryptionConfigured() ? (
+              <p className="rounded-xl bg-warning-bg px-3 py-2 text-sm text-foreground">
+                La facturación todavía no está activada en el servidor. Falta cargar la variable ARCA_ENCRYPTION_KEY.
+              </p>
+            ) : (
+              arcaStatus && <FacturacionManager status={arcaStatus} orgName={organization.name} />
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Comprobante X (ticket sin factura)</CardTitle>
+                <CardDescription>
+                  Es el ticket interno de una venta que no se factura. Elegí qué lleva impreso; las facturas electrónicas llevan siempre los datos que exige ARCA.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TicketOptions
+                  initialShowOrgName={organization.ticket_show_org_name !== false}
+                  initialShowNumber={organization.ticket_show_number !== false}
+                />
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {section === "avisos" && (
           <>

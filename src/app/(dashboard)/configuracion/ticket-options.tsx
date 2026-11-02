@@ -43,11 +43,7 @@ export function TicketOptions({ initialShowOrgName, initialShowNumber }: { initi
   }
 
   return (
-    <div className="space-y-4 border-t border-border pt-4">
-      <div>
-        <p className="text-sm font-medium text-foreground">Comprobante X (ticket sin factura)</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">Elegí qué lleva impreso el ticket interno de una venta que no se factura. Las facturas electrónicas llevan siempre los datos que exige ARCA.</p>
-      </div>
+    <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm text-foreground">Mostrar el nombre del negocio</p>

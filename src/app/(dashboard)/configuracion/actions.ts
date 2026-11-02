@@ -34,22 +34,6 @@ export async function updateOrganizationName(name: string): Promise<ActionState>
   return { success: true };
 }
 
-export async function updateAutoInvoiceSetting(enabled: boolean): Promise<ActionState> {
-  const { organization } = await requireOrgContext();
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from("organizations")
-    .update({ auto_invoice_by_payment: enabled })
-    .eq("id", organization.id);
-
-  if (error) return { error: "No pudimos guardar el cambio." };
-
-  revalidatePath("/configuracion");
-  revalidatePath("/pos");
-  return { success: true };
-}
-
 /** Qué lleva el comprobante interno X: el nombre del negocio y su número correlativo (sólo dueño o administrador). */
 export async function updateTicketOptions(options: { showOrgName: boolean; showNumber: boolean }): Promise<ActionState> {
   const { organization, membership } = await requireOrgContext();

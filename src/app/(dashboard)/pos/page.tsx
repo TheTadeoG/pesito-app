@@ -64,7 +64,9 @@ export default async function PosPage() {
       ticketShowNumber={organization.ticket_show_number !== false}
       cashRegisterId={openRegister.id}
       customers={customers.map((c) => ({ ...c, balance: Number(c.balance) }))}
-      autoInvoiceByPayment={organization.auto_invoice_by_payment}
+      // «Facturación automática según medio de pago» (el interruptor viejo) se quitó: la factura real
+      // se elige en Ajustes → Facturación.
+      autoInvoiceByPayment={false}
       invoicing={invoicing}
       customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
       recentSales={recentSales}
