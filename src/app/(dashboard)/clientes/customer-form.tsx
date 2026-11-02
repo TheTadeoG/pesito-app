@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveCustomer, type CustomerFormInput } from "@/app/(dashboard)/clientes/actions";
-import { invoiceTypes, type InvoiceType } from "@/lib/invoice-labels";
+import { allowedInvoiceTypes, invoiceTypes, type InvoiceType, type IssuerCondition } from "@/lib/invoice-labels";
 import { PhoneCountrySelect } from "@/components/ui/phone-country-select";
 import {
   splitPhoneCountry,
   type PhoneCountry,
 } from "@/lib/phone-countries";
-import { arcaLookupAvailable, lookupArcaTaxpayer, type TaxpayerInfo } from "@/lib/actions/padron";
+import { getCustomerFormContext, lookupArcaTaxpayer, type TaxpayerInfo } from "@/lib/actions/padron";
 import type { Customer } from "@/lib/types";
 
 interface CustomerFormProps {
@@ -44,6 +44,8 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
   const [error, setError] = useState<string | null>(null);
   // Buscar en ARCA (Padrón): sólo si la facturación está lista.
   const [canLookup, setCanLookup] = useState(false);
+  // Cómo factura el negocio: de eso depende qué comprobantes se le pueden hacer a este cliente.
+  const [issuer, setIssuer] = useState<IssuerCondition | null>(null);
   const [looking, setLooking] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [found, setFound] = useState<TaxpayerInfo | null>(null);
@@ -51,8 +53,10 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    void arcaLookupAvailable().then((ok) => {
-      if (!cancelled) setCanLookup(ok);
+    void getCustomerFormContext().then((ctx) => {
+      if (cancelled) return;
+      setCanLookup(ctx.lookup);
+      setIssuer(ctx.issuerCondition);
     }, () => {});
     return () => {
       cancelled = true;
@@ -83,6 +87,11 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
     if (t.province) setProvince(t.province);
     if (t.conditionCode) setTaxCondition(t.conditionCode);
   }
+
+  // Sólo comprobantes que el negocio emite y que este cliente puede recibir. Si el elegido dejó de valer (cambió
+  // la condición del cliente), se ofrece igual para que se vea qué hay que corregir.
+  const allowed = allowedInvoiceTypes(issuer, taxCondition);
+  const invalidChoice = !allowed.includes(invoiceType);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -250,15 +259,23 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
             onChange={(e) => setInvoiceType(e.target.value as InvoiceType)}
             className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
           >
-            {invoiceTypes.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
+            {invoiceTypes
+              .filter((type) => allowed.includes(type.value) || type.value === invoiceType)
+              .map((type) => (
+                <option key={type.value} value={type.value} disabled={!allowed.includes(type.value)}>
+                  {type.value === "consumidor_final" ? "Sin factura (Comprobante X)" : type.label}
+                  {!allowed.includes(type.value) ? " — no disponible" : ""}
+                </option>
+              ))}
           </select>
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            &quot;Consumidor Final&quot; usa el ticket automático según el medio de pago. Elegí
-            Factura A/B/C solo si este cliente siempre necesita ese comprobante.
+          <p className={`mt-1.5 text-xs ${invalidChoice ? "text-danger" : "text-muted-foreground"}`}>
+            {invalidChoice
+              ? "Este comprobante ya no corresponde: tu negocio no lo emite o este cliente no puede recibirlo. Elegí otro."
+              : !issuer
+                ? "Para ofrecer facturas, completá tu condición frente al IVA en Ajustes → Facturación."
+                : issuer === "responsable_inscripto"
+                  ? "Factura A a responsables inscriptos y Factura B a los demás. Elegí uno sólo si este cliente siempre necesita ese comprobante."
+                  : "Como monotributista o exento, tu negocio emite Factura C. Elegila sólo si este cliente siempre necesita factura."}
           </p>
         </div>
 

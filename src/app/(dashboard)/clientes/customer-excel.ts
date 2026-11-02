@@ -9,6 +9,14 @@ const INVOICE_LABEL: Record<string, string> = {
   factura_c: "Factura C",
 };
 
+const TAX_CONDITION_LABEL: Record<string, string> = {
+  responsable_inscripto: "Responsable inscripto",
+  monotributo: "Monotributo",
+  exento: "IVA exento",
+  no_alcanzado: "IVA no alcanzado",
+  consumidor_final: "Consumidor final",
+};
+
 /** "2026-10-07T..." -> "07/10/2026" (hora argentina). */
 function fullDate(iso: string | null): string {
   if (!iso) return "";
@@ -41,6 +49,11 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
     { value: c.phone ?? "" },
     { value: c.email ?? "" },
     { value: c.document ?? "" },
+    { value: c.address ?? "" },
+    { value: c.city ?? "" },
+    { value: c.postal_code ?? "" },
+    { value: c.province ?? "" },
+    { value: c.tax_condition ? (TAX_CONDITION_LABEL[c.tax_condition] ?? "") : "" },
     { value: c.invoice_type ? (INVOICE_LABEL[c.invoice_type] ?? "") : "" },
     { value: c.notes ?? "" },
     { value: c.balance, format: "#,##0.00", backgroundColor: "#f3f4f6" },
@@ -57,6 +70,11 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
       { width: 18 },
       { width: 26 },
       { width: 16 },
+      { width: 30 },
+      { width: 18 },
+      { width: 10 },
+      { width: 18 },
+      { width: 22 },
       { width: 18 },
       { width: 30 },
       { width: 14 },

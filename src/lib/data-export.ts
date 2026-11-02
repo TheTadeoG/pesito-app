@@ -92,11 +92,11 @@ export async function buildExport(
   }
   if (kind === "clientes") {
     const data = await fetchAll((from, to) =>
-      supabase.from("customers").select("id, name, razon_social, document, phone, email, balance, created_at").eq("org_id", orgId).order("name").order("id").range(from, to)
+      supabase.from("customers").select("id, name, razon_social, document, phone, email, address, city, postal_code, province, tax_condition, balance, created_at").eq("org_id", orgId).order("name").order("id").range(from, to)
     );
     const { rows, truncated } = cap(data);
     return {
-      csv: toCsv(["Nombre", "Razón social", "Documento", "Teléfono", "Email", "Te debe", "Alta"], rows.map((c) => [c.name, c.razon_social, c.document, c.phone, c.email, Number(c.balance), when(c.created_at)])),
+      csv: toCsv(["Nombre", "Razón social", "Documento", "Domicilio", "Localidad", "Código postal", "Provincia", "Condición frente al IVA", "Teléfono", "Email", "Te debe", "Alta"], rows.map((c) => [c.name, c.razon_social, c.document, c.address, c.city, c.postal_code, c.province, c.tax_condition, c.phone, c.email, Number(c.balance), when(c.created_at)])),
       rows: rows.length,
       truncated,
     };

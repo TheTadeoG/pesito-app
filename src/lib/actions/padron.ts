@@ -52,6 +52,14 @@ export async function arcaLookupAvailable(): Promise<boolean> {
   return (await getInvoicingConfig(organization.id)).enabled;
 }
 
+/** Lo que necesita la ficha del cliente: si puede buscar en ARCA y cómo factura el negocio (para ofrecer sólo comprobantes válidos). */
+export async function getCustomerFormContext(): Promise<{ lookup: boolean; issuerCondition: "monotributo" | "responsable_inscripto" | "exento" | null }> {
+  const { organization } = await requireOrgContext();
+  const lookup = PROVIDER_ORG_ID ? true : (await getInvoicingConfig(organization.id)).enabled;
+  const { data } = await createAdminClient().from("arca_settings").select("issuer_condition").eq("org_id", organization.id).maybeSingle();
+  return { lookup, issuerCondition: data?.issuer_condition ?? null };
+}
+
 /** Datos de un contribuyente en el Padrón de ARCA, por CUIT/CUIL (11 dígitos) o por DNI (se busca su CUIL). */
 export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
   const { organization } = await requireOrgContext();

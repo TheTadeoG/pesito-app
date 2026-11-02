@@ -46,3 +46,23 @@ export function resolveInvoiceType(
   // "Mercado Pago"): se trata como tarjeta/transferencia, no como efectivo.
   return defaultInvoiceTypeByPayment[paymentMethod] ?? "factura_b";
 }
+
+export type IssuerCondition = "monotributo" | "responsable_inscripto" | "exento";
+export type TaxCondition = "responsable_inscripto" | "monotributo" | "exento" | "no_alcanzado" | "consumidor_final";
+
+/**
+ * Comprobantes que se le pueden hacer a un cliente: sólo los que el negocio emite según su condición frente al
+ * IVA y que el cliente puede recibir.
+ *  - Siempre se puede no facturar (consumidor_final: ticket interno X).
+ *  - Monotributo o IVA exento: sólo Factura C, a cualquier cliente.
+ *  - Responsable inscripto: Factura A a otro responsable inscripto y Factura B al resto (con la condición del
+ *    cliente sin cargar, se ofrecen las dos).
+ *  - Sin la facturación configurada: ninguno.
+ */
+export function allowedInvoiceTypes(issuer: IssuerCondition | null, customer: TaxCondition | "" | null): InvoiceType[] {
+  if (!issuer) return ["consumidor_final"];
+  if (issuer === "monotributo" || issuer === "exento") return ["consumidor_final", "factura_c"];
+  if (customer === "responsable_inscripto") return ["consumidor_final", "factura_a"];
+  if (customer) return ["consumidor_final", "factura_b"];
+  return ["consumidor_final", "factura_a", "factura_b"];
+}

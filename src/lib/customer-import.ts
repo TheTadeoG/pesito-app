@@ -3,7 +3,7 @@
 // Corre en el navegador (lectura y vista previa) y se revalida en el servidor.
 // Qué toca y qué NO toca:
 //  - Crea clientes nuevos y, si se pide, actualiza datos de contacto de los que
-//    ya existen (nombre, razón social, teléfono, mail, documento, tipo de factura
+//    ya existen (nombre, razón social, teléfono, mail, documento, domicilio, condición frente al IVA, tipo de factura
 //    y notas). Una celda vacía nunca borra un dato que ya está cargado.
 //  - NUNCA toca lo que el cliente debe (el saldo de fiado), ni sus ventas ni sus
 //    pagos: el fiado sólo cambia vendiendo a fiado o registrando un cobro.
@@ -23,6 +23,11 @@ export type CustomerUpdateField =
   | "phone"
   | "email"
   | "document"
+  | "address"
+  | "city"
+  | "postalCode"
+  | "province"
+  | "taxCondition"
   | "invoiceType"
   | "notes";
 
@@ -36,6 +41,11 @@ export const CUSTOMER_UPDATE_FIELDS: {
   { field: "email", label: "Mail", hint: "Si la celda está vacía, se deja el actual.", defaultOn: true },
   { field: "document", label: "Documento (DNI o CUIT)", hint: "Si la celda está vacía, se deja el actual.", defaultOn: true },
   { field: "razonSocial", label: "Razón social", hint: "Si la celda está vacía, se deja la actual.", defaultOn: true },
+  { field: "address", label: "Domicilio", hint: "Si la celda está vacía, se deja el actual.", defaultOn: true },
+  { field: "city", label: "Localidad", hint: "Si la celda está vacía, se deja la actual.", defaultOn: true },
+  { field: "postalCode", label: "Código postal", hint: "Si la celda está vacía, se deja el actual.", defaultOn: true },
+  { field: "province", label: "Provincia", hint: "Si la celda está vacía, se deja la actual.", defaultOn: true },
+  { field: "taxCondition", label: "Condición frente al IVA", hint: "Sólo si la planilla trae una válida.", defaultOn: true },
   { field: "notes", label: "Notas", hint: "Si la celda está vacía, se dejan las actuales.", defaultOn: false },
   { field: "invoiceType", label: "Tipo de factura", hint: "Sólo si la planilla trae uno válido.", defaultOn: false },
   { field: "name", label: "Nombre", hint: "Cambia el nombre del cliente.", defaultOn: false },
@@ -51,6 +61,11 @@ export interface CustomerImportRow {
   phone: string;
   email: string;
   document: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  province: string;
+  taxCondition: TaxConditionKind | null;
   invoiceType: InvoiceKind | null;
   notes: string;
 }
@@ -69,7 +84,22 @@ export interface ParsedCustomerImport {
   missingColumns: string[];
 }
 
-type Field = "id" | "name" | "razonSocial" | "phone" | "email" | "document" | "invoiceType" | "notes";
+export type TaxConditionKind = "responsable_inscripto" | "monotributo" | "exento" | "no_alcanzado" | "consumidor_final";
+
+type Field =
+  | "id"
+  | "name"
+  | "razonSocial"
+  | "phone"
+  | "email"
+  | "document"
+  | "address"
+  | "city"
+  | "postalCode"
+  | "province"
+  | "taxCondition"
+  | "invoiceType"
+  | "notes";
 
 /** Columnas de la planilla modelo (y de la exportación), en este orden. */
 export const CUSTOMER_TEMPLATE_COLUMNS: { field: Field; title: string; required?: boolean; example: string }[] = [
@@ -78,6 +108,11 @@ export const CUSTOMER_TEMPLATE_COLUMNS: { field: Field; title: string; required?
   { field: "phone", title: "Teléfono", example: "11 5555-0101" },
   { field: "email", title: "Mail", example: "lucia@mail.com" },
   { field: "document", title: "Documento", example: "30123456" },
+  { field: "address", title: "Domicilio", example: "Av. Corrientes 1234" },
+  { field: "city", title: "Localidad", example: "CABA" },
+  { field: "postalCode", title: "Código postal", example: "C1043" },
+  { field: "province", title: "Provincia", example: "Buenos Aires" },
+  { field: "taxCondition", title: "Condición frente al IVA", example: "Consumidor final" },
   { field: "invoiceType", title: "Tipo de factura", example: "Consumidor final" },
   { field: "notes", title: "Notas", example: "Vive en la esquina" },
 ];
@@ -89,7 +124,12 @@ const ALIASES: Record<Field, string[]> = {
   phone: ["telefono", "tel", "celular", "whatsapp", "movil", "cel"],
   email: ["mail", "email", "e mail", "correo", "correo electronico"],
   document: ["documento", "dni", "cuit", "cuil", "cuit cuil", "dni cuit", "nro documento", "numero de documento"],
-  invoiceType: ["tipo de factura", "factura", "tipo factura", "condicion", "condicion iva"],
+  address: ["domicilio", "direccion", "domicilio fiscal", "calle"],
+  city: ["localidad", "ciudad"],
+  postalCode: ["codigo postal", "cp", "c p"],
+  province: ["provincia"],
+  taxCondition: ["condicion frente al iva", "condicion iva", "condicion fiscal", "condicion", "iva"],
+  invoiceType: ["tipo de factura", "factura", "tipo factura"],
   notes: ["notas", "nota", "observaciones", "comentarios", "obs"],
 };
 
@@ -142,6 +182,29 @@ export function normalizeInvoiceType(value: unknown): InvoiceKind | null | "inva
     c: "factura_c",
     monotributo: "factura_c",
     monotributista: "factura_c",
+  };
+  return map[text] ?? "invalid";
+}
+
+/** «Monotributo», «Resp. inscripto», «Exento»… -> código. null si la celda está vacía, "invalid" si no se entiende. */
+export function normalizeTaxCondition(value: unknown): TaxConditionKind | null | "invalid" {
+  const text = normalizeText(value);
+  if (!text) return null;
+  const map: Record<string, TaxConditionKind> = {
+    "responsable inscripto": "responsable_inscripto",
+    "resp inscripto": "responsable_inscripto",
+    "resp. inscripto": "responsable_inscripto",
+    ri: "responsable_inscripto",
+    monotributo: "monotributo",
+    monotributista: "monotributo",
+    "responsable monotributo": "monotributo",
+    exento: "exento",
+    "iva exento": "exento",
+    "no alcanzado": "no_alcanzado",
+    "iva no alcanzado": "no_alcanzado",
+    "consumidor final": "consumidor_final",
+    cf: "consumidor_final",
+    consumidor: "consumidor_final",
   };
   return map[text] ?? "invalid";
 }
@@ -213,6 +276,14 @@ export function parseCustomerSheet(matrix: unknown[][]): ParsedCustomerImport {
       });
       continue;
     }
+    const taxCondition = normalizeTaxCondition(get(row, "taxCondition"));
+    if (taxCondition === "invalid") {
+      result.problems.push({
+        line,
+        message: `“${name}”: la condición frente al IVA “${get(row, "taxCondition")}” no existe (usá Consumidor final, Monotributo, Responsable inscripto, Exento o No alcanzado).`,
+      });
+      continue;
+    }
     const id = get(row, "id");
     if (id && !UUID.test(id)) {
       result.problems.push({ line, message: `“${name}”: el ID no es válido (no lo cambies de la planilla exportada).` });
@@ -226,6 +297,11 @@ export function parseCustomerSheet(matrix: unknown[][]): ParsedCustomerImport {
       phone: get(row, "phone").slice(0, 60),
       email: email.slice(0, 200),
       document: get(row, "document").slice(0, 60),
+      address: get(row, "address").slice(0, 200),
+      city: get(row, "city").slice(0, 100),
+      postalCode: get(row, "postalCode").slice(0, 12),
+      province: get(row, "province").slice(0, 60),
+      taxCondition,
       invoiceType: invoice,
       notes: get(row, "notes").slice(0, 1000),
     });

@@ -16,6 +16,7 @@ import {
   buildCustomerIndex,
   matchCustomer,
   normalizeInvoiceType,
+  normalizeTaxCondition,
   type CustomerImportRow,
   type CustomerUpdateField,
 } from "@/lib/customer-import";
@@ -90,6 +91,11 @@ export async function importCustomersChunk(
     const phone = String(raw.phone ?? "").trim();
     const email = String(raw.email ?? "").trim();
     const document = String(raw.document ?? "").trim();
+    const address = String(raw.address ?? "").trim();
+    const city = String(raw.city ?? "").trim();
+    const postalCode = String(raw.postalCode ?? "").trim();
+    const province = String(raw.province ?? "").trim();
+    const taxCondition = raw.taxCondition ? normalizeTaxCondition(String(raw.taxCondition).replace(/_/g, " ")) : null;
     const notes = String(raw.notes ?? "").trim();
     const invoice = raw.invoiceType ? normalizeInvoiceType(raw.invoiceType.replace("_", " ")) : null;
 
@@ -100,6 +106,11 @@ export async function importCustomersChunk(
       phone.length > 60 ||
       email.length > 200 ||
       document.length > 60 ||
+      address.length > 200 ||
+      city.length > 100 ||
+      postalCode.length > 12 ||
+      province.length > 60 ||
+      taxCondition === "invalid" ||
       notes.length > 1000 ||
       (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) ||
       invoice === "invalid"
@@ -139,6 +150,11 @@ export async function importCustomersChunk(
       if (fields.has("phone") && phone) patch.phone = phone;
       if (fields.has("email") && email) patch.email = email;
       if (fields.has("document") && document) patch.document = document;
+      if (fields.has("address") && address) patch.address = address;
+      if (fields.has("city") && city) patch.city = city;
+      if (fields.has("postalCode") && postalCode) patch.postal_code = postalCode;
+      if (fields.has("province") && province) patch.province = province;
+      if (fields.has("taxCondition") && taxCondition) patch.tax_condition = taxCondition;
       if (fields.has("notes") && notes) patch.notes = notes;
       if (fields.has("invoiceType") && invoice) patch.invoice_type = invoice;
       if (Object.keys(patch).length === 0) {
@@ -166,6 +182,11 @@ export async function importCustomersChunk(
         phone: phone || null,
         email: email || null,
         document: document || null,
+        address: address || null,
+        city: city || null,
+        postal_code: postalCode || null,
+        province: province || null,
+        tax_condition: taxCondition ?? null,
         notes: notes || null,
         invoice_type: invoice ?? "consumidor_final",
       },
