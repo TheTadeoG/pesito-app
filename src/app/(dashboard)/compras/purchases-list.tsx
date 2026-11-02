@@ -4,8 +4,8 @@ import { PaginationBar, usePagination } from "@/components/dashboard/pagination-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Eye } from "lucide-react";
+import { RowActions } from "@/components/dashboard/row-actions";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { shortDate } from "@/app/(dashboard)/proveedores/debt-format";
 import {
@@ -117,35 +117,19 @@ export function PurchasesList({ purchases }: { purchases: PurchaseRow[] }) {
               )}
             </div>
             <span className="font-semibold text-foreground">{formatCurrency(purchase.total)}</span>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openDetail(purchase.id);
-                }}
-                aria-label="Ver detalle"
-                title="Ver detalle"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              {purchase.status !== "anulada" && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleVoid(purchase);
-                  }}
-                  disabled={busyId === purchase.id}
-                  aria-label="Anular compra"
-                  title="Anular compra"
-                >
-                  <Ban className="h-4 w-4 text-danger" />
-                </Button>
-              )}
-            </div>
+            <RowActions
+              primary={{ label: "Ver detalle", icon: Eye, onClick: () => void openDetail(purchase.id) }}
+              items={[
+                {
+                  label: "Anular compra",
+                  icon: Ban,
+                  danger: true,
+                  hidden: purchase.status === "anulada",
+                  disabled: busyId === purchase.id,
+                  onClick: () => handleVoid(purchase),
+                },
+              ]}
+            />
           </div>
         ))}
       </div>

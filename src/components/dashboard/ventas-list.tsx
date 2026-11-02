@@ -4,8 +4,8 @@ import { PaginationBar, usePagination } from "@/components/dashboard/pagination-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Eye } from "lucide-react";
+import { RowActions } from "@/components/dashboard/row-actions";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { getSaleDetail, type SaleDetail } from "@/lib/actions/sales";
 import { SaleDetailDialog } from "@/components/dashboard/sale-detail-dialog";
@@ -93,32 +93,17 @@ export function VentasList({
               </p>
             </div>
             <span className="shrink-0 whitespace-nowrap font-semibold text-foreground">{formatCurrency(sale.total)}</span>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openDetail(sale.id);
-                }}
-                aria-label="Ver detalle"
-                title="Ver detalle"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleVoid(sale);
-                }}
-                aria-label={sale.voucher ? "Anular con nota de crédito" : "Anular venta"}
-                title={sale.voucher ? "Anular con nota de crédito" : "Anular venta"}
-              >
-                <Ban className="h-4 w-4 text-danger" />
-              </Button>
-            </div>
+            <RowActions
+              primary={{ label: "Ver detalle", icon: Eye, onClick: () => void openDetail(sale.id) }}
+              items={[
+                {
+                  label: sale.voucher ? "Anular con nota de crédito" : "Anular venta",
+                  icon: Ban,
+                  danger: true,
+                  onClick: () => handleVoid(sale),
+                },
+              ]}
+            />
           </div>
         ))}
       </div>

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { RowActions } from "@/components/dashboard/row-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Brand } from "@/lib/types";
@@ -172,23 +173,10 @@ export function MarcasTab({
                       </>
                     ) : (
                       <>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => startEdit(brand)}
-                          aria-label="Editar"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDelete(brand)}
-                          disabled={busyId === brand.id}
-                          aria-label="Borrar"
-                        >
-                          <Trash2 className="h-4 w-4 text-danger" />
-                        </Button>
+                        <RowActions
+                          primary={{ label: "Editar", icon: Pencil, onClick: () => startEdit(brand) }}
+                          items={[{ label: "Borrar", icon: Trash2, danger: true, disabled: busyId === brand.id, onClick: () => handleDelete(brand) }]}
+                        />
                       </>
                     )}
                   </div>

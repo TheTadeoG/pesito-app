@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Download, Eye, FileText, Printer, Search } from "lucide-react";
+import { RowActions } from "@/components/dashboard/row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -249,16 +250,18 @@ export function VentasHistorial({
                       </td>
                       <td className={`px-3 py-3 text-right font-semibold tabular-nums ${r.voided ? "text-muted-foreground line-through" : "text-foreground"}`}>{formatCurrency(r.total)}</td>
                       <td className="px-3 py-3">
-                        <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <Button variant="outline" size="icon" aria-label="Ver detalle" title="Ver detalle" onClick={() => void openDetail(r.id)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {canVoid && !r.voided && (
-                            <Button variant="outline" size="icon" aria-label={r.voucher ? "Anular con nota de crédito" : "Anular venta"} title={r.voucher ? "Anular con nota de crédito" : "Anular venta"} onClick={() => setVoidTarget({ id: r.id, total: r.total, creditNote: Boolean(r.voucher) })}>
-                              <Ban className="h-4 w-4 text-danger" />
-                            </Button>
-                          )}
-                        </div>
+                        <RowActions
+                          primary={{ label: "Ver detalle", icon: Eye, onClick: () => void openDetail(r.id) }}
+                          items={[
+                            {
+                              label: r.voucher ? "Anular con nota de crédito" : "Anular venta",
+                              icon: Ban,
+                              danger: true,
+                              hidden: !canVoid || r.voided,
+                              onClick: () => setVoidTarget({ id: r.id, total: r.total, creditNote: Boolean(r.voucher) }),
+                            },
+                          ]}
+                        />
                       </td>
                     </tr>
                   ))}

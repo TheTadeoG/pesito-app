@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Info, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RowActions } from "@/components/dashboard/row-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
@@ -402,28 +403,11 @@ export function UsuariosClient({
                       </Select>
                       </div>
                     )}
-                    {!isOwner && member.username && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => openEdit(member)}
-                        aria-label="Editar usuario y contraseña"
-                        title="Editar usuario y contraseña"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {!isOwner && !isSelf && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleRemove(member)}
-                        disabled={busyId === member.id}
-                        aria-label="Quitar"
-                        title="Quitar del equipo"
-                      >
-                        <Trash2 className="h-4 w-4 text-danger" />
-                      </Button>
+                    {!isOwner && (member.username || !isSelf) && (
+                      <RowActions
+                        primary={member.username ? { label: "Editar usuario y contraseña", icon: Pencil, onClick: () => openEdit(member) } : undefined}
+                        items={[{ label: "Quitar del equipo", icon: Trash2, danger: true, hidden: isSelf, disabled: busyId === member.id, onClick: () => handleRemove(member) }]}
+                      />
                     )}
                   </div>
                 </div>
