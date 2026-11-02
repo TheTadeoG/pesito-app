@@ -322,25 +322,44 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
         <CardHeader>
           <CardTitle className="text-base">Facturación automática por medio de pago</CardTitle>
           <CardDescription>
-            Elegí con qué medios de pago Pesito emite la factura sola al cobrar. Los que dejes sin tildar se facturan a mano, con el botón «Facturar» en la venta.
-            Si no tildás ninguno, todo es manual.
+            Elegí, para cada medio de pago, si Pesito emite la factura sola al cobrar (Automática) o si la hacés vos con el botón «Facturar» en la venta (Manual).
+            Al principio todo está en Manual.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="divide-y divide-border rounded-xl border border-border">
             {AUTO_INVOICE_METHODS.map((m) => {
               const on = autoMethods.includes(m.id);
+              const set = (auto: boolean) => setAutoMethods((cur) => (auto ? (cur.includes(m.id) ? cur : [...cur, m.id]) : cur.filter((x) => x !== m.id)));
               return (
-                <label key={m.id} className="flex cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
+                <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
                   <span className="min-w-0">
                     <span className="block font-medium text-foreground">{m.label}</span>
                     {m.note && <span className="block text-xs text-muted-foreground">{m.note}</span>}
                   </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <span className={cn("text-xs font-medium", on ? "text-success" : "text-muted-foreground")}>{on ? "Automática" : "Manual"}</span>
-                    <input type="checkbox" checked={on} onChange={() => toggleAuto(m.id)} className="h-4 w-4 accent-primary" />
+                  {/* Dos opciones a la vista: la elegida va con color y tilde. */}
+                  <span role="radiogroup" aria-label={`Facturación de ${m.label}`} className="inline-flex shrink-0 gap-0.5 rounded-xl border border-border bg-muted p-0.5">
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={!on}
+                      onClick={() => set(false)}
+                      className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors", !on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                    >
+                      Manual
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => set(true)}
+                      className={cn("flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors", on ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                    >
+                      {on && <CheckCircle2 className="h-3.5 w-3.5" />}
+                      Automática
+                    </button>
                   </span>
-                </label>
+                </div>
               );
             })}
           </div>
