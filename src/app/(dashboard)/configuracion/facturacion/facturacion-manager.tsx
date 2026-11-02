@@ -468,16 +468,22 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
             <Button variant="outline" disabled={stepIndex === 0} onClick={goBack}>
               Atrás
             </Button>
-            {stepIndex < steps.length - 1 && (
+            {stepIndex < steps.length - 1 ? (
               <Button disabled={(wizard === "solicitud" && !hasCsr) || (wizard === "cert" && !hasCert)} onClick={goNext}>
                 {wizard === "pv" ? "Ya lo creé" : "Siguiente"}
+              </Button>
+            ) : (
+              // Último paso: lleva al paso 3 (probar la conexión), que está más abajo.
+              <Button onClick={() => document.getElementById("arca-conectar")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                <CheckCircle2 className="h-4 w-4" />
+                Listo, seguir al paso 3
               </Button>
             )}
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="arca-conectar" className="scroll-mt-20">
         <CardHeader>
           <CardTitle className="text-base">3. Probar la conexión y activar</CardTitle>
           <CardDescription>Entramos a ARCA con tu certificado y miramos que tu punto de venta esté habilitado.</CardDescription>
