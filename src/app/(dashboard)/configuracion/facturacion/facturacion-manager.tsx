@@ -142,6 +142,37 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">{`Antes de empezar: lo que tiene que estar listo en ARCA (${env === "test" ? "pruebas" : "producción"})`}</CardTitle>
+          <CardDescription>ARCA pide tres cosas distintas. Si falta alguna, la conexión falla aunque lo demás esté bien. Más abajo está el detalle de cada una.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ol className="space-y-3 text-sm">
+            {(env === "production"
+              ? [
+                  { t: "Clave fiscal nivel 3 (o más)", d: "Es con la que entrás a ARCA. Los certificados digitales no se pueden administrar con un nivel menor." },
+                  { t: "Un punto de venta para Web Services", d: "En «Administración de Puntos de Venta y Domicilios» → «A/B/M de Puntos de Venta» → Agregar. Sistema: «Factura Electrónica – Monotributo – Web Services» (Responsable inscripto: «RECE para aplicativo y Web Services»). Anotá el número: es el que va en el paso 2." },
+                  { t: "El certificado, y su permiso para facturar", d: "Se crea en «Administración de Certificados Digitales» (paso 2 y 3). Después hay que autorizar ese certificado para el servicio «Facturación Electrónica» en «Administrador de Relaciones» (paso 4). Son dos pasos: tener el certificado no alcanza." },
+                ]
+              : [
+                  { t: "Clave fiscal nivel 2 (o más) y el servicio WSASS", d: "WSASS es el servicio de ARCA para certificados de prueba. Si no aparece entre tus servicios, agregalo desde «Administrador de Relaciones»." },
+                  { t: "El certificado de pruebas", d: "Se crea en WSASS con la solicitud de abajo (paso 2 y 3)." },
+                  { t: "Su permiso para facturar", d: "En WSASS, «Crear autorización a servicio»: el alias, tu CUIT y el servicio «wsfe». El punto de venta no hace falta en pruebas." },
+                ]
+            ).map((item, i) => (
+              <li key={item.t} className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">{i + 1}</span>
+                <span>
+                  <span className="block font-medium text-foreground">{item.t}</span>
+                  <span className="block text-muted-foreground">{item.d}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">1. Datos del negocio</CardTitle>
           <CardDescription>Salen impresos en cada comprobante.</CardDescription>
         </CardHeader>
@@ -329,6 +360,19 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
           <CardDescription>Entramos a ARCA con tu certificado y miramos que tu punto de venta esté habilitado.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <details className="rounded-xl border border-border px-3.5 py-2.5 text-sm">
+            <summary className="cursor-pointer font-medium text-foreground">¿ARCA no acepta el certificado?</summary>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+              <li>
+                {env === "production"
+                  ? "Falta autorizar el certificado para facturar: Administrador de Relaciones → Nueva relación → ARCA → WebServices → «Facturación Electrónica». En «Representante» elegí el alias que creaste. Puede tardar unos minutos en aplicarse."
+                  : "Falta autorizar el certificado para facturar: en WSASS, «Crear autorización a servicio» con el alias, tu CUIT y el servicio «wsfe»."}
+              </li>
+              <li>{`Tiene que ser un certificado de ${env === "test" ? "pruebas (WSASS)" : "producción (Administración de Certificados Digitales)"}: no se pueden mezclar.`}</li>
+              <li>Tiene que ser el certificado de la última solicitud que generaste acá. Si generaste otra después, el certificado viejo ya no sirve.</li>
+              <li>El CUIT de acá, el de tu clave fiscal y el del alias tienen que ser el mismo.</li>
+            </ul>
+          </details>
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
