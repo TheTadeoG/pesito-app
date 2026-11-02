@@ -52,8 +52,14 @@ export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
 
   const config = await getInvoicingConfig(organization.id);
   if (!config.enabled) return { error: "La búsqueda en ARCA se activa cuando la facturación está lista (Ajustes → Facturación)." };
-  const { data: settings } = await createAdminClient().from("arca_settings").select("active_environment").eq("org_id", organization.id).maybeSingle();
-  const environment = settings?.active_environment ?? "test";
+  // El Padrón sólo lee (no emite nada): si ya hay certificado de producción se usa ese aunque la facturación esté
+  // en pruebas, porque el padrón de pruebas de ARCA casi no tiene datos reales.
+  const admin = createAdminClient();
+  const [{ data: settings }, { data: prod }] = await Promise.all([
+    admin.from("arca_settings").select("active_environment").eq("org_id", organization.id).maybeSingle(),
+    admin.from("arca_credentials").select("certificate_pem, key_enc").eq("org_id", organization.id).eq("environment", "production").maybeSingle(),
+  ]);
+  const environment = prod?.certificate_pem && prod.key_enc ? "production" : (settings?.active_environment ?? "test");
   const res = await getOrgArca(organization.id, environment);
   if ("error" in res) return { error: res.error };
 
