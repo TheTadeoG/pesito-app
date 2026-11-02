@@ -317,7 +317,10 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                 </li>
               </ul>
               {!cond && <p className="text-xs">Elegí tu condición frente al IVA en el paso 1 y te marco la que te toca.</p>}
-              <p>Anotá el número que le pongas: lo vas a elegir en el último paso.</p>
+              <div className="rounded-xl border border-warning/40 bg-warning-bg px-4 py-3 text-foreground">
+                <p className="font-semibold">Acordate del número del punto de venta</p>
+                <p className="mt-0.5 text-muted-foreground">Anotalo: en el último paso vas a tener que elegir <b>el mismo</b> que creás ahora.</p>
+              </div>
             </WizardStep>
           )}
 
@@ -527,7 +530,9 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                   ))}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">El certificado sirve para cualquier punto de venta: elegí el que diste de alta para Web Services. Podés cambiarlo cuando quieras.</p>
+            <p className="rounded-lg bg-warning-bg px-3 py-2 text-xs text-foreground">
+              Elegí <b>el mismo punto de venta que creaste en ARCA</b> en el primer paso (el de Web Services). Si usás otro, ARCA va a rechazar las facturas.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
