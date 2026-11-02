@@ -95,7 +95,9 @@ export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
     if (e instanceof ArcaError && String((e as { code?: string }).code ?? "").includes("AUTHENTICATION")) {
       return {
         error:
-          "ARCA no autorizó tu certificado para consultar el Padrón. En ARCA, «Crear autorización a servicio», autorizá el mismo alias para «ws_sr_constancia_inscripcion» y «ws_sr_padron_a13».",
+          environment === "production"
+            ? "ARCA no autorizó tu certificado de producción para consultar el Padrón. En ARCA, Administrador de Relaciones → Nueva relación, autorizá el mismo alias para los servicios «ws_sr_constancia_inscripcion» y «ws_sr_padron_a13». Puede tardar unos minutos."
+            : "ARCA no autorizó tu certificado de pruebas para consultar el Padrón. En WSASS, «Crear autorización a servicio», autorizá el mismo alias para «ws_sr_constancia_inscripcion» y «ws_sr_padron_a13».",
       };
     }
     return { error: arcaMessage(e) };
