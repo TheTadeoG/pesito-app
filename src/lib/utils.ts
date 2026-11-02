@@ -19,8 +19,20 @@ const currencyFormatter = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 0,
 });
 
+const currencyFormatterCents = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * El precio es el precio: con centavos se ven los dos decimales ($ 3,63) y sin centavos no se muestran
+ * ($ 3.000). Antes todo se redondeaba al peso y $ 3,63 aparecía como $ 4 aunque se cobraba bien.
+ */
 export function formatCurrency(value: number) {
-  return currencyFormatter.format(value);
+  const cents = Math.round(value * 100);
+  return cents % 100 === 0 ? currencyFormatter.format(cents / 100) : currencyFormatterCents.format(cents / 100);
 }
 
 // Node y el navegador traen versiones distintas de los datos de ICU: uno
