@@ -21,6 +21,7 @@ export interface SalePaymentLine {
 }
 
 export interface SaleVoucherInfo {
+  id: string;
   kind: "invoice" | "credit_note" | "debit_note";
   status: string;
   voucherClass: string | null;
@@ -78,7 +79,7 @@ export async function getSaleDetail(
     supabase.from("sale_payments").select("method, amount").eq("sale_id", saleId),
     supabase
       .from("arca_vouchers")
-      .select("kind, status, voucher_class, sales_point, number, cae, cae_expiry, environment")
+      .select("id, kind, status, voucher_class, sales_point, number, cae, cae_expiry, environment")
       .eq("sale_id", saleId)
       .order("created_at"),
     sale.voided_by
@@ -113,6 +114,7 @@ export async function getSaleDetail(
       })),
       voided: sale.voided_at ? { at: sale.voided_at, by: voider?.username ?? voider?.email ?? null, reason: sale.void_reason } : sale.status === "anulada" ? { at: "", by: null, reason: null } : null,
       vouchers: (voucherRows ?? []).map((v) => ({
+        id: v.id,
         kind: v.kind,
         status: v.status,
         voucherClass: v.voucher_class,

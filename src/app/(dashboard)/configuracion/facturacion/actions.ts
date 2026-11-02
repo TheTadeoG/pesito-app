@@ -1,5 +1,6 @@
 "use server";
 
+import { buildStoredDocument } from "@/lib/arca/voucher-doc";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -197,7 +198,7 @@ export async function setArcaEnabled(input: { enabled: boolean; environment: str
 }
 
 export interface TestVoucherResult extends ArcaResult {
-  voucher?: { number: number; salesPoint: number; voucherType: number; cae: string; caeExpiry: string };
+  voucher?: { id: string; number: number; salesPoint: number; voucherType: number; cae: string; caeExpiry: string };
 }
 
 /** Emite un comprobante de prueba por $1 a Consumidor Final en HOMOLOGACIÓN (no vale fiscalmente). */
@@ -209,14 +210,18 @@ export async function issueArcaTestVoucher(): Promise<TestVoucherResult> {
   const { arca } = res;
   if (!arca.issuerCondition || !arca.salesPoint) return { error: "Completá los datos del negocio y el punto de venta." };
   const key = `test-${g.org.id}-${Date.now()}`;
+  const items = arca.issuerCondition === "responsable_inscripto" ? [{ gross: 100, vat: 21, description: "Prueba de Pesito" }] : [{ amount: 100, description: "Prueba de Pesito" }];
   try {
-    const outcome = await arca.client.issue({
-      issuer: arca.issuerCondition,
-      salesPoint: arca.salesPoint,
-      to: { condition: "consumidor_final" },
-      items: arca.issuerCondition === "responsable_inscripto" ? [{ gross: 100, vat: 21, description: "Prueba de Pesito" }] : [{ amount: 100, description: "Prueba de Pesito" }],
-      // idempotencyKey lo reserva el SDK (ARCA_INPUT_RESERVED_FIELD): la clave de abajo es sólo de nuestro registro.
-    } as Parameters<typeof arca.client.issue>[0]);
+    // La clave anti-duplicados va en las opciones (2.º argumento), no en los datos: el SDK la reserva.
+    const outcome = await arca.client.issue(
+      {
+        issuer: arca.issuerCondition,
+        salesPoint: arca.salesPoint,
+        to: { condition: "consumidor_final" },
+        items,
+      } as Parameters<typeof arca.client.issue>[0],
+      { idempotencyKey: key }
+    );
     if (outcome.kind !== "authorized") {
       await g.admin.from("arca_vouchers").insert({ org_id: g.org.id, environment: "test", status: outcome.kind, idempotency_key: key, total_cents: 100, created_by: g.userId, detail: JSON.parse(JSON.stringify({ kind: outcome.kind })) });
       if (outcome.kind === "rejected") {
@@ -226,7 +231,20 @@ export async function issueArcaTestVoucher(): Promise<TestVoucherResult> {
       return { error: `No pudimos confirmar el comprobante de prueba (${outcome.kind}). Probá de nuevo.` };
     }
     const v = outcome.voucher;
-    await g.admin.from("arca_vouchers").insert({
+    const { data: profile } = await g.admin.from("arca_settings").select("legal_name, address, gross_income, activity_start").eq("org_id", g.org.id).maybeSingle();
+    const built = buildStoredDocument({
+      voucher: v,
+      items: items as Parameters<typeof buildStoredDocument>[0]["items"],
+      issuer: {
+        legalName: profile?.legal_name ?? null,
+        address: profile?.address ?? null,
+        grossIncome: profile?.gross_income ?? null,
+        activityStart: profile?.activity_start ?? null,
+        condition: arca.issuerCondition,
+        taxId: arca.taxId,
+      },
+    });
+    const { data: saved } = await g.admin.from("arca_vouchers").insert({
       org_id: g.org.id,
       environment: "test",
       status: "authorized",
@@ -240,8 +258,9 @@ export async function issueArcaTestVoucher(): Promise<TestVoucherResult> {
       qr: v.qr ?? null,
       total_cents: 100,
       created_by: g.userId,
-    });
-    return { ok: true, voucher: { number: v.number, salesPoint: v.salesPoint, voucherType: v.voucherType, cae: v.cae, caeExpiry: v.caeExpiry } };
+      detail: JSON.parse(JSON.stringify("document" in built ? { document: built.document } : { documentError: built.error })),
+    }).select("id").single();
+    return { ok: true, voucher: { id: saved?.id ?? "", number: v.number, salesPoint: v.salesPoint, voucherType: v.voucherType, cae: v.cae, caeExpiry: v.caeExpiry } };
   } catch (e) {
     return { error: arcaMessage(e) };
   }

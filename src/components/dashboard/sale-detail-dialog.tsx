@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -20,7 +24,9 @@ export function SaleDetailDialog({
   /** Botones de abajo (imprimir, anular…) cuando el diálogo se usa en el historial. */
   actions?: React.ReactNode;
 }) {
+  const [viewVoucher, setViewVoucher] = useState<string | null>(null);
   return (
+    <>
     <Dialog
       open={open}
       onClose={onClose}
@@ -66,7 +72,7 @@ export function SaleDetailDialog({
             <div className="space-y-1 rounded-xl border border-border px-3.5 py-2.5 text-sm">
               <p className="text-xs font-medium text-foreground">Comprobantes de ARCA</p>
               {sale.vouchers.map((v, i) => (
-                <p key={i} className="text-muted-foreground">
+                <p key={i} className="flex flex-wrap items-center gap-x-2 text-muted-foreground">
                   <span className="font-medium text-foreground">
                     {`${v.kind === "invoice" ? "Factura" : v.kind === "credit_note" ? "Nota de crédito" : "Nota de débito"}${v.voucherClass ? ` ${v.voucherClass}` : ""}`}
                   </span>
@@ -74,6 +80,11 @@ export function SaleDetailDialog({
                   {v.cae ? ` · CAE ${v.cae}` : ""}
                   {v.status !== "authorized" ? ` · ${v.status}` : ""}
                   {v.environment === "test" ? " · prueba (sin validez fiscal)" : ""}
+                  {v.status === "authorized" && (
+                    <button type="button" onClick={() => setViewVoucher(v.id)} className="font-medium text-primary hover:underline">
+                      Ver e imprimir
+                    </button>
+                  )}
                 </p>
               ))}
             </div>
@@ -155,5 +166,7 @@ export function SaleDetailDialog({
         </div>
       )}
     </Dialog>
+    <VoucherDialog voucherId={viewVoucher} onClose={() => setViewVoucher(null)} />
+    </>
   );
 }

@@ -327,17 +327,42 @@ body {
    está abierta la ventana de venta cobrada; al imprimir se oculta todo lo
    demás. Sin @page (afectaría cualquier impresión): el ancho lo pone el
    papel de la impresora (58 u 80 mm) y el ticket ocupa el 100%. */
-.ticket-print {
+.ticket-print,
+.voucher-print {
   display: none;
 }
 
 @media print {
-  body:has(> .ticket-print) > *:not(.ticket-print) {
+  body:has(> .ticket-print) > *:not(.ticket-print),
+  body:has(> .voucher-print-a4) > *:not(.voucher-print-a4) {
     display: none !important;
   }
 
-  body:has(> .ticket-print) {
+  body:has(> .ticket-print),
+  body:has(> .voucher-print-a4) {
     background: #fff !important;
+  }
+
+  /* Factura en hoja A4: página con nombre, así no afecta a los tickets (sin @page). */
+  @page voucher-a4 {
+    size: A4;
+    margin: 12mm;
+  }
+
+  .voucher-print-a4 {
+    display: block;
+    page: voucher-a4;
+    color: #000;
+  }
+
+  .voucher-print-a4 .ticket-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .voucher-print-a4 .ticket-small {
+    font-size: 10px;
   }
 
   .ticket-print {

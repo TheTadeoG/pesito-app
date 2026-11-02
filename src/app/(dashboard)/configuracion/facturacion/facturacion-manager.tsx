@@ -1,5 +1,6 @@
 "use client";
 
+import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { useState, useTransition } from "react";
 import { CheckCircle2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
   const [msg, setMsg] = useState<{ text: string; tone: "error" | "ok" } | null>(null);
   const [points, setPoints] = useState<{ number: number; type: string; blocked: boolean }[] | null>(null);
   const [voucher, setVoucher] = useState<TestVoucherResult["voucher"] | null>(null);
+  const [viewVoucher, setViewVoucher] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   function run<T extends { error?: string }>(fn: () => Promise<T>, okText: string, after?: (r: T) => void) {
@@ -297,10 +299,16 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
             <p className="text-sm text-muted-foreground">{`Puntos de venta para Web Services en ARCA: ${points.map((p) => `${p.number}${p.blocked ? " (bloqueado)" : ""}`).join(", ")}.`}</p>
           )}
           {voucher && (
-            <div className="rounded-xl bg-success-bg px-3 py-2 text-sm text-foreground">
-              {`Comprobante de prueba Nº ${String(voucher.salesPoint).padStart(5, "0")}-${String(voucher.number).padStart(8, "0")} (tipo ${voucher.voucherType}) · CAE ${voucher.cae} · vence ${voucher.caeExpiry}`}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-success-bg px-3 py-2 text-sm text-foreground">
+              <span>{`Comprobante de prueba Nº ${String(voucher.salesPoint).padStart(5, "0")}-${String(voucher.number).padStart(8, "0")} (tipo ${voucher.voucherType}) · CAE ${voucher.cae} · vence ${voucher.caeExpiry}`}</span>
+              {voucher.id && (
+                <Button size="sm" variant="outline" onClick={() => setViewVoucher(voucher.id)}>
+                  Ver e imprimir
+                </Button>
+              )}
             </div>
           )}
+          <VoucherDialog voucherId={viewVoucher} onClose={() => setViewVoucher(null)} />
         </CardContent>
       </Card>
     </div>
