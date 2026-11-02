@@ -14,6 +14,7 @@ import {
   type PaymentBreakdownRow,
 } from "@/lib/caja";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
+import { getInvoiceBadgesBySale } from "@/lib/sale-vouchers";
 import { getMemberLabelsById, memberLabelFor } from "@/lib/member-labels";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 
@@ -123,6 +124,7 @@ export async function getCajaDetail(
     getFiadoAmountsBySale(supabase, saleIds),
   ]);
 
+  const voucherBySale = await getInvoiceBadgesBySale(supabase, saleIds);
   const customerNameById = new Map((customersRaw ?? []).map((c) => [c.id, c.name]));
   const itemsBySale = new Map<string, string[]>();
   for (const item of itemsRaw) {
@@ -138,6 +140,7 @@ export async function getCajaDetail(
     total: sale.total,
     payment_method: sale.payment_method,
     invoice_type: sale.invoice_type,
+    voucher: voucherBySale.get(sale.id) ?? null,
     customerName: sale.customer_id
       ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
       : "Consumidor Final",

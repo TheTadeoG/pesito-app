@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, FileText, Printer } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { VoucherDialog } from "@/components/dashboard/voucher-view";
+import { VoucherDialog, type VoucherFormat } from "@/components/dashboard/voucher-view";
 import { issueSaleInvoice, type InvoicingConfig } from "@/lib/actions/invoicing";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
@@ -109,14 +109,16 @@ export function SaleDoneDialog({
   receipt,
   onClose,
   invoicing,
+  onInvoiced,
 }: {
   receipt: SaleReceipt | null;
   onClose: () => void;
   invoicing?: InvoicingConfig;
+  onInvoiced?: (saleId: string, badge: string) => void;
 }) {
   const newSaleRef = useRef<HTMLButtonElement>(null);
   const [invoice, setInvoice] = useState<InvoiceState | null>(null);
-  const [viewVoucher, setViewVoucher] = useState<string | null>(null);
+  const [viewVoucher, setViewVoucher] = useState<{ id: string; format: VoucherFormat } | null>(null);
   const autoStarted = useRef<string | null>(null);
   const saleId = receipt?.saleId;
   const canInvoice = Boolean(invoicing?.enabled && saleId);
@@ -124,18 +126,20 @@ export function SaleDoneDialog({
 
   // La venta ya está cobrada: facturar corre aparte y, si ARCA falla, la venta sigue igual (queda para
   // facturar a mano desde acá o desde el historial). El servidor no duplica una factura de la misma venta.
-  async function emit(id: string) {
+  const emit = useCallback(async (id: string) => {
     setInvoice({ saleId: id, phase: "working" });
     const res = await issueSaleInvoice(id);
-    if (res.status === "authorized") setInvoice({ saleId: id, phase: "done", voucherId: res.voucherId });
-    else setInvoice({ saleId: id, phase: "error", message: res.error ?? "No pudimos facturar." });
-  }
+    if (res.status === "authorized") {
+      setInvoice({ saleId: id, phase: "done", voucherId: res.voucherId });
+      if (res.badge) onInvoiced?.(id, res.badge);
+    } else setInvoice({ saleId: id, phase: "error", message: res.error ?? "No pudimos facturar." });
+  }, [onInvoiced]);
 
   useEffect(() => {
     if (!isAuto || !saleId || autoStarted.current === saleId) return;
     autoStarted.current = saleId;
     void emit(saleId);
-  }, [isAuto, saleId]);
+  }, [isAuto, saleId, emit]);
 
   // Enter o Escape cierran y siguen vendiendo. Cualquier otra tecla (el
   // lector de códigos "tipea") también cierra: el POS manda esa tecla al
@@ -200,15 +204,21 @@ export function SaleDoneDialog({
             <div className="rounded-xl border border-border px-4 py-3 text-sm">
               {invoice?.phase === "working" && <p className="text-muted-foreground">Facturando en ARCA…</p>}
               {invoice?.phase === "done" && (
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="space-y-2">
                   <p className="flex items-center gap-2 font-medium text-success">
                     <CheckCircle2 className="h-4 w-4" />
-                    Factura emitida
+                    Factura electrónica emitida
                   </p>
-                  <Button type="button" size="sm" variant="outline" onClick={() => setViewVoucher(invoice.voucherId ?? null)}>
-                    <FileText className="h-4 w-4" />
-                    Ver e imprimir
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => invoice.voucherId && setViewVoucher({ id: invoice.voucherId, format: "ticket" })}>
+                      <FileText className="h-4 w-4" />
+                      Factura en ticket 80 mm
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => invoice.voucherId && setViewVoucher({ id: invoice.voucherId, format: "a4" })}>
+                      <FileText className="h-4 w-4" />
+                      Factura en hoja A4
+                    </Button>
+                  </div>
                 </div>
               )}
               {invoice?.phase === "error" && (
@@ -235,7 +245,7 @@ export function SaleDoneDialog({
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={() => window.print()}>
               <Printer className="h-4 w-4" />
-              Imprimir ticket
+              Imprimir ticket (no fiscal)
               <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">
                 P
               </kbd>
@@ -247,7 +257,7 @@ export function SaleDoneDialog({
 
         </div>
       </Dialog>
-      <VoucherDialog voucherId={viewVoucher} onClose={() => setViewVoucher(null)} />
+      <VoucherDialog voucherId={viewVoucher?.id ?? null} initialFormat={viewVoucher?.format} onClose={() => setViewVoucher(null)} />
       {createPortal(<Ticket receipt={receipt} />, document.body)}
     </>
   );

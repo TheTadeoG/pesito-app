@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { getSaleDetail, type SaleDetail } from "@/lib/actions/sales";
-import { invoiceLabels } from "@/lib/invoice-labels";
 import { SaleDetailDialog } from "@/components/dashboard/sale-detail-dialog";
 import { VoidSaleDialog } from "@/components/dashboard/void-sale-dialog";
 
@@ -18,6 +17,8 @@ export interface SaleRow {
   total: number;
   payment_method: string;
   invoice_type: string;
+  /** Factura electrónica autorizada de la venta («Factura C»), si la tiene. */
+  voucher?: string | null;
   customerName: string;
   itemsSummary: string;
   // Sólo se completa cuando la venta tiene una parte cargada a fiado (venta
@@ -84,11 +85,7 @@ export function VentasList({
                 {sale.payment_method === "mixto" && !!sale.fiadoAmount && sale.fiadoAmount > 0 && (
                   <Badge tone="danger">Fiado {formatCurrency(sale.fiadoAmount)}</Badge>
                 )}
-                {sale.invoice_type && sale.invoice_type !== "consumidor_final" && (
-                  <Badge tone="accent">
-                    {invoiceLabels[sale.invoice_type] ?? sale.invoice_type}
-                  </Badge>
-                )}
+                {sale.voucher && <Badge tone="accent">{sale.voucher}</Badge>}
               </div>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {formatDateTime(sale.created_at)} · {sale.itemsSummary}

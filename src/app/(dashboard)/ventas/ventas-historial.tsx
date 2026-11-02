@@ -266,7 +266,7 @@ export function VentasHistorial({
             <>
               <Button variant="outline" onClick={() => setPrinting(receiptFromSale(sale, orgName, paymentLabels))}>
                 <Printer className="h-4 w-4" />
-                Reimprimir ticket
+                Reimprimir ticket (no fiscal)
               </Button>
               {canVoid && !sale.voided && sale.status !== "anulada" && !hasInvoice && (
                 <Button variant="danger" onClick={() => setVoidTarget({ id: sale.id, total: sale.total })}>

@@ -11,6 +11,7 @@ import { VentasList, type SaleRow } from "@/components/dashboard/ventas-list";
 import { CuentaCorriente, type CuentaCorrienteMovement } from "@/components/dashboard/cuenta-corriente";
 import { ClienteDetailClient } from "@/app/(dashboard)/clientes/[id]/cliente-detail-client";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
+import { getInvoiceBadgesBySale } from "@/lib/sale-vouchers";
 
 export default async function ClienteDetailPage({
   params,
@@ -61,6 +62,7 @@ export default async function ClienteDetailPage({
   }
 
   const fiadoBySale = await getFiadoAmountsBySale(supabase, saleIds);
+  const voucherBySale = await getInvoiceBadgesBySale(supabase, saleIds);
 
   const { data: paymentsRaw } = await supabase
     .from("customer_payments")
@@ -101,6 +103,7 @@ export default async function ClienteDetailPage({
     total: sale.total,
     payment_method: sale.payment_method,
     invoice_type: sale.invoice_type,
+    voucher: voucherBySale.get(sale.id) ?? null,
     customerName: customer.name,
     itemsSummary: (itemsBySale.get(sale.id) ?? []).join(", ") || "Sin detalle",
     fiadoAmount: fiadoBySale.get(sale.id) ?? 0,

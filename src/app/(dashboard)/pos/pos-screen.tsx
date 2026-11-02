@@ -26,6 +26,12 @@ export function PosScreen({ recentSales, ...posProps }: PosScreenProps) {
       <PosClient
         {...posProps}
         onSaleCompleted={(next) => setLive({ base: recentSales, rows: next })}
+        onSaleInvoiced={(saleId, badge) =>
+          setLive((cur) => {
+            const current = cur.base === recentSales ? cur.rows : recentSales;
+            return { base: recentSales, rows: current.map((r) => (r.id === saleId ? { ...r, voucher: badge } : r)) };
+          })
+        }
       />
 
       <Card>

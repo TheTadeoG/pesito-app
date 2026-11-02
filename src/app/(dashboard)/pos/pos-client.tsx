@@ -118,6 +118,8 @@ interface PosClientProps {
   invoicing: InvoicingConfig;
   customPaymentMethods: string[];
   onSaleCompleted: (recentSales: SaleRow[]) => void;
+  /** Una venta recién cobrada quedó facturada: la lista de ventas recientes lo muestra al toque. */
+  onSaleInvoiced?: (saleId: string, badge: string) => void;
 }
 
 export function PosClient({
@@ -130,6 +132,7 @@ export function PosClient({
   invoicing,
   customPaymentMethods,
   onSaleCompleted,
+  onSaleInvoiced,
 }: PosClientProps) {
   // Después de cobrar no se vuelve a renderizar el POS desde el servidor
   // (bajaba otra vez el catálogo y los clientes enteros en cada venta):
@@ -1856,7 +1859,7 @@ export function PosClient({
         )}
       </Dialog>
 
-      <SaleDoneDialog receipt={lastReceipt} onClose={closeReceipt} invoicing={invoicing} />
+      <SaleDoneDialog receipt={lastReceipt} onClose={closeReceipt} invoicing={invoicing} onInvoiced={onSaleInvoiced} />
     </div>
   );
 }

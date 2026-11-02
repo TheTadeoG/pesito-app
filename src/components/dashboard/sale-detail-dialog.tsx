@@ -82,7 +82,7 @@ export function SaleDetailDialog({
                   {v.environment === "test" ? " · prueba (sin validez fiscal)" : ""}
                   {v.status === "authorized" && (
                     <button type="button" onClick={() => setViewVoucher(v.id)} className="font-medium text-primary hover:underline">
-                      Ver e imprimir
+                      Ver e imprimir factura
                     </button>
                   )}
                 </p>

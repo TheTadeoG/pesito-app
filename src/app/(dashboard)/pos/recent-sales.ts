@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
+import { getInvoiceBadgesBySale } from "@/lib/sale-vouchers";
 
 const RECENT_SALES_LIMIT = 8;
 
@@ -28,12 +29,13 @@ export async function getRecentSaleRows(
     new Set(sales.map((s) => s.customer_id).filter((id): id is string => Boolean(id)))
   );
 
-  const [{ data: itemsRaw }, { data: saleCustomersRaw }, fiadoBySale] = await Promise.all([
+  const [{ data: itemsRaw }, { data: saleCustomersRaw }, fiadoBySale, badges] = await Promise.all([
     supabase.from("sale_items").select("sale_id, product_name, quantity").in("sale_id", saleIds),
     customerIds.length > 0
       ? supabase.from("customers").select("id, name").in("id", customerIds)
       : Promise.resolve({ data: [] }),
     getFiadoAmountsBySale(supabase, saleIds),
+    getInvoiceBadgesBySale(supabase, saleIds),
   ]);
 
   const customerNameById = new Map((saleCustomersRaw ?? []).map((c) => [c.id, c.name]));
@@ -51,6 +53,7 @@ export async function getRecentSaleRows(
     total: sale.total,
     payment_method: sale.payment_method,
     invoice_type: sale.invoice_type,
+    voucher: badges.get(sale.id) ?? null,
     customerName: sale.customer_id
       ? customerNameById.get(sale.customer_id) ?? "Cliente eliminado"
       : "Consumidor Final",

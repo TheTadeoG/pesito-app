@@ -12,12 +12,15 @@ import { invoiceLines, receiverFromDocument, saleConditionLabel } from "@/lib/ar
 import { autoInvoiceMethodIds } from "@/lib/arca/auto-invoice";
 import type { Json } from "@/lib/database.types";
 import type { IssuedVoucher } from "facturas";
+import { voucherBadge } from "@/lib/sale-vouchers";
 
 export interface InvoiceResult {
   error?: string;
   /** authorized: ya está emitida (puede ser de antes). pending: ARCA no confirmó, se reintenta sin duplicar. */
   status?: "authorized" | "pending";
   voucherId?: string;
+  /** «Factura C» (o «Factura C (prueba)»): lo que rotulan las listas. */
+  badge?: string;
 }
 
 /** Lo que necesita el POS para decidir si factura solo: sólo el servidor emite. */
@@ -82,14 +85,14 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
   // Intentos anteriores de esta venta.
   const { data: previous } = await admin
     .from("arca_vouchers")
-    .select("id, kind, status, idempotency_key")
+    .select("id, kind, status, idempotency_key, voucher_class")
     .eq("org_id", organization.id)
     .eq("sale_id", saleId)
     .eq("kind", "invoice")
     .eq("environment", environment)
     .order("created_at");
   const authorized = (previous ?? []).find((v) => v.status === "authorized");
-  if (authorized) return { status: "authorized", voucherId: authorized.id };
+  if (authorized) return { status: "authorized", voucherId: authorized.id, badge: voucherBadge(authorized.voucher_class, environment) };
   const open = (previous ?? []).find((v) => v.status === "indeterminate" || v.status === "conflict");
 
   const res = await getOrgArca(organization.id, environment);
@@ -177,7 +180,7 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
     const saved = open
       ? await admin.from("arca_vouchers").update(fields).eq("id", open.id).select("id").single()
       : await admin.from("arca_vouchers").insert({ ...base, ...fields }).select("id").single();
-    return { status: "authorized", voucherId: saved.data?.id };
+    return { status: "authorized", voucherId: saved.data?.id, badge: voucherBadge(v.voucherClass, environment) };
   } catch (e) {
     return { error: arcaMessage(e) };
   }

@@ -17,6 +17,7 @@ import {
 } from "@/app/(dashboard)/reportes/reportes-dashboard";
 import type { SaleRow } from "@/components/dashboard/ventas-list";
 import { getFiadoAmountsBySale } from "@/lib/sale-payments";
+import { getInvoiceBadgesBySale } from "@/lib/sale-vouchers";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { getMemberLabelsById } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
@@ -284,6 +285,10 @@ export default async function ReportesPage({
     supabase,
     ov.recent.map((s) => s.id)
   );
+  const voucherBySale = await getInvoiceBadgesBySale(
+    supabase,
+    ov.recent.map((s) => s.id)
+  );
 
   const saleRows: SaleRow[] = ov.recent.map((sale) => ({
     id: sale.id,
@@ -291,6 +296,7 @@ export default async function ReportesPage({
     total: sale.total,
     payment_method: sale.payment_method,
     invoice_type: sale.invoice_type ?? "consumidor_final",
+    voucher: voucherBySale.get(sale.id) ?? null,
     customerName: sale.customer_id
       ? sale.customer_name ?? "Cliente eliminado"
       : "Consumidor Final",

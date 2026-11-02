@@ -308,7 +308,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
               <span>{`Comprobante de prueba Nº ${String(voucher.salesPoint).padStart(5, "0")}-${String(voucher.number).padStart(8, "0")} (tipo ${voucher.voucherType}) · CAE ${voucher.cae} · vence ${voucher.caeExpiry}`}</span>
               {voucher.id && (
                 <Button size="sm" variant="outline" onClick={() => setViewVoucher(voucher.id)}>
-                  Ver e imprimir
+                  Ver e imprimir la factura
                 </Button>
               )}
             </div>

@@ -194,7 +194,16 @@ export function VoucherDocumentView({ data, format }: { data: VoucherData; forma
  * Ver y reimprimir un comprobante electrónico. Todo el trabajo es del navegador: el servidor sólo lee la fila
  * guardada. Imprime con el mismo mecanismo que el ticket de venta (se monta en el body y se oculta lo demás).
  */
-export function VoucherDialog({ voucherId, onClose }: { voucherId: string | null; onClose: () => void }) {
+export function VoucherDialog({
+  voucherId,
+  onClose,
+  initialFormat,
+}: {
+  voucherId: string | null;
+  onClose: () => void;
+  /** Formato con el que se abre (si no, el último que eligió esta persona). */
+  initialFormat?: VoucherFormat;
+}) {
   const [data, setData] = useState<VoucherData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [format, setFormat] = useState<VoucherFormat>("ticket");
@@ -209,6 +218,11 @@ export function VoucherDialog({ voucherId, onClose }: { voucherId: string | null
       // sin localStorage: queda el ticket
     }
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (voucherId && initialFormat) setFormat(initialFormat);
+  }, [voucherId, initialFormat]);
 
   useEffect(() => {
     if (!voucherId) return;
@@ -248,7 +262,7 @@ export function VoucherDialog({ voucherId, onClose }: { voucherId: string | null
 
   return (
     <>
-      <Dialog open={Boolean(voucherId)} onClose={onClose} title={data?.kind === "credit_note" ? "Nota de crédito" : "Factura electrónica"} description={data?.environment === "test" ? "Comprobante de prueba: no tiene valor fiscal." : undefined}>
+      <Dialog open={Boolean(voucherId)} onClose={onClose} title={data?.kind === "credit_note" ? "Nota de crédito electrónica" : "Factura electrónica (fiscal)"} description={data?.environment === "test" ? "Comprobante de prueba: no tiene valor fiscal." : undefined}>
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="inline-flex gap-0.5 rounded-xl border border-border bg-muted p-0.5">
@@ -259,7 +273,7 @@ export function VoucherDialog({ voucherId, onClose }: { voucherId: string | null
                   onClick={() => pick(f)}
                   className={cn("rounded-lg px-3 py-1.5 text-sm font-medium", format === f ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
                 >
-                  {f === "ticket" ? "Ticket" : "Hoja A4"}
+                  {f === "ticket" ? "Ticket 80 mm" : "Hoja A4"}
                 </button>
               ))}
             </div>
