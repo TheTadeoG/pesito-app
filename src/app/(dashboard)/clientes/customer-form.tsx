@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
   splitPhoneCountry,
   type PhoneCountry,
 } from "@/lib/phone-countries";
+import { arcaLookupAvailable, lookupArcaTaxpayer, type TaxpayerInfo } from "@/lib/actions/padron";
 import type { Customer } from "@/lib/types";
 
 interface CustomerFormProps {
@@ -35,6 +36,42 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
   );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Buscar en ARCA (Padrón): sólo si la facturación está lista.
+  const [canLookup, setCanLookup] = useState(false);
+  const [looking, setLooking] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [found, setFound] = useState<TaxpayerInfo | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void arcaLookupAvailable().then((ok) => {
+      if (!cancelled) setCanLookup(ok);
+    }, () => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  async function lookup() {
+    setLooking(true);
+    setLookupError(null);
+    setFound(null);
+    const res = await lookupArcaTaxpayer(document);
+    setLooking(false);
+    if (res.error || !res.taxpayer) {
+      setLookupError(res.error ?? "No pudimos buscar en ARCA.");
+      return;
+    }
+    const t = res.taxpayer;
+    setFound(t);
+    setDocument(t.taxId);
+    // Completa lo que falta, sin pisar lo que ya escribiste.
+    if (t.name) {
+      setRazonSocial((cur) => cur || t.name!);
+      setName((cur) => cur || t.name!);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -121,6 +158,27 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
             />
           </div>
         </div>
+
+        {canLookup && (
+          <div className="space-y-2 rounded-xl border border-border px-3.5 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">Con el CUIT, CUIL o DNI, completamos el nombre con los datos de ARCA.</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => void lookup()} disabled={looking || document.replace(/\D/g, "").length < 7}>
+                {looking ? "Buscando…" : "Buscar en ARCA"}
+              </Button>
+            </div>
+            {lookupError && <p className="rounded-lg bg-danger-bg px-3 py-2 text-xs text-danger">{lookupError}</p>}
+            {found && (
+              <div className="space-y-0.5 text-sm">
+                <p className="font-medium text-foreground">{found.name ?? "Sin nombre en ARCA"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {[`CUIT ${found.taxId}`, found.condition, found.active === false ? "sin inscripciones activas" : null].filter(Boolean).join(" · ")}
+                </p>
+                {found.address && <p className="text-xs text-muted-foreground">{found.address}</p>}
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <Label htmlFor="c-email">Email</Label>

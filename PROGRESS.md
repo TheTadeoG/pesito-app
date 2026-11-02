@@ -668,4 +668,5 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Comprobante interno X con numeración correlativa por negocio (migración 0084: `sales.internal_number`, trigger, `sale_counters`; formato «X 0001-00000012»).
 - El ticket X puede ocultar el nombre del negocio y el número (migración 0085, Ajustes → Tu negocio → Comprobante X).
 - Hecho: nota de crédito al anular una venta facturada (`voidInvoicedSale`: primero la nota en ARCA, recién autorizada se anula la venta; reintentable sin duplicar).
+- Hecho: «Buscar en ARCA» (Padrón A5/A13) en la ficha del cliente: completa nombre y muestra condición IVA y domicilio; requiere autorizar `ws_sr_constancia_inscripcion` y `ws_sr_padron_a13` en ARCA (`src/lib/actions/padron.ts`).
 - Falta (Funciones pendientes): Responsable Inscripto (Factura A/B: IVA por producto), receptor con condición IVA del cliente (luego `void_sale_audited`), certificado de producción. Los textos públicos siguen diciendo «Pronto».
