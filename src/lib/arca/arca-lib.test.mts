@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import forge from "node-forge";
 import { decryptSecret, encryptSecret, encryptionConfigured } from "./crypto.ts";
+import { certificateFromFile } from "./cert-file.ts";
 import { invoiceLines, receiverFromDocument } from "./sale-invoice.ts";
 import { checkCertificate, cleanSubjectText, createCsr, isValidCuit } from "./csr.ts";
 
@@ -74,3 +75,21 @@ assert.deepEqual(receiverFromDocument("20-12345678-9"), { cuit: "20123456789" })
 assert.deepEqual(receiverFromDocument("30.123.456"), { dni: "30123456" });
 assert.deepEqual(receiverFromDocument("abc"), {});
 assert.deepEqual(receiverFromDocument(null), {});
+
+// Certificado desde un archivo: PEM (texto, con o sin ruido alrededor) o DER (binario).
+{
+  const keys = forge.pki.rsa.generateKeyPair(1024);
+  const cert = forge.pki.createCertificate();
+  cert.publicKey = keys.publicKey;
+  cert.serialNumber = "01";
+  cert.validity.notBefore = new Date();
+  cert.validity.notAfter = new Date(Date.now() + 86_400_000);
+  cert.setSubject([{ name: "commonName", value: "prueba" }]);
+  cert.setIssuer([{ name: "commonName", value: "prueba" }]);
+  cert.sign(keys.privateKey);
+  const pem = forge.pki.certificateToPem(cert).replace(/\r\n/g, "\n");
+  assert.equal(certificateFromFile(new TextEncoder().encode(`texto\r\n${pem}\r\notro`)), pem.trim());
+  const der = Uint8Array.from(Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes(), "binary"));
+  assert.equal(certificateFromFile(der), pem.trim());
+  assert.equal(certificateFromFile(new TextEncoder().encode("esto no es un certificado")), null);
+}

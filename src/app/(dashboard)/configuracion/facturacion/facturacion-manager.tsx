@@ -1,9 +1,10 @@
 "use client";
 
+import { certificateFromFile } from "@/lib/arca/cert-file";
 import { AUTO_INVOICE_METHODS } from "@/lib/arca/auto-invoice";
 import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { useState, useTransition } from "react";
-import { CheckCircle2, Copy, Download } from "lucide-react";
+import { CheckCircle2, Copy, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -269,11 +270,45 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">3. Pegar el certificado</CardTitle>
-          <CardDescription>El texto que te dio ARCA, desde -----BEGIN CERTIFICATE----- hasta -----END CERTIFICATE-----.</CardDescription>
+          <CardTitle className="text-base">3. Subir el certificado</CardTitle>
+          <CardDescription>Subí el archivo .crt que descargaste de ARCA, tal cual. Si preferís, también podés pegar su texto.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {hasCert && <p className="text-sm text-success">Ya hay un certificado cargado para este entorno. Si pegás otro, lo reemplaza.</p>}
+          <div>
+            <input
+              id="arca-cert-file"
+              type="file"
+              accept=".crt,.cer,.pem,.txt"
+              className="sr-only"
+              disabled={!hasCsr || pending}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                void file.arrayBuffer().then((buf) => {
+                  const pem = certificateFromFile(new Uint8Array(buf));
+                  if (!pem) {
+                    setMsg({ text: "Ese archivo no parece un certificado. Tiene que ser el .crt que descargaste de ARCA.", tone: "error" });
+                    return;
+                  }
+                  setCertificate(pem);
+                  // Se guarda enseguida: el servidor comprueba que corresponda a tu solicitud.
+                  run(() => saveArcaCertificate({ environment: env, certificate: pem }), `Certificado «${file.name}» guardado.`, () => setCertificate(""));
+                });
+              }}
+            />
+            <label
+              htmlFor="arca-cert-file"
+              className={cn(
+                "inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted",
+                (!hasCsr || pending) && "pointer-events-none opacity-50"
+              )}
+            >
+              <Upload className="h-4 w-4" />
+              Subir archivo .crt
+            </label>
+          </div>
           <textarea
             value={certificate}
             onChange={(e) => setCertificate(e.target.value)}
