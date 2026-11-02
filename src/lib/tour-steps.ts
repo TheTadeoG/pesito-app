@@ -79,30 +79,21 @@ export const TOUR_STEPS: TourStep[] = [
   },
   // --- 2. La caja
   {
-    id: "nav-caja",
-    path: "*",
-    target: '[data-tour="nav-/caja"]',
-    title: "Ahora, la caja",
-    text: "Para poder vender, primero se abre la caja: es el registro de la plata que entra y sale en el día. Tocá «Caja» en el menú.",
-    side: "right",
-    advance: { type: "click" },
-    goTo: "/caja",
-  },
-  {
     id: "open-caja",
-    path: "/caja",
+    path: "*",
     target: '[data-tour="open-caja"]',
     title: "Abrí tu caja",
-    text: "Tocá el botón «Abrir caja». Si ya la tenés abierta, seguimos de largo.",
-    side: "bottom",
+    text: "Para poder vender, primero se abre la caja: es el registro de la plata que entra y sale en el día. Tocá el bloque «Vender · Cerrada» de arriba a la izquierda. Si ya la tenés abierta, seguimos de largo.",
+    side: "right",
     advance: { type: "click" },
+    goTo: "/pos",
     ifMissing: "skip",
     skipTo: "nav-pos",
     waitMs: 1500,
   },
   {
     id: "caja-form",
-    path: "/caja",
+    path: "*",
     target: '[data-tour="caja-form"]',
     title: "Con cuánto efectivo empezás",
     text: "Escribí cuánto efectivo hay en el cajón ahora, por ejemplo los billetes para dar vuelto (si no hay, poné 0). Al cerrar la caja, Pesito compara contra este monto y te dice si sobra o falta. Después tocá «Abrir Caja» (o apretá Enter) para empezar el día.",
@@ -111,6 +102,7 @@ export const TOUR_STEPS: TourStep[] = [
     ifMissing: "skip",
     skipTo: "nav-pos",
     waitMs: 1500,
+    goTo: "/pos",
   },
   {
     id: "nav-pos",
@@ -131,8 +123,7 @@ export const TOUR_STEPS: TourStep[] = [
     text: "1) Buscá el producto que cargaste (escribí su nombre o escaneá el código) y tocalo para sumarlo al carrito. 2) Tocá «Cobrar», o apretá Enter dos veces. 3) Elegí «Efectivo» (tecla 1); para esta primera venta es la única opción. 4) Escribí con cuánto paga el cliente para ver el vuelto (si paga justo, dejalo vacío) y confirmá con el botón verde o Enter. Después podés cobrar con tarjeta, transferencia, QR, fiado o mixto; los atajos del teclado los ves en el menú (?). Cuando se cobre, vas a poder imprimir el ticket (tecla P); tocá «Nueva venta» (o Enter) para seguir.",
     advance: { type: "cycle", selector: '[data-tour="sale-done"]' },
     ifMissing: "show",
-    missingText: "Para vender necesitás la caja abierta. Abrila desde «Caja» y volvé a tocar «Vender».",
-    goTo: "/caja",
+    missingText: "Para vender necesitás la caja abierta. Abrila desde el bloque de arriba a la izquierda y volvé a tocar «Vender».",
   },
   // --- 4. Lo que sigue
   {
@@ -199,7 +190,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "finish",
     path: "/reportes",
     title: "Tus reportes y listo",
-    text: "Acá vas a poder ver cuánto vendiste, con qué te pagan, qué productos se venden más, quién te debe y cómo está tu stock, por día, semana o mes (la ganancia estimada es del Plan Pro). Ya sabés lo principal: productos, caja, ventas, compras y clientes. Al terminar el día, cerrá la caja desde «Caja»: contás el efectivo y Pesito te dice si sobra o falta. Podés repetir esta guía cuando quieras desde el botón de ayuda (?).",
+    text: "Acá vas a poder ver cuánto vendiste, con qué te pagan, qué productos se venden más, quién te debe y cómo está tu stock, por día, semana o mes (la ganancia estimada es del Plan Pro). Ya sabés lo principal: productos, caja, ventas, compras y clientes. Al terminar el día, cerrá la caja desde el bloque verde de arriba a la izquierda: contás el efectivo y Pesito te dice si sobra o falta. Podés repetir esta guía cuando quieras desde el botón de ayuda (?).",
     advance: { type: "next", label: "Terminar" },
   },
 ];

@@ -61,7 +61,8 @@ const FIRST_SALE: Step[] = [
     id: "cash",
     title: "Abrí la caja",
     text: "Decí con cuánto efectivo arrancás. Así, al cerrar, ves si el dinero cierra.",
-    href: "/caja",
+    // La caja se abre desde el bloque de arriba a la izquierda o desde el POS (Caja ya no tiene el botón).
+    href: "/pos",
     cta: "Abrir la caja",
     icon: Wallet,
     done: (p) => p.cashOpened,

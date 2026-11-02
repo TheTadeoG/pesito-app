@@ -107,6 +107,7 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
         <button
           type="button"
           onClick={() => setOpenDialog(true)}
+          data-tour="open-caja"
           className="block w-full rounded-xl border border-border bg-background/60 p-3.5 text-left transition-colors hover:border-primary/50 hover:bg-primary/10"
         >
           <div className="flex items-center justify-between">

@@ -151,7 +151,7 @@ export function OpenCajaDialog() {
           <p className="text-sm text-muted-foreground">
             Abrí tu caja con el efectivo con el que empezás el día para poder vender.
           </p>
-          <Button className="mt-2" data-tour="open-caja" onClick={() => setOpen(true)}>
+          <Button className="mt-2" onClick={() => setOpen(true)}>
             <DollarSign className="h-4 w-4" />
             Abrir caja (Enter)
           </Button>
