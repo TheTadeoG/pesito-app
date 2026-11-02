@@ -1,7 +1,7 @@
 "use client";
 
 import { certificateFromFile } from "@/lib/arca/cert-file";
-import { SceneDownload, SceneDrop, ScenePuntoVenta, SceneRelation, SceneSearch, SceneUpload } from "@/app/(dashboard)/configuracion/facturacion/arca-scenes";
+import { SceneDownload, SceneDrop, ScenePuntoVenta, SceneRelation, SceneSearch, SceneTree, SceneUpload } from "@/app/(dashboard)/configuracion/facturacion/arca-scenes";
 import { AUTO_INVOICE_METHODS } from "@/lib/arca/auto-invoice";
 import { VoucherDialog } from "@/components/dashboard/voucher-view";
 import { useState, useTransition } from "react";
@@ -173,11 +173,11 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
   }
 
   // Asistente de ARCA: un paso por pantalla. Arranca donde quedó la persona.
-  const stepsFor = (e: Env) => (e === "production" ? ["pv", "solicitud", "descargar", "subir", "bajar", "cert", "autorizar"] : ["solicitud", "copiar", "wsass", "cert", "autorizar"]);
+  const stepsFor = (e: Env) => (e === "production" ? ["pv", "solicitud", "descargar", "subir", "bajar", "cert", "servicio", "representante"] : ["solicitud", "copiar", "wsass", "cert", "autorizar"]);
   const startStep = (e: Env) => {
     const c = status.credentials[e];
     const list = stepsFor(e);
-    if (c?.has_certificate) return "autorizar";
+    if (c?.has_certificate) return e === "production" ? "servicio" : "autorizar";
     if (c?.has_key && c.csr_pem) return list[list.indexOf("solicitud") + 1];
     return list[0];
   };
@@ -437,19 +437,31 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
             </WizardStep>
           )}
 
-          {wizard === "autorizar" && (
-            <WizardStep title="Autorizá tu alias" scene={<SceneRelation />}>
-              {env === "test" ? (
-                <p>
-                  En WSASS: <b>Crear autorización a servicio</b> → servicio <b>wsfe</b> → alias <AliasInline alias={alias} />.
-                </p>
-              ) : (
-                <p>
-                  <b>Administrador de Relaciones</b> → <b>Nueva relación</b> → <b>Facturación Electrónica</b>. Representante: <AliasInline alias={alias} />.
-                </p>
-              )}
+          {wizard === "servicio" && (
+            <WizardStep title="Elegí el servicio de facturación" scene={<SceneTree title="Nueva relación" items={["Buscar", "ARCA", "WebServices", "Facturación Electrónica"]} />}>
+              <p>
+                <b>Administrador de Relaciones</b> → <b>Nueva relación</b> → <b>Buscar</b> → <b>ARCA</b> → <b>WebServices</b> → <b>Facturación Electrónica</b>.
+              </p>
+            </WizardStep>
+          )}
+
+          {wizard === "representante" && (
+            <WizardStep title="Elegí tu alias como representante" scene={<SceneRelation />}>
+              <p>
+                <b>Representante</b> → <b>Buscar</b> → <b>Computador Fiscal</b> → <AliasInline alias={alias} /> → <b>Confirmar</b>.
+              </p>
               <AliasNote alias={alias} />
               <p className="text-xs">Puede tardar unos minutos. Después seguí con el paso 3.</p>
+            </WizardStep>
+          )}
+
+          {wizard === "autorizar" && (
+            <WizardStep title="Autorizá tu alias" scene={<SceneTree title="WSASS" items={["Crear autorización a servicio", "wsfe", "pesito"]} />}>
+              <p>
+                En WSASS: <b>Crear autorización a servicio</b> → servicio <b>wsfe</b> → alias <AliasInline alias={alias} />.
+              </p>
+              <AliasNote alias={alias} />
+              <p className="text-xs">Después seguí con el paso 3.</p>
             </WizardStep>
           )}
 

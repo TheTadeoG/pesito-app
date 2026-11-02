@@ -113,18 +113,35 @@ export function SceneDownload() {
   );
 }
 
-/** Nueva relación: el servicio y el alias como representante. */
+/** Camino de menús: cada paso se ilumina en orden (Buscar → ARCA → WebServices → Facturación Electrónica). */
+export function SceneTree({ items, title }: { items: string[]; title: string }) {
+  const rowH = 22;
+  return (
+    <Frame label={items.join(", ")}>
+      <text x="26" y="50" fontSize="8" fontWeight="600" fill={C.fg}>{title}</text>
+      {items.map((label, i) => (
+        <g key={label} className="arca-appear" style={{ animationDelay: `${i * 0.35}s` }}>
+          <rect x={26 + i * 12} y={58 + i * rowH} width={268 - i * 12} height={18} rx="5" fill={i === items.length - 1 ? C.accent : C.muted} stroke={i === items.length - 1 ? C.primary : "none"} />
+          <text x={34 + i * 12} y={70 + i * rowH} fontSize="8" fontWeight={i === items.length - 1 ? 700 : 500} fill={C.fg}>{label}</text>
+        </g>
+      ))}
+      <Pulse x={24 + (items.length - 1) * 12} y={56 + (items.length - 1) * rowH} w={272 - (items.length - 1) * 12} h={22} />
+    </Frame>
+  );
+}
+
+/** Representante: Buscar → Computador Fiscal → el alias → Confirmar. */
 export function SceneRelation() {
   return (
-    <Frame label="Nueva relación con Facturación Electrónica y el alias pesito">
-      <text x="26" y="50" fontSize="8" fontWeight="600" fill={C.fg}>Nueva relación</text>
-      <text x="26" y="68" fontSize="7" fill={C.sub}>Servicio</text>
-      <rect x="26" y="72" width="268" height="16" rx="5" fill={C.accent} stroke={C.border} />
-      <text x="34" y="83" fontSize="8" fill={C.fg}>Web Services › Facturación Electrónica</text>
-      <text x="26" y="102" fontSize="7" fill={C.sub}>Representante</text>
-      <rect x="26" y="106" width="268" height="16" rx="5" fill={C.accent} stroke={C.primary} />
-      <text x="34" y="117" fontSize="8" fontWeight="600" fill={C.fg}>pesito</text>
-      <Pulse x={24} y={104} w={272} h={20} />
+    <Frame label="Elegir como representante el computador fiscal pesito y confirmar">
+      <text x="26" y="50" fontSize="8" fontWeight="600" fill={C.fg}>Representante</text>
+      <rect x="26" y="58" width="60" height="16" rx="5" fill={C.card} stroke={C.border} />
+      <text x="34" y="69" fontSize="8" fill={C.fg}>Buscar</text>
+      <rect x="26" y="82" width="268" height="18" rx="5" fill={C.muted} />
+      <text x="34" y="94" fontSize="8" fill={C.fg}>Computador Fiscal</text>
+      <rect x="38" y="104" width="256" height="18" rx="5" fill={C.accent} stroke={C.primary} className="arca-appear" />
+      <text x="46" y="116" fontSize="8" fontWeight="700" fill={C.fg} className="arca-appear">pesito</text>
+      <Pulse x={36} y={102} w={260} h={22} />
       <rect x="226" y="134" width="68" height="16" rx="6" fill={C.primary} />
       <text x="240" y="145" fontSize="8" fill="#fff">Confirmar</text>
     </Frame>
