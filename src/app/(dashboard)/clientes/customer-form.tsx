@@ -9,6 +9,7 @@ import { saveCustomer, type CustomerFormInput } from "@/app/(dashboard)/clientes
 import { CONSUMER_NEEDS_DNI_MESSAGE, allowedInvoiceTypes, hasIdentification, invoiceTypes, type InvoiceType, type IssuerCondition } from "@/lib/invoice-labels";
 import { PhoneCountrySelect } from "@/components/ui/phone-country-select";
 import {
+  sanitizePhone,
   splitPhoneCountry,
   type PhoneCountry,
 } from "@/lib/phone-countries";
@@ -179,7 +180,8 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
             <Input
               id="c-phone"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(e) => setPhoneNumber(sanitizePhone(e.target.value))}
+              inputMode="tel"
               placeholder="Ej: 11 2345-6789"
               className="min-w-0 flex-1"
             />

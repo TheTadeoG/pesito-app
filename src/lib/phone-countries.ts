@@ -39,3 +39,14 @@ export function splitPhoneCountry(phone: string): { country: PhoneCountry; numbe
   // campo de número, con Argentina como país por defecto.
   return { country: defaultPhoneCountry, number: trimmed };
 }
+
+/** Un teléfono se escribe sólo con números (y espacios, guiones, paréntesis o +): lo demás se descarta al tipear. */
+export function sanitizePhone(value: string): string {
+  return value.replace(/[^\d\s\-()+]/g, "");
+}
+
+/** Cantidad de dígitos de un teléfono. */
+export const phoneDigits = (value: string | null | undefined): number => (value ?? "").replace(/\D/g, "").length;
+
+/** Mínimo de dígitos para considerar válido un teléfono de contacto (con el código de país). */
+export const MIN_PHONE_DIGITS = 8;

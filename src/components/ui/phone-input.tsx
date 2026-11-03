@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { PhoneCountrySelect } from "@/components/ui/phone-country-select";
-import { defaultPhoneCountry, type PhoneCountry } from "@/lib/phone-countries";
+import { defaultPhoneCountry, sanitizePhone, type PhoneCountry } from "@/lib/phone-countries";
 
 export function PhoneInput({
   id,
@@ -27,8 +27,10 @@ export function PhoneInput({
       <Input
         id={id}
         type="tel"
+        inputMode="tel"
+        pattern="[0-9 ()+\-]*"
         value={number}
-        onChange={(e) => setNumber(e.target.value)}
+        onChange={(e) => setNumber(sanitizePhone(e.target.value))}
         placeholder="11 2345 6789"
         autoComplete="tel-national"
         className="flex-1"

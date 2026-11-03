@@ -1,5 +1,6 @@
 "use server";
 
+import { MIN_PHONE_DIGITS, phoneDigits, sanitizePhone } from "@/lib/phone-countries";
 import { normalizePlanParam } from "@/lib/plan-ids";
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -53,9 +54,9 @@ export async function createKiosco(
   const slug = `${baseSlug}-${user.id.slice(0, 6)}`;
   // El teléfono viene del registro con email; con Google se pide en este paso.
   const metaPhone = typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone.trim() : "";
-  const phone = (phoneInput ?? "").trim().slice(0, 40) || metaPhone;
-  if (phone.replace(/\D/g, "").length < 8) {
-    return { error: "Ingresá un teléfono de contacto." };
+  const phone = sanitizePhone(phoneInput ?? "").trim().slice(0, 40) || sanitizePhone(metaPhone).trim();
+  if (phoneDigits(phone) < MIN_PHONE_DIGITS) {
+    return { error: "Ingresá un teléfono de contacto, sólo con números." };
   }
 
   const { error } = await supabase.rpc("create_organization", {

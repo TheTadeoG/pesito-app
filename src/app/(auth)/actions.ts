@@ -12,6 +12,7 @@ import { LOGIN_FAIL_WINDOW, captchaNextTime, loginGate } from "@/lib/login-gate"
 import { safeNextPath } from "@/lib/safe-redirect";
 import { recordLogin } from "@/lib/login-events";
 import { MFA_COOKIE } from "@/lib/supabase/cookie-options";
+import { MIN_PHONE_DIGITS, phoneDigits, sanitizePhone } from "@/lib/phone-countries";
 import { isEmailIdentifier, isInternalEmail, usernameToEmail } from "@/lib/internal-auth";
 
 export interface AuthActionState {
@@ -113,7 +114,7 @@ export async function signup(
   const businessName = String(formData.get("businessName") ?? "").trim();
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
+  const phone = sanitizePhone(String(formData.get("phone") ?? "")).trim().slice(0, 40);
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
@@ -129,6 +130,10 @@ export async function signup(
 
   if (businessName.length > BUSINESS_NAME_MAX) {
     return { error: BUSINESS_NAME_TOO_LONG };
+  }
+
+  if (phoneDigits(phone) < MIN_PHONE_DIGITS) {
+    return { error: "Ingresá un teléfono válido, sólo con números." };
   }
 
   if (password.length < 8) {
