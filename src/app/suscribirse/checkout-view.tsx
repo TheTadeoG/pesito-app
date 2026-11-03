@@ -61,6 +61,9 @@ export interface CheckoutViewProps {
   totals: Record<number, { prices: Record<BillingCycle, number>; promoPrice: number | null }>;
   /** Paquete de facturas elegido al llegar. */
   initialPack: number;
+  /** Con un débito activo del mismo plan: qué pasa al elegir cada paquete (se cobra aparte sólo lo que resta; sin nueva suscripción). */
+  changes: Record<number, { kind: "upgrade" | "downgrade" | "same" | "restore"; today: number; next: number }> | null;
+  changeDate: string;
   /** Próximo cobro (débito) o hasta cuándo queda pago (pago único). */
   dates: Record<BillingCycle, Record<PaymentMethod, string>>;
   current: { planName: string; autoDebit: boolean; samePlan: boolean } | null;
@@ -68,9 +71,10 @@ export interface CheckoutViewProps {
 }
 
 export function CheckoutView(props: CheckoutViewProps) {
-  const { plan, fromSignup, features, totals, dates, current, paymentsEnabled } = props;
+  const { plan, fromSignup, features, totals, changes, changeDate, dates, current, paymentsEnabled } = props;
   const [pack, setPack] = useState(props.initialPack);
   const { prices, promoPrice } = totals[pack] ?? totals[0];
+  const change = changes?.[pack] ?? null;
   const [cycle, setCycle] = useState<BillingCycle>(props.initialCycle);
   const [method, setMethod] = useState<PaymentMethod>(props.initialMethod);
   const { status, error, checkoutUrl, activePlan, periodEnd, start, check } = useMercadoPagoCheckout();
@@ -191,6 +195,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                 </p>
               </div>
 
+              {!changes && (
               <div className="grid grid-cols-2 rounded-xl bg-muted p-1 text-sm" role="radiogroup" aria-label="Período">
                 {(["mensual", "anual"] as const).map((c) => (
                   <button
@@ -210,6 +215,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                   </button>
                 ))}
               </div>
+              )}
 
               {(
                 <div className="space-y-2">
@@ -238,6 +244,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                 </div>
               )}
 
+              {!changes && (
               <div className="space-y-3" role="radiogroup" aria-label="Forma de pago">
                 <MethodOption
                   selected={method === "debito"}
@@ -257,8 +264,9 @@ export function CheckoutView(props: CheckoutViewProps) {
                   text={`${cycle === "anual" ? "Un año" : "Un mes"} con tarjeta, dinero en Mercado Pago o efectivo. No se renueva solo: te avisamos en Pesito antes de que venza.`}
                 />
               </div>
+              )}
 
-              {current && (
+              {current && !change && (
                 <p className="rounded-xl border border-border px-4 py-3 text-sm text-muted-foreground">
                   {current.samePlan
                     ? current.autoDebit
@@ -268,6 +276,27 @@ export function CheckoutView(props: CheckoutViewProps) {
                 </p>
               )}
 
+              {change ? (
+                <dl className="space-y-2 rounded-xl bg-muted/60 px-4 py-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-muted-foreground">Hoy pagás</dt>
+                    <dd className="text-lg font-bold text-foreground">{formatCurrency(change.today)}</dd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-muted-foreground">Próximo cobro</dt>
+                    <dd className="text-foreground">{`${changeDate} · ${formatCurrency(change.next)}`}</dd>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {change.kind === "upgrade"
+                      ? "Pagás sólo la parte del paquete que resta de este período, aparte. Desde el próximo cobro, tu débito incluye el plan y el paquete. El plan no se vuelve a cobrar."
+                      : change.kind === "downgrade"
+                        ? "No se cobra nada hoy. Seguís con tu paquete actual hasta el próximo cobro y desde ahí se debita menos."
+                        : change.kind === "restore"
+                          ? "Cancelás el cambio programado: seguís con tu paquete y el débito no cambia."
+                          : "Es el paquete que ya tenés."}
+                  </p>
+                </dl>
+              ) : (
               <dl className="space-y-2 rounded-xl bg-muted/60 px-4 py-3 text-sm">
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">Hoy pagás</dt>
@@ -289,6 +318,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                   </p>
                 )}
               </dl>
+              )}
 
               {status === "waiting" || status === "pending" ? (
                 <Waiting pending={status === "pending"} checkoutUrl={checkoutUrl} onCheck={check} />
@@ -301,9 +331,9 @@ export function CheckoutView(props: CheckoutViewProps) {
                       value: amount,
                       items: [{ item_id: plan, item_name: planName, item_variant: cycle, price: amount, quantity: 1 }],
                     });
-                    start(plan, cycle, method, pack);
+                    start(plan, cycle, change ? "debito" : method, pack);
                   }}
-                  disabled={status === "opening"}
+                  disabled={status === "opening" || change?.kind === "same"}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-60"
                 >
                   {status === "opening" ? (
@@ -314,7 +344,15 @@ export function CheckoutView(props: CheckoutViewProps) {
                   ) : (
                     <>
                       <Lock className="h-4 w-4" />
-                      {method === "debito"
+                      {change
+                        ? change.kind === "upgrade"
+                          ? `Pagar el paquete: ${formatCurrency(change.today)}`
+                          : change.kind === "downgrade"
+                            ? "Cambiar el paquete"
+                            : change.kind === "restore"
+                              ? "Mantener mi paquete"
+                              : "Es tu paquete actual"
+                        : method === "debito"
                         ? promoActive
                           ? `Suscribirme: ${formatCurrency(amount)} el primer mes`
                           : `Suscribirme por ${formatCurrency(amount)}${cycle === "anual" ? "/año" : "/mes"}`

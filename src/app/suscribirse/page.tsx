@@ -5,7 +5,7 @@ import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
-import { chargeAmount, firstChargeAmount, isPromoEligible, type PaymentMethod } from "@/lib/billing";
+import { chargeAmount, firstChargeAmount, isPromoEligible, packChange, type PaymentMethod } from "@/lib/billing";
 import { normalizePlanParam } from "@/lib/plan-ids";
 import { INVOICE_PACKS, isValidPack } from "@/lib/invoice-packs";
 import { getPlanOwnFeatures } from "@/lib/plan-features";
@@ -49,7 +49,7 @@ export default async function SuscribirsePage({
 
   const plan = PAID.find((p) => p === normalizePlanParam(planParam));
   if (!plan) redirect("/planes");
-  const cycle: BillingCycle = ciclo === "anual" ? "anual" : "mensual";
+  let cycle: BillingCycle = ciclo === "anual" ? "anual" : "mensual";
   const method: PaymentMethod = metodo === "unico" ? "unico" : "debito";
   const wantedPack = Number(paquete);
 
@@ -59,6 +59,17 @@ export default async function SuscribirsePage({
     isPromoEligible(organization.id),
   ]);
   const billing = subscription.billing;
+  // Mismo plan con débito automático activo: cambiar el paquete no crea otra suscripción (se usa el ciclo que ya paga).
+  const sameBilling = subscription.plan === plan && billing?.status === "active" && billing.cycle ? billing.cycle : null;
+  if (sameBilling) cycle = sameBilling;
+  const changes = sameBilling
+    ? Object.fromEntries(
+        [0, ...INVOICE_PACKS.map((p) => p.size)].flatMap((size) => {
+          const c = packChange(subscription, plan, cycle, size);
+          return c ? [[size, { kind: c.kind, today: c.today, next: c.next }]] : [];
+        })
+      )
+    : null;
 
   // Fechas que se muestran en el resumen (calculadas acá para que el
   // servidor y el navegador muestren lo mismo). El pago único del mismo plan
@@ -100,6 +111,8 @@ export default async function SuscribirsePage({
           },
         ])
       )}
+      changes={changes && Object.keys(changes).length > 0 ? changes : null}
+      changeDate={billing?.currentPeriodEnd ? longDate(new Date(billing.currentPeriodEnd)) : ""}
       initialPack={Number.isInteger(wantedPack) && paquete && isValidPack(wantedPack) ? wantedPack : subscription.plan === plan ? subscription.invoicePack : 0}
       dates={dates}
       current={current}

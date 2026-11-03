@@ -338,6 +338,7 @@ Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados
 - Se elige al contratar el plan (`/suscribirse`, `?paquete=`): va dentro de la misma suscripción de Mercado Pago (monto = plan + paquete; el descuento anual aplica a ambos; la promo del primer mes sólo al plan). El paquete viaja en la `external_reference` (`|k500`) y se guarda en `organization_subscriptions.invoice_pack`; se renueva y se cancela junto con el plan. Para cambiarlo, se vuelve a contratar el mismo plan con otro paquete.
 - Cuentan las facturas y las notas de crédito autorizadas del mes calendario (huso Argentina), sólo en modo real. Sin paquete o al llegar al cupo no se emiten más facturas (`issueSaleInvoice` devuelve `outOfQuota`): la venta sigue normal como comprobante X (no fiscal) y se puede facturar después de sumar un paquete. Las notas de crédito nunca se frenan.
 - Configuración → Facturación muestra el uso del mes con aviso desde el 80%.
+- Cambiar el paquete con un débito activo del mismo plan y ciclo (migración 0089, `next_invoice_pack`): no se crea otra suscripción (cobraría el plan dos veces). Al subirlo se cobra aparte (Checkout Pro, referencia `|a<monto>_<azar>`) sólo la parte proporcional del período y el débito se actualiza a plan + paquete para la renovación; al bajarlo o quitarlo no se cobra nada, el débito baja y el paquete nuevo rige desde la renovación. Lógica en `packChange` (`src/lib/billing.ts`).
 - Planes muestra los paquetes (contratar o cambiar). Falta: avisar por la campana al 80%/100%.
 
 ## Funciones pendientes (tasklist)

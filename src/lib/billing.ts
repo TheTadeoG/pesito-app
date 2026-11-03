@@ -17,7 +17,7 @@ import {
 import { mercadoPagoConfigured, MercadoPagoError } from "@/lib/mercadopago";
 import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
 import { isValidPack, packPrice } from "@/lib/invoice-packs";
-import { lapsedToFree, planOrder, PLAN_GRACE_DAYS, type BillingCycle, type Plan } from "@/lib/subscription";
+import { lapsedToFree, planOrder, PLAN_GRACE_DAYS, type BillingCycle, type Plan, type SubscriptionInfo } from "@/lib/subscription";
 import type { Database, Json } from "@/lib/database.types";
 
 // Estado del cobro de los planes a partir de lo que dice Mercado Pago
@@ -71,17 +71,20 @@ export function buildExternalReference(orgId: string, plan: Plan, cycle: Billing
  */
 export function parseExternalReference(
   ref: string | null | undefined
-): { orgId: string; plan: Plan; cycle: BillingCycle; oneTime: boolean; pack: number } | null {
+): { orgId: string; plan: Plan; cycle: BillingCycle; oneTime: boolean; pack: number; addonAmount: number | null } | null {
   if (!ref) return null;
   const [orgId, rawPlan, cycle, ...tags] = String(ref).split("|");
   const packTag = tags.find((t) => /^k\d+$/.test(t));
   const pack = packTag ? Number(packTag.slice(1)) : 0;
   if (!isValidPack(pack)) return null;
+  // Pago aparte del paquete sobre un débito ya activo: "a<monto>_<azar>".
+  const addonTag = tags.find((t) => /^a\d+_/.test(t));
+  const addonAmount = addonTag ? Number(addonTag.slice(1).split("_")[0]) : null;
   const plan = normalizePlanParam(rawPlan); // referencias de antes del cambio de nombres (esencial/ia)
   if (!/^[0-9a-f-]{36}$/i.test(orgId ?? "")) return null;
   if (!PAID_PLANS.includes(plan as Plan)) return null;
   if (cycle !== "mensual" && cycle !== "anual") return null;
-  return { orgId, plan: plan as Plan, cycle, oneTime: tags.some((t) => t.startsWith("u")), pack };
+  return { orgId, plan: plan as Plan, cycle, oneTime: tags.some((t) => t.startsWith("u")), pack, addonAmount };
 }
 
 /**
@@ -185,7 +188,8 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
         grace_until: current?.mp_preapproval_id === pre.id ? current.grace_until ?? null : null,
         payer_email: pre.payer_email ?? current?.payer_email ?? null,
         pro_trial_ends_at: null,
-        invoice_pack: ref.pack,
+        // El paquete de la referencia es el de cuando se creó la suscripción: si después se cambió, no se pisa.
+        ...(current?.mp_preapproval_id === pre.id ? {} : { invoice_pack: ref.pack, next_invoice_pack: null }),
         ...downgradeGraceFields(current, ref.plan),
       },
       { onConflict: "org_id" }
@@ -277,6 +281,10 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
         payment_status: current?.payment_status === "cancelled" ? "cancelled" : "active",
         grace_until: null,
         current_period_end: addMonths(base, ref.cycle === "anual" ? 12 : 1).toISOString(),
+        // Un paquete que se bajó o quitó rige desde la renovación (no desde un aviso tardío de un cobro anterior).
+        ...(current?.next_invoice_pack != null && ap.debit_date && current.updated_at && new Date(ap.debit_date) > new Date(current.updated_at)
+          ? { invoice_pack: current.next_invoice_pack, next_invoice_pack: null }
+          : {}),
       })
       .eq("org_id", ref.orgId);
   } else if (paymentStatus === "rejected" || paymentStatus === "cancelled" || paymentStatus === "canceled") {
@@ -333,9 +341,10 @@ async function bumpPromoAmount(orgId: string, pre: Preapproval, plan: Plan, cycl
  */
 export async function applyOneTimePayment(pay: Payment): Promise<string | null> {
   const ref = parseExternalReference(pay.external_reference);
-  if (!ref?.oneTime) return null;
+  if (!ref || (!ref.oneTime && ref.addonAmount === null)) return null;
   if (pay.status !== "approved") return ref.orgId;
   const admin = createAdminClient();
+  if (ref.addonAmount !== null) return applyPackAddon(pay, { ...ref, addonAmount: ref.addonAmount });
 
   const { data: already } = await admin
     .from("billing_events")
@@ -400,6 +409,82 @@ export async function applyOneTimePayment(pay: Payment): Promise<string | null> 
   return ref.orgId;
 }
 
+export interface PackChange {
+  /** restore: había un cambio a la baja programado y se vuelve a elegir el paquete actual (no se cobra nada). */
+  kind: "upgrade" | "downgrade" | "same" | "restore";
+  /** Lo que se paga hoy: sólo la parte proporcional del paquete (0 si se baja o se quita). */
+  today: number;
+  /** Monto de los próximos cobros del débito (plan + paquete). */
+  next: number;
+  /** Próximo cobro. */
+  nextDate: string;
+}
+
+/**
+ * Cambiar el paquete de facturas con un débito automático activo del mismo plan y ciclo: no se crea otra suscripción
+ * (eso cobraría el plan dos veces). Si se sube, se cobra aparte hoy sólo lo que falta del período y el débito pasa a
+ * cobrar plan + paquete desde la renovación; si se baja o se quita, no se cobra nada y rige desde la renovación.
+ * null = no corresponde (otro plan, otro ciclo, sin débito activo): se contrata como siempre.
+ */
+export function packChange(sub: SubscriptionInfo, plan: Plan, cycle: BillingCycle, pack: number, now = new Date()): PackChange | null {
+  const b = sub.billing;
+  if (sub.plan !== plan || !b || b.status !== "active" || !b.mpPreapprovalId || b.cycle !== cycle || !b.currentPeriodEnd) return null;
+  const end = new Date(b.currentPeriodEnd);
+  if (end <= now) return null;
+  const current = sub.invoicePack;
+  const next = chargeAmount(plan, cycle, pack);
+  const nextDate = end.toISOString();
+  if (pack === current && sub.nextInvoicePack === null) return { kind: "same", today: 0, next, nextDate };
+  if (pack === current) return { kind: "restore", today: 0, next, nextDate };
+  if (pack < current) return { kind: "downgrade", today: 0, next, nextDate };
+  const start = addMonths(end, cycle === "anual" ? -12 : -1);
+  const periodMs = Math.max(1, end.getTime() - start.getTime());
+  const leftMs = Math.min(periodMs, Math.max(0, end.getTime() - now.getTime()));
+  const diff = chargeAmount(plan, cycle, pack) - chargeAmount(plan, cycle, current);
+  return { kind: "upgrade", today: Math.max(1, Math.round((diff * leftMs) / periodMs)), next, nextDate };
+}
+
+/** Vuelve a dejar el paquete actual (se cancela una baja programada): el débito vuelve a cobrar plan + paquete. */
+export async function cancelScheduledPack(orgId: string, preapprovalId: string, plan: Plan, cycle: BillingCycle, pack: number) {
+  await updatePreapprovalAmount(preapprovalId, chargeAmount(plan, cycle, pack));
+  const { error } = await createAdminClient().from("organization_subscriptions").update({ next_invoice_pack: null }).eq("org_id", orgId);
+  if (error) throw new Error(`No pudimos guardar el cambio: ${error.message}`);
+}
+
+/** Baja o quita el paquete: el débito cobra menos desde la renovación y el paquete actual rige hasta entonces. */
+export async function scheduleLowerPack(orgId: string, preapprovalId: string, plan: Plan, cycle: BillingCycle, pack: number) {
+  await updatePreapprovalAmount(preapprovalId, chargeAmount(plan, cycle, pack));
+  const { error } = await createAdminClient().from("organization_subscriptions").update({ next_invoice_pack: pack }).eq("org_id", orgId);
+  if (error) throw new Error(`No pudimos guardar el cambio: ${error.message}`);
+  await logEvent(orgId, "pack_scheduled", preapprovalId, "scheduled", chargeAmount(plan, cycle, pack), { pack });
+}
+
+/**
+ * Pago aparte de un paquete sobre un débito activo: el paquete rige desde ya y el débito pasa a cobrar plan + paquete
+ * desde la renovación. Se aplica una sola vez por pago.
+ */
+async function applyPackAddon(pay: Payment, ref: { orgId: string; plan: Plan; cycle: BillingCycle; pack: number; addonAmount: number }): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data: already } = await admin.from("billing_events").select("id").eq("topic", "payment_applied").eq("mp_id", String(pay.id)).limit(1);
+  if (already?.length) return ref.orgId;
+  if (Number(pay.transaction_amount) + 0.01 < ref.addonAmount) {
+    console.error("Pago de paquete con monto menor al esperado", pay.id, pay.transaction_amount);
+    await logEvent(ref.orgId, "payment", String(pay.id), "monto_invalido", pay.transaction_amount, pay);
+    return ref.orgId;
+  }
+  const { data: current } = await admin.from("organization_subscriptions").select("*").eq("org_id", ref.orgId).maybeSingle();
+  if (!current?.mp_preapproval_id || current.plan !== ref.plan) {
+    // Ya no tiene ese débito: se anota para revisarlo a mano (el pago existe).
+    await logEvent(ref.orgId, "payment", String(pay.id), "sin_debito", pay.transaction_amount, pay);
+    return ref.orgId;
+  }
+  await updatePreapprovalAmount(current.mp_preapproval_id, chargeAmount(ref.plan, ref.cycle, ref.pack));
+  const { error } = await admin.from("organization_subscriptions").update({ invoice_pack: ref.pack, next_invoice_pack: null }).eq("org_id", ref.orgId);
+  if (error) throw new Error(`No pudimos guardar el paquete: ${error.message}`);
+  await logEvent(ref.orgId, "payment_applied", String(pay.id), pay.status, pay.transaction_amount, pay);
+  return ref.orgId;
+}
+
 /** Trae el recurso de Mercado Pago y lo aplica. */
 export async function syncFromMercadoPago(topic: string, id: string): Promise<string | null> {
   if (topic === "subscription_preapproval" || topic === "preapproval") {
@@ -429,11 +514,14 @@ interface CheckoutDetail {
   pack?: number;
   /** external_reference del pago único. */
   ref?: string;
+  /** Pago aparte de un paquete sobre un débito activo, y su monto. */
+  addon?: boolean;
+  addonAmount?: number;
 }
 
 /** Anota un checkout abierto para buscar después su pago. */
 export async function recordCheckout(orgId: string, checkoutId: string, detail: CheckoutDetail) {
-  await logEvent(orgId, "checkout", checkoutId, "pending", firstChargeAmount(detail.plan, detail.cycle, Boolean(detail.promo), detail.pack ?? 0), detail);
+  await logEvent(orgId, "checkout", checkoutId, "pending", detail.addon ? detail.addonAmount ?? null : firstChargeAmount(detail.plan, detail.cycle, Boolean(detail.promo), detail.pack ?? 0), detail);
 }
 
 /** ¿Se pagó el checkout? Si se pagó, lo aplica. */

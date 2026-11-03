@@ -21,10 +21,13 @@ import {
 import {
   applyPreapproval,
   buildExternalReference,
+  cancelScheduledPack,
   checkoutState,
   firstChargeAmount,
   isPromoEligible,
+  packChange,
   recordCheckout,
+  scheduleLowerPack,
   type CheckoutState,
   type PaymentMethod,
 } from "@/lib/billing";
@@ -61,6 +64,43 @@ export async function startSubscription(
   if (!mercadoPagoConfigured()) return { error: "El cobro con Mercado Pago todavía no está configurado." };
 
   const backUrl = `${siteUrl}/suscribirse/listo`;
+
+  // Ya tiene este plan con débito automático y sólo cambia el paquete de facturas: no se crea otra suscripción (cobraría
+  // el plan dos veces). Si lo sube, se cobra aparte sólo lo que falta del período; el débito suma el paquete desde la renovación.
+  if (method === "debito") {
+    const current = await getSubscription(await createClient(), organization.id);
+    const change = packChange(current, plan, cycle, pack);
+    if (change) {
+      const preapprovalId = current.billing!.mpPreapprovalId!;
+      try {
+        if (change.kind === "same") return { error: "Ya tenés ese paquete." };
+        if (change.kind === "downgrade") {
+          await scheduleLowerPack(organization.id, preapprovalId, plan, cycle, pack);
+          revalidatePath("/planes");
+          return { url: "/planes", checkoutId: "sin-cobro" };
+        }
+        if (change.kind === "restore") {
+          await cancelScheduledPack(organization.id, preapprovalId, plan, cycle, pack);
+          revalidatePath("/planes");
+          return { url: "/planes", checkoutId: "sin-cobro" };
+        }
+        const ref = `${buildExternalReference(organization.id, plan, cycle, pack)}|a${change.today}_${crypto.randomBytes(6).toString("hex")}`;
+        const pref = await createPreference({
+          title: `Pesito paquete de ${formatCount(pack)} facturas por mes (lo que resta del período)`.slice(0, 120),
+          externalReference: ref,
+          amount: change.today,
+          backUrl,
+        });
+        const url = usingTestCredentials() ? pref.sandbox_init_point ?? pref.init_point : pref.init_point;
+        if (!url) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
+        await recordCheckout(organization.id, pref.id, { plan, cycle, method: "unico", ref, pack, addon: true, addonAmount: change.today });
+        return { url, checkoutId: pref.id };
+      } catch (e) {
+        console.error("startSubscription (paquete)", e instanceof MercadoPagoError ? e.body : e);
+        return { error: mercadoPagoErrorMessage(e) ? `Mercado Pago rechazó el pedido: ${mercadoPagoErrorMessage(e)}` : "No pudimos conectar con Mercado Pago. Probá de nuevo en un rato." };
+      }
+    }
+  }
   // Promo del primer mes (mensual, para quien nunca pagó un plan).
   const promo = cycle === "mensual" && (await isPromoEligible(organization.id));
   // Prueba de cobro real: sólo el negocio de MP_TEST_ORG_ID paga $1 (débito
