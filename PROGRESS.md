@@ -719,3 +719,11 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 
 - Con débito activo y el mismo ciclo, bajar de plan no crea otra suscripción ni cobra hoy: `scheduleDowngrade` baja el monto del débito (plan nuevo + el mismo paquete de facturas) y guarda `next_plan`; al llegar el cobro de la renovación (`applyAuthorizedPayment`, `renewing`) el plan pasa a `next_plan` y queda en `plan_history`. Elegir de nuevo el plan actual cancela la baja. `applyPreapproval` ya no pisa el plan guardado de una misma suscripción, y `bumpPromoAmount` no sube un monto que se bajó a propósito.
 - Sin débito (pago único) o con otro ciclo sigue el flujo de antes (7 días de gracia). Planes muestra el aviso "El … pasás al Plan X" con "Mantener mi plan".
+
+## Pendiente: pantallas de cambio con "antes y después" (se retoma más adelante)
+
+- Diseño elegido: opción **B** (dos tarjetas "Hoy pagás" → "Desde el [fecha]", con flecha), sin alerta amarilla al mejorar. Maqueta: https://claude.ai/artifact/4xmGqoBDrnWtU3yiFGUHj6 (versión 5).
+- Al **mejorar** (subir paquete o plan): en verde, "Mejorás tu plan: …". Falta decidir **B1** (etiqueta verde dentro de la tarjeta nueva) o **B2** (franja verde arriba, recomendada).
+- Al **bajar de plan**: aviso en ámbar "podrías perder funciones", recuadro "Desde el [fecha] ya no tendrías:" con las funciones del plan que se pierden (armadas desde `plan-features.ts` y `planLimits`), los límites de usuarios, cajas y productos, y cierre con "Y muchas más funcionalidades…"; aclarar que los datos no se borran. Monto de hoy $0.
+- Alcance: sólo las pantallas de cambio de `/suscribirse` (`checkout-view.tsx`: cambio de paquete, baja de plan, mantener plan/paquete). La contratación normal, renovación, pago único y cambio de ciclo quedan como están.
+- **Subir de plan** hoy crea una suscripción nueva y cobra el plan completo, sin descontar lo ya pagado. Decidir si se cambia para cobrar sólo la diferencia (como el paquete) y subir el débito desde la renovación.
