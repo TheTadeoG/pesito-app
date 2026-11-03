@@ -676,3 +676,23 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Clientes: el Excel de importación y exportación y el CSV traen domicilio, localidad, código postal, provincia y condición frente al IVA; la ficha sólo ofrece los comprobantes que el negocio emite y que el cliente puede recibir (`allowedInvoiceTypes`).
 - El certificado de ARCA es del CUIT (sirve para cualquier punto de venta): la solicitud ya no pide punto de venta; se elige al final, entre los habilitados que devuelve ARCA o escribiéndolo (`saveArcaSalesPoint`).
 - Falta (Funciones pendientes): Responsable Inscripto (Factura A/B: IVA por producto, guardado por producto), notas de crédito parciales (devoluciones de un producto), reportes fiscales (libro IVA ventas).
+
+## Costo de emitir una factura electrónica (medido el 3/11/2026)
+
+**Qué cobra ARCA:** nada (emitir, consultar el padrón y pedir certificados son gratis). El costo es nuestra infraestructura.
+
+**Cómo se midió.** Postgres 16 local con las migraciones (hasta la 0086; 5 fallaron por stubs de Supabase: storage y MFA, no tocan la factura), 20 negocios (~52.500 ventas, 400 clientes cada uno) y el negocio que factura con 5.000 ventas y 2.500 facturas. Un guion de pgbench repite las consultas que hace `issueSaleInvoice` (sesión con RLS, ajustes, intentos anteriores, credenciales, almacén y bloqueo del SDK, guardado del comprobante con su documento). **No incluye ARCA** (la red no llega ni hay certificado) ni la latencia de red a Supabase.
+
+**Resultados (sólo base de datos):**
+- **~19 consultas por factura:** 6 con sesión (negocio y membresía, suscripción, límite de ritmo, venta, renglones, cliente), 4 de servidor (ajustes, intentos anteriores, ajustes y credenciales) y ~8 del almacén del SDK (ticket, bloqueo, numeración, reserva, resultado) + el guardado. Las del SDK son una estimación de cuántas hace (no se pudo correr el SDK sin ARCA).
+- **6,7 ms de base por factura** con una sola a la vez; con 8 a la vez, 9,3 ms cada una y **~860 facturas por segundo** en total. La base no es el cuello de botella: lo es ARCA.
+- **Espacio:** un comprobante guardado pesa ~1,2 KB de documento (medido con `buildVoucherDocument` de una venta de un renglón; cada renglón suma ~150 bytes) más ~0,6 KB de QR, receptor e ítems y los índices: **~2 a 3 KB por factura**. 100.000 facturas ≈ 200 a 300 MB. La tabla de la prueba (filas más chicas) dio 1,2 KB por fila con índices.
+- **Límite de ritmo:** 600 emisiones por hora por negocio (`arca_issue`); la prueba lo hizo saltar a propósito con el mensaje «demasiados pedidos» y se midió con otro cubo sin tope.
+
+**Lo que NO se midió y se estima:**
+- **ARCA:** 2 llamadas (último número y autorización), ~1 a 4 s en total; es espera, no cobro. El ticket de ARCA (WSAA) se pide una vez cada ~12 horas por negocio y se guarda; esa firma dura unos pocos ms de CPU.
+- **Red a Supabase:** 19 consultas seguidas × 3 a 10 ms de ida y vuelta ≈ 60 a 190 ms por factura (depende de la región de Vercel y de Supabase).
+- **Vercel:** una función de ~2 a 5 s de reloj, casi toda esperando red (poca CPU activa). Orden de magnitud: **menos de una milésima de dólar por factura** en Vercel y Supabase juntos (a confirmar con Usage de ambos cuando haya negocios facturando).
+- **Cargar la pantalla del POS** suma 3 consultas chicas por carga (`getInvoicingConfig`), no por factura.
+
+**Pendiente:** correr el SDK contra el entorno de pruebas de ARCA con un contador en el almacén para saber cuántas operaciones hace en realidad, y mirar el uso real de Supabase/Vercel con varios negocios facturando.
