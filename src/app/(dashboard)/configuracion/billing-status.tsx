@@ -14,11 +14,14 @@ export function BillingStatus({
   billing,
   amount,
   planName,
+  breakdown,
   canManage,
 }: {
   billing: BillingInfo;
   amount: number;
   planName: string;
+  /** Cómo se compone el monto (plan + paquete de facturas), si hay paquete. */
+  breakdown?: string;
   canManage: boolean;
 }) {
   const router = useRouter();
@@ -87,6 +90,7 @@ export function BillingStatus({
         <CreditCard className="h-4 w-4 text-muted-foreground" />
         {`Pago con Mercado Pago · ${formatCurrency(amount)} ${cycleText}`}
       </p>
+      {breakdown && <p className="text-xs text-muted-foreground">{breakdown}</p>}
 
       {billing.status === "active" && (
         <p className="text-muted-foreground">

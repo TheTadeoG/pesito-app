@@ -44,6 +44,7 @@ export default async function PlanesPage({
         monthlySalesCount={monthlySalesCount}
         canManage={isOrgAdmin(membership.role)}
         paymentsEnabled={mercadoPagoConfigured()}
+        usage={usage}
       />
       <InvoicePacksSection subscription={subscription} usage={usage} canManage={isOrgAdmin(membership.role)} />
       <PlanHistorySection planHistory={planHistory} />

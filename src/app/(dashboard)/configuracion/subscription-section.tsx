@@ -4,7 +4,9 @@ import { planTone } from "@/components/dashboard/pro-locked-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { formatCount, packPrice } from "@/lib/invoice-packs";
+import type { InvoiceUsage } from "@/lib/invoice-usage";
 import type { Plan, PlanHistoryEntry, SubscriptionInfo } from "@/lib/subscription";
 import { FREE_PLAN_MONTHLY_SALES_LIMIT, planLabels, planOrder } from "@/lib/subscription";
 import { planDefinitions, getPlanOwnFeatures } from "@/lib/plan-features";
@@ -18,6 +20,7 @@ export function SubscriptionSection({
   monthlySalesCount,
   canManage,
   paymentsEnabled,
+  usage = null,
 }: {
   subscription: SubscriptionInfo;
   /** Dueño o administrador: contrata, cambia o cancela el plan. */
@@ -27,6 +30,8 @@ export function SubscriptionSection({
   // Sólo se calcula (en el server) cuando hace falta mostrarlo: plan
   // gratis y sin prueba Pro activa.
   monthlySalesCount: number | null;
+  /** Facturas usadas en el mes (si tiene facturación). */
+  usage?: InvoiceUsage | null;
 }) {
   const current = planDefinitions[subscription.plan];
   const billing = subscription.billing;
@@ -94,6 +99,16 @@ export function SubscriptionSection({
                     ? "Sin costo"
                     : `${current.priceLabel} ${current.period}`}
                 </p>
+                {subscription.plan !== "gratis" && (
+                  <p className="mt-0.5 text-sm text-foreground">
+                    {subscription.invoicePack > 0
+                      ? `Facturas electrónicas: paquete de ${formatCount(subscription.invoicePack)} por mes (${formatCurrency(packPrice(subscription.invoicePack))} por mes)${usage ? ` · usaste ${formatCount(usage.used)} este mes` : ""}`
+                      : "Facturas electrónicas: sin paquete"}
+                    {subscription.nextInvoicePack !== null && subscription.nextInvoicePack !== subscription.invoicePack
+                      ? ` · desde la renovación: ${subscription.nextInvoicePack > 0 ? `${formatCount(subscription.nextInvoicePack)} por mes` : "sin paquete"}`
+                      : ""}
+                  </p>
+                )}
               </div>
             </div>
             {subscription.plan === "gratis" && !subscription.trialActive && (
@@ -107,8 +122,13 @@ export function SubscriptionSection({
             <div className="mt-4 border-t border-border/60 pt-4">
               <BillingStatus
                 billing={billing}
-                amount={chargeAmount(billing.paidPlan, billing.cycle ?? "mensual")}
+                amount={chargeAmount(subscription.nextPlan ?? billing.paidPlan, billing.cycle ?? "mensual", subscription.nextInvoicePack ?? subscription.invoicePack)}
                 planName={planDefinitions[billing.paidPlan].name}
+                breakdown={
+                  (subscription.nextInvoicePack ?? subscription.invoicePack) > 0
+                    ? `Incluye el plan (${formatCurrency(chargeAmount(subscription.nextPlan ?? billing.paidPlan, billing.cycle ?? "mensual", 0))}) y el paquete de ${formatCount(subscription.nextInvoicePack ?? subscription.invoicePack)} facturas por mes (${formatCurrency(chargeAmount(subscription.nextPlan ?? billing.paidPlan, billing.cycle ?? "mensual", subscription.nextInvoicePack ?? subscription.invoicePack) - chargeAmount(subscription.nextPlan ?? billing.paidPlan, billing.cycle ?? "mensual", 0))}).`
+                    : undefined
+                }
                 canManage={canManage}
               />
             </div>
