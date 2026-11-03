@@ -326,7 +326,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                         {upgradeFrom ? (
                           <div className="space-y-1 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
                             <div className="flex justify-between">
-                              <span>{`${planName}${pack > 0 ? ` + ${formatCount(pack)} facturas` : ""}`}</span>
+                              <span>{`${planName}${Math.max(pack, currentPack) > 0 ? ` + ${formatCount(Math.max(pack, currentPack))} facturas` : ""}`}</span>
                               <span>{formatCurrency(change.fullNow)}</span>
                             </div>
                             <div className="flex justify-between">
@@ -365,6 +365,9 @@ export function CheckoutView(props: CheckoutViewProps) {
                         <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
                         <p className="text-xs text-muted-foreground">{`Hoy tu débito es de ${formatCurrency(change.currentTotal)}${cycle === "anual" ? " por año" : " por mes"}: pasa a ${formatCurrency(change.next)}.`}</p>
                       </section>
+                      {upgradeFrom && pack < currentPack && (
+                        <p className="text-xs text-muted-foreground">{`Seguís con tu paquete de ${formatCount(currentPack)} facturas hasta el ${changeDate}, que ya está pago. Desde ahí pasás a ${pack > 0 ? `${formatCount(pack)} facturas por mes` : "sin paquete"}.`}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">El plan no se vuelve a cobrar: el pago de ahora es sólo la diferencia, una vez. Después se debita todo junto cada {cycle === "anual" ? "año" : "mes"}.</p>
                     </>
                   ) : (

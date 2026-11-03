@@ -83,7 +83,7 @@ export default async function SuscribirsePage({
                     packFull: chargeAmount(plan, cycle, size) - chargeAmount(plan, cycle, 0),
                     credit: chargeAmount(subscription.plan, cycle, subscription.invoicePack) - chargeAmount(subscription.plan, cycle, 0),
                     currentTotal: chargeAmount(subscription.nextPlan ?? subscription.plan, cycle, subscription.nextInvoicePack ?? subscription.invoicePack),
-                    fullNow: chargeAmount(plan, cycle, size),
+                    fullNow: chargeAmount(plan, cycle, isUpgrade ? Math.max(size, subscription.invoicePack) : size),
                     paidNow: chargeAmount(subscription.plan, cycle, subscription.invoicePack),
                   },
                 ],

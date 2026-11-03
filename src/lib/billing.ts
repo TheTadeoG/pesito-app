@@ -517,7 +517,9 @@ export function upgradeChange(sub: SubscriptionInfo, plan: Plan, cycle: BillingC
   const end = new Date(b.currentPeriodEnd);
   if (end <= now) return null;
   const next = chargeAmount(plan, cycle, pack);
-  const diff = Math.max(1, next - chargeAmount(sub.plan, cycle, sub.invoicePack));
+  // Si baja o quita el paquete al mismo tiempo, el actual ya está pago: sigue hasta la renovación y no se descuenta.
+  const packNow = Math.max(pack, sub.invoicePack);
+  const diff = Math.max(1, chargeAmount(plan, cycle, packNow) - chargeAmount(sub.plan, cycle, sub.invoicePack));
   if (cycle === "mensual") return { kind: "upgrade", today: diff, next, nextDate: end.toISOString() };
   const start = addMonths(end, -12);
   const periodMs = Math.max(1, end.getTime() - start.getTime());
@@ -556,9 +558,15 @@ async function applyPackAddon(pay: Payment, ref: { orgId: string; plan: Plan; cy
     return ref.orgId;
   }
   await updatePreapprovalAmount(current.mp_preapproval_id, chargeAmount(upgrading ? ref.plan : current.next_plan ?? ref.plan, ref.cycle, ref.pack));
+  // Mejora de plan que además baja el paquete: el paquete actual sigue hasta la renovación y después rige el elegido.
+  const keepsBiggerPack = upgrading && ref.pack < (current.invoice_pack ?? 0);
   const { error } = await admin
     .from("organization_subscriptions")
-    .update({ invoice_pack: ref.pack, next_invoice_pack: null, ...(upgrading ? { plan: ref.plan, next_plan: null, grace_plan: null, plan_grace_until: null } : {}) })
+    .update({
+      invoice_pack: keepsBiggerPack ? current.invoice_pack ?? 0 : ref.pack,
+      next_invoice_pack: keepsBiggerPack ? ref.pack : null,
+      ...(upgrading ? { plan: ref.plan, next_plan: null, grace_plan: null, plan_grace_until: null } : {}),
+    })
     .eq("org_id", ref.orgId);
   if (error) throw new Error(`No pudimos guardar el cambio: ${error.message}`);
   if (upgrading) {
