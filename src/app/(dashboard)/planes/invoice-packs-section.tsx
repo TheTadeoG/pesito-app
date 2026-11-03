@@ -25,7 +25,7 @@ export function InvoicePacksSection({
   const href = (pack: number) => `/suscribirse?plan=${paidPlan}&ciclo=${cycle}&paquete=${pack}`;
 
   return (
-    <Card>
+    <Card id="facturas-electronicas">
       <CardHeader>
         <CardTitle>Facturas electrónicas</CardTitle>
         <CardDescription>

@@ -15,6 +15,7 @@ export function BillingStatus({
   amount,
   planName,
   breakdown,
+  compact = false,
   canManage,
 }: {
   billing: BillingInfo;
@@ -22,6 +23,8 @@ export function BillingStatus({
   planName: string;
   /** Cómo se compone el monto (plan + paquete de facturas), si hay paquete. */
   breakdown?: string;
+  /** El total y el desglose ya se muestran arriba: sólo estado y acciones. */
+  compact?: boolean;
   canManage: boolean;
 }) {
   const router = useRouter();
@@ -86,13 +89,15 @@ export function BillingStatus({
 
   return (
     <div className="space-y-3 rounded-xl border border-border p-4 text-sm">
-      <p className="flex items-center gap-2 font-medium text-foreground">
-        <CreditCard className="h-4 w-4 text-muted-foreground" />
-        {`Pago con Mercado Pago · ${formatCurrency(amount)} ${cycleText}`}
-      </p>
-      {breakdown && <p className="text-xs text-muted-foreground">{breakdown}</p>}
+      {!compact && (
+        <p className="flex items-center gap-2 font-medium text-foreground">
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
+          {`Pago con Mercado Pago · ${formatCurrency(amount)} ${cycleText}`}
+        </p>
+      )}
+      {!compact && breakdown && <p className="text-xs text-muted-foreground">{breakdown}</p>}
 
-      {billing.status === "active" && (
+      {!compact && billing.status === "active" && (
         <p className="text-muted-foreground">
           {periodEnd ? `Al día. Próximo débito: ${periodEnd}.` : "Al día."}
         </p>

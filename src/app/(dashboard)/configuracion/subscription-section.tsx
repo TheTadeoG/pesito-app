@@ -50,6 +50,22 @@ export function SubscriptionSection({
     ? (["basico", "pro"] as const).map((plan) => ({ plan, features: getPlanOwnFeatures(plan) }))
     : [];
 
+  // Plan pago con débito automático (al día o con un cobro pendiente): se muestra el total, el desglose y el uso de facturas.
+  const paidView = Boolean(
+    billing && billing.paidPlan !== "gratis" && subscription.plan !== "gratis" && billing.mpPreapprovalId && (billing.status === "active" || billing.status === "past_due")
+  );
+  const cycle = billing?.cycle ?? "mensual";
+  const perText = cycle === "anual" ? "por año" : "por mes";
+  const nextPlanKey: Plan = subscription.nextPlan ?? subscription.plan;
+  const nextPackSize = subscription.nextInvoicePack ?? subscription.invoicePack;
+  const nowTotal = chargeAmount(subscription.plan, cycle, subscription.invoicePack);
+  const nextTotal = chargeAmount(nextPlanKey, cycle, nextPackSize);
+  const planAmount = chargeAmount(subscription.plan, cycle, 0);
+  const packAmount = chargeAmount(subscription.plan, cycle, subscription.invoicePack) - planAmount;
+  const usagePct = usage && subscription.invoicePack > 0 ? Math.min(100, Math.round((usage.used / subscription.invoicePack) * 100)) : 0;
+  const usageFull = Boolean(usage && subscription.invoicePack > 0 && usage.used >= subscription.invoicePack);
+  const renewalDate = billing?.currentPeriodEnd ? formatDate(billing.currentPeriodEnd) : null;
+
   const trialDaysLeft =
     subscription.trialActive && subscription.proTrialEndsAt
       ? Math.max(
@@ -79,6 +95,80 @@ export function SubscriptionSection({
           </p>
         )}
         <div className={cn("rounded-2xl border p-5 sm:p-6", currentAccent.border, currentAccent.shadow)}>
+          {paidView && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tu plan actual</p>
+                  <p className="text-2xl font-bold text-foreground">{current.name}</p>
+                </div>
+                <Badge tone={billing?.status === "past_due" ? "warning" : "success"}>{billing?.status === "past_due" ? "Pago pendiente" : "Al día"}</Badge>
+              </div>
+              <div className="grid overflow-hidden rounded-xl border border-border md:grid-cols-[minmax(210px,260px)_1fr]">
+                <div className="grid content-center gap-1.5 bg-primary p-5 text-primary-foreground">
+                  <p className="text-xs opacity-90">{renewalDate ? `Próximo débito · ${renewalDate}` : "Próximo débito"}</p>
+                  <p className="text-4xl font-bold leading-none tabular-nums">{formatCurrency(nextTotal)}</p>
+                  <p className="text-xs opacity-90">{`${perText} · se cobra todo junto`}</p>
+                  {subscription.nextPlan || nextTotal !== nowTotal ? (
+                    <p className="mt-1.5 rounded-lg bg-black/15 px-2.5 py-1.5 text-xs">{`Hoy se debitan ${formatCurrency(nowTotal)} ${perText}`}</p>
+                  ) : null}
+                </div>
+                <div className="space-y-1 p-4">
+                  <div className="space-y-1.5 py-1.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="font-bold text-foreground">{current.name}</span>
+                      <span className="text-lg font-bold tabular-nums text-foreground">{formatCurrency(planAmount)}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                      <span>
+                        {subscription.nextPlan
+                          ? `El ${renewalDate} pasa al ${planDefinitions[subscription.nextPlan].name} (${formatCurrency(chargeAmount(subscription.nextPlan, cycle, 0))})`
+                          : cycle === "anual"
+                            ? "Plan anual"
+                            : "Plan mensual"}
+                      </span>
+                      {canManage && (
+                        <a href="#comparar-planes" className="font-semibold text-primary hover:underline">
+                          Cambiar de plan
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground before:flex-1 before:border-t before:border-dashed before:border-border after:flex-1 after:border-t after:border-dashed after:border-border">
+                    más
+                  </div>
+                  <div className="space-y-1.5 py-1.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="font-bold text-foreground">{subscription.invoicePack > 0 ? `Facturas · ${formatCount(subscription.invoicePack)} por mes` : "Facturas electrónicas"}</span>
+                      <span className="text-lg font-bold tabular-nums text-foreground">{subscription.invoicePack > 0 ? formatCurrency(packAmount) : "—"}</span>
+                    </div>
+                    {subscription.invoicePack > 0 && usage && (
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={`${usage.used} de ${subscription.invoicePack} facturas`}>
+                        <div className={cn("h-full min-w-[3px] rounded-full", usageFull ? "bg-danger" : "bg-primary")} style={{ width: `${usagePct}%` }} />
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                      <span>
+                        {subscription.invoicePack > 0
+                          ? `${usage ? `${formatCount(usage.used)} de ${formatCount(subscription.invoicePack)} este mes` : `${formatCount(subscription.invoicePack)} por mes`}${usageFull ? " · cupo agotado: las ventas salen como comprobante X" : ""}${
+                              subscription.nextInvoicePack !== null && subscription.nextInvoicePack !== subscription.invoicePack
+                                ? ` · desde la renovación: ${subscription.nextInvoicePack > 0 ? `${formatCount(subscription.nextInvoicePack)} por mes` : "sin paquete"}`
+                                : ""
+                            }`
+                          : "Sin paquete: tus ventas salen como comprobante X"}
+                      </span>
+                      {canManage && (
+                        <a href="#facturas-electronicas" className="font-semibold text-primary hover:underline">
+                          {subscription.invoicePack > 0 ? (usageFull ? "Subir de paquete" : "Cambiar paquete") : "Sumar un paquete"}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {!paidView && (
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <span
@@ -117,10 +207,12 @@ export function SubscriptionSection({
               </Badge>
             )}
           </div>
+          )}
 
           {billing && billing.paidPlan !== "gratis" && (
             <div className="mt-4 border-t border-border/60 pt-4">
               <BillingStatus
+                compact={paidView}
                 billing={billing}
                 amount={chargeAmount(subscription.nextPlan ?? billing.paidPlan, billing.cycle ?? "mensual", subscription.nextInvoicePack ?? subscription.invoicePack)}
                 planName={planDefinitions[billing.paidPlan].name}
@@ -271,7 +363,7 @@ export function SubscriptionSection({
           </div>
         )}
 
-        <div className="space-y-3">
+        <div id="comparar-planes" className="space-y-3">
           <div className="flex items-center gap-2 text-foreground">
             <Sparkles className="h-4 w-4 shrink-0 text-primary" />
             <p className="text-sm font-semibold">Comparar planes</p>
