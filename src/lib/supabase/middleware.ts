@@ -97,6 +97,15 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims ?? null;
 
+  // /planes es del panel, pero es el link que más se comparte: sin sesión (y para las vistas previas de WhatsApp o
+  // las redes) va a la página pública de planes, que tiene su propio título, descripción e imagen.
+  if (!user && (request.nextUrl.pathname === "/planes" || request.nextUrl.pathname === "/planes/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/comparar-planes";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   if (!user && !isPublicPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

@@ -1,59 +1,14 @@
-import { ImageResponse } from "next/og";
+import { OG_SIZE, renderOgCard } from "@/lib/og-card";
 
-// Imagen OG por defecto para todo el sitio — Next.js la usa como fallback
-// para cualquier ruta que no defina la suya propia (ninguna la define
-// hoy, así que ésta aplica a todas). Sin esto, compartir un link de
-// Pesito en WhatsApp/Twitter/LinkedIn no mostraba ninguna imagen.
-export const alt = "Pesito — sistema POS y punto de venta para tu negocio";
-export const size = { width: 1200, height: 630 };
+// Imagen por defecto de las vistas previas (la usa cualquier página que no defina la suya).
+export const alt = "Pesito: sistema POS y punto de venta para tu negocio";
+export const size = OG_SIZE;
 export const contentType = "image/png";
 
 export default function Image() {
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #047857 0%, #059669 55%, #10b981 100%)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 96,
-              height: 96,
-              borderRadius: 24,
-              background: "rgba(255,255,255,0.16)",
-            }}
-          >
-            <div style={{ fontSize: 56, color: "#ffffff" }}>$</div>
-          </div>
-          <div style={{ display: "flex", fontSize: 96, fontWeight: 800, color: "#ffffff" }}>
-            <div>pesito</div>
-            <div style={{ color: "#bbf7d0" }}>.</div>
-          </div>
-        </div>
-        <div
-          style={{
-            marginTop: 28,
-            fontSize: 34,
-            color: "rgba(255,255,255,0.92)",
-            maxWidth: 860,
-            textAlign: "center",
-          }}
-        >
-          Sistema POS para tu negocio: ventas, stock, caja y fiado
-        </div>
-      </div>
-    ),
-    { ...size }
-  );
+  return renderOgCard({
+    title: "Sistema POS para tu negocio",
+    subtitle: "Ventas, stock, caja y fiado en un solo lugar.",
+    chips: ["Gratis para empezar", "Hecho en Argentina"],
+  });
 }
