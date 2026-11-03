@@ -110,7 +110,7 @@ export function SubscriptionSection({
                   <p className="text-4xl font-bold leading-none tabular-nums">{formatCurrency(nextTotal)}</p>
                   <p className="text-xs opacity-90">{`${perText} · se cobra todo junto`}</p>
                   {subscription.nextPlan || nextTotal !== nowTotal ? (
-                    <p className="mt-1.5 rounded-lg bg-black/15 px-2.5 py-1.5 text-xs">{`Hoy se debitan ${formatCurrency(nowTotal)} ${perText}`}</p>
+                    <p className="mt-1.5 rounded-lg bg-foreground/10 px-2.5 py-1.5 text-xs">{`Hoy se debitan ${formatCurrency(nowTotal)} ${perText}`}</p>
                   ) : null}
                 </div>
                 <div className="space-y-1 p-4">

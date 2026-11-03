@@ -56,7 +56,7 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeBg: "bg-amber-500",
     badgeText: "text-amber-950",
     buttonVariant: "gold",
-    panel: "bg-amber-500 text-amber-950",
+    panel: "border-r border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100",
     bar: "bg-amber-500",
   },
   // IA: violeta — se distingue como el tope de gama, con onda "tecnológico".
@@ -67,7 +67,7 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeBg: "bg-violet-500",
     badgeText: "text-white",
     buttonVariant: "violet",
-    panel: "bg-violet-500 text-white",
+    panel: "border-r border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-500/40 dark:bg-violet-500/15 dark:text-violet-100",
     bar: "bg-violet-500",
   },
 };
