@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { isOrgAdmin } from "@/lib/roles";
+import { getInvoiceUsage } from "@/lib/invoice-usage";
+import { formatCount } from "@/lib/invoice-packs";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -96,6 +98,14 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
   const authorized = (previous ?? []).find((v) => v.status === "authorized");
   if (authorized) return { status: "authorized", voucherId: authorized.id, badge: voucherBadge(authorized.voucher_class, environment) };
   const open = (previous ?? []).find((v) => v.status === "indeterminate" || v.status === "conflict");
+
+  // Cupo mensual de facturas (plan + paquete). La venta ya está cobrada: sólo se frena la factura, con el aviso de cómo sumar más.
+  if (!open && environment === "production") {
+    const usage = await getInvoiceUsage(organization.id, subscription);
+    if (usage.reached) {
+      return { error: `Usaste las ${formatCount(usage.quota)} facturas de este mes (las notas de crédito cuentan). Sumá un paquete en Planes para seguir facturando; la venta quedó registrada y la podés facturar después.` };
+    }
+  }
 
   const res = await getOrgArca(organization.id, environment);
   if ("error" in res) return { error: res.error };

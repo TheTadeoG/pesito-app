@@ -6,7 +6,7 @@ import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import crypto from "crypto";
-import { planDefinitions } from "@/lib/plan-features";
+import { formatCount, isValidPack } from "@/lib/invoice-packs";
 import { siteUrl } from "@/lib/utils";
 import {
   cancelPreapproval,
@@ -50,12 +50,14 @@ const PAID: Plan[] = ["basico", "pro", "max"];
 export async function startSubscription(
   plan: Plan,
   cycle: BillingCycle,
-  method: PaymentMethod = "debito"
+  method: PaymentMethod = "debito",
+  pack = 0
 ): Promise<BillingActionResult> {
   const { organization, membership } = await requireOrgContext();
   if (!isOrgAdmin(membership.role)) return { error: "Sólo el dueño o un administrador puede contratar un plan." };
   if (!PAID.includes(plan) || (cycle !== "mensual" && cycle !== "anual")) return { error: "Elegí un plan válido." };
   if (method !== "debito" && method !== "unico") return { error: "Elegí cómo querés pagar." };
+  if (!Number.isInteger(pack) || !isValidPack(pack)) return { error: "Elegí un paquete de facturas válido." };
   if (!mercadoPagoConfigured()) return { error: "El cobro con Mercado Pago todavía no está configurado." };
 
   const backUrl = `${siteUrl}/suscribirse/listo`;
@@ -65,19 +67,20 @@ export async function startSubscription(
   // automático mensual). Sin la variable no hace nada. Sin promo, así el
   // monto no se sube solo después del primer cobro.
   const testPrice = method === "debito" && cycle === "mensual" && process.env.MP_TEST_ORG_ID === organization.id;
-  const amount = testPrice ? 15 : firstChargeAmount(plan, cycle, promo);
+  const amount = testPrice ? 15 : firstChargeAmount(plan, cycle, promo, pack);
+  const packLabel = pack > 0 ? ` + paquete de ${formatCount(pack)} facturas por mes` : "";
   try {
     if (method === "unico") {
-      const ref = `${buildExternalReference(organization.id, plan, cycle)}|u${crypto.randomBytes(6).toString("hex")}`;
+      const ref = `${buildExternalReference(organization.id, plan, cycle, pack)}|u${crypto.randomBytes(6).toString("hex")}`;
       const pref = await createPreference({
-        title: `Pesito — Plan ${planLabels[plan]} (${cycle === "anual" ? "1 año" : promo ? "primer mes, promo" : "1 mes"})`,
+        title: `Pesito — Plan ${planLabels[plan]}${packLabel} (${cycle === "anual" ? "1 año" : promo ? "primer mes, promo" : "1 mes"})`,
         externalReference: ref,
         amount,
         backUrl,
       });
       const url = usingTestCredentials() ? pref.sandbox_init_point ?? pref.init_point : pref.init_point;
       if (!url) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
-      await recordCheckout(organization.id, pref.id, { plan, cycle, method, ref, promo });
+      await recordCheckout(organization.id, pref.id, { plan, cycle, method, ref, promo, pack });
       return { url, checkoutId: pref.id };
     }
 
@@ -85,15 +88,15 @@ export async function startSubscription(
       reason: testPrice
         ? `Pesito — Plan ${planLabels[plan]} (prueba de cobro)`
         : promo
-        ? `Pesito — Plan ${planLabels[plan]} (primer mes ${planDefinitions[plan].promoLabel}, después ${planDefinitions[plan].priceLabel})`
-        : `Pesito — Plan ${planLabels[plan]} (${cycle})`,
-      externalReference: buildExternalReference(organization.id, plan, cycle),
+        ? `Pesito — Plan ${planLabels[plan]}${packLabel} (primer mes con promo, después el precio normal)`
+        : `Pesito — Plan ${planLabels[plan]}${packLabel} (${cycle})`,
+      externalReference: buildExternalReference(organization.id, plan, cycle, pack),
       frequencyMonths: cycle === "anual" ? 12 : 1,
       amount,
       backUrl,
     });
     if (!checkout.init_point) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
-    await recordCheckout(organization.id, checkout.id, { plan, cycle, method, promo: promo && !testPrice });
+    await recordCheckout(organization.id, checkout.id, { plan, cycle, method, promo: promo && !testPrice, pack });
     return { url: checkout.init_point, checkoutId: checkout.id };
   } catch (e) {
     const detail = mercadoPagoErrorMessage(e);

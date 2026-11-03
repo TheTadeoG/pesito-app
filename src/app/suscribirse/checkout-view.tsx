@@ -22,6 +22,7 @@ import { planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import type { PaymentMethod } from "@/lib/billing";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { trackEvent } from "@/lib/track";
+import { INVOICE_PACKS, formatCount } from "@/lib/invoice-packs";
 import { useMercadoPagoCheckout } from "@/app/(dashboard)/configuracion/use-mp-checkout";
 
 // Colores del panel izquierdo según el plan (el mismo acento que en precios).
@@ -56,10 +57,11 @@ export interface CheckoutViewProps {
   /** Último paso del alta (cuenta → negocio → pago). */
   fromSignup: boolean;
   features: string[];
-  /** Monto de cada cobro: mensual, o el total del año. */
-  prices: Record<BillingCycle, number>;
-  /** Primer cobro mensual con la promo del primer mes; null si no aplica. */
-  promoPrice: number | null;
+  /** Por paquete de facturas (0 = sin paquete): monto de cada cobro (mensual, o el total del año) y primer cobro con la promo (null si no aplica). */
+  totals: Record<number, { prices: Record<BillingCycle, number>; promoPrice: number | null }>;
+  /** Facturas por mes que ya incluye el plan, y paquete elegido al llegar. */
+  includedInvoices: number;
+  initialPack: number;
   /** Próximo cobro (débito) o hasta cuándo queda pago (pago único). */
   dates: Record<BillingCycle, Record<PaymentMethod, string>>;
   current: { planName: string; autoDebit: boolean; samePlan: boolean } | null;
@@ -67,7 +69,9 @@ export interface CheckoutViewProps {
 }
 
 export function CheckoutView(props: CheckoutViewProps) {
-  const { plan, fromSignup, features, prices, promoPrice, dates, current, paymentsEnabled } = props;
+  const { plan, fromSignup, features, totals, includedInvoices, dates, current, paymentsEnabled } = props;
+  const [pack, setPack] = useState(props.initialPack);
+  const { prices, promoPrice } = totals[pack] ?? totals[0];
   const [cycle, setCycle] = useState<BillingCycle>(props.initialCycle);
   const [method, setMethod] = useState<PaymentMethod>(props.initialMethod);
   const { status, error, checkoutUrl, activePlan, periodEnd, start, check } = useMercadoPagoCheckout();
@@ -208,6 +212,33 @@ export function CheckoutView(props: CheckoutViewProps) {
                 ))}
               </div>
 
+              {includedInvoices > 0 && (
+                <div className="space-y-2">
+                  <label htmlFor="invoice-pack" className="text-sm font-semibold text-foreground">
+                    Facturas electrónicas por mes
+                  </label>
+                  <select
+                    id="invoice-pack"
+                    value={pack}
+                    disabled={busy}
+                    onChange={(e) => setPack(Number(e.target.value))}
+                    className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value={0}>{`Las ${formatCount(includedInvoices)} que incluye el plan`}</option>
+                    {INVOICE_PACKS.map((p) => (
+                      <option key={p.size} value={p.size}>
+                        {`+${formatCount(p.size)} por mes (${formatCurrency(p.price)} por mes, IVA incl.)`}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    {pack > 0
+                      ? `Tenés ${formatCount(includedInvoices + pack)} facturas por mes. El paquete se cobra y se renueva junto con el plan. Las notas de crédito cuentan como factura.`
+                      : "Sólo si facturás más que eso. Se cobra y se renueva junto con el plan; las notas de crédito cuentan como factura. Lo podés cambiar cuando quieras."}
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-3" role="radiogroup" aria-label="Forma de pago">
                 <MethodOption
                   selected={method === "debito"}
@@ -271,7 +302,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                       value: amount,
                       items: [{ item_id: plan, item_name: planName, item_variant: cycle, price: amount, quantity: 1 }],
                     });
-                    start(plan, cycle, method);
+                    start(plan, cycle, method, pack);
                   }}
                   disabled={status === "opening"}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-60"

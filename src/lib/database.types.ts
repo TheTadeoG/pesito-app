@@ -657,6 +657,8 @@ export interface Database {
           payer_email?: string | null;
           grace_plan?: "basico" | "pro" | "max" | null;
           plan_grace_until?: string | null;
+          /** Paquete de facturas por mes (0088). */
+          invoice_pack?: number;
         };
         Insert: {
           org_id: string;
@@ -671,6 +673,7 @@ export interface Database {
           payer_email?: string | null;
           grace_plan?: "basico" | "pro" | "max" | null;
           plan_grace_until?: string | null;
+          invoice_pack?: number;
         };
         Update: Partial<Database["public"]["Tables"]["organization_subscriptions"]["Insert"]>;
         Relationships: [];

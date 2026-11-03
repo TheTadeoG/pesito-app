@@ -332,6 +332,14 @@ Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados
 - `lib/billing-alerts.ts`: si el webhook de Mercado Pago responde 500, o llega con `x-signature` que no coincide (casi seguro `MP_WEBHOOK_SECRET` mal cargada), se anota en `billing_events` (topic `alert`) y llega un mail (`BILLING_ALERT_EMAIL`, o `FEEDBACK_NOTIFY_EMAIL`; necesita `RESEND_API_KEY`), uno por tipo cada 30 min.
 - Pendiente de decidir: que después de pagar desde Configuración → Plan vuelva a Planes en vez de al POS (hoy `/suscribirse/listo` siempre va a `/pos`).
 
+## Hecho: paquetes de facturas (migración 0088 — **falta aplicar en producción**)
+
+- Cada plan incluye facturas electrónicas por mes (Básico 150, Pro 500, Max 1.500; la prueba Pro cuenta como Pro) y se pueden sumar paquetes mensuales (500 $9.000, 1.000 $17.000, 2.000 $32.000, 3.000 $45.000, 5.000 $65.000, 10.000 $100.000; IVA incl.). Fuente única: `src/lib/invoice-packs.ts` (los números por plan todavía son una propuesta, se pueden ajustar ahí).
+- Se elige al contratar el plan (`/suscribirse`, `?paquete=`): va dentro de la misma suscripción de Mercado Pago (monto = plan + paquete; el descuento anual aplica a ambos; la promo del primer mes sólo al plan). El paquete viaja en la `external_reference` (`|k500`) y se guarda en `organization_subscriptions.invoice_pack`; se renueva y se cancela junto con el plan. Para cambiarlo, se vuelve a contratar el mismo plan con otro paquete.
+- Cuentan las facturas y las notas de crédito autorizadas del mes calendario (huso Argentina), sólo en modo real. Al llegar al cupo no se emiten más facturas (`issueSaleInvoice`): la venta queda cobrada y se factura después. Las notas de crédito nunca se frenan.
+- Configuración → Facturación muestra el uso del mes con aviso desde el 80%.
+- Falta: mostrar el paquete en la sección Plan de Configuración y avisar por la campana al 80%/100%.
+
 ## Funciones pendientes (tasklist)
 
 Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: controlarla con `canUse` (ya tiene su plan en `featureMinPlan`), sacarle el "Pronto" en `plan-features.ts` (cards y `planComparison`), `faq-data.ts`, blog y páginas por rubro.

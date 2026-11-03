@@ -15,6 +15,8 @@ import { isOrgAdmin } from "@/lib/roles";
 import { PaymentMethodsManager } from "@/app/(dashboard)/configuracion/payment-methods-manager";
 import { canUse } from "@/lib/plan-access";
 import { getSubscription } from "@/lib/subscription";
+import { getInvoiceUsage } from "@/lib/invoice-usage";
+import { InvoiceUsageCard } from "@/components/dashboard/invoice-usage-card";
 import { getBranchContext } from "@/lib/branches";
 import { BranchesManager } from "@/app/(dashboard)/configuracion/branches-manager";
 import { TwoFactorCard } from "@/app/(dashboard)/configuracion/two-factor-card";
@@ -100,6 +102,7 @@ export default async function ConfiguracionPage({
     if (error) arcaError = "No pudimos leer la configuración de facturación (¿falta aplicar la migración 0080?).";
     else arcaStatus = data as unknown as ArcaStatusView;
   }
+  const invoiceUsage = arcaStatus ? await getInvoiceUsage(organization.id, subscription) : null;
   const memberLabel = (id: string) => {
     if (id === userId) return "Vos";
     const m = (memberships ?? []).find((x) => x.user_id === id);
@@ -186,7 +189,12 @@ export default async function ConfiguracionPage({
                 La facturación todavía no está activada en el servidor. Falta cargar la variable ARCA_ENCRYPTION_KEY.
               </p>
             ) : (
-              arcaStatus && <FacturacionManager status={arcaStatus} orgName={organization.name} />
+              arcaStatus && (
+                <>
+                  {invoiceUsage && <InvoiceUsageCard usage={invoiceUsage} pack={subscription.invoicePack} />}
+                  <FacturacionManager status={arcaStatus} orgName={organization.name} />
+                </>
+              )
             )}
 
             <Card>

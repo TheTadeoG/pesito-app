@@ -36,6 +36,8 @@ export interface SubscriptionInfo {
   hasProAccess: boolean;
   /** Está en plan gratis y todavía le queda tiempo de prueba Pro. */
   trialActive: boolean;
+  /** Paquete de facturas por mes contratado junto con el plan (0 = sin paquete). */
+  invoicePack: number;
   /** Cobro con Mercado Pago (null sin la migración 0047 o sin suscripción). */
   billing: BillingInfo | null;
   /**
@@ -58,6 +60,7 @@ type SubscriptionRow = {
   current_period_end?: string | null;
   grace_until?: string | null;
   payer_email?: string | null;
+  invoice_pack?: number | null;
   grace_plan?: Plan | null;
   plan_grace_until?: string | null;
 };
@@ -133,6 +136,7 @@ export async function getSubscription(
 
   return {
     plan,
+    invoicePack: data?.invoice_pack ?? 0,
     proTrialEndsAt,
     hasProAccess: plan === "pro" || plan === "max" || trialActive,
     trialActive,

@@ -1,4 +1,5 @@
 import { FREE_PLAN_SALES_LIMIT_LABEL, planDefinitions, PRODUCT_LIMITS, thousands } from "@/lib/plan-features";
+import { INVOICES_INCLUDED, INVOICE_PACKS } from "@/lib/invoice-packs";
 
 export interface Faq {
   question: string;
@@ -96,7 +97,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Imprime tickets? ¿Hace factura electrónica?",
         answer:
-          `Sí. Cada venta se imprime en ticket: si no se factura, es un comprobante interno X numerado (no fiscal). Desde el ${basico.name}, Pesito emite factura electrónica de ARCA/AFIP con tu CUIT y tu certificado: Factura C para monotributistas y exentos, con CAE y código QR, en ticket de 80 mm o en hoja A4, y con nota de crédito cuando anulás una venta facturada. Elegís, por cada medio de pago, si se factura sola o a mano. Todavía no emite Factura A ni B (para responsables inscriptos): llegan pronto.`,
+          `Sí. Cada venta se imprime en ticket: si no se factura, es un comprobante interno X numerado (no fiscal). Desde el ${basico.name}, Pesito emite factura electrónica de ARCA/AFIP con tu CUIT y tu certificado: Factura C para monotributistas y exentos, con CAE y código QR, en ticket de 80 mm o en hoja A4, y con nota de crédito cuando anulás una venta facturada. Elegís, por cada medio de pago, si se factura sola o a mano. Cada plan incluye facturas por mes (Básico ${thousands(INVOICES_INCLUDED.basico)}, Pro ${thousands(INVOICES_INCLUDED.pro)}, Max ${thousands(INVOICES_INCLUDED.max)}; las notas de crédito cuentan como factura) y, si necesitás más, al elegir el plan sumás un paquete mensual de ${INVOICE_PACKS.map((p) => thousands(p.size)).join(", ")} facturas, que se renueva junto con el plan. Todavía no emite Factura A ni B (para responsables inscriptos): llegan pronto.`,
       },
     ],
   },

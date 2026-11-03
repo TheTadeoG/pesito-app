@@ -22,10 +22,10 @@ export function useMercadoPagoCheckout() {
   const [periodEnd, setPeriodEnd] = useState<string | null>(null);
   const checking = useRef(false);
 
-  const start = useCallback(async (plan: Plan, cycle: BillingCycle, method: PaymentMethod) => {
+  const start = useCallback(async (plan: Plan, cycle: BillingCycle, method: PaymentMethod, pack = 0) => {
     setError(null);
     setStatus("opening");
-    const result = await startSubscription(plan, cycle, method);
+    const result = await startSubscription(plan, cycle, method, pack);
     if (result.error || !result.url || !result.checkoutId) {
       setStatus("idle");
       setError(result.error ?? "No pudimos conectar con Mercado Pago.");

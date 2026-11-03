@@ -7,6 +7,7 @@ import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
 import { chargeAmount, firstChargeAmount, isPromoEligible, type PaymentMethod } from "@/lib/billing";
 import { normalizePlanParam } from "@/lib/plan-ids";
+import { INVOICES_INCLUDED, INVOICE_PACKS, isValidPack } from "@/lib/invoice-packs";
 import { getPlanOwnFeatures } from "@/lib/plan-features";
 import { CheckoutView } from "@/app/suscribirse/checkout-view";
 
@@ -40,9 +41,9 @@ function longDate(date: Date) {
 export default async function SuscribirsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; ciclo?: string; metodo?: string; desde?: string }>;
+  searchParams: Promise<{ plan?: string; ciclo?: string; metodo?: string; desde?: string; paquete?: string }>;
 }) {
-  const { plan: planParam, ciclo, metodo, desde } = await searchParams;
+  const { plan: planParam, ciclo, metodo, desde, paquete } = await searchParams;
   const { organization, membership } = await requireOrgContext();
   if (!isOrgAdmin(membership.role)) redirect("/planes");
 
@@ -50,6 +51,7 @@ export default async function SuscribirsePage({
   if (!plan) redirect("/planes");
   const cycle: BillingCycle = ciclo === "anual" ? "anual" : "mensual";
   const method: PaymentMethod = metodo === "unico" ? "unico" : "debito";
+  const wantedPack = Number(paquete);
 
   const supabase = await createClient();
   const [subscription, promoEligible] = await Promise.all([
@@ -89,8 +91,17 @@ export default async function SuscribirsePage({
       features={getPlanOwnFeatures(plan)
         .filter((f) => !f.includes("(pronto)"))
         .slice(0, 5)}
-      prices={{ mensual: chargeAmount(plan, "mensual"), anual: chargeAmount(plan, "anual") }}
-      promoPrice={promoEligible ? firstChargeAmount(plan, "mensual", true) : null}
+      totals={Object.fromEntries(
+        [0, ...INVOICE_PACKS.map((p) => p.size)].map((pack) => [
+          pack,
+          {
+            prices: { mensual: chargeAmount(plan, "mensual", pack), anual: chargeAmount(plan, "anual", pack) },
+            promoPrice: promoEligible ? firstChargeAmount(plan, "mensual", true, pack) : null,
+          },
+        ])
+      )}
+      includedInvoices={INVOICES_INCLUDED[plan]}
+      initialPack={Number.isInteger(wantedPack) && paquete && isValidPack(wantedPack) ? wantedPack : subscription.plan === plan ? subscription.invoicePack : 0}
       dates={dates}
       current={current}
       paymentsEnabled={mercadoPagoConfigured()}

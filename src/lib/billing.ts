@@ -16,6 +16,7 @@ import {
 } from "@/lib/mercadopago";
 import { mercadoPagoConfigured, MercadoPagoError } from "@/lib/mercadopago";
 import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
+import { isValidPack, packPrice } from "@/lib/invoice-packs";
 import { lapsedToFree, planOrder, PLAN_GRACE_DAYS, type BillingCycle, type Plan } from "@/lib/subscription";
 import type { Database, Json } from "@/lib/database.types";
 
@@ -28,9 +29,9 @@ import type { Database, Json } from "@/lib/database.types";
 export const GRACE_DAYS = 7;
 const PAID_PLANS: Plan[] = ["basico", "pro", "max"];
 
-/** Monto de cada cobro: el mensual, o 12 meses con el descuento anual. */
-export function chargeAmount(plan: Plan, cycle: BillingCycle): number {
-  const monthly = planDefinitions[plan].price;
+/** Monto de cada cobro: el mensual, o 12 meses con el descuento anual. El paquete de facturas (por mes) va incluido. */
+export function chargeAmount(plan: Plan, cycle: BillingCycle, pack = 0): number {
+  const monthly = planDefinitions[plan].price + packPrice(pack);
   return cycle === "anual" ? Math.round(monthly * (1 - ANNUAL_DISCOUNT)) * 12 : monthly;
 }
 
@@ -38,9 +39,9 @@ export function chargeAmount(plan: Plan, cycle: BillingCycle): number {
  * Monto del primer cobro: con la promo de lanzamiento (primer mes, sólo
  * mensual y sólo para quien nunca pagó un plan), el precio promocional.
  */
-export function firstChargeAmount(plan: Plan, cycle: BillingCycle, promoEligible: boolean): number {
+export function firstChargeAmount(plan: Plan, cycle: BillingCycle, promoEligible: boolean, pack = 0): number {
   const promo = planDefinitions[plan].promoPrice;
-  return promoEligible && cycle === "mensual" && promo ? promo : chargeAmount(plan, cycle);
+  return promoEligible && cycle === "mensual" && promo ? promo + packPrice(pack) : chargeAmount(plan, cycle, pack);
 }
 
 /** ¿El negocio nunca pagó un plan? (la promo del primer mes es sólo para él). */
@@ -59,9 +60,9 @@ export async function isPromoEligible(orgId: string): Promise<boolean> {
   return !sub?.mp_preapproval_id && (sub?.plan ?? "gratis") === "gratis";
 }
 
-/** "<org_id>|<plan>|<ciclo>" — lo que viaja en external_reference. */
-export function buildExternalReference(orgId: string, plan: Plan, cycle: BillingCycle): string {
-  return `${orgId}|${plan}|${cycle}`;
+/** "<org_id>|<plan>|<ciclo>[|k<paquete>]" — lo que viaja en external_reference. */
+export function buildExternalReference(orgId: string, plan: Plan, cycle: BillingCycle, pack = 0): string {
+  return `${orgId}|${plan}|${cycle}${pack > 0 ? `|k${pack}` : ""}`;
 }
 
 /**
@@ -70,14 +71,17 @@ export function buildExternalReference(orgId: string, plan: Plan, cycle: Billing
  */
 export function parseExternalReference(
   ref: string | null | undefined
-): { orgId: string; plan: Plan; cycle: BillingCycle; oneTime: boolean } | null {
+): { orgId: string; plan: Plan; cycle: BillingCycle; oneTime: boolean; pack: number } | null {
   if (!ref) return null;
-  const [orgId, rawPlan, cycle, tag] = String(ref).split("|");
+  const [orgId, rawPlan, cycle, ...tags] = String(ref).split("|");
+  const packTag = tags.find((t) => /^k\d+$/.test(t));
+  const pack = packTag ? Number(packTag.slice(1)) : 0;
+  if (!isValidPack(pack)) return null;
   const plan = normalizePlanParam(rawPlan); // referencias de antes del cambio de nombres (esencial/ia)
   if (!/^[0-9a-f-]{36}$/i.test(orgId ?? "")) return null;
   if (!PAID_PLANS.includes(plan as Plan)) return null;
   if (cycle !== "mensual" && cycle !== "anual") return null;
-  return { orgId, plan: plan as Plan, cycle, oneTime: Boolean(tag?.startsWith("u")) };
+  return { orgId, plan: plan as Plan, cycle, oneTime: tags.some((t) => t.startsWith("u")), pack };
 }
 
 /**
@@ -181,6 +185,7 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
         grace_until: current?.mp_preapproval_id === pre.id ? current.grace_until ?? null : null,
         payer_email: pre.payer_email ?? current?.payer_email ?? null,
         pro_trial_ends_at: null,
+        invoice_pack: ref.pack,
         ...downgradeGraceFields(current, ref.plan),
       },
       { onConflict: "org_id" }
@@ -200,7 +205,7 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
     }
     // Promo del primer mes: con el primer cobro aprobado, los siguientes
     // van al precio normal.
-    await bumpPromoAmount(ref.orgId, pre, ref.plan, ref.cycle);
+    await bumpPromoAmount(ref.orgId, pre, ref.plan, ref.cycle, ref.pack);
     // Cambio de plan: la suscripción vieja deja de cobrarse.
     if (previousId) {
       await cancelPreapproval(previousId).catch((e) => console.error("No pudimos cancelar la suscripción anterior", e));
@@ -261,7 +266,7 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
 
   if (paymentStatus === "approved") {
     if (ap.preapproval_id) {
-      await bumpPromoAmount(ref.orgId, await getPreapproval(ap.preapproval_id), ref.plan, ref.cycle).catch((e) =>
+      await bumpPromoAmount(ref.orgId, await getPreapproval(ap.preapproval_id), ref.plan, ref.cycle, ref.pack).catch((e) =>
         console.error("bumpPromoAmount", e)
       );
     }
@@ -295,8 +300,8 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
  * por la promo. Se llama al autorizarse la suscripción, al llegar cada cobro
  * y en cada sincronización (no depende de un solo aviso).
  */
-async function bumpPromoAmount(orgId: string, pre: Preapproval, plan: Plan, cycle: BillingCycle) {
-  const normal = chargeAmount(plan, cycle);
+async function bumpPromoAmount(orgId: string, pre: Preapproval, plan: Plan, cycle: BillingCycle, pack = 0) {
+  const normal = chargeAmount(plan, cycle, pack);
   const current = Number(pre.auto_recurring?.transaction_amount ?? normal);
   if (!pre.preapproval_plan_id || current >= normal) return;
   const charges = await searchAuthorizedPayments(pre.id).catch(() => []);
@@ -339,7 +344,7 @@ export async function applyOneTimePayment(pay: Payment): Promise<string | null> 
     .eq("mp_id", String(pay.id))
     .limit(1);
   if (already?.length) return ref.orgId;
-  if (Number(pay.transaction_amount) + 0.01 < firstChargeAmount(ref.plan, ref.cycle, true)) {
+  if (Number(pay.transaction_amount) + 0.01 < firstChargeAmount(ref.plan, ref.cycle, true, ref.pack)) {
     console.error("Pago único con monto menor al del plan", pay.id, pay.transaction_amount);
     await logEvent(ref.orgId, "payment", String(pay.id), "monto_invalido", pay.transaction_amount, pay);
     return ref.orgId;
@@ -370,6 +375,7 @@ export async function applyOneTimePayment(pay: Payment): Promise<string | null> 
       current_period_end: addMonths(base, ref.cycle === "anual" ? 12 : 1).toISOString(),
       grace_until: null,
       pro_trial_ends_at: null,
+      invoice_pack: ref.pack,
       ...downgradeGraceFields(current, ref.plan),
     },
     { onConflict: "org_id" }
@@ -419,13 +425,15 @@ interface CheckoutDetail {
   method: PaymentMethod;
   /** Primer cobro con la promo del primer mes. */
   promo?: boolean;
+  /** Paquete de facturas por mes (0 o ausente: sin paquete). */
+  pack?: number;
   /** external_reference del pago único. */
   ref?: string;
 }
 
 /** Anota un checkout abierto para buscar después su pago. */
 export async function recordCheckout(orgId: string, checkoutId: string, detail: CheckoutDetail) {
-  await logEvent(orgId, "checkout", checkoutId, "pending", firstChargeAmount(detail.plan, detail.cycle, Boolean(detail.promo)), detail);
+  await logEvent(orgId, "checkout", checkoutId, "pending", firstChargeAmount(detail.plan, detail.cycle, Boolean(detail.promo), detail.pack ?? 0), detail);
 }
 
 /** ¿Se pagó el checkout? Si se pagó, lo aplica. */
@@ -520,7 +528,7 @@ async function ensurePromoEnded(orgId: string): Promise<void> {
   if (!hadPromo || ended || !sub?.mp_preapproval_id || sub.payment_status === "cancelled") return;
   const pre = await getPreapproval(sub.mp_preapproval_id);
   const ref = await referenceOf(pre);
-  if (ref?.orgId === orgId) await bumpPromoAmount(orgId, pre, ref.plan, ref.cycle);
+  if (ref?.orgId === orgId) await bumpPromoAmount(orgId, pre, ref.plan, ref.cycle, ref.pack);
 }
 
 /**
