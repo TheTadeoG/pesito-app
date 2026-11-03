@@ -20,6 +20,9 @@ export interface PlanAccent {
   badgeBg: string;
   badgeText: string;
   buttonVariant: "outline" | "gold" | "violet";
+  /** Panel de color con el total del plan actual (fondo y texto) y barra de uso. */
+  panel: string;
+  bar: string;
 }
 
 export const planAccents: Record<Plan, PlanAccent> = {
@@ -30,6 +33,8 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeBg: "bg-muted",
     badgeText: "text-muted-foreground",
     buttonVariant: "outline",
+    panel: "bg-primary text-primary-foreground",
+    bar: "bg-primary",
   },
   basico: {
     iconBg: "bg-accent text-accent-foreground",
@@ -38,6 +43,8 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeBg: "bg-muted",
     badgeText: "text-muted-foreground",
     buttonVariant: "outline",
+    panel: "bg-primary text-primary-foreground",
+    bar: "bg-primary",
   },
   // Pro: dorado — el plan "premium" del medio. Un tono para fondo claro y
   // otro para oscuro (esta app no define un color "warning"-like propio
@@ -49,6 +56,8 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeBg: "bg-amber-500",
     badgeText: "text-amber-950",
     buttonVariant: "gold",
+    panel: "bg-amber-500 text-amber-950",
+    bar: "bg-amber-500",
   },
   // IA: violeta — se distingue como el tope de gama, con onda "tecnológico".
   max: {
@@ -58,6 +67,8 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeBg: "bg-violet-500",
     badgeText: "text-white",
     buttonVariant: "violet",
+    panel: "bg-violet-500 text-white",
+    bar: "bg-violet-500",
   },
 };
 

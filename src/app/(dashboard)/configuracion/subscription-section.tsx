@@ -105,7 +105,7 @@ export function SubscriptionSection({
                 <Badge tone={billing?.status === "past_due" ? "warning" : "success"}>{billing?.status === "past_due" ? "Pago pendiente" : "Al día"}</Badge>
               </div>
               <div className="grid overflow-hidden rounded-xl border border-border md:grid-cols-[minmax(210px,260px)_1fr]">
-                <div className="grid content-center gap-1.5 bg-primary p-5 text-primary-foreground">
+                <div className={cn("grid content-center gap-1.5 p-5", currentAccent.panel)}>
                   <p className="text-xs opacity-90">{renewalDate ? `Próximo débito · ${renewalDate}` : "Próximo débito"}</p>
                   <p className="text-4xl font-bold leading-none tabular-nums">{formatCurrency(nextTotal)}</p>
                   <p className="text-xs opacity-90">{`${perText} · se cobra todo junto`}</p>
@@ -144,7 +144,7 @@ export function SubscriptionSection({
                     </div>
                     {subscription.invoicePack > 0 && usage && (
                       <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={`${usage.used} de ${subscription.invoicePack} facturas`}>
-                        <div className={cn("h-full min-w-[3px] rounded-full", usageFull ? "bg-danger" : "bg-primary")} style={{ width: `${usagePct}%` }} />
+                        <div className={cn("h-full min-w-[3px] rounded-full", usageFull ? "bg-danger" : currentAccent.bar)} style={{ width: `${usagePct}%` }} />
                       </div>
                     )}
                     <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
