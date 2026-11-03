@@ -44,8 +44,9 @@ export function InvoicePacksSection({
         <ul className="grid gap-2 sm:grid-cols-2">
           {INVOICE_PACKS.map((p) => {
             const mine = hasPlan && subscription.invoicePack === p.size;
-            return (
-              <li key={p.size} className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            const action = hasPlan ? (subscription.invoicePack > 0 ? "Cambiar" : "Sumar") : "Elegir";
+            const body = (
+              <>
                 <div className="min-w-0">
                   <p className="font-semibold text-foreground">{`${formatCount(p.size)} facturas por mes`}</p>
                   <p className="text-xs text-muted-foreground">{`${formatCurrency(p.price)} por mes · IVA incl.`}</p>
@@ -53,10 +54,24 @@ export function InvoicePacksSection({
                 {mine ? (
                   <Badge tone="success">Tu paquete</Badge>
                 ) : canManage ? (
-                  <Link href={href(p.size)} prefetch={false} className="shrink-0 text-sm font-medium text-primary hover:underline">
-                    {hasPlan ? (subscription.invoicePack > 0 ? "Cambiar" : "Sumar") : "Elegir"}
-                  </Link>
+                  <span className="shrink-0 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">{action}</span>
                 ) : null}
+              </>
+            );
+            const base = "flex items-center justify-between gap-3 rounded-xl border px-4 py-3";
+            return (
+              <li key={p.size}>
+                {!mine && canManage ? (
+                  <Link
+                    href={href(p.size)}
+                    prefetch={false}
+                    className={`${base} border-border transition-colors hover:border-primary hover:bg-primary/5`}
+                  >
+                    {body}
+                  </Link>
+                ) : (
+                  <div className={`${base} ${mine ? "border-primary bg-primary/5" : "border-border"}`}>{body}</div>
+                )}
               </li>
             );
           })}
