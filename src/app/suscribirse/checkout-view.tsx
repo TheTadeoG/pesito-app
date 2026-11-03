@@ -62,10 +62,10 @@ export interface CheckoutViewProps {
   /** Paquete de facturas elegido al llegar. */
   initialPack: number;
   /** Con un débito activo del mismo plan: qué pasa al elegir cada paquete (se cobra aparte sólo lo que resta; sin nueva suscripción). */
-  changes: Record<number, { kind: "upgrade" | "downgrade" | "same" | "restore"; today: number; next: number }> | null;
+  changes: Record<number, { kind: "upgrade" | "downgrade" | "same" | "restore"; today: number; next: number; planPart: number }> | null;
   changeDate: string;
   /** Baja de plan (o cancelar una baja programada) con débito activo: sin cobro hoy, rige desde la renovación. */
-  planSwitch: { kind: "downgrade" | "restore"; next: number; date: string; fromName: string; limits: { users: number; openRegisters: number; products: number } } | null;
+  planSwitch: { kind: "downgrade" | "restore"; next: number; planPart: number; pack: number; date: string; fromName: string; limits: { users: number; openRegisters: number; products: number } } | null;
   /** Próximo cobro (débito) o hasta cuándo queda pago (pago único). */
   dates: Record<BillingCycle, Record<PaymentMethod, string>>;
   current: { planName: string; autoDebit: boolean; samePlan: boolean } | null;
@@ -290,6 +290,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                     <dt className="text-muted-foreground">{planSwitch.kind === "downgrade" ? `Desde el ${planSwitch.date}` : "Próximo cobro"}</dt>
                     <dd className="text-foreground">{`${formatCurrency(planSwitch.next)} por ${cycle === "anual" ? "año" : "mes"}`}</dd>
                   </div>
+                  <ChargeBreakdown planName={planName} planPart={planSwitch.planPart} pack={planSwitch.pack} total={planSwitch.next} suffix={cycle === "anual" ? "año" : "mes"} />
                   <p className="text-xs text-muted-foreground">
                     {planSwitch.kind === "downgrade"
                       ? `Seguís con el Plan ${planSwitch.fromName} hasta el ${planSwitch.date}, que ya está pago. Desde ahí pasás al ${planName} y mantenés tu paquete de facturas. El Plan ${planLabels[plan]} permite ${planSwitch.limits.users} usuarios, ${planSwitch.limits.openRegisters} cajas y ${planSwitch.limits.products.toLocaleString("es-AR")} productos: ordená tu negocio antes de esa fecha.`
@@ -306,6 +307,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                     <dt className="text-muted-foreground">Próximo cobro</dt>
                     <dd className="text-foreground">{`${changeDate} · ${formatCurrency(change.next)}`}</dd>
                   </div>
+                  <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
                   <p className="text-xs text-muted-foreground">
                     {change.kind === "upgrade"
                       ? "Pagás el paquete completo, aparte. Desde el próximo cobro, tu débito incluye el plan y el paquete. El plan no se vuelve a cobrar."
@@ -418,6 +420,27 @@ export function CheckoutView(props: CheckoutViewProps) {
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+/** Desglose del cobro: el plan y, si hay, el paquete de facturas (para que el total no parezca otro precio). */
+function ChargeBreakdown({ planName, planPart, pack, total, suffix }: { planName: string; planPart: number; pack: number; total: number; suffix: string }) {
+  if (pack <= 0) return null;
+  return (
+    <div className="space-y-1 rounded-lg border border-border bg-card px-3 py-2 text-xs">
+      <div className="flex justify-between text-muted-foreground">
+        <span>{planName}</span>
+        <span>{formatCurrency(planPart)}</span>
+      </div>
+      <div className="flex justify-between text-muted-foreground">
+        <span>{`Paquete de ${formatCount(pack)} facturas por mes`}</span>
+        <span>{formatCurrency(total - planPart)}</span>
+      </div>
+      <div className="flex justify-between border-t border-border pt-1 font-medium text-foreground">
+        <span>{`Total por ${suffix}`}</span>
+        <span>{formatCurrency(total)}</span>
+      </div>
     </div>
   );
 }
