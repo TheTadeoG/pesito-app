@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createKiosco } from "@/app/onboarding/actions";
 import { businessTypes } from "@/lib/business-types";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,13 @@ import { BUSINESS_NAME_MAX } from "@/lib/business-name";
 export function KioscoForm({
   initialName = "",
   needsPhone = false,
+  payFirst = false,
 }: {
   initialName?: string;
   /** Cuenta sin teléfono (por ejemplo, creada con Google): se pide junto al nombre. */
   needsPhone?: boolean;
+  /** Contrató un plan desde el alta: se crea el negocio ya (sin preguntar el rubro) y se va derecho al pago. */
+  payFirst?: boolean;
 }) {
   // El nombre ya se pidió una vez en /registro (queda guardado en el
   // usuario hasta confirmar el email). Si ya lo tenemos, no lo volvemos a
@@ -27,15 +30,39 @@ export function KioscoForm({
   const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState("");
 
-  async function handleSelectType(value: string) {
-    if (pending) return;
+  const autoStarted = useRef(false);
+  const canAuto = payFirst && initialName.trim() !== "" && !needsPhone;
+  useEffect(() => {
+    if (!canAuto || autoStarted.current) return;
+    autoStarted.current = true;
+    void handleSelectType("pendiente");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canAuto]);
+
+  async function handleSelectType(value: string, typedPhone?: string) {
+    if (pending && !canAuto) return;
     setPending(true);
     setError(null);
-    const result = await createKiosco(name, value, needsPhone ? phone : undefined);
+    const result = await createKiosco(name || initialName, value, typedPhone ?? (needsPhone ? phone : undefined));
     if (result.error) {
       setError(result.error);
       setPending(false);
     }
+  }
+
+  if (canAuto) {
+    return (
+      <div className="space-y-3 text-sm text-muted-foreground">
+        {error ? (
+          <>
+            <p className="rounded-xl bg-danger-bg px-3 py-2 text-danger">{error}</p>
+            <Button type="button" onClick={() => void handleSelectType("pendiente")}>Reintentar</Button>
+          </>
+        ) : (
+          <p>Preparando tu cuenta para el pago…</p>
+        )}
+      </div>
+    );
   }
 
   if (step === "nombre") {
@@ -57,6 +84,10 @@ export function KioscoForm({
             setPhone(typed);
           }
           setError(null);
+          if (payFirst) {
+            void handleSelectType("pendiente", needsPhone ? String(new FormData(e.currentTarget).get("phone") ?? "") : undefined);
+            return;
+          }
           setStep("rubro");
         }}
       >

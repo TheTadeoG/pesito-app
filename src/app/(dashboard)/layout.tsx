@@ -9,6 +9,7 @@ import { capitalizeWords } from "@/lib/utils";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { CommercialDatesBanner } from "@/components/dashboard/commercial-dates-banner";
+import { BusinessTypeDialog } from "@/components/dashboard/business-type-dialog";
 import { EmailVerifyBanner } from "@/components/dashboard/email-verify-banner";
 import { ProTrialBanner } from "@/components/dashboard/pro-trial-banner";
 import { ToastProvider } from "@/components/toast/toast-provider";
@@ -275,6 +276,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               closeTime={organization.cash_close_time ?? null}
             />
           )}
+          {isAdmin && organization.business_type === "pendiente" && <BusinessTypeDialog businessName={organization.name} />}
           {emailUnverified && email && <EmailVerifyBanner email={email} />}
           <OnboardingChecklist show={newBusiness} canReopen={isOrgAdmin(membership.role)} />
           {subscription.plan === "gratis" && subscription.proTrialEndsAt && (

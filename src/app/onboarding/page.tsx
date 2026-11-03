@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MIN_PHONE_DIGITS, phoneDigits } from "@/lib/phone-countries";
 import { signOut } from "@/app/(auth)/actions";
+import { normalizePlanParam } from "@/lib/plan-ids";
 import { KioscoForm } from "@/app/onboarding/kiosco-form";
 import { TrackEvent } from "@/components/track-event";
 
@@ -63,6 +64,10 @@ export default async function OnboardingPage() {
   const needsPhone =
     typeof user.user_metadata?.phone !== "string" || phoneDigits(user.user_metadata.phone) < MIN_PHONE_DIGITS;
 
+  // Contrató un plan pago desde el alta: se va derecho al pago y el rubro se pregunta después.
+  const wantedPlan = normalizePlanParam(user.user_metadata?.selected_plan);
+  const payFirst = typeof wantedPlan === "string" && ["basico", "pro", "max"].includes(wantedPlan);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
       <Card className="w-full max-w-xl">
@@ -74,7 +79,7 @@ export default async function OnboardingPage() {
         </CardHeader>
         <CardContent>
           <TrackEvent event="sign_up" params={{ method: user.identities?.some((i) => i.provider === "google") ? "google" : "email" }} dedupeKey="sign_up" />
-          <KioscoForm initialName={initialName} needsPhone={needsPhone} />
+          <KioscoForm initialName={initialName} needsPhone={needsPhone} payFirst={payFirst} />
         </CardContent>
       </Card>
       <form action={signOut}>

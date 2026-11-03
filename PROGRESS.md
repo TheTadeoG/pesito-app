@@ -710,3 +710,7 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - **Total, peor caso: ~US$0,0002 por factura = US$0,20 cada 1.000 facturas** (US$2 cada 10.000; US$20 cada 100.000). Un negocio que emita 3.000 facturas por mes cuesta ~US$0,60 por mes.
 
 **Pendiente:** correr el SDK contra el entorno de pruebas de ARCA con un contador en el almacén para saber cuántas operaciones hace en realidad, y mirar el uso real de Supabase/Vercel con varios negocios facturando.
+
+## Alta con plan directo: el rubro se pregunta después de pagar
+
+- Si se contrata un plan desde el registro, `/onboarding` crea el negocio sin preguntar el rubro (queda `business_type = "pendiente"`) y va derecho a `/suscribirse`. Al entrar al panel (pague o no), el dueño ve `BusinessTypeDialog` y elige el rubro (`setBusinessType`). Quien no contrata un plan sigue con el flujo de siempre.
