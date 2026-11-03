@@ -303,9 +303,9 @@ export function CheckoutView(props: CheckoutViewProps) {
                     <dt className="text-muted-foreground">Hoy pagás</dt>
                     <dd className="text-lg font-bold text-foreground">{formatCurrency(0)}</dd>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-muted-foreground">{planSwitch.kind === "downgrade" ? `Desde el ${planSwitch.date} pagarás ${cycle === "anual" ? "por año" : "por mes"}` : "Próximo cobro"}</dt>
-                    <dd className="text-foreground">{`${formatCurrency(planSwitch.next)} por ${cycle === "anual" ? "año" : "mes"}`}</dd>
+                  <div className="space-y-0.5 border-t border-border pt-2">
+                    <dt className="text-muted-foreground">{planSwitch.kind === "downgrade" ? `Desde el ${planSwitch.date.replace(/ de \d{4}$/, "")} pagarás` : "Próximo cobro"}</dt>
+                    <dd className="text-2xl font-bold text-foreground">{`${formatCurrency(planSwitch.next)} `}<span className="text-sm font-medium text-muted-foreground">{cycle === "anual" ? "por año" : "por mes"}</span></dd>
                   </div>
                   <ChargeBreakdown planName={planName} planPart={planSwitch.planPart} pack={planSwitch.pack} total={planSwitch.next} suffix={cycle === "anual" ? "año" : "mes"} />
                   <p className="text-xs text-muted-foreground">
@@ -358,9 +358,9 @@ export function CheckoutView(props: CheckoutViewProps) {
                         )}
                       </section>
                       <section className="space-y-2 rounded-xl bg-muted/60 px-4 py-3">
-                        <div className="flex items-baseline justify-between gap-3">
-                          <h3 className="font-semibold text-foreground">{`Desde el ${changeDate} pagarás ${cycle === "anual" ? "por año" : "por mes"}`}</h3>
-                          <p className="text-lg font-bold text-foreground">{formatCurrency(change.next)}</p>
+                        <div className="space-y-0.5">
+                          <h3 className="text-muted-foreground">{`Desde el ${changeDate.replace(/ de \d{4}$/, "")} pagarás`}</h3>
+                          <p className="text-2xl font-bold text-foreground">{`${formatCurrency(change.next)} `}<span className="text-sm font-medium text-muted-foreground">{cycle === "anual" ? "por año" : "por mes"}</span></p>
                         </div>
                         <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
                         <p className="text-xs text-muted-foreground">{`Hoy tu débito es de ${formatCurrency(change.currentTotal)}${cycle === "anual" ? " por año" : " por mes"}: pasa a ${formatCurrency(change.next)}.`}</p>
@@ -376,9 +376,9 @@ export function CheckoutView(props: CheckoutViewProps) {
                         <dt className="text-muted-foreground">Pagás ahora</dt>
                         <dd className="text-lg font-bold text-foreground">{formatCurrency(0)}</dd>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <dt className="text-muted-foreground">{`Desde el ${changeDate} pagarás ${cycle === "anual" ? "por año" : "por mes"}`}</dt>
-                        <dd className="font-semibold text-foreground">{formatCurrency(change.next)}</dd>
+                      <div className="space-y-0.5 border-t border-border pt-2">
+                        <dt className="text-muted-foreground">{`Desde el ${changeDate.replace(/ de \d{4}$/, "")} pagarás`}</dt>
+                        <dd className="text-2xl font-bold text-foreground">{`${formatCurrency(change.next)} `}<span className="text-sm font-medium text-muted-foreground">{cycle === "anual" ? "por año" : "por mes"}</span></dd>
                       </div>
                       <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
                       <p className="text-xs text-muted-foreground">
