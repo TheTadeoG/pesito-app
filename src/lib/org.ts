@@ -2,11 +2,14 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isMembershipPaused } from "@/lib/member-pause";
+import { isInternalEmail } from "@/lib/internal-auth";
 import type { Membership, Organization } from "@/lib/types";
 
 export interface CurrentOrgContext {
   userId: string;
   email: string | null;
+  /** El email de la cuenta todavía no se confirmó (se pide después del alta, con un recordatorio). */
+  emailUnverified: boolean;
   firstName: string | null;
   organization: Organization;
   membership: Membership;
@@ -68,6 +71,8 @@ export const requireOrgContext = cache(async (): Promise<CurrentOrgContext> => {
   return {
     userId: claims.sub,
     email: claims.email ?? null,
+    // Sólo si Supabase lo marca explícitamente sin confirmar (las cuentas anteriores y las internas no lo traen).
+    emailUnverified: meta.email_verified === false && !isInternalEmail(claims.email ?? ""),
     firstName,
     organization: organizations,
     membership: membershipRow,
