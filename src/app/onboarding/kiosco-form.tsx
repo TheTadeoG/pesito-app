@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { createKiosco } from "@/app/onboarding/actions";
 import { businessTypes } from "@/lib/business-types";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ export function KioscoForm({
   initialName?: string;
   /** Cuenta sin teléfono (por ejemplo, creada con Google): se pide junto al nombre. */
   needsPhone?: boolean;
-  /** Contrató un plan desde el alta: se crea el negocio ya (sin preguntar el rubro) y se va derecho al pago. */
+  /** Contrató un plan desde el alta: no se pregunta el rubro (se pregunta después de pagar). */
   payFirst?: boolean;
 }) {
   // El nombre ya se pidió una vez en /registro (queda guardado en el
@@ -30,39 +30,15 @@ export function KioscoForm({
   const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState("");
 
-  const autoStarted = useRef(false);
-  const canAuto = payFirst && initialName.trim() !== "" && !needsPhone;
-  useEffect(() => {
-    if (!canAuto || autoStarted.current) return;
-    autoStarted.current = true;
-    void handleSelectType("pendiente");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canAuto]);
-
   async function handleSelectType(value: string, typedPhone?: string) {
-    if (pending && !canAuto) return;
+    if (pending) return;
     setPending(true);
     setError(null);
-    const result = await createKiosco(name || initialName, value, typedPhone ?? (needsPhone ? phone : undefined));
+    const result = await createKiosco(name, value, typedPhone ?? (needsPhone ? phone : undefined));
     if (result.error) {
       setError(result.error);
       setPending(false);
     }
-  }
-
-  if (canAuto) {
-    return (
-      <div className="space-y-3 text-sm text-muted-foreground">
-        {error ? (
-          <>
-            <p className="rounded-xl bg-danger-bg px-3 py-2 text-danger">{error}</p>
-            <Button type="button" onClick={() => void handleSelectType("pendiente")}>Reintentar</Button>
-          </>
-        ) : (
-          <p>Preparando tu cuenta para el pago…</p>
-        )}
-      </div>
-    );
   }
 
   if (step === "nombre") {

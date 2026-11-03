@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { MIN_PHONE_DIGITS, phoneDigits } from "@/lib/phone-countries";
 import { signOut } from "@/app/(auth)/actions";
 import { normalizePlanParam } from "@/lib/plan-ids";
+import { createKiosco } from "@/app/onboarding/actions";
 import { KioscoForm } from "@/app/onboarding/kiosco-form";
 import { TrackEvent } from "@/components/track-event";
 
@@ -67,6 +68,10 @@ export default async function OnboardingPage() {
   // Contrató un plan pago desde el alta: se va derecho al pago y el rubro se pregunta después.
   const wantedPlan = normalizePlanParam(user.user_metadata?.selected_plan);
   const payFirst = typeof wantedPlan === "string" && ["basico", "pro", "max"].includes(wantedPlan);
+
+  // Ya tenemos nombre y teléfono del registro: se crea el negocio acá mismo y se sigue al pago, sin pantalla intermedia.
+  // Si falla, se muestra el formulario de siempre.
+  if (payFirst && initialName.trim() && !needsPhone) await createKiosco(initialName, "pendiente");
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
