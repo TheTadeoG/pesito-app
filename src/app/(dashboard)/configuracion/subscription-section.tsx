@@ -16,7 +16,6 @@ import { BillingStatus } from "@/app/(dashboard)/configuracion/billing-status";
 export function SubscriptionSection({
   subscription,
   monthlySalesCount,
-  planHistory,
   canManage,
   paymentsEnabled,
 }: {
@@ -28,7 +27,6 @@ export function SubscriptionSection({
   // Sólo se calcula (en el server) cuando hace falta mostrarlo: plan
   // gratis y sin prueba Pro activa.
   monthlySalesCount: number | null;
-  planHistory: PlanHistoryEntry[];
 }) {
   const current = planDefinitions[subscription.plan];
   const billing = subscription.billing;
@@ -385,31 +383,6 @@ export function SubscriptionSection({
           </div>
         </div>
 
-        {planHistory.length > 0 && (
-          <div className="space-y-3 border-t border-border pt-5">
-            <div className="flex items-center gap-2 text-foreground">
-              <History className="h-4 w-4 shrink-0 text-primary" />
-              <p className="text-sm font-semibold">Historial de cambios de plan</p>
-            </div>
-            <ul className="space-y-2">
-              {planHistory.map((entry) => (
-                <li
-                  key={entry.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-4 py-2.5 text-sm"
-                >
-                  <span className="text-foreground">
-                    Pasaste de <span className="font-medium">{planLabels[entry.fromPlan]}</span>{" "}
-                    a <span className="font-medium">{planLabels[entry.toPlan]}</span>
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDateTime(entry.createdAt)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         <p className="text-xs text-muted-foreground">
           ¿Tenés dudas sobre tu plan?{" "}
           <Link href="/soporte" className="font-medium text-primary hover:underline">
@@ -417,6 +390,37 @@ export function SubscriptionSection({
           </Link>
           .
         </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Cambios de plan: va al final de Planes, debajo de las facturas electrónicas. */
+export function PlanHistorySection({ planHistory }: { planHistory: PlanHistoryEntry[] }) {
+  if (planHistory.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <History className="h-4 w-4 shrink-0 text-primary" />
+          Historial de cambios de plan
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {planHistory.map((entry) => (
+            <li
+              key={entry.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-4 py-2.5 text-sm"
+            >
+              <span className="text-foreground">
+                Pasaste de <span className="font-medium">{planLabels[entry.fromPlan]}</span>{" "}
+                a <span className="font-medium">{planLabels[entry.toPlan]}</span>
+              </span>
+              <span className="text-xs text-muted-foreground">{formatDateTime(entry.createdAt)}</span>
+            </li>
+          ))}
+        </ul>
       </CardContent>
     </Card>
   );

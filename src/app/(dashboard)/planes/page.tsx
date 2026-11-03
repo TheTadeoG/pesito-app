@@ -11,7 +11,7 @@ import { mercadoPagoConfigured } from "@/lib/mercadopago";
 import { syncReturnedPayment } from "@/lib/billing";
 import { getInvoiceUsage } from "@/lib/invoice-usage";
 import { InvoicePacksSection } from "@/app/(dashboard)/planes/invoice-packs-section";
-import { SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
+import { PlanHistorySection, SubscriptionSection } from "@/app/(dashboard)/configuracion/subscription-section";
 
 // Planes: el plan actual, la comparación y cómo se paga. Antes era una
 // pestaña de Configuración (/configuracion?tab=plan, que ahora redirige acá).
@@ -42,11 +42,11 @@ export default async function PlanesPage({
       <SubscriptionSection
         subscription={subscription}
         monthlySalesCount={monthlySalesCount}
-        planHistory={planHistory}
         canManage={isOrgAdmin(membership.role)}
         paymentsEnabled={mercadoPagoConfigured()}
       />
       <InvoicePacksSection subscription={subscription} usage={usage} canManage={isOrgAdmin(membership.role)} />
+      <PlanHistorySection planHistory={planHistory} />
     </div>
   );
 }
