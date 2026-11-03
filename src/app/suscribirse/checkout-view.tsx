@@ -127,7 +127,7 @@ export function CheckoutView(props: CheckoutViewProps) {
             <Icon className="h-6 w-6" />
           </span>
           <p className={cn("mt-5 text-sm font-medium", "text-muted-foreground")}>
-            {current?.samePlan ? "Renovar el" : "Suscribirte al"}
+            {planSwitch ? "Cambiar al" : current?.samePlan ? "Renovar el" : "Suscribirte al"}
           </p>
           <h1 className={cn("text-3xl font-bold tracking-tight sm:text-4xl", "text-foreground")}>{planName}</h1>
           <p className="mt-3 flex items-baseline gap-2">
@@ -146,11 +146,13 @@ export function CheckoutView(props: CheckoutViewProps) {
                 : `Pagando mensual, el primer mes sale ${formatCurrency(promoPrice)}.`}
             </p>
           )}
+          {!planSwitch && (
           <p className={cn("mt-1 text-sm", "text-muted-foreground")}>
             {cycle === "anual"
               ? `${formatCurrency(prices.anual)} al año. Ahorrás ${formatCurrency(monthly * 12 - prices.anual)}.`
               : `O ${formatCurrency(annualMonthly)} por mes pagando anual (ahorrás ${formatCurrency(monthly * 12 - prices.anual)}).`}
           </p>
+          )}
 
           <p className={cn("mt-8 text-xs font-semibold uppercase tracking-wider", "text-muted-foreground")}>
             {`Todo lo del Plan ${previousPlan[plan] ?? "Gratis"}, más:`}
@@ -191,9 +193,9 @@ export function CheckoutView(props: CheckoutViewProps) {
           ) : (
             <>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Elegí cómo pagar</h2>
+                <h2 className="text-2xl font-bold text-foreground">{planSwitch ? (planSwitch.kind === "downgrade" ? "Cambiar de plan" : "Mantener tu plan") : "Elegí cómo pagar"}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Pagás con Mercado Pago y volvés acá al terminar.
+                  {planSwitch ? "No se cobra nada hoy: el cambio rige desde tu próxima renovación." : "Pagás con Mercado Pago y volvés acá al terminar."}
                 </p>
               </div>
 
@@ -361,10 +363,10 @@ export function CheckoutView(props: CheckoutViewProps) {
                     </>
                   ) : (
                     <>
-                      <Lock className="h-4 w-4" />
+                      {!planSwitch && <Lock className="h-4 w-4" />}
                       {planSwitch
                         ? planSwitch.kind === "downgrade"
-                          ? `Cambiar al ${planName} desde el ${planSwitch.date}`
+                          ? `Cambiar al ${planName}`
                           : "Mantener mi plan"
                         : change
                         ? change.kind === "upgrade"
@@ -391,14 +393,18 @@ export function CheckoutView(props: CheckoutViewProps) {
 
               {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
 
-              <p className="text-center text-xs text-muted-foreground">
-                Al terminar de pagar, tocá «Ir al sitio del vendedor» para volver a Pesito.
-              </p>
+              {!planSwitch && (
+                <>
+                  <p className="text-center text-xs text-muted-foreground">
+                    Al terminar de pagar, tocá «Ir al sitio del vendedor» para volver a Pesito.
+                  </p>
 
-              <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-                <Lock className="h-3.5 w-3.5 shrink-0" />
-                Pago seguro procesado por Mercado Pago · Comprobante por email
-              </p>
+                  <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+                    <Lock className="h-3.5 w-3.5 shrink-0" />
+                    Pago seguro procesado por Mercado Pago · Comprobante por email
+                  </p>
+                </>
+              )}
 
               {fromSignup && (
                 <p className="text-center text-sm text-muted-foreground">
