@@ -85,11 +85,11 @@ export async function startSubscription(
     }
 
     const checkout = await createPreapprovalPlan({
-      reason: testPrice
-        ? `Pesito — Plan ${planLabels[plan]} (prueba de cobro)`
-        : promo
-        ? `Pesito — Plan ${planLabels[plan]}${packLabel} (primer mes con promo, después el precio normal)`
-        : `Pesito — Plan ${planLabels[plan]}${packLabel} (${cycle})`,
+      // Mercado Pago acepta hasta 60 caracteres en el motivo.
+      reason: (testPrice
+        ? `Pesito Plan ${planLabels[plan]} (prueba de cobro)`
+        : `Pesito Plan ${planLabels[plan]}${pack > 0 ? ` + ${formatCount(pack)} facturas` : ""} (${promo ? "promo 1.er mes" : cycle})`
+      ).slice(0, 60),
       externalReference: buildExternalReference(organization.id, plan, cycle, pack),
       frequencyMonths: cycle === "anual" ? 12 : 1,
       amount,

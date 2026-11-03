@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
 import { createKiosco } from "@/app/onboarding/actions";
 import { businessTypes } from "@/lib/business-types";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,7 @@ export function KioscoForm({
   const [phone, setPhone] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [type, setType] = useState("");
 
   async function handleSelectType(value: string) {
     if (pending) return;
@@ -87,37 +87,57 @@ export function KioscoForm({
     );
   }
 
+  const chosen = businessTypes.find((t) => t.value === type);
+
   return (
     <div>
-      <h2 className="text-xl font-bold text-foreground">¿Qué tipo de negocio es?</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Esto nos ayuda a configurar funciones específicas para{" "}
         <span className="font-medium text-foreground">{name}</span>.
       </p>
 
-      <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {businessTypes.map((type) => (
+      <p className="mt-4 text-3xl font-bold leading-tight text-foreground sm:text-4xl" aria-live="polite">
+        {`Mi negocio es `}
+        <span
+          className={
+            chosen
+              ? "border-b-[3px] border-primary px-1 text-primary"
+              : "border-b-[3px] border-dashed border-border px-1 text-muted-foreground"
+          }
+        >
+          {chosen ? chosen.phrase : "…"}
+        </span>
+        .
+      </p>
+
+      <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2" role="radiogroup" aria-label="Tipo de negocio">
+        {businessTypes.map((t) => (
           <button
-            key={type.value}
+            key={t.value}
             type="button"
+            role="radio"
+            aria-checked={type === t.value}
             disabled={pending}
-            onClick={() => handleSelectType(type.value)}
-            className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3.5 py-3 text-left text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-60"
+            onClick={() => setType(t.value)}
+            className={`py-1 text-base underline decoration-2 underline-offset-[6px] transition-colors disabled:opacity-60 ${
+              type === t.value
+                ? "font-semibold text-foreground decoration-primary"
+                : "text-muted-foreground decoration-border hover:text-foreground hover:decoration-primary"
+            }`}
           >
-            <span className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-                <type.icon className="h-4 w-4" />
-              </span>
-              {type.label}
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            {t.label.toLowerCase()}
           </button>
         ))}
       </div>
+      <p className="mt-4 text-xs text-muted-foreground">¿No está tu rubro? Elegí «otro» y lo ajustamos después.</p>
 
       {error && (
         <p className="mt-3 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
       )}
+
+      <Button type="button" className="mt-6 w-full" disabled={!type || pending} onClick={() => void handleSelectType(type)}>
+        {pending ? "Creando tu negocio…" : "Seguir"}
+      </Button>
 
       <button
         type="button"
