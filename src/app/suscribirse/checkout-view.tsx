@@ -288,7 +288,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {change.kind === "upgrade"
-                      ? "Pagás sólo la parte del paquete que resta de este período, aparte. Desde el próximo cobro, tu débito incluye el plan y el paquete. El plan no se vuelve a cobrar."
+                      ? "Pagás el paquete completo, aparte. Desde el próximo cobro, tu débito incluye el plan y el paquete. El plan no se vuelve a cobrar."
                       : change.kind === "downgrade"
                         ? "No se cobra nada hoy. Seguís con tu paquete actual hasta el próximo cobro y desde ahí se debita menos."
                         : change.kind === "restore"

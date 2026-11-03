@@ -78,7 +78,7 @@ export function InvoicePacksSection({
         </ul>
         <p className="text-xs text-muted-foreground">
           {hasPlan
-            ? `Si ya pagás tu plan con débito automático, el plan no se vuelve a cobrar: al subir de paquete pagás aparte sólo lo que resta del período, y desde el próximo cobro el débito incluye plan y paquete. Si lo bajás, rige desde el próximo cobro.`
+            ? `Si ya pagás tu plan con débito automático, el plan no se vuelve a cobrar: al subir de paquete pagás aparte el paquete completo, y desde el próximo cobro el débito incluye plan y paquete. Si lo bajás, rige desde el próximo cobro.`
             : "Se contrata junto con un plan pago, desde el Plan Básico."}
         </p>
       </CardContent>

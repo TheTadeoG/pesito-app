@@ -412,7 +412,7 @@ export async function applyOneTimePayment(pay: Payment): Promise<string | null> 
 export interface PackChange {
   /** restore: había un cambio a la baja programado y se vuelve a elegir el paquete actual (no se cobra nada). */
   kind: "upgrade" | "downgrade" | "same" | "restore";
-  /** Lo que se paga hoy: sólo la parte proporcional del paquete (0 si se baja o se quita). */
+  /** Lo que se paga hoy: el paquete completo (0 si se baja o se quita). Sólo en pago anual se cobran los meses que quedan. */
   today: number;
   /** Monto de los próximos cobros del débito (plan + paquete). */
   next: number;
@@ -422,7 +422,8 @@ export interface PackChange {
 
 /**
  * Cambiar el paquete de facturas con un débito automático activo del mismo plan y ciclo: no se crea otra suscripción
- * (eso cobraría el plan dos veces). Si se sube, se cobra aparte hoy sólo lo que falta del período y el débito pasa a
+ * (eso cobraría el plan dos veces). Si se sube, se cobra aparte hoy el paquete completo (no proporcional: las facturas
+ * se pueden usar todas en un día) y el débito pasa a
  * cobrar plan + paquete desde la renovación; si se baja o se quita, no se cobra nada y rige desde la renovación.
  * null = no corresponde (otro plan, otro ciclo, sin débito activo): se contrata como siempre.
  */
@@ -439,9 +440,12 @@ export function packChange(sub: SubscriptionInfo, plan: Plan, cycle: BillingCycl
   if (pack < current) return { kind: "downgrade", today: 0, next, nextDate };
   const start = addMonths(end, cycle === "anual" ? -12 : -1);
   const periodMs = Math.max(1, end.getTime() - start.getTime());
-  const leftMs = Math.min(periodMs, Math.max(0, end.getTime() - now.getTime()));
   const diff = chargeAmount(plan, cycle, pack) - chargeAmount(plan, cycle, current);
-  return { kind: "upgrade", today: Math.max(1, Math.round((diff * leftMs) / periodMs)), next, nextDate };
+  if (cycle === "mensual") return { kind: "upgrade", today: Math.max(1, diff), next, nextDate };
+  // Anual: el cupo es mensual, así que se cobran los meses que quedan del año.
+  const leftMs = Math.min(periodMs, Math.max(0, end.getTime() - now.getTime()));
+  const monthsLeft = Math.max(1, Math.min(12, Math.ceil((leftMs / periodMs) * 12)));
+  return { kind: "upgrade", today: Math.max(1, Math.round((diff / 12) * monthsLeft)), next, nextDate };
 }
 
 /** Vuelve a dejar el paquete actual (se cancela una baja programada): el débito vuelve a cobrar plan + paquete. */
