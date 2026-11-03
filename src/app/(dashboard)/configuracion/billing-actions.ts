@@ -29,6 +29,7 @@ import {
   planChange,
   recordCheckout,
   scheduleDowngrade,
+  upgradeChange,
   scheduleLowerPack,
   type CheckoutState,
   type PaymentMethod,
@@ -71,6 +72,26 @@ export async function startSubscription(
   // mantiene el paquete de facturas.
   if (method === "debito") {
     const sub = await getSubscription(await createClient(), organization.id);
+    const up = upgradeChange(sub, plan, cycle, pack);
+    if (up) {
+      // Mejora de plan: se cobra aparte sólo la diferencia con lo ya pago y el débito sube desde la renovación.
+      try {
+        const ref = `${buildExternalReference(organization.id, plan, cycle, pack)}|a${up.today}_${crypto.randomBytes(6).toString("hex")}`;
+        const pref = await createPreference({
+          title: `Pesito mejora al Plan ${planLabels[plan]} (diferencia con lo que ya pagaste)`.slice(0, 120),
+          externalReference: ref,
+          amount: up.today,
+          backUrl,
+        });
+        const url = usingTestCredentials() ? pref.sandbox_init_point ?? pref.init_point : pref.init_point;
+        if (!url) return { error: "Mercado Pago no devolvió el link de pago. Probá de nuevo." };
+        await recordCheckout(organization.id, pref.id, { plan, cycle, method: "unico", ref, pack, addon: true, addonAmount: up.today });
+        return { url, checkoutId: pref.id };
+      } catch (e) {
+        console.error("startSubscription (mejora de plan)", e instanceof MercadoPagoError ? e.body : e);
+        return { error: mercadoPagoErrorMessage(e) ? `Mercado Pago rechazó el pedido: ${mercadoPagoErrorMessage(e)}` : "No pudimos conectar con Mercado Pago. Probá de nuevo en un rato." };
+      }
+    }
     const down = planChange(sub, plan, cycle);
     if (down && (down.kind === "downgrade" || pack === (sub.nextInvoicePack ?? sub.invoicePack))) {
       try {

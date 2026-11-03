@@ -62,7 +62,9 @@ export interface CheckoutViewProps {
   /** Paquete de facturas elegido al llegar. */
   initialPack: number;
   /** Con un débito activo del mismo plan: qué pasa al elegir cada paquete (se cobra aparte sólo lo que resta; sin nueva suscripción). */
-  changes: Record<number, { kind: "upgrade" | "downgrade" | "same" | "restore"; today: number; next: number; planPart: number; packFull: number; credit: number; currentTotal: number }> | null;
+  changes: Record<number, { kind: "upgrade" | "downgrade" | "same" | "restore"; today: number; next: number; planPart: number; packFull: number; credit: number; currentTotal: number; fullNow: number; paidNow: number }> | null;
+  /** Si el cambio es una mejora de plan: el plan del que se viene. */
+  upgradeFrom: string | null;
   changeDate: string;
   /** Paquete de facturas que ya tiene contratado. */
   currentPack: number;
@@ -75,7 +77,7 @@ export interface CheckoutViewProps {
 }
 
 export function CheckoutView(props: CheckoutViewProps) {
-  const { plan, fromSignup, features, totals, changes, changeDate, currentPack, planSwitch, dates, current, paymentsEnabled } = props;
+  const { plan, fromSignup, features, totals, changes, upgradeFrom, changeDate, currentPack, planSwitch, dates, current, paymentsEnabled } = props;
   const [pack, setPack] = useState(props.initialPack);
   const { prices, promoPrice } = totals[pack] ?? totals[0];
   const change = planSwitch ? null : changes?.[pack] ?? null;
@@ -129,7 +131,7 @@ export function CheckoutView(props: CheckoutViewProps) {
             <Icon className="h-6 w-6" />
           </span>
           <p className={cn("mt-5 text-sm font-medium", "text-muted-foreground")}>
-            {planSwitch ? "Cambiar al" : change ? "Cambiar el paquete de facturas del" : current?.samePlan ? "Renovar el" : "Suscribirte al"}
+            {planSwitch ? "Cambiar al" : change ? (upgradeFrom ? `Mejorar desde el Plan ${upgradeFrom} al` : "Cambiar el paquete de facturas del") : current?.samePlan ? "Renovar el" : "Suscribirte al"}
           </p>
           <h1 className={cn("text-3xl font-bold tracking-tight sm:text-4xl", "text-foreground")}>{planName}</h1>
           {change ? (
@@ -208,9 +210,9 @@ export function CheckoutView(props: CheckoutViewProps) {
           ) : (
             <>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">{planSwitch ? (planSwitch.kind === "downgrade" ? "Cambiar de plan" : "Mantener tu plan") : change ? "Cambiar el paquete de facturas" : "Elegí cómo pagar"}</h2>
+                <h2 className="text-2xl font-bold text-foreground">{planSwitch ? (planSwitch.kind === "downgrade" ? "Cambiar de plan" : "Mantener tu plan") : change ? (upgradeFrom ? "Mejorar tu plan" : "Cambiar el paquete de facturas") : "Elegí cómo pagar"}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {planSwitch ? "No se cobra nada hoy: el cambio rige desde tu próxima renovación." : change ? "Tu plan no se vuelve a cobrar: sólo cambia el paquete." : "Pagás con Mercado Pago y volvés acá al terminar."}
+                  {planSwitch ? "No se cobra nada hoy: el cambio rige desde tu próxima renovación." : change ? (upgradeFrom ? "No se cobra el plan de nuevo: pagás sólo la diferencia con lo que ya pagaste." : "Tu plan no se vuelve a cobrar: sólo cambia el paquete.") : "Pagás con Mercado Pago y volvés acá al terminar."}
                 </p>
               </div>
 
@@ -321,7 +323,22 @@ export function CheckoutView(props: CheckoutViewProps) {
                           <h3 className="font-semibold text-foreground">Pagás ahora, una sola vez</h3>
                           <p className="text-lg font-bold text-foreground">{formatCurrency(change.today)}</p>
                         </div>
-                        {cycle === "mensual" && currentPack > 0 ? (
+                        {upgradeFrom ? (
+                          <div className="space-y-1 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+                            <div className="flex justify-between">
+                              <span>{`${planName}${pack > 0 ? ` + ${formatCount(pack)} facturas` : ""}`}</span>
+                              <span>{formatCurrency(change.fullNow)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>{`Lo que ya pagaste (Plan ${upgradeFrom}${currentPack > 0 ? ` + ${formatCount(currentPack)} facturas` : ""})`}</span>
+                              <span>{`− ${formatCurrency(change.paidNow)}`}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-border pt-1 font-medium text-foreground">
+                              <span>Diferencia a pagar ahora</span>
+                              <span>{formatCurrency(change.today)}</span>
+                            </div>
+                          </div>
+                        ) : cycle === "mensual" && currentPack > 0 ? (
                           <div className="space-y-1 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
                             <div className="flex justify-between">
                               <span>{`Paquete de ${formatCount(pack)} facturas`}</span>
@@ -348,7 +365,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                         <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
                         <p className="text-xs text-muted-foreground">{`Hoy tu débito es de ${formatCurrency(change.currentTotal)}${cycle === "anual" ? " por año" : " por mes"}: pasa a ${formatCurrency(change.next)}.`}</p>
                       </section>
-                      <p className="text-xs text-muted-foreground">El plan no se vuelve a cobrar: el pago de ahora es sólo la diferencia del paquete, una vez. Después se debita todo junto cada {cycle === "anual" ? "año" : "mes"}.</p>
+                      <p className="text-xs text-muted-foreground">El plan no se vuelve a cobrar: el pago de ahora es sólo la diferencia, una vez. Después se debita todo junto cada {cycle === "anual" ? "año" : "mes"}.</p>
                     </>
                   ) : (
                     <dl className="space-y-2 rounded-xl bg-muted/60 px-4 py-3">

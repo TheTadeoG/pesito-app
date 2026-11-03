@@ -504,6 +504,28 @@ export async function cancelScheduledPack(orgId: string, preapprovalId: string, 
   if (error) throw new Error(`No pudimos guardar el cambio: ${error.message}`);
 }
 
+/**
+ * Subir de plan con un débito automático activo (mismo ciclo): no se crea otra suscripción ni se cobra el plan nuevo
+ * entero. Se cobra aparte la diferencia con lo que ya está pago (plan + paquete actuales) y el débito pasa a cobrar el
+ * plan nuevo con el paquete desde la renovación. En pago anual, la diferencia de los meses que quedan del año.
+ * null = no corresponde (no es una mejora, sin débito activo u otro ciclo): se contrata como siempre.
+ */
+export function upgradeChange(sub: SubscriptionInfo, plan: Plan, cycle: BillingCycle, pack: number, now = new Date()): PackChange | null {
+  const b = sub.billing;
+  if (sub.plan === "gratis" || plan === "gratis" || planOrder.indexOf(plan) <= planOrder.indexOf(sub.plan)) return null;
+  if (!b || b.status !== "active" || !b.mpPreapprovalId || b.cycle !== cycle || !b.currentPeriodEnd) return null;
+  const end = new Date(b.currentPeriodEnd);
+  if (end <= now) return null;
+  const next = chargeAmount(plan, cycle, pack);
+  const diff = Math.max(1, next - chargeAmount(sub.plan, cycle, sub.invoicePack));
+  if (cycle === "mensual") return { kind: "upgrade", today: diff, next, nextDate: end.toISOString() };
+  const start = addMonths(end, -12);
+  const periodMs = Math.max(1, end.getTime() - start.getTime());
+  const leftMs = Math.min(periodMs, Math.max(0, end.getTime() - now.getTime()));
+  const monthsLeft = Math.max(1, Math.min(12, Math.ceil((leftMs / periodMs) * 12)));
+  return { kind: "upgrade", today: Math.max(1, Math.round((diff / 12) * monthsLeft)), next, nextDate: end.toISOString() };
+}
+
 /** Baja o quita el paquete: el débito cobra menos desde la renovación y el paquete actual rige hasta entonces. */
 export async function scheduleLowerPack(orgId: string, preapprovalId: string, plan: Plan, cycle: BillingCycle, pack: number) {
   await updatePreapprovalAmount(preapprovalId, chargeAmount(await renewalPlan(orgId, plan), cycle, pack));
@@ -526,14 +548,22 @@ async function applyPackAddon(pay: Payment, ref: { orgId: string; plan: Plan; cy
     return ref.orgId;
   }
   const { data: current } = await admin.from("organization_subscriptions").select("*").eq("org_id", ref.orgId).maybeSingle();
-  if (!current?.mp_preapproval_id || current.plan !== ref.plan) {
+  // La referencia lleva el plan al que se va: el mismo (sólo cambia el paquete) o uno más alto (mejora de plan).
+  const upgrading = Boolean(current && current.plan !== ref.plan && planOrder.indexOf(ref.plan) > planOrder.indexOf(current.plan));
+  if (!current?.mp_preapproval_id || (current.plan !== ref.plan && !upgrading)) {
     // Ya no tiene ese débito: se anota para revisarlo a mano (el pago existe).
     await logEvent(ref.orgId, "payment", String(pay.id), "sin_debito", pay.transaction_amount, pay);
     return ref.orgId;
   }
-  await updatePreapprovalAmount(current.mp_preapproval_id, chargeAmount(current.next_plan ?? ref.plan, ref.cycle, ref.pack));
-  const { error } = await admin.from("organization_subscriptions").update({ invoice_pack: ref.pack, next_invoice_pack: null }).eq("org_id", ref.orgId);
-  if (error) throw new Error(`No pudimos guardar el paquete: ${error.message}`);
+  await updatePreapprovalAmount(current.mp_preapproval_id, chargeAmount(upgrading ? ref.plan : current.next_plan ?? ref.plan, ref.cycle, ref.pack));
+  const { error } = await admin
+    .from("organization_subscriptions")
+    .update({ invoice_pack: ref.pack, next_invoice_pack: null, ...(upgrading ? { plan: ref.plan, next_plan: null, grace_plan: null, plan_grace_until: null } : {}) })
+    .eq("org_id", ref.orgId);
+  if (error) throw new Error(`No pudimos guardar el cambio: ${error.message}`);
+  if (upgrading) {
+    await admin.from("plan_history").insert({ org_id: ref.orgId, from_plan: current.plan, to_plan: ref.plan, changed_by: null });
+  }
   await logEvent(ref.orgId, "payment_applied", String(pay.id), pay.status, pay.transaction_amount, pay);
   return ref.orgId;
 }

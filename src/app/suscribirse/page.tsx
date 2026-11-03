@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { requireOrgContext } from "@/lib/org";
 import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
-import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
+import { getSubscription, planLabels, planOrder, type BillingCycle, type Plan } from "@/lib/subscription";
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
-import { chargeAmount, firstChargeAmount, isPromoEligible, packChange, planChange, type PaymentMethod } from "@/lib/billing";
+import { chargeAmount, firstChargeAmount, isPromoEligible, packChange, planChange, upgradeChange, type PaymentMethod } from "@/lib/billing";
 import { normalizePlanParam } from "@/lib/plan-ids";
 import { INVOICE_PACKS, isValidPack } from "@/lib/invoice-packs";
 import { planLimits } from "@/lib/plan-access";
@@ -61,15 +61,34 @@ export default async function SuscribirsePage({
   ]);
   const billing = subscription.billing;
   // Mismo plan con débito automático activo: cambiar el paquete no crea otra suscripción (se usa el ciclo que ya paga).
-  const sameBilling = subscription.plan === plan && billing?.status === "active" && billing.cycle ? billing.cycle : null;
+  const activeCycle = billing?.status === "active" && billing.cycle ? billing.cycle : null;
+  const isUpgrade = subscription.plan !== "gratis" && planOrder.indexOf(plan) > planOrder.indexOf(subscription.plan);
+  const sameBilling = (subscription.plan === plan || isUpgrade) && activeCycle ? activeCycle : null;
   if (sameBilling) cycle = sameBilling;
   const downgradeCycle = billing?.status === "active" && billing.cycle ? billing.cycle : null;
   const planSwitch = downgradeCycle ? planChange(subscription, plan, downgradeCycle) : null;
   const changes = sameBilling
     ? Object.fromEntries(
         [0, ...INVOICE_PACKS.map((p) => p.size)].flatMap((size) => {
-          const c = packChange(subscription, plan, cycle, size);
-          return c ? [[size, { kind: c.kind, today: c.today, next: c.next, planPart: chargeAmount(subscription.nextPlan ?? plan, cycle, 0), packFull: chargeAmount(plan, cycle, size) - chargeAmount(plan, cycle, 0), credit: chargeAmount(plan, cycle, subscription.invoicePack) - chargeAmount(plan, cycle, 0), currentTotal: chargeAmount(subscription.nextPlan ?? plan, cycle, subscription.nextInvoicePack ?? subscription.invoicePack) }]] : [];
+          const c = isUpgrade ? upgradeChange(subscription, plan, cycle, size) : packChange(subscription, plan, cycle, size);
+          return c
+            ? [
+                [
+                  size,
+                  {
+                    kind: c.kind,
+                    today: c.today,
+                    next: c.next,
+                    planPart: chargeAmount(isUpgrade ? plan : subscription.nextPlan ?? plan, cycle, 0),
+                    packFull: chargeAmount(plan, cycle, size) - chargeAmount(plan, cycle, 0),
+                    credit: chargeAmount(subscription.plan, cycle, subscription.invoicePack) - chargeAmount(subscription.plan, cycle, 0),
+                    currentTotal: chargeAmount(subscription.nextPlan ?? subscription.plan, cycle, subscription.nextInvoicePack ?? subscription.invoicePack),
+                    fullNow: chargeAmount(plan, cycle, size),
+                    paidNow: chargeAmount(subscription.plan, cycle, subscription.invoicePack),
+                  },
+                ],
+              ]
+            : [];
         })
       )
     : null;
@@ -116,9 +135,10 @@ export default async function SuscribirsePage({
       )}
       planSwitch={planSwitch ? { kind: planSwitch.kind, next: planSwitch.next, planPart: chargeAmount(planSwitch.kind === "restore" ? subscription.plan : plan, downgradeCycle!, 0), pack: subscription.nextInvoicePack ?? subscription.invoicePack, date: longDate(new Date(planSwitch.nextDate)), fromName: planLabels[subscription.plan], limits: planLimits[plan] } : null}
       currentPack={subscription.invoicePack}
+      upgradeFrom={isUpgrade ? planLabels[subscription.plan] : null}
       changes={changes && Object.keys(changes).length > 0 ? changes : null}
       changeDate={billing?.currentPeriodEnd ? longDate(new Date(billing.currentPeriodEnd)) : ""}
-      initialPack={Number.isInteger(wantedPack) && paquete && isValidPack(wantedPack) ? wantedPack : subscription.plan === plan ? subscription.invoicePack : 0}
+      initialPack={Number.isInteger(wantedPack) && paquete && isValidPack(wantedPack) ? wantedPack : subscription.plan !== "gratis" ? subscription.nextInvoicePack ?? subscription.invoicePack : 0}
       dates={dates}
       current={current}
       paymentsEnabled={mercadoPagoConfigured()}
