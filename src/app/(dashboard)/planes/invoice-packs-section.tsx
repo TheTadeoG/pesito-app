@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { INVOICE_PACKS, formatCount } from "@/lib/invoice-packs";
 import { formatCurrency } from "@/lib/utils";
-import { planLabels, type Plan, type SubscriptionInfo } from "@/lib/subscription";
+import type { Plan, SubscriptionInfo } from "@/lib/subscription";
 import type { InvoiceUsage } from "@/lib/invoice-usage";
 
 // Paquetes de facturas electrónicas por mes, para contratar o cambiar desde Planes. Se cobran y renuevan junto con el

@@ -225,11 +225,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                 Volver a vincular ARCA
               </Button>
             </div>
-          ) : (
-            <button type="button" onClick={() => switchEnv("test")} className="text-xs font-medium text-muted-foreground underline hover:text-foreground">
-              Quiero practicar antes, sin valor fiscal
-            </button>
-          )}
+          ) : null}
           {active && (
             <p className="flex items-center gap-2 rounded-xl bg-success-bg px-3 py-2 text-sm text-success">
               <CheckCircle2 className="h-4 w-4" />
