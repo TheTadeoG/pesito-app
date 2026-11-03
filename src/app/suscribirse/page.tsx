@@ -69,7 +69,7 @@ export default async function SuscribirsePage({
     ? Object.fromEntries(
         [0, ...INVOICE_PACKS.map((p) => p.size)].flatMap((size) => {
           const c = packChange(subscription, plan, cycle, size);
-          return c ? [[size, { kind: c.kind, today: c.today, next: c.next, planPart: chargeAmount(subscription.nextPlan ?? plan, cycle, 0) }]] : [];
+          return c ? [[size, { kind: c.kind, today: c.today, next: c.next, planPart: chargeAmount(subscription.nextPlan ?? plan, cycle, 0), packFull: chargeAmount(plan, cycle, size) - chargeAmount(plan, cycle, 0), credit: chargeAmount(plan, cycle, subscription.invoicePack) - chargeAmount(plan, cycle, 0) }]] : [];
         })
       )
     : null;
@@ -115,6 +115,7 @@ export default async function SuscribirsePage({
         ])
       )}
       planSwitch={planSwitch ? { kind: planSwitch.kind, next: planSwitch.next, planPart: chargeAmount(planSwitch.kind === "restore" ? subscription.plan : plan, downgradeCycle!, 0), pack: subscription.nextInvoicePack ?? subscription.invoicePack, date: longDate(new Date(planSwitch.nextDate)), fromName: planLabels[subscription.plan], limits: planLimits[plan] } : null}
+      currentPack={subscription.invoicePack}
       changes={changes && Object.keys(changes).length > 0 ? changes : null}
       changeDate={billing?.currentPeriodEnd ? longDate(new Date(billing.currentPeriodEnd)) : ""}
       initialPack={Number.isInteger(wantedPack) && paquete && isValidPack(wantedPack) ? wantedPack : subscription.plan === plan ? subscription.invoicePack : 0}

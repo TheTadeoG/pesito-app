@@ -62,8 +62,10 @@ export interface CheckoutViewProps {
   /** Paquete de facturas elegido al llegar. */
   initialPack: number;
   /** Con un débito activo del mismo plan: qué pasa al elegir cada paquete (se cobra aparte sólo lo que resta; sin nueva suscripción). */
-  changes: Record<number, { kind: "upgrade" | "downgrade" | "same" | "restore"; today: number; next: number; planPart: number }> | null;
+  changes: Record<number, { kind: "upgrade" | "downgrade" | "same" | "restore"; today: number; next: number; planPart: number; packFull: number; credit: number }> | null;
   changeDate: string;
+  /** Paquete de facturas que ya tiene contratado. */
+  currentPack: number;
   /** Baja de plan (o cancelar una baja programada) con débito activo: sin cobro hoy, rige desde la renovación. */
   planSwitch: { kind: "downgrade" | "restore"; next: number; planPart: number; pack: number; date: string; fromName: string; limits: { users: number; openRegisters: number; products: number } } | null;
   /** Próximo cobro (débito) o hasta cuándo queda pago (pago único). */
@@ -73,7 +75,7 @@ export interface CheckoutViewProps {
 }
 
 export function CheckoutView(props: CheckoutViewProps) {
-  const { plan, fromSignup, features, totals, changes, changeDate, planSwitch, dates, current, paymentsEnabled } = props;
+  const { plan, fromSignup, features, totals, changes, changeDate, currentPack, planSwitch, dates, current, paymentsEnabled } = props;
   const [pack, setPack] = useState(props.initialPack);
   const { prices, promoPrice } = totals[pack] ?? totals[0];
   const change = planSwitch ? null : changes?.[pack] ?? null;
@@ -127,9 +129,21 @@ export function CheckoutView(props: CheckoutViewProps) {
             <Icon className="h-6 w-6" />
           </span>
           <p className={cn("mt-5 text-sm font-medium", "text-muted-foreground")}>
-            {planSwitch ? "Cambiar al" : current?.samePlan ? "Renovar el" : "Suscribirte al"}
+            {planSwitch ? "Cambiar al" : change ? "Cambiar el paquete de facturas del" : current?.samePlan ? "Renovar el" : "Suscribirte al"}
           </p>
           <h1 className={cn("text-3xl font-bold tracking-tight sm:text-4xl", "text-foreground")}>{planName}</h1>
+          {change ? (
+            <div className="mt-4 max-w-xs">
+              {pack > 0 ? (
+                <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
+              ) : (
+                <p className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-foreground">{formatCurrency(change.next)}</span>
+                  <span className="text-muted-foreground">{cycle === "anual" ? "por año" : "por mes"}</span>
+                </p>
+              )}
+            </div>
+          ) : (
           <p className="mt-3 flex items-baseline gap-2">
             <span className={cn("text-4xl font-bold sm:text-5xl", "text-foreground")}>
               {formatCurrency(promoActive ? promoPrice! : cycle === "anual" ? annualMonthly : monthly)}
@@ -139,14 +153,15 @@ export function CheckoutView(props: CheckoutViewProps) {
             )}
             {!promoActive && <span className={"text-muted-foreground"}>por mes</span>}
           </p>
-          {promoPrice !== null && (
+          )}
+          {promoPrice !== null && !change && (
             <p className="mt-2 text-sm text-muted-foreground">
               {cycle === "mensual"
                 ? `El primer mes (promo de lanzamiento). Desde el mes 2: ${formatCurrency(monthly)} por mes.`
                 : `Pagando mensual, el primer mes sale ${formatCurrency(promoPrice)}.`}
             </p>
           )}
-          {!planSwitch && (
+          {!planSwitch && !change && (
           <p className={cn("mt-1 text-sm", "text-muted-foreground")}>
             {cycle === "anual"
               ? `${formatCurrency(prices.anual)} al año. Ahorrás ${formatCurrency(monthly * 12 - prices.anual)}.`
@@ -193,9 +208,9 @@ export function CheckoutView(props: CheckoutViewProps) {
           ) : (
             <>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">{planSwitch ? (planSwitch.kind === "downgrade" ? "Cambiar de plan" : "Mantener tu plan") : "Elegí cómo pagar"}</h2>
+                <h2 className="text-2xl font-bold text-foreground">{planSwitch ? (planSwitch.kind === "downgrade" ? "Cambiar de plan" : "Mantener tu plan") : change ? "Cambiar el paquete de facturas" : "Elegí cómo pagar"}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {planSwitch ? "No se cobra nada hoy: el cambio rige desde tu próxima renovación." : "Pagás con Mercado Pago y volvés acá al terminar."}
+                  {planSwitch ? "No se cobra nada hoy: el cambio rige desde tu próxima renovación." : change ? "Tu plan no se vuelve a cobrar: sólo cambia el paquete." : "Pagás con Mercado Pago y volvés acá al terminar."}
                 </p>
               </div>
 
@@ -303,6 +318,22 @@ export function CheckoutView(props: CheckoutViewProps) {
                     <dt className="text-muted-foreground">Hoy pagás</dt>
                     <dd className="text-lg font-bold text-foreground">{formatCurrency(change.today)}</dd>
                   </div>
+                  {change.kind === "upgrade" && cycle === "mensual" && currentPack > 0 && (
+                    <div className="space-y-1 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>{`Paquete de ${formatCount(pack)} facturas`}</span>
+                        <span>{formatCurrency(change.packFull)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{`Tu paquete actual de ${formatCount(currentPack)} (ya pagado)`}</span>
+                        <span>{`− ${formatCurrency(change.credit)}`}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-border pt-1 font-medium text-foreground">
+                        <span>Hoy pagás la diferencia</span>
+                        <span>{formatCurrency(change.today)}</span>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <dt className="text-muted-foreground">Próximo cobro</dt>
                     <dd className="text-foreground">{`${changeDate} · ${formatCurrency(change.next)}`}</dd>
@@ -310,7 +341,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                   <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
                   <p className="text-xs text-muted-foreground">
                     {change.kind === "upgrade"
-                      ? "Pagás el paquete completo, aparte. Desde el próximo cobro, tu débito incluye el plan y el paquete. El plan no se vuelve a cobrar."
+                      ? "Pagás hoy el paquete nuevo, descontando el que ya tenés pago. Desde el próximo cobro, tu débito incluye el plan y el paquete. El plan no se vuelve a cobrar."
                       : change.kind === "downgrade"
                         ? "No se cobra nada hoy. Seguís con tu paquete actual hasta el próximo cobro y desde ahí se debita menos."
                         : change.kind === "restore"
