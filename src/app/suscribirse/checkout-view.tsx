@@ -302,7 +302,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                     <dd className="text-lg font-bold text-foreground">{formatCurrency(0)}</dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <dt className="text-muted-foreground">{planSwitch.kind === "downgrade" ? `Desde el ${planSwitch.date}` : "Próximo cobro"}</dt>
+                    <dt className="text-muted-foreground">{planSwitch.kind === "downgrade" ? `Desde el ${planSwitch.date} pagarás ${cycle === "anual" ? "por año" : "por mes"}` : "Próximo cobro"}</dt>
                     <dd className="text-foreground">{`${formatCurrency(planSwitch.next)} por ${cycle === "anual" ? "año" : "mes"}`}</dd>
                   </div>
                   <ChargeBreakdown planName={planName} planPart={planSwitch.planPart} pack={planSwitch.pack} total={planSwitch.next} suffix={cycle === "anual" ? "año" : "mes"} />
@@ -342,7 +342,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                       </section>
                       <section className="space-y-2 rounded-xl bg-muted/60 px-4 py-3">
                         <div className="flex items-baseline justify-between gap-3">
-                          <h3 className="font-semibold text-foreground">{`Desde el ${changeDate}, por ${cycle === "anual" ? "año" : "mes"}`}</h3>
+                          <h3 className="font-semibold text-foreground">{`Desde el ${changeDate} pagarás ${cycle === "anual" ? "por año" : "por mes"}`}</h3>
                           <p className="text-lg font-bold text-foreground">{formatCurrency(change.next)}</p>
                         </div>
                         <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
@@ -357,7 +357,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                         <dd className="text-lg font-bold text-foreground">{formatCurrency(0)}</dd>
                       </div>
                       <div className="flex items-center justify-between">
-                        <dt className="text-muted-foreground">{`Desde el ${changeDate}, por ${cycle === "anual" ? "año" : "mes"}`}</dt>
+                        <dt className="text-muted-foreground">{`Desde el ${changeDate} pagarás ${cycle === "anual" ? "por año" : "por mes"}`}</dt>
                         <dd className="font-semibold text-foreground">{formatCurrency(change.next)}</dd>
                       </div>
                       <ChargeBreakdown planName={planName} planPart={change.planPart} pack={pack} total={change.next} suffix={cycle === "anual" ? "año" : "mes"} />
