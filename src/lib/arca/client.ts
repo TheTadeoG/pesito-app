@@ -23,7 +23,7 @@ export async function getOrgArca(orgId: string, environment: ArcaEnvironment): P
     admin.from("arca_credentials").select("tax_id, sales_point, key_enc, certificate_pem").eq("org_id", orgId).eq("environment", environment).maybeSingle(),
   ]);
   if (!cred?.tax_id || !cred.key_enc || !cred.certificate_pem) {
-    return { error: environment === "test" ? "Todavía no cargaste el certificado de pruebas." : "Todavía no cargaste el certificado de producción." };
+    return { error: environment === "test" ? "Todavía no cargaste el certificado de pruebas." : "Todavía no vinculaste ARCA: faltan el certificado y la autorización (Ajustes → Facturación)." };
   }
   let privateKeyPem: string;
   try {

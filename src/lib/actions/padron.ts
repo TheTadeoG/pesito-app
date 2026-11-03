@@ -112,7 +112,7 @@ export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
       return {
         error:
           environment === "test"
-            ? "ARCA (entorno de pruebas) no encontró a esa persona o empresa. El padrón de pruebas tiene muy pocos datos: en producción busca en el padrón real."
+            ? "ARCA (entorno de pruebas) no encontró a esa persona o empresa. El padrón de pruebas tiene muy pocos datos: con ARCA vinculado de verdad busca en el padrón real."
             : "ARCA no encontró a esa persona o empresa.",
       };
     }
@@ -140,7 +140,7 @@ export async function lookupArcaTaxpayer(raw: string): Promise<TaxpayerLookup> {
       return {
         error:
           environment === "production"
-            ? "ARCA no autorizó tu certificado de producción para consultar el Padrón. En ARCA, Administrador de Relaciones → Nueva relación, autorizá el mismo alias para los servicios «ws_sr_constancia_inscripcion» y «ws_sr_padron_a13». Puede tardar unos minutos."
+            ? "ARCA no autorizó tu certificado para consultar el Padrón. En ARCA, Administrador de Relaciones → Nueva relación, autorizá el mismo alias para los servicios «ws_sr_constancia_inscripcion» y «ws_sr_padron_a13». Puede tardar unos minutos."
             : "ARCA no autorizó tu certificado de pruebas para consultar el Padrón. En WSASS, «Crear autorización a servicio», autorizá el mismo alias para «ws_sr_constancia_inscripcion» y «ws_sr_padron_a13».",
       };
     }

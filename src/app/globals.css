@@ -866,6 +866,12 @@ html:has(body.driver-active),
   0%, 10% { transform: translate(0, -2px); }
   60%, 100% { transform: translate(0, 26px); }
 }
+@keyframes arca-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.arca-pop { animation: arca-pop 0.5s ease-out; }
 .arca-pulse { animation: arca-pulse 1.6s ease-in-out infinite; }
 .arca-type { animation: arca-type 3.2s steps(24, end) infinite; }
 .arca-appear { animation: arca-appear 3.2s ease-out infinite; }
@@ -873,5 +879,5 @@ html:has(body.driver-active),
 .arca-drop { animation: arca-drop 3.2s ease-out infinite; }
 .arca-drag { animation: arca-drag 2.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .arca-pulse, .arca-type, .arca-appear, .arca-fly, .arca-drop, .arca-drag { animation: none; opacity: 1; clip-path: none; transform: none; }
+  .arca-pop, .arca-pulse, .arca-type, .arca-appear, .arca-fly, .arca-drop, .arca-drag { animation: none; opacity: 1; clip-path: none; transform: none; }
 }

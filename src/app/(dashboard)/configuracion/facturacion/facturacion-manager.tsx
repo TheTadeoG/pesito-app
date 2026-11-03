@@ -123,7 +123,7 @@ function Message({ text, tone }: { text: string | null; tone: "error" | "ok" }) 
 
 export function FacturacionManager({ status, orgName }: { status: ArcaStatusView; orgName: string }) {
   const s = status.settings;
-  const [env, setEnv] = useState<Env>(s?.active_environment ?? "test");
+  const [env, setEnv] = useState<Env>(s?.active_environment ?? "production");
   const cred = status.credentials[env];
 
   // Paso 1: datos del negocio
@@ -210,29 +210,30 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Facturación electrónica (ARCA)</CardTitle>
+          <CardTitle>Vincular ARCA</CardTitle>
           <CardDescription>
-            Pesito se conecta a ARCA (ex AFIP) con TU CUIT y TU certificado. La clave privada se guarda cifrada y no sale del servidor. Primero probás en el
-            entorno de pruebas (homologación); después repetís los pasos en producción.
+            Conectá tu CUIT con ARCA (ex AFIP) para emitir facturas desde Pesito. La clave privada de tu certificado se guarda cifrada y no sale del servidor.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="inline-flex rounded-xl border border-border bg-muted/50 p-1">
-            {(["test", "production"] as const).map((e) => (
-              <button
-                key={e}
-                type="button"
-                onClick={() => switchEnv(e)}
-                className={cn("rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors", env === e ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-              >
-                {e === "test" ? "Pruebas (homologación)" : "Producción"}
-              </button>
-            ))}
-          </div>
+          {env === "test" ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-warning-bg px-4 py-3 text-sm text-foreground">
+              <p>
+                <b>Modo de pruebas.</b> Las facturas que hagas acá <b>no tienen valor fiscal</b>: sirven para practicar.
+              </p>
+              <Button size="sm" variant="outline" onClick={() => switchEnv("production")}>
+                Volver a vincular ARCA
+              </Button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => switchEnv("test")} className="text-xs font-medium text-muted-foreground underline hover:text-foreground">
+              Quiero practicar antes, sin valor fiscal
+            </button>
+          )}
           {active && (
             <p className="flex items-center gap-2 rounded-xl bg-success-bg px-3 py-2 text-sm text-success">
               <CheckCircle2 className="h-4 w-4" />
-              {`La facturación está activa en ${env === "test" ? "pruebas: los comprobantes no tienen validez fiscal" : "producción"}.`}
+              {env === "test" ? "La facturación está activa en modo de pruebas: los comprobantes no tienen validez fiscal." : "La facturación está activa."}
             </p>
           )}
           <Message text={msg?.text ?? null} tone={msg?.tone ?? "ok"} />
@@ -355,7 +356,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                     const url = URL.createObjectURL(new Blob([csr], { type: "application/pkcs10" }));
                     const link = document.createElement("a");
                     link.href = url;
-                    link.download = `pesito-${env === "test" ? "pruebas" : "produccion"}.csr`;
+                    link.download = env === "test" ? "pesito-pruebas.csr" : "pesito.csr";
                     link.click();
                     URL.revokeObjectURL(url);
                   }}
@@ -485,7 +486,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
 
       <Card id="arca-conectar" className="scroll-mt-20">
         <CardHeader>
-          <CardTitle className="text-base">3. Probar la conexión y activar</CardTitle>
+          <CardTitle className="text-base">3. Probar la conexión</CardTitle>
           <CardDescription>Entramos a ARCA con tu certificado y miramos que tu punto de venta esté habilitado.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -497,7 +498,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
                   ? "Falta autorizar el certificado para facturar: Administrador de Relaciones → Nueva relación → ARCA → WebServices → «Facturación Electrónica». En «Representante» elegí el alias que creaste. Puede tardar unos minutos en aplicarse."
                   : "Falta autorizar el certificado para facturar: en WSASS, «Crear autorización a servicio» con el alias, tu CUIT y el servicio «wsfe»."}
               </li>
-              <li>{`Tiene que ser un certificado de ${env === "test" ? "pruebas (WSASS)" : "producción (Administración de Certificados Digitales)"}: no se pueden mezclar.`}</li>
+              <li>{`Tiene que ser un certificado ${env === "test" ? "de pruebas (WSASS)" : "creado en Administración de Certificados Digitales"}: no se pueden mezclar.`}</li>
               <li>Tiene que ser el certificado de la última solicitud que generaste acá. Si generaste otra después, el certificado viejo ya no sirve.</li>
               <li>El CUIT de acá, el de tu clave fiscal y el del alias tienen que ser el mismo.</li>
             </ul>
@@ -542,16 +543,13 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
-              variant="outline"
+              variant={verified ? "outline" : "primary"}
               disabled={pending || !hasCert}
               onClick={() =>
                 run(() => testArcaConnection(env), "¡Conexión con ARCA lista!", (r) => setPoints(r.salesPoints ?? null))
               }
             >
-              Probar la conexión
-            </Button>
-            <Button disabled={pending || !verified} onClick={() => run(() => setArcaEnabled({ enabled: !active, environment: env }), active ? "Facturación apagada." : "Facturación activada.")}>
-              {active ? "Apagar la facturación" : `Activar en ${env === "test" ? "pruebas" : "producción"}`}
+              {pending ? "Probando…" : verified ? "Probar de nuevo" : "Probar la conexión"}
             </Button>
             {env === "test" && (
               <Button
@@ -563,7 +561,19 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
               </Button>
             )}
           </div>
-          {verified && <p className="text-xs text-muted-foreground">{`Última conexión correcta: ${new Date(cred!.verified_at!).toLocaleString("es-AR")}`}</p>}
+          {verified && (
+            <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success-bg px-4 py-3" role="status">
+              <span className="arca-pop flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-white">
+                <CheckCircle2 className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-success">Conexión con ARCA lista</p>
+                <p className="text-xs text-muted-foreground">
+                  {`${cred?.sales_point ? `Punto de venta ${cred.sales_point} habilitado. ` : ""}Última prueba: ${new Date(cred!.verified_at!).toLocaleString("es-AR")}.`}
+                </p>
+              </div>
+            </div>
+          )}
           {points && points.length > 0 && (
             <p className="text-sm text-muted-foreground">{`Puntos de venta para Web Services en ARCA: ${points.map((p) => `${p.number}${p.blocked ? " (bloqueado)" : ""}`).join(", ")}.`}</p>
           )}
@@ -578,6 +588,41 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
             </div>
           )}
           <VoucherDialog voucherId={viewVoucher} onClose={() => setViewVoucher(null)} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">4. Prender o apagar la facturación</CardTitle>
+          <CardDescription>
+            Prendida, las ventas se facturan según lo que elijas más abajo (a mano o automático por medio de pago). Apagarla no borra nada.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", active ? "bg-success" : "bg-muted-foreground/40")} />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  {`Facturación ${active ? "prendida" : "apagada"}${env === "test" ? " (modo de pruebas)" : ""}`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {verified ? (active ? "Las ventas se pueden facturar." : "No se factura nada hasta que la prendas.") : "Probá la conexión (paso 3) para poder prenderla."}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={active}
+              aria-label="Prender o apagar la facturación"
+              disabled={pending || !verified}
+              onClick={() => run(() => setArcaEnabled({ enabled: !active, environment: env }), active ? "Facturación apagada." : "Facturación prendida.")}
+              className={cn("relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50", active ? "bg-success" : "bg-muted")}
+            >
+              <span className={cn("absolute left-0 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform", active ? "translate-x-[1.375rem]" : "translate-x-0.5")} />
+            </button>
+          </div>
         </CardContent>
       </Card>
 
