@@ -84,6 +84,12 @@ export function SaleDetailDialog({
                   {v.salesPoint && v.number ? ` ${String(v.salesPoint).padStart(5, "0")}-${String(v.number).padStart(8, "0")}` : ""}
                   {v.cae ? ` · CAE ${v.cae}` : ""}
                   {v.status !== "authorized" ? ` · ${v.status}` : ""}
+                  {v.kind === "credit_note" && (() => {
+                    const inv = sale.vouchers.find((x) => x.kind === "invoice" && x.status === "authorized");
+                    return inv && inv.salesPoint && inv.number
+                      ? ` · anula la Factura${inv.voucherClass ? ` ${inv.voucherClass}` : ""} ${String(inv.salesPoint).padStart(5, "0")}-${String(inv.number).padStart(8, "0")}`
+                      : "";
+                  })()}
                   {v.environment === "test" ? " · prueba (sin validez fiscal)" : ""}
                   {v.status === "authorized" && (
                     <button type="button" onClick={() => setViewVoucher(v.id)} className="font-medium text-primary hover:underline">

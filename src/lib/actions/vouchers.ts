@@ -15,6 +15,8 @@ export interface VoucherView {
   document: VoucherDocument | null;
   /** Por qué no hay documento (falta un dato del negocio, importes que no cierran…). */
   documentError: string | null;
+  /** Sólo en notas de crédito: la factura que anulan. */
+  associated: { label: string; number: string; date: string } | null;
 }
 
 /** Una sola lectura de una fila: ver o reimprimir un comprobante no calcula ni pide nada a ARCA. */
@@ -27,7 +29,7 @@ export async function getVoucherView(voucherId: string): Promise<{ error?: strin
     .eq("id", voucherId)
     .maybeSingle();
   if (!data || data.status !== "authorized") return { error: "No encontramos ese comprobante." };
-  const detail = (data.detail ?? {}) as { document?: VoucherDocument; documentError?: string };
+  const detail = (data.detail ?? {}) as { document?: VoucherDocument; documentError?: string; associated?: { label: string; number: string; date: string } };
   return {
     voucher: {
       id: data.id,
@@ -38,6 +40,7 @@ export async function getVoucherView(voucherId: string): Promise<{ error?: strin
       qr: data.qr,
       document: detail.document ?? null,
       documentError: detail.documentError ?? null,
+      associated: detail.associated ?? null,
     },
   };
 }

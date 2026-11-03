@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { CONSUMER_NEEDS_DNI_MESSAGE, hasIdentification } from "@/lib/invoice-labels";
+import { cleanDocument, documentError, type DocumentType } from "@/lib/tax-id";
 
 export interface ActionState {
   error?: string;
@@ -15,6 +17,7 @@ export interface CustomerFormInput {
   phone: string;
   email: string;
   document: string;
+  documentType: DocumentType;
   address: string;
   city: string;
   postalCode: string;
@@ -29,6 +32,14 @@ export async function saveCustomer(input: CustomerFormInput): Promise<ActionStat
     return { error: "El cliente necesita un nombre." };
   }
 
+  const documentType: DocumentType = input.documentType ?? "cuit";
+  const document = cleanDocument(input.document, documentType);
+  const docError = documentError(document, documentType);
+  if (docError) return { error: docError };
+  if (input.taxCondition === "consumidor_final" && !hasIdentification(document)) {
+    return { error: CONSUMER_NEEDS_DNI_MESSAGE };
+  }
+
   const { organization } = await requireOrgContext();
   const supabase = await createClient();
 
@@ -38,7 +49,8 @@ export async function saveCustomer(input: CustomerFormInput): Promise<ActionStat
     razon_social: input.razonSocial.trim() || null,
     phone: input.phone.trim() || null,
     email: input.email.trim() || null,
-    document: input.document.trim() || null,
+    document: document || null,
+    document_type: document ? documentType : null,
     address: input.address.trim().slice(0, 200) || null,
     city: input.city.trim().slice(0, 100) || null,
     postal_code: input.postalCode.trim().slice(0, 12) || null,

@@ -292,6 +292,8 @@ export interface Database {
           phone: string | null;
           email: string | null;
           document: string | null;
+          /** Tipo de documento (0087). undefined si falta la migración. */
+          document_type?: "cuit" | "cuil" | "dni" | "pasaporte" | "cdi" | null;
           /** Domicilio y condición fiscal (0086). undefined si falta la migración. */
           address?: string | null;
           city?: string | null;
@@ -311,6 +313,7 @@ export interface Database {
           phone?: string | null;
           email?: string | null;
           document?: string | null;
+          document_type?: "cuit" | "cuil" | "dni" | "pasaporte" | "cdi" | null;
           address?: string | null;
           city?: string | null;
           postal_code?: string | null;

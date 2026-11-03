@@ -55,14 +55,23 @@ export type TaxCondition = "responsable_inscripto" | "monotributo" | "exento" | 
  * IVA y que el cliente puede recibir.
  *  - Siempre se puede no facturar (consumidor_final: ticket interno X).
  *  - Monotributo o IVA exento: sólo Factura C, a cualquier cliente.
- *  - Responsable inscripto: Factura A a otro responsable inscripto y Factura B al resto (con la condición del
- *    cliente sin cargar, se ofrecen las dos).
+ *  - Responsable inscripto: Factura A a otro responsable inscripto y también a un monotributista (Ley 27.618,
+ *    Régimen de Sostenimiento e Inclusión Fiscal: con crédito fiscal discriminado y esa leyenda); Factura B a
+ *    consumidor final, IVA exento y no alcanzado (con la condición del cliente sin cargar, se ofrecen las dos).
  *  - Sin la facturación configurada: ninguno.
  */
 export function allowedInvoiceTypes(issuer: IssuerCondition | null, customer: TaxCondition | "" | null): InvoiceType[] {
   if (!issuer) return ["consumidor_final"];
   if (issuer === "monotributo" || issuer === "exento") return ["consumidor_final", "factura_c"];
-  if (customer === "responsable_inscripto") return ["consumidor_final", "factura_a"];
+  if (customer === "responsable_inscripto" || customer === "monotributo") return ["consumidor_final", "factura_a"];
   if (customer) return ["consumidor_final", "factura_b"];
   return ["consumidor_final", "factura_a", "factura_b"];
 }
+
+/** Un consumidor final cargado como cliente se identifica con su DNI (o CUIL/CUIT): 7 u 8 dígitos, u 11. */
+export function hasIdentification(document: string | null | undefined): boolean {
+  const digits = (document ?? "").replace(/\D/g, "");
+  return digits.length === 7 || digits.length === 8 || digits.length === 11;
+}
+
+export const CONSUMER_NEEDS_DNI_MESSAGE = "Un consumidor final se carga con su DNI (o CUIL): lo necesita ARCA para identificarlo en las facturas.";

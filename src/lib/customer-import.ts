@@ -9,6 +9,7 @@
 //    pagos: el fiado sólo cambia vendiendo a fiado o registrando un cobro.
 
 import { normalizeText } from "@/lib/product-import";
+import { CONSUMER_NEEDS_DNI_MESSAGE, hasIdentification } from "@/lib/invoice-labels";
 
 export { parseCsv } from "@/lib/product-import";
 
@@ -282,6 +283,10 @@ export function parseCustomerSheet(matrix: unknown[][]): ParsedCustomerImport {
         line,
         message: `“${name}”: la condición frente al IVA “${get(row, "taxCondition")}” no existe (usá Consumidor final, Monotributo, Responsable inscripto, Exento o No alcanzado).`,
       });
+      continue;
+    }
+    if (taxCondition === "consumidor_final" && !hasIdentification(get(row, "document"))) {
+      result.problems.push({ line, message: `“${name}”: ${CONSUMER_NEEDS_DNI_MESSAGE}` });
       continue;
     }
     const id = get(row, "id");

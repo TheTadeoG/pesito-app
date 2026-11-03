@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveCustomer, type CustomerFormInput } from "@/app/(dashboard)/clientes/actions";
-import { allowedInvoiceTypes, invoiceTypes, type InvoiceType, type IssuerCondition } from "@/lib/invoice-labels";
+import { CONSUMER_NEEDS_DNI_MESSAGE, allowedInvoiceTypes, hasIdentification, invoiceTypes, type InvoiceType, type IssuerCondition } from "@/lib/invoice-labels";
 import { PhoneCountrySelect } from "@/components/ui/phone-country-select";
 import {
   splitPhoneCountry,
   type PhoneCountry,
 } from "@/lib/phone-countries";
+import { DOCUMENT_TYPES, documentError, formatDocument, inferDocumentType, cleanDocument, type DocumentType } from "@/lib/tax-id";
 import { getCustomerFormContext, lookupArcaTaxpayer, type TaxpayerInfo } from "@/lib/actions/padron";
 import type { Customer } from "@/lib/types";
 
@@ -29,7 +30,8 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
   const [phoneCountry, setPhoneCountry] = useState<PhoneCountry>(initialPhone.country);
   const [phoneNumber, setPhoneNumber] = useState(initialPhone.number);
   const [email, setEmail] = useState(customer?.email ?? "");
-  const [document, setDocument] = useState(customer?.document ?? "");
+  const [documentType, setDocumentType] = useState<DocumentType>(customer?.document_type ?? (customer?.document ? inferDocumentType(customer.document) : "cuit"));
+  const [document, setDocument] = useState(formatDocument(customer?.document ?? "", customer?.document_type ?? inferDocumentType(customer?.document)));
   const [notes, setNotes] = useState(customer?.notes ?? "");
   // Domicilio y condición fiscal (se completan solos al buscar el CUIT en ARCA).
   const [address, setAddress] = useState(customer?.address ?? "");
@@ -75,7 +77,8 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
     }
     const t = res.taxpayer;
     setFound(t);
-    setDocument(t.taxId);
+    setDocumentType("cuit");
+    setDocument(formatDocument(t.taxId, "cuit"));
     // El nombre se completa sólo si estaba vacío; el domicilio y la condición fiscal vienen de ARCA, que es la fuente.
     if (t.name) {
       setRazonSocial((cur) => cur || t.name!);
@@ -95,6 +98,15 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const docError = documentError(cleanDocument(document, documentType), documentType);
+    if (docError) {
+      setError(docError);
+      return;
+    }
+    if (taxCondition === "consumidor_final" && !hasIdentification(document)) {
+      setError(CONSUMER_NEEDS_DNI_MESSAGE);
+      return;
+    }
     setPending(true);
     setError(null);
 
@@ -105,6 +117,7 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
       phone: phoneNumber.trim() ? `${phoneCountry.dialCode} ${phoneNumber.trim()}` : "",
       email,
       document,
+      documentType,
       address,
       city,
       postalCode,
@@ -159,27 +172,46 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="c-phone">Teléfono</Label>
-            <div className="flex gap-1.5">
-              <PhoneCountrySelect value={phoneCountry} onChange={setPhoneCountry} />
-              <Input
-                id="c-phone"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Ej: 11 2345-6789"
-                className="min-w-0 flex-1"
-              />
-            </div>
+        <div>
+          <Label htmlFor="c-phone">Teléfono</Label>
+          <div className="flex gap-1.5">
+            <PhoneCountrySelect value={phoneCountry} onChange={setPhoneCountry} />
+            <Input
+              id="c-phone"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="Ej: 11 2345-6789"
+              className="min-w-0 flex-1"
+            />
           </div>
-          <div>
-            <Label htmlFor="c-doc">DNI / CUIT</Label>
+        </div>
+
+        <div>
+          <Label htmlFor="c-doc">Documento</Label>
+          <div className="flex gap-1.5">
+            <select
+              aria-label="Tipo de documento"
+              value={documentType}
+              onChange={(e) => {
+                const next = e.target.value as DocumentType;
+                setDocumentType(next);
+                setDocument((cur) => formatDocument(cur, next));
+              }}
+              className="h-10 w-28 shrink-0 rounded-xl border border-border bg-card px-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              {DOCUMENT_TYPES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
             <Input
               id="c-doc"
               value={document}
-              onChange={(e) => setDocument(e.target.value)}
-              placeholder="Ej: 20-12345678-9"
+              onChange={(e) => setDocument(formatDocument(e.target.value, documentType))}
+              inputMode={documentType === "pasaporte" ? "text" : "numeric"}
+              placeholder={documentType === "dni" ? "Ej: 12345678" : documentType === "pasaporte" ? "Ej: AAB123456" : "Ej: 20-12345678-9"}
+              className="min-w-0 flex-1"
             />
           </div>
         </div>
@@ -188,7 +220,7 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
           <div className="space-y-2 rounded-xl border border-border px-3.5 py-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">Con el CUIT, CUIL o DNI, completamos el nombre con los datos de ARCA.</p>
-              <Button type="button" variant="outline" size="sm" onClick={() => void lookup()} disabled={looking || document.replace(/\D/g, "").length < 7}>
+              <Button type="button" variant="outline" size="sm" onClick={() => void lookup()} disabled={looking || documentType === "pasaporte" || document.replace(/\D/g, "").length < 7}>
                 {looking ? "Buscando…" : "Buscar en ARCA"}
               </Button>
             </div>
@@ -237,6 +269,9 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
               <option value="exento">IVA exento</option>
               <option value="no_alcanzado">IVA no alcanzado</option>
             </select>
+            {taxCondition === "consumidor_final" && !hasIdentification(document) && (
+              <p className="mt-1 text-xs text-danger">Cargá su DNI arriba: ARCA lo pide para identificarlo.</p>
+            )}
           </div>
         </div>
 
@@ -274,7 +309,7 @@ export function CustomerForm({ open, onClose, customer }: CustomerFormProps) {
               : !issuer
                 ? "Para ofrecer facturas, completá tu condición frente al IVA en Ajustes → Facturación."
                 : issuer === "responsable_inscripto"
-                  ? "Factura A a responsables inscriptos y Factura B a los demás. Elegí uno sólo si este cliente siempre necesita ese comprobante."
+                  ? "Factura A a responsables inscriptos y monotributistas, y Factura B a consumidores finales y exentos. Elegí uno sólo si este cliente siempre necesita ese comprobante."
                   : "Como monotributista o exento, tu negocio emite Factura C. Elegila sólo si este cliente siempre necesita factura."}
           </p>
         </div>

@@ -61,6 +61,7 @@ function TicketVoucher({ doc, data }: { doc: VoucherDocument; data: VoucherData 
       <p className="ticket-center ticket-bold ticket-big">{`${doc.title} ${doc.voucherClass}`}</p>
       <p className="ticket-center">{`Cód. ${doc.code} · Nº ${doc.number}`}</p>
       <p className="ticket-center">{`Fecha ${day(doc.issueDate)}`}</p>
+      {data.associated && <p className="ticket-center ticket-bold">{`Anula la ${data.associated.label} Nº ${data.associated.number} del ${day(data.associated.date)}`}</p>}
       <hr />
       <p>{doc.receiver.name ?? "Consumidor Final"}</p>
       {doc.receiver.document && <p>{`${doc.receiver.document.label ?? "Doc."} ${doc.receiver.document.number}`}</p>}
@@ -121,6 +122,7 @@ function A4Voucher({ doc, data }: { doc: VoucherDocument; data: VoucherData }) {
           <p style={{ fontSize: 18, fontWeight: 700 }}>{doc.title}</p>
           <p>{`Nº ${doc.number}`}</p>
           <p>{`Fecha de emisión: ${day(doc.issueDate)}`}</p>
+          {data.associated && <p style={{ fontWeight: 700 }}>{`Anula la ${data.associated.label} Nº ${data.associated.number} del ${day(data.associated.date)}`}</p>}
           <p>{`CUIT: ${doc.issuer.taxId}`}</p>
           <p>{`Ingresos Brutos: ${doc.issuer.grossIncome}`}</p>
           {doc.issuer.activitiesStartDate && <p>{`Inicio de actividades: ${day(doc.issuer.activitiesStartDate)}`}</p>}

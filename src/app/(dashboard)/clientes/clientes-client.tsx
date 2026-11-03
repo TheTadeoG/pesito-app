@@ -147,13 +147,15 @@ export function ClientesClient({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const qDigits = q.replace(/\D/g, "");
     const list = customers.filter((c) => {
       if (ages.size > 0 && !ages.has(ageOf(c, todayKey))) return false;
       if (!q) return true;
       return (
         c.name.toLowerCase().includes(q) ||
         Boolean(c.phone?.toLowerCase().includes(q)) ||
-        Boolean(c.document?.toLowerCase().includes(q))
+        Boolean(c.document?.toLowerCase().includes(q)) ||
+        (qDigits.length >= 3 && Boolean(c.document?.includes(qDigits)))
       );
     });
     const byName = (a: ClienteRow, b: ClienteRow) => a.name.localeCompare(b.name, "es");

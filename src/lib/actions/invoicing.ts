@@ -104,12 +104,12 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
 
   const [{ data: items }, customerRes] = await Promise.all([
     supabase.from("sale_items").select("product_name, quantity, subtotal").eq("sale_id", saleId).order("id"),
-    sale.customer_id ? supabase.from("customers").select("name, razon_social, document, address, city, postal_code, province").eq("id", sale.customer_id).maybeSingle() : Promise.resolve({ data: null }),
+    sale.customer_id ? supabase.from("customers").select("name, razon_social, document, document_type, address, city, postal_code, province").eq("id", sale.customer_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const lines = invoiceLines((items ?? []).map((i) => ({ name: i.product_name, quantity: Number(i.quantity), subtotal: Number(i.subtotal) })), Number(sale.total));
   if (lines.length === 0) return { error: "La venta no tiene importe para facturar." };
   const customer = customerRes.data;
-  const receiver = receiverFromDocument(customer?.document);
+  const receiver = receiverFromDocument(customer?.document_type === "pasaporte" ? null : customer?.document);
   const sdkItems = lines.map((l) => ({ amount: l.amount, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice }));
 
   // Misma venta, misma clave: el SDK no duplica. Un rechazo anterior (ya corregido) usa una clave nueva.
@@ -223,7 +223,7 @@ export async function voidInvoicedSale(saleId: string, reason: string): Promise<
   const admin = createAdminClient();
   const { data: vouchers } = await admin
     .from("arca_vouchers")
-    .select("id, kind, status, idempotency_key, environment, sales_point, voucher_type, number, items, receiver")
+    .select("id, kind, status, idempotency_key, environment, sales_point, voucher_type, voucher_class, number, items, receiver, detail, created_at")
     .eq("org_id", organization.id)
     .eq("sale_id", saleId)
     .order("created_at");
@@ -288,6 +288,13 @@ export async function voidInvoicedSale(saleId: string, reason: string): Promise<
         receiver: (invoice.receiver as { name?: string | null } | null)?.name ? { name: (invoice.receiver as { name: string }).name } : undefined,
         saleConditions: "Contado",
       });
+      // A qué factura corresponde la nota de crédito: sale impreso en la nota y en el detalle de la venta.
+      const invoiceDoc = (invoice.detail as { document?: { issueDate?: string } } | null)?.document;
+      const associated = {
+        label: `Factura${invoice.voucher_class ? ` ${invoice.voucher_class}` : ""}`,
+        number: `${String(invoice.sales_point).padStart(5, "0")}-${String(invoice.number).padStart(8, "0")}`,
+        date: invoiceDoc?.issueDate ?? invoice.created_at.slice(0, 10),
+      };
       const fields = {
         status: "authorized" as const,
         sales_point: v.salesPoint,
@@ -297,7 +304,7 @@ export async function voidInvoicedSale(saleId: string, reason: string): Promise<
         cae: v.cae,
         cae_expiry: v.caeExpiry,
         qr: v.qr ?? null,
-        detail: JSON.parse(JSON.stringify("document" in built ? { document: built.document } : { documentError: built.error })) as Json,
+        detail: JSON.parse(JSON.stringify({ ...("document" in built ? { document: built.document } : { documentError: built.error }), associated })) as Json,
       };
       if (open) await admin.from("arca_vouchers").update(fields).eq("id", open.id);
       else await admin.from("arca_vouchers").insert({ ...base, ...fields });

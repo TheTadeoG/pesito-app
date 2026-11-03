@@ -1,5 +1,6 @@
 "use client";
 
+import { documentTypeLabel, formatDocument, inferDocumentType } from "@/lib/tax-id";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Wallet } from "lucide-react";
@@ -45,7 +46,7 @@ export function ClienteDetailClient({
               <p className="text-sm text-muted-foreground">{customer.razon_social}</p>
             )}
             <p className="mt-1 text-sm text-muted-foreground">
-              {[customer.phone, customer.email, customer.document].filter(Boolean).join(" · ") ||
+              {[customer.phone, customer.email, customer.document ? `${documentTypeLabel(customer.document_type ?? inferDocumentType(customer.document))} ${formatDocument(customer.document, customer.document_type ?? inferDocumentType(customer.document))}` : null].filter(Boolean).join(" · ") ||
                 "Sin datos de contacto"}
             </p>
             {(customer.address || customer.city || customer.tax_condition) && (

@@ -1,5 +1,6 @@
 "use server";
 
+import { hasIdentification } from "@/lib/invoice-labels";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/database.types";
@@ -111,6 +112,7 @@ export async function importCustomersChunk(
       postalCode.length > 12 ||
       province.length > 60 ||
       taxCondition === "invalid" ||
+      (taxCondition === "consumidor_final" && !hasIdentification(document)) ||
       notes.length > 1000 ||
       (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) ||
       invoice === "invalid"
