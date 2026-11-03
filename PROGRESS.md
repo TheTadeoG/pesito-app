@@ -695,4 +695,9 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - **Vercel:** una función de ~2 a 5 s de reloj, casi toda esperando red (poca CPU activa). Orden de magnitud: **menos de una milésima de dólar por factura** en Vercel y Supabase juntos (a confirmar con Usage de ambos cuando haya negocios facturando).
 - **Cargar la pantalla del POS** suma 3 consultas chicas por carga (`getInvoicingConfig`), no por factura.
 
+**En dólares (estimado, con los precios de arriba y un supuesto de Vercel que no está verificado):**
+- **Supabase:** disco 3 KB × US$0,125/GB-mes ≈ **US$0,0000004** por factura y por mes; transferencia ~30 KB × US$0,09/GB ≈ **US$0,000003** (y hay 250 GB incluidos). El servidor ya está pagado en el plan: no hay costo extra por factura mientras no se sature (a 6,7 ms por factura falta muchísimo).
+- **Vercel:** supuesto de US$0,18 por GB-hora de memoria, 1 GB y los 4 s completos de reloj contando como si todo fuera CPU (es el peor caso; con cobro por CPU activa sería bastante menos) ≈ **US$0,0002** por factura.
+- **Total, peor caso: ~US$0,0002 por factura = US$0,20 cada 1.000 facturas** (US$2 cada 10.000; US$20 cada 100.000). Un negocio que emita 3.000 facturas por mes cuesta ~US$0,60 por mes.
+
 **Pendiente:** correr el SDK contra el entorno de pruebas de ARCA con un contador en el almacén para saber cuántas operaciones hace en realidad, y mirar el uso real de Supabase/Vercel con varios negocios facturando.
