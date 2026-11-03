@@ -191,7 +191,7 @@ export default async function ConfiguracionPage({
             ) : (
               arcaStatus && (
                 <>
-                  {invoiceUsage && <InvoiceUsageCard usage={invoiceUsage} pack={subscription.invoicePack} />}
+                  {invoiceUsage && <InvoiceUsageCard usage={invoiceUsage} />}
                   <FacturacionManager status={arcaStatus} orgName={organization.name} />
                 </>
               )

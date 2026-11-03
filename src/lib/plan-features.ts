@@ -1,5 +1,5 @@
 import type { Plan } from "@/lib/subscription";
-import { INVOICES_INCLUDED, INVOICE_PACKS } from "@/lib/invoice-packs";
+import { INVOICE_PACKS } from "@/lib/invoice-packs";
 
 // Descuento del ciclo anual sobre el precio mensual — usado tanto en la
 // página de precios de la landing como en el checkout de /registro, para
@@ -93,7 +93,7 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Avisos configurables, de margen bajo y de costos sin actualizar",
       "Cuentas corrientes de clientes y proveedores, con vencimientos y calendario de pagos",
       "Control de caja por empleado",
-      `Factura electrónica con ARCA (Factura C para monotributistas e IVA exento), con nota de crédito: ${thousands(INVOICES_INCLUDED.basico)} por mes`,
+      `Factura electrónica con ARCA (Factura C para monotributistas e IVA exento), con nota de crédito, con paquetes de facturas por mes a tu medida`,
       "Carga masiva de productos y clientes con Excel",
       "Códigos de barras propios y etiquetas para imprimir",
       `Hasta ${products("basico")}, 2 usuarios y 2 cajas`,
@@ -288,11 +288,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         values: fromBasico,
       },
       {
-        label: "Facturas electrónicas por mes incluidas (las notas de crédito cuentan como factura)",
-        values: { gratis: false, basico: thousands(INVOICES_INCLUDED.basico), pro: thousands(INVOICES_INCLUDED.pro), max: thousands(INVOICES_INCLUDED.max) },
-      },
-      {
-        label: `Paquetes de facturas por mes, para sumar al elegir el plan y renovados junto con él (${INVOICE_PACKS.map((p) => `+${thousands(p.size)}: $${thousands(p.price)}`).join(", ")}; IVA incl.)`,
+        label: `Paquetes de facturas por mes (los planes no incluyen facturas; las notas de crédito cuentan como factura; sin cupo, las ventas siguen como comprobante X): se eligen con el plan y se renuevan junto con él (${INVOICE_PACKS.map((p) => `+${thousands(p.size)}: $${thousands(p.price)}`).join(", ")}; IVA incl.)`,
         values: fromBasico,
       },
       { label: "Buscar clientes en ARCA por CUIT, CUIL o DNI", values: fromBasico },

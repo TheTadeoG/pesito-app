@@ -7,7 +7,7 @@ import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
 import { chargeAmount, firstChargeAmount, isPromoEligible, type PaymentMethod } from "@/lib/billing";
 import { normalizePlanParam } from "@/lib/plan-ids";
-import { INVOICES_INCLUDED, INVOICE_PACKS, isValidPack } from "@/lib/invoice-packs";
+import { INVOICE_PACKS, isValidPack } from "@/lib/invoice-packs";
 import { getPlanOwnFeatures } from "@/lib/plan-features";
 import { CheckoutView } from "@/app/suscribirse/checkout-view";
 
@@ -100,7 +100,6 @@ export default async function SuscribirsePage({
           },
         ])
       )}
-      includedInvoices={INVOICES_INCLUDED[plan]}
       initialPack={Number.isInteger(wantedPack) && paquete && isValidPack(wantedPack) ? wantedPack : subscription.plan === plan ? subscription.invoicePack : 0}
       dates={dates}
       current={current}

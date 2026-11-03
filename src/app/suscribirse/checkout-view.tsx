@@ -59,8 +59,7 @@ export interface CheckoutViewProps {
   features: string[];
   /** Por paquete de facturas (0 = sin paquete): monto de cada cobro (mensual, o el total del año) y primer cobro con la promo (null si no aplica). */
   totals: Record<number, { prices: Record<BillingCycle, number>; promoPrice: number | null }>;
-  /** Facturas por mes que ya incluye el plan, y paquete elegido al llegar. */
-  includedInvoices: number;
+  /** Paquete de facturas elegido al llegar. */
   initialPack: number;
   /** Próximo cobro (débito) o hasta cuándo queda pago (pago único). */
   dates: Record<BillingCycle, Record<PaymentMethod, string>>;
@@ -69,7 +68,7 @@ export interface CheckoutViewProps {
 }
 
 export function CheckoutView(props: CheckoutViewProps) {
-  const { plan, fromSignup, features, totals, includedInvoices, dates, current, paymentsEnabled } = props;
+  const { plan, fromSignup, features, totals, dates, current, paymentsEnabled } = props;
   const [pack, setPack] = useState(props.initialPack);
   const { prices, promoPrice } = totals[pack] ?? totals[0];
   const [cycle, setCycle] = useState<BillingCycle>(props.initialCycle);
@@ -212,7 +211,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                 ))}
               </div>
 
-              {includedInvoices > 0 && (
+              {(
                 <div className="space-y-2">
                   <label htmlFor="invoice-pack" className="text-sm font-semibold text-foreground">
                     Facturas electrónicas por mes
@@ -224,7 +223,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                     onChange={(e) => setPack(Number(e.target.value))}
                     className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
-                    <option value={0}>{`Las ${formatCount(includedInvoices)} que incluye el plan`}</option>
+                    <option value={0}>Sin facturas electrónicas (comprobante X)</option>
                     {INVOICE_PACKS.map((p) => (
                       <option key={p.size} value={p.size}>
                         {`+${formatCount(p.size)} por mes (${formatCurrency(p.price)} por mes, IVA incl.)`}
@@ -233,8 +232,8 @@ export function CheckoutView(props: CheckoutViewProps) {
                   </select>
                   <p className="text-xs text-muted-foreground">
                     {pack > 0
-                      ? `Tenés ${formatCount(includedInvoices + pack)} facturas por mes. El paquete se cobra y se renueva junto con el plan. Las notas de crédito cuentan como factura.`
-                      : "Sólo si facturás más que eso. Se cobra y se renueva junto con el plan; las notas de crédito cuentan como factura. Lo podés cambiar cuando quieras."}
+                      ? `Tenés ${formatCount(pack)} facturas por mes. El paquete se cobra y se renueva junto con el plan; las notas de crédito cuentan como factura. Si llegás al cupo, las ventas siguen como comprobante X.`
+                      : "Los planes no incluyen facturas. Sin paquete, tus ventas salen como comprobante X (no fiscal). Lo podés sumar cuando quieras."}
                   </p>
                 </div>
               )}

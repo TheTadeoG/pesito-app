@@ -107,7 +107,7 @@ export function Ticket({ receipt }: { receipt: SaleReceipt }) {
   );
 }
 
-type InvoiceState = { saleId: string; phase: "working" | "done" | "error"; voucherId?: string; message?: string };
+type InvoiceState = { saleId: string; phase: "working" | "done" | "error" | "quota"; voucherId?: string; message?: string };
 
 export function SaleDoneDialog({
   receipt,
@@ -136,7 +136,7 @@ export function SaleDoneDialog({
     if (res.status === "authorized") {
       setInvoice({ saleId: id, phase: "done", voucherId: res.voucherId });
       if (res.badge) onInvoiced?.(id, res.badge);
-    } else setInvoice({ saleId: id, phase: "error", message: res.error ?? "No pudimos facturar." });
+    } else setInvoice({ saleId: id, phase: res.outOfQuota ? "quota" : "error", message: res.error ?? "No pudimos facturar." });
   }, [onInvoiced]);
 
   useEffect(() => {
@@ -244,6 +244,12 @@ export function SaleDoneDialog({
                       <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">A</kbd>
                     </Button>
                   </div>
+                </div>
+              )}
+              {invoice?.phase === "quota" && (
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">Sin facturas disponibles este mes</p>
+                  <p className="text-xs text-muted-foreground">{invoice.message}</p>
                 </div>
               )}
               {invoice?.phase === "error" && (

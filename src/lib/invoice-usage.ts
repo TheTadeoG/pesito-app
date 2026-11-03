@@ -4,7 +4,7 @@ import { invoiceQuota } from "@/lib/invoice-packs";
 import type { SubscriptionInfo } from "@/lib/subscription";
 
 // Facturas del mes (calendario, huso Argentina) que cuentan contra el cupo del plan: las autorizadas por ARCA, facturas
-// y notas de crédito por igual. Las de modo de prueba no cuentan. Sólo servidor.
+// y notas de crédito por igual. El cupo es el del paquete contratado. Las de modo de prueba no cuentan. Sólo servidor.
 
 export interface InvoiceUsage {
   /** Plan por el que se calcula el cupo (la prueba Pro cuenta como Pro). */

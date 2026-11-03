@@ -25,6 +25,8 @@ export interface InvoiceResult {
   voucherId?: string;
   /** «Factura C» (o «Factura C (prueba)»): lo que rotulan las listas. */
   badge?: string;
+  /** Se acabó el cupo de facturas del mes: la venta sigue como comprobante X (no fiscal). */
+  outOfQuota?: boolean;
 }
 
 /** Lo que necesita el POS para decidir si factura solo: sólo el servidor emite. */
@@ -99,11 +101,16 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
   if (authorized) return { status: "authorized", voucherId: authorized.id, badge: voucherBadge(authorized.voucher_class, environment) };
   const open = (previous ?? []).find((v) => v.status === "indeterminate" || v.status === "conflict");
 
-  // Cupo mensual de facturas (plan + paquete). La venta ya está cobrada: sólo se frena la factura, con el aviso de cómo sumar más.
+  // Cupo mensual de facturas (paquete). Sin cupo la venta sigue igual, como comprobante X: sólo no se emite la factura.
   if (!open && environment === "production") {
     const usage = await getInvoiceUsage(organization.id, subscription);
     if (usage.reached) {
-      return { error: `Usaste las ${formatCount(usage.quota)} facturas de este mes (las notas de crédito cuentan). Sumá un paquete en Planes para seguir facturando; la venta quedó registrada y la podés facturar después.` };
+      return {
+        outOfQuota: true,
+        error: usage.quota === 0
+          ? "Tu plan no tiene un paquete de facturas: esta venta queda como comprobante X (no fiscal). Sumá un paquete en Planes para facturar."
+          : `Usaste las ${formatCount(usage.quota)} facturas de este mes (las notas de crédito cuentan): esta venta queda como comprobante X (no fiscal). Sumá un paquete en Planes para seguir facturando; la podés facturar después.`,
+      };
     }
   }
 

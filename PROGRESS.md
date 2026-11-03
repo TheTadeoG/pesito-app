@@ -334,9 +334,9 @@ Arreglado en 0045 (probado en local con ataques de un vendedor, todos rechazados
 
 ## Hecho: paquetes de facturas (migración 0088 — **falta aplicar en producción**)
 
-- Cada plan incluye facturas electrónicas por mes (Básico 150, Pro 500, Max 1.500; la prueba Pro cuenta como Pro) y se pueden sumar paquetes mensuales (500 $9.000, 1.000 $17.000, 2.000 $32.000, 3.000 $45.000, 5.000 $65.000, 10.000 $100.000; IVA incl.). Fuente única: `src/lib/invoice-packs.ts` (los números por plan todavía son una propuesta, se pueden ajustar ahí).
+- Los planes NO incluyen facturas: se contratan con paquetes mensuales (500 $9.000, 1.000 $17.000, 2.000 $32.000, 3.000 $45.000, 5.000 $65.000, 10.000 $100.000; IVA incl.). Fuente única: `src/lib/invoice-packs.ts`.
 - Se elige al contratar el plan (`/suscribirse`, `?paquete=`): va dentro de la misma suscripción de Mercado Pago (monto = plan + paquete; el descuento anual aplica a ambos; la promo del primer mes sólo al plan). El paquete viaja en la `external_reference` (`|k500`) y se guarda en `organization_subscriptions.invoice_pack`; se renueva y se cancela junto con el plan. Para cambiarlo, se vuelve a contratar el mismo plan con otro paquete.
-- Cuentan las facturas y las notas de crédito autorizadas del mes calendario (huso Argentina), sólo en modo real. Al llegar al cupo no se emiten más facturas (`issueSaleInvoice`): la venta queda cobrada y se factura después. Las notas de crédito nunca se frenan.
+- Cuentan las facturas y las notas de crédito autorizadas del mes calendario (huso Argentina), sólo en modo real. Sin paquete o al llegar al cupo no se emiten más facturas (`issueSaleInvoice` devuelve `outOfQuota`): la venta sigue normal como comprobante X (no fiscal) y se puede facturar después de sumar un paquete. Las notas de crédito nunca se frenan.
 - Configuración → Facturación muestra el uso del mes con aviso desde el 80%.
 - Falta: mostrar el paquete en la sección Plan de Configuración y avisar por la campana al 80%/100%.
 

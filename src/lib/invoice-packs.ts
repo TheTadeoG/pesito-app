@@ -1,11 +1,8 @@
 import type { Plan } from "@/lib/subscription";
 
-// Facturas electrónicas por mes: cada plan incluye una cantidad y se pueden sumar paquetes mensuales, que se cobran
-// y renuevan junto con el plan. Las notas de crédito cuentan como factura. Fuente única: la usan el cobro, el control
-// al emitir y los textos públicos.
-
-/** Facturas por mes incluidas en cada plan (el Gratis no factura). */
-export const INVOICES_INCLUDED: Record<Plan, number> = { gratis: 0, basico: 150, pro: 500, max: 1500 };
+// Facturas electrónicas por mes: los planes no incluyen facturas; se contratan con paquetes mensuales, que se cobran
+// y renuevan junto con el plan. Las notas de crédito cuentan como factura. Pasado el cupo, las ventas siguen con
+// comprobante X (no fiscal). Fuente única: la usan el cobro, el control al emitir y los textos públicos.
 
 /** Paquetes que se pueden sumar: facturas por mes y precio mensual en ARS, IVA incluido. */
 export const INVOICE_PACKS: { size: number; price: number }[] = [
@@ -20,7 +17,7 @@ export const INVOICE_PACKS: { size: number; price: number }[] = [
 export const packPrice = (size: number): number => INVOICE_PACKS.find((p) => p.size === size)?.price ?? 0;
 export const isValidPack = (size: number): boolean => size === 0 || INVOICE_PACKS.some((p) => p.size === size);
 
-/** Cupo mensual total: lo incluido en el plan más el paquete. */
-export const invoiceQuota = (plan: Plan, pack: number): number => INVOICES_INCLUDED[plan] + pack;
+/** Cupo mensual: el del paquete contratado (los planes no incluyen facturas). */
+export const invoiceQuota = (_plan: Plan, pack: number): number => pack;
 
 export const formatCount = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
