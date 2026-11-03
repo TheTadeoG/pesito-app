@@ -222,6 +222,8 @@ export function getAuthorizedPayment(id: string): Promise<AuthorizedPayment> {
  * primer mes: después del primer pago pasa al precio normal).
  */
 export async function updatePreapprovalAmount(id: string, amount: number): Promise<void> {
+  // Suscripción simulada para probar los cambios de plan y de paquete sin Mercado Pago (id `sim_…`, cargado a mano en la base).
+  if (id.startsWith("sim_")) return;
   await mp(`/preapproval/${encodeURIComponent(id)}`, {
     method: "PUT",
     body: JSON.stringify({ auto_recurring: { transaction_amount: amount, currency_id: "ARS" } }),
