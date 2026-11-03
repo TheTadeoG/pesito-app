@@ -154,6 +154,24 @@ export function planAlerts(subscription: SubscriptionInfo, expiringPeriodEnd: st
   return out;
 }
 
+/** Cupo mensual de facturas del paquete: avisa al 80% y al 100%. El token cambia por mes y por nivel, así vuelve a aparecer. */
+export function invoiceQuotaAlert(usage: { used: number; quota: number; left: number; nearLimit: boolean; reached: boolean }, monthKey: string): BellAlert | null {
+  if (usage.quota <= 0 || !usage.nearLimit) return null;
+  const level = usage.reached ? "100" : "80";
+  return {
+    id: "invoice-quota",
+    module: "plan",
+    priority: usage.reached ? "urgent" : "normal",
+    tone: usage.reached ? "danger" : "warning",
+    title: usage.reached ? "Usaste todas las facturas del mes" : `Te quedan ${usage.left} facturas este mes`,
+    detail: usage.reached
+      ? "Hasta el mes que viene las ventas salen como comprobante X (no fiscal). Sumá un paquete para seguir facturando."
+      : `Llevás ${usage.used} de ${usage.quota}. Sumá un paquete para no quedarte sin cupo.`,
+    href: "/planes",
+    dismiss: { key: "pesito-dismissed-invoice-quota", token: `${monthKey}-${level}` },
+  };
+}
+
 /** Aviso de la caja abierta (hora de cierre o caja de un día anterior); null si no hace falta. */
 export function cashAlert(openedAt: string, closeTime: string | null): BellAlert | null {
   const reminder = getCashReminder(openedAt, closeTime);

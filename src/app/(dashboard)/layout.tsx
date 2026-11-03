@@ -30,7 +30,8 @@ import { loadAlertSettings } from "@/lib/alert-settings";
 import { TourController } from "@/components/dashboard/tour-controller";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { AlertsProvider } from "@/components/dashboard/alerts-provider";
-import { newDeviceAlert, planAlerts, type BellAlert, type NewDeviceLogin } from "@/lib/bell-alerts";
+import { getInvoiceUsage } from "@/lib/invoice-usage";
+import { invoiceQuotaAlert, newDeviceAlert, planAlerts, type BellAlert, type NewDeviceLogin } from "@/lib/bell-alerts";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -157,6 +158,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = isOrgAdmin(membership.role);
   const bellAlerts: BellAlert[] = [];
   if (isAdmin) bellAlerts.push(...planAlerts(subscription, expiringBilling ? expiringBilling.currentPeriodEnd : null));
+  // Sólo si tiene un paquete de facturas (una consulta chica; sin paquete no hay cupo que avisar).
+  if (isAdmin && subscription.invoicePack > 0) {
+    const quotaAlert = invoiceQuotaAlert(await getInvoiceUsage(organization.id, subscription), argDateString().slice(0, 7));
+    if (quotaAlert) bellAlerts.push(quotaAlert);
+  }
   const deviceAlert = isAdmin ? newDeviceAlert(newDeviceLogins) : null;
   if (deviceAlert) bellAlerts.push(deviceAlert);
   if (overdueSuppliers > 0) {
