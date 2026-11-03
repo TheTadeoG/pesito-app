@@ -4,7 +4,7 @@ import { planTone } from "@/components/dashboard/pro-locked-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import type { Plan, PlanHistoryEntry, SubscriptionInfo } from "@/lib/subscription";
 import { FREE_PLAN_MONTHLY_SALES_LIMIT, planLabels, planOrder } from "@/lib/subscription";
 import { planDefinitions, getPlanOwnFeatures } from "@/lib/plan-features";
@@ -63,6 +63,16 @@ export function SubscriptionSection({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {subscription.nextPlan && billing?.currentPeriodEnd && (
+          <p className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warning/40 bg-warning-bg px-4 py-3 text-sm text-foreground">
+            <span>{`El ${formatDate(billing.currentPeriodEnd)} pasás al Plan ${planLabels[subscription.nextPlan]}. Hasta entonces seguís con el Plan ${planLabels[subscription.plan]}, que ya está pago.`}</span>
+            {canManage && (
+              <Link href={`/suscribirse?plan=${subscription.plan}`} prefetch={false} className="font-medium text-primary hover:underline">
+                Mantener mi plan
+              </Link>
+            )}
+          </p>
+        )}
         <div className={cn("rounded-2xl border p-5 sm:p-6", currentAccent.border, currentAccent.shadow)}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-4">

@@ -40,6 +40,8 @@ export interface SubscriptionInfo {
   invoicePack: number;
   /** Paquete que rige desde la próxima renovación (se bajó o quitó), o null. */
   nextInvoicePack: number | null;
+  /** Plan al que se baja en la próxima renovación, o null. */
+  nextPlan: Plan | null;
   /** Cobro con Mercado Pago (null sin la migración 0047 o sin suscripción). */
   billing: BillingInfo | null;
   /**
@@ -64,6 +66,7 @@ type SubscriptionRow = {
   payer_email?: string | null;
   invoice_pack?: number | null;
   next_invoice_pack?: number | null;
+  next_plan?: Plan | null;
   grace_plan?: Plan | null;
   plan_grace_until?: string | null;
 };
@@ -141,6 +144,7 @@ export async function getSubscription(
     plan,
     invoicePack: data?.invoice_pack ?? 0,
     nextInvoicePack: data?.next_invoice_pack ?? null,
+    nextPlan: data?.next_plan ?? null,
     proTrialEndsAt,
     hasProAccess: plan === "pro" || plan === "max" || trialActive,
     trialActive,

@@ -64,6 +64,8 @@ export interface CheckoutViewProps {
   /** Con un débito activo del mismo plan: qué pasa al elegir cada paquete (se cobra aparte sólo lo que resta; sin nueva suscripción). */
   changes: Record<number, { kind: "upgrade" | "downgrade" | "same" | "restore"; today: number; next: number }> | null;
   changeDate: string;
+  /** Baja de plan (o cancelar una baja programada) con débito activo: sin cobro hoy, rige desde la renovación. */
+  planSwitch: { kind: "downgrade" | "restore"; next: number; date: string; fromName: string; limits: { users: number; openRegisters: number; products: number } } | null;
   /** Próximo cobro (débito) o hasta cuándo queda pago (pago único). */
   dates: Record<BillingCycle, Record<PaymentMethod, string>>;
   current: { planName: string; autoDebit: boolean; samePlan: boolean } | null;
@@ -71,10 +73,10 @@ export interface CheckoutViewProps {
 }
 
 export function CheckoutView(props: CheckoutViewProps) {
-  const { plan, fromSignup, features, totals, changes, changeDate, dates, current, paymentsEnabled } = props;
+  const { plan, fromSignup, features, totals, changes, changeDate, planSwitch, dates, current, paymentsEnabled } = props;
   const [pack, setPack] = useState(props.initialPack);
   const { prices, promoPrice } = totals[pack] ?? totals[0];
-  const change = changes?.[pack] ?? null;
+  const change = planSwitch ? null : changes?.[pack] ?? null;
   const [cycle, setCycle] = useState<BillingCycle>(props.initialCycle);
   const [method, setMethod] = useState<PaymentMethod>(props.initialMethod);
   const { status, error, checkoutUrl, activePlan, periodEnd, start, check } = useMercadoPagoCheckout();
@@ -195,7 +197,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                 </p>
               </div>
 
-              {!changes && (
+              {!changes && !planSwitch && (
               <div className="grid grid-cols-2 rounded-xl bg-muted p-1 text-sm" role="radiogroup" aria-label="Período">
                 {(["mensual", "anual"] as const).map((c) => (
                   <button
@@ -217,7 +219,7 @@ export function CheckoutView(props: CheckoutViewProps) {
               </div>
               )}
 
-              {(
+              {!planSwitch && (
                 <div className="space-y-2">
                   <label htmlFor="invoice-pack" className="text-sm font-semibold text-foreground">
                     Facturas electrónicas por mes
@@ -244,7 +246,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                 </div>
               )}
 
-              {!changes && (
+              {!changes && !planSwitch && (
               <div className="space-y-3" role="radiogroup" aria-label="Forma de pago">
                 <MethodOption
                   selected={method === "debito"}
@@ -266,7 +268,7 @@ export function CheckoutView(props: CheckoutViewProps) {
               </div>
               )}
 
-              {current && !change && (
+              {current && !change && !planSwitch && (
                 <p className="rounded-xl border border-border px-4 py-3 text-sm text-muted-foreground">
                   {current.samePlan
                     ? current.autoDebit
@@ -276,7 +278,23 @@ export function CheckoutView(props: CheckoutViewProps) {
                 </p>
               )}
 
-              {change ? (
+              {planSwitch ? (
+                <dl className="space-y-2 rounded-xl bg-muted/60 px-4 py-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-muted-foreground">Hoy pagás</dt>
+                    <dd className="text-lg font-bold text-foreground">{formatCurrency(0)}</dd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-muted-foreground">{planSwitch.kind === "downgrade" ? `Desde el ${planSwitch.date}` : "Próximo cobro"}</dt>
+                    <dd className="text-foreground">{`${formatCurrency(planSwitch.next)} por ${cycle === "anual" ? "año" : "mes"}`}</dd>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {planSwitch.kind === "downgrade"
+                      ? `Seguís con el Plan ${planSwitch.fromName} hasta el ${planSwitch.date}, que ya está pago. Desde ahí pasás al ${planName} y mantenés tu paquete de facturas. El Plan ${planLabels[plan]} permite ${planSwitch.limits.users} usuarios, ${planSwitch.limits.openRegisters} cajas y ${planSwitch.limits.products.toLocaleString("es-AR")} productos: ordená tu negocio antes de esa fecha.`
+                      : `Cancelás el cambio de plan: seguís con el Plan ${planSwitch.fromName} y tu débito no cambia.`}
+                  </p>
+                </dl>
+              ) : change ? (
                 <dl className="space-y-2 rounded-xl bg-muted/60 px-4 py-3 text-sm">
                   <div className="flex items-center justify-between">
                     <dt className="text-muted-foreground">Hoy pagás</dt>
@@ -331,7 +349,7 @@ export function CheckoutView(props: CheckoutViewProps) {
                       value: amount,
                       items: [{ item_id: plan, item_name: planName, item_variant: cycle, price: amount, quantity: 1 }],
                     });
-                    start(plan, cycle, change ? "debito" : method, pack);
+                    start(plan, cycle, change || planSwitch ? "debito" : method, pack);
                   }}
                   disabled={status === "opening" || change?.kind === "same"}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-60"
@@ -344,7 +362,11 @@ export function CheckoutView(props: CheckoutViewProps) {
                   ) : (
                     <>
                       <Lock className="h-4 w-4" />
-                      {change
+                      {planSwitch
+                        ? planSwitch.kind === "downgrade"
+                          ? `Cambiar al ${planName} desde el ${planSwitch.date}`
+                          : "Mantener mi plan"
+                        : change
                         ? change.kind === "upgrade"
                           ? `Pagar el paquete: ${formatCurrency(change.today)}`
                           : change.kind === "downgrade"

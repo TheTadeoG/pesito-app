@@ -26,7 +26,9 @@ import {
   firstChargeAmount,
   isPromoEligible,
   packChange,
+  planChange,
   recordCheckout,
+  scheduleDowngrade,
   scheduleLowerPack,
   type CheckoutState,
   type PaymentMethod,
@@ -64,6 +66,23 @@ export async function startSubscription(
   if (!mercadoPagoConfigured()) return { error: "El cobro con Mercado Pago todavía no está configurado." };
 
   const backUrl = `${siteUrl}/suscribirse/listo`;
+
+  // Baja de plan (o se cancela una baja programada) con débito activo: sin cobro hoy, rige desde la renovación y se
+  // mantiene el paquete de facturas.
+  if (method === "debito") {
+    const sub = await getSubscription(await createClient(), organization.id);
+    const down = planChange(sub, plan, cycle);
+    if (down && (down.kind === "downgrade" || pack === (sub.nextInvoicePack ?? sub.invoicePack))) {
+      try {
+        await scheduleDowngrade(organization.id, sub.billing!.mpPreapprovalId!, sub.plan, plan, cycle, sub.nextInvoicePack ?? sub.invoicePack);
+        revalidatePath("/planes");
+        return { url: "/planes", checkoutId: "sin-cobro" };
+      } catch (e) {
+        console.error("startSubscription (baja de plan)", e instanceof MercadoPagoError ? e.body : e);
+        return { error: "No pudimos programar el cambio de plan. Probá de nuevo en un rato." };
+      }
+    }
+  }
 
   // Ya tiene este plan con débito automático y sólo cambia el paquete de facturas: no se crea otra suscripción (cobraría
   // el plan dos veces). Si lo sube, se cobra aparte sólo lo que falta del período; el débito suma el paquete desde la renovación.

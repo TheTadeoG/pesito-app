@@ -5,9 +5,10 @@ import { isOrgAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription, planLabels, type BillingCycle, type Plan } from "@/lib/subscription";
 import { mercadoPagoConfigured } from "@/lib/mercadopago";
-import { chargeAmount, firstChargeAmount, isPromoEligible, packChange, type PaymentMethod } from "@/lib/billing";
+import { chargeAmount, firstChargeAmount, isPromoEligible, packChange, planChange, type PaymentMethod } from "@/lib/billing";
 import { normalizePlanParam } from "@/lib/plan-ids";
 import { INVOICE_PACKS, isValidPack } from "@/lib/invoice-packs";
+import { planLimits } from "@/lib/plan-access";
 import { getPlanOwnFeatures } from "@/lib/plan-features";
 import { CheckoutView } from "@/app/suscribirse/checkout-view";
 
@@ -62,6 +63,8 @@ export default async function SuscribirsePage({
   // Mismo plan con débito automático activo: cambiar el paquete no crea otra suscripción (se usa el ciclo que ya paga).
   const sameBilling = subscription.plan === plan && billing?.status === "active" && billing.cycle ? billing.cycle : null;
   if (sameBilling) cycle = sameBilling;
+  const downgradeCycle = billing?.status === "active" && billing.cycle ? billing.cycle : null;
+  const planSwitch = downgradeCycle ? planChange(subscription, plan, downgradeCycle) : null;
   const changes = sameBilling
     ? Object.fromEntries(
         [0, ...INVOICE_PACKS.map((p) => p.size)].flatMap((size) => {
@@ -111,6 +114,7 @@ export default async function SuscribirsePage({
           },
         ])
       )}
+      planSwitch={planSwitch ? { kind: planSwitch.kind, next: planSwitch.next, date: longDate(new Date(planSwitch.nextDate)), fromName: planLabels[subscription.plan], limits: planLimits[plan] } : null}
       changes={changes && Object.keys(changes).length > 0 ? changes : null}
       changeDate={billing?.currentPeriodEnd ? longDate(new Date(billing.currentPeriodEnd)) : ""}
       initialPack={Number.isInteger(wantedPack) && paquete && isValidPack(wantedPack) ? wantedPack : subscription.plan === plan ? subscription.invoicePack : 0}

@@ -171,6 +171,8 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
   await logEvent(ref.orgId, "subscription_preapproval", pre.id, pre.status, pre.auto_recurring?.transaction_amount ?? null, pre);
 
   const isCurrent = !current?.mp_preapproval_id || current.mp_preapproval_id === pre.id;
+  // Misma suscripción: el plan guardado manda (puede haber bajado en una renovación; la referencia es la del alta).
+  const keepsPlan = current?.mp_preapproval_id === pre.id && current ? current.plan : null;
 
   if (pre.status === "authorized") {
     const previousId = current?.mp_preapproval_id && current.mp_preapproval_id !== pre.id ? current.mp_preapproval_id : null;
@@ -179,7 +181,7 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
     const { error } = await admin.from("organization_subscriptions").upsert(
       {
         org_id: ref.orgId,
-        plan: ref.plan,
+        plan: keepsPlan && keepsPlan !== "gratis" ? keepsPlan : ref.plan,
         billing_cycle: ref.cycle,
         mp_preapproval_id: pre.id,
         payment_status:
@@ -189,8 +191,8 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
         payer_email: pre.payer_email ?? current?.payer_email ?? null,
         pro_trial_ends_at: null,
         // El paquete de la referencia es el de cuando se creó la suscripción: si después se cambió, no se pisa.
-        ...(current?.mp_preapproval_id === pre.id ? {} : { invoice_pack: ref.pack, next_invoice_pack: null }),
-        ...downgradeGraceFields(current, ref.plan),
+        ...(current?.mp_preapproval_id === pre.id ? {} : { invoice_pack: ref.pack, next_invoice_pack: null, next_plan: null }),
+        ...downgradeGraceFields(current, keepsPlan && keepsPlan !== "gratis" ? keepsPlan : ref.plan),
       },
       { onConflict: "org_id" }
     );
@@ -199,7 +201,7 @@ export async function applyPreapproval(pre: Preapproval): Promise<string | null>
       console.error("applyPreapproval", error.message);
       throw new Error(`No pudimos guardar el plan: ${error.message}`);
     }
-    if ((current?.plan ?? "gratis") !== ref.plan) {
+    if (!keepsPlan && (current?.plan ?? "gratis") !== ref.plan) {
       await admin.from("plan_history").insert({
         org_id: ref.orgId,
         from_plan: current?.plan ?? "gratis",
@@ -275,18 +277,23 @@ export async function applyAuthorizedPayment(ap: AuthorizedPayment): Promise<str
       );
     }
     const base = ap.debit_date ? new Date(ap.debit_date) : new Date();
+    // Es el cobro de la renovación (y no un aviso tardío de uno anterior) si cae cerca del fin del período que figura.
+    const renewing = Boolean(
+      ap.debit_date && current?.current_period_end && base.getTime() >= new Date(current.current_period_end).getTime() - 2 * 24 * 60 * 60 * 1000
+    );
     await admin
       .from("organization_subscriptions")
       .update({
         payment_status: current?.payment_status === "cancelled" ? "cancelled" : "active",
         grace_until: null,
         current_period_end: addMonths(base, ref.cycle === "anual" ? 12 : 1).toISOString(),
-        // Un paquete que se bajó o quitó rige desde la renovación (no desde un aviso tardío de un cobro anterior).
-        ...(current?.next_invoice_pack != null && ap.debit_date && current.updated_at && new Date(ap.debit_date) > new Date(current.updated_at)
-          ? { invoice_pack: current.next_invoice_pack, next_invoice_pack: null }
-          : {}),
+        // Un plan o paquete que se bajó rige desde la renovación (no desde un aviso tardío de un cobro anterior).
+        ...(renewing ? { ...(current?.next_invoice_pack != null ? { invoice_pack: current.next_invoice_pack, next_invoice_pack: null } : {}), ...(current?.next_plan ? { plan: current.next_plan, next_plan: null } : {}) } : {}),
       })
       .eq("org_id", ref.orgId);
+    if (renewing && current?.next_plan && current.next_plan !== current.plan) {
+      await admin.from("plan_history").insert({ org_id: ref.orgId, from_plan: current.plan, to_plan: current.next_plan, changed_by: null });
+    }
   } else if (paymentStatus === "rejected" || paymentStatus === "cancelled" || paymentStatus === "canceled") {
     await admin
       .from("organization_subscriptions")
@@ -312,6 +319,9 @@ async function bumpPromoAmount(orgId: string, pre: Preapproval, plan: Plan, cycl
   const normal = chargeAmount(plan, cycle, pack);
   const current = Number(pre.auto_recurring?.transaction_amount ?? normal);
   if (!pre.preapproval_plan_id || current >= normal) return;
+  // Si la promo ya terminó, un monto menor es un cambio a propósito (baja de plan o de paquete): no se toca.
+  const { data: ended } = await createAdminClient().from("billing_events").select("id").eq("topic", "promo_ended").eq("mp_id", pre.id).limit(1);
+  if (ended?.length) return;
   const charges = await searchAuthorizedPayments(pre.id).catch(() => []);
   if (!charges.some((c) => c.payment?.status === "approved")) return;
   const admin = createAdminClient();
@@ -409,6 +419,45 @@ export async function applyOneTimePayment(pay: Payment): Promise<string | null> 
   return ref.orgId;
 }
 
+/** Plan que rige desde la próxima renovación: el que se programó al bajar, o el actual. */
+async function renewalPlan(orgId: string, fallback: Plan): Promise<Plan> {
+  const { data } = await createAdminClient().from("organization_subscriptions").select("next_plan").eq("org_id", orgId).maybeSingle();
+  return (data?.next_plan as Plan | null | undefined) ?? fallback;
+}
+
+export interface PlanChange {
+  /** downgrade: baja a un plan más barato desde la renovación; restore: se cancela una baja programada. */
+  kind: "downgrade" | "restore";
+  /** Monto de los próximos cobros (plan + paquete). */
+  next: number;
+  nextDate: string;
+}
+
+/**
+ * Bajar de plan con un débito automático activo (mismo ciclo): no se crea otra suscripción ni se cobra nada hoy. Sigue
+ * valiendo el plan actual, que ya está pago, y desde la renovación se cobra el plan nuevo con el mismo paquete de
+ * facturas. null = no corresponde (sin débito activo, otro ciclo, o no es una baja): se contrata como siempre.
+ */
+export function planChange(sub: SubscriptionInfo, plan: Plan, cycle: BillingCycle, now = new Date()): PlanChange | null {
+  const b = sub.billing;
+  if (sub.plan === "gratis" || !b || b.status !== "active" || !b.mpPreapprovalId || b.cycle !== cycle || !b.currentPeriodEnd) return null;
+  if (new Date(b.currentPeriodEnd) <= now) return null;
+  const pack = sub.nextInvoicePack ?? sub.invoicePack;
+  const nextDate = new Date(b.currentPeriodEnd).toISOString();
+  if (plan === sub.plan) return sub.nextPlan ? { kind: "restore", next: chargeAmount(sub.plan, cycle, pack), nextDate } : null;
+  if (plan === "gratis" || planOrder.indexOf(plan) > planOrder.indexOf(sub.plan)) return null;
+  return { kind: "downgrade", next: chargeAmount(plan, cycle, pack), nextDate };
+}
+
+/** Programa la baja de plan (o la cancela con `plan` = el actual): el débito cobra el monto nuevo desde la renovación. */
+export async function scheduleDowngrade(orgId: string, preapprovalId: string, current: Plan, target: Plan, cycle: BillingCycle, pack: number) {
+  const restore = target === current;
+  await updatePreapprovalAmount(preapprovalId, chargeAmount(target, cycle, pack));
+  const { error } = await createAdminClient().from("organization_subscriptions").update({ next_plan: restore ? null : (target as "basico" | "pro" | "max") }).eq("org_id", orgId);
+  if (error) throw new Error(`No pudimos guardar el cambio: ${error.message}`);
+  await logEvent(orgId, restore ? "plan_downgrade_cancelled" : "plan_downgrade_scheduled", preapprovalId, "scheduled", chargeAmount(target, cycle, pack), { plan: target });
+}
+
 export interface PackChange {
   /** restore: había un cambio a la baja programado y se vuelve a elegir el paquete actual (no se cobra nada). */
   kind: "upgrade" | "downgrade" | "same" | "restore";
@@ -450,14 +499,14 @@ export function packChange(sub: SubscriptionInfo, plan: Plan, cycle: BillingCycl
 
 /** Vuelve a dejar el paquete actual (se cancela una baja programada): el débito vuelve a cobrar plan + paquete. */
 export async function cancelScheduledPack(orgId: string, preapprovalId: string, plan: Plan, cycle: BillingCycle, pack: number) {
-  await updatePreapprovalAmount(preapprovalId, chargeAmount(plan, cycle, pack));
+  await updatePreapprovalAmount(preapprovalId, chargeAmount(await renewalPlan(orgId, plan), cycle, pack));
   const { error } = await createAdminClient().from("organization_subscriptions").update({ next_invoice_pack: null }).eq("org_id", orgId);
   if (error) throw new Error(`No pudimos guardar el cambio: ${error.message}`);
 }
 
 /** Baja o quita el paquete: el débito cobra menos desde la renovación y el paquete actual rige hasta entonces. */
 export async function scheduleLowerPack(orgId: string, preapprovalId: string, plan: Plan, cycle: BillingCycle, pack: number) {
-  await updatePreapprovalAmount(preapprovalId, chargeAmount(plan, cycle, pack));
+  await updatePreapprovalAmount(preapprovalId, chargeAmount(await renewalPlan(orgId, plan), cycle, pack));
   const { error } = await createAdminClient().from("organization_subscriptions").update({ next_invoice_pack: pack }).eq("org_id", orgId);
   if (error) throw new Error(`No pudimos guardar el cambio: ${error.message}`);
   await logEvent(orgId, "pack_scheduled", preapprovalId, "scheduled", chargeAmount(plan, cycle, pack), { pack });
@@ -482,7 +531,7 @@ async function applyPackAddon(pay: Payment, ref: { orgId: string; plan: Plan; cy
     await logEvent(ref.orgId, "payment", String(pay.id), "sin_debito", pay.transaction_amount, pay);
     return ref.orgId;
   }
-  await updatePreapprovalAmount(current.mp_preapproval_id, chargeAmount(ref.plan, ref.cycle, ref.pack));
+  await updatePreapprovalAmount(current.mp_preapproval_id, chargeAmount(current.next_plan ?? ref.plan, ref.cycle, ref.pack));
   const { error } = await admin.from("organization_subscriptions").update({ invoice_pack: ref.pack, next_invoice_pack: null }).eq("org_id", ref.orgId);
   if (error) throw new Error(`No pudimos guardar el paquete: ${error.message}`);
   await logEvent(ref.orgId, "payment_applied", String(pay.id), pay.status, pay.transaction_amount, pay);

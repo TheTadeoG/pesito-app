@@ -714,3 +714,8 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 ## Alta con plan directo: el rubro se pregunta después de pagar
 
 - Si se contrata un plan desde el registro, `/onboarding` crea el negocio sin preguntar el rubro (queda `business_type = "pendiente"`) y va derecho a `/suscribirse`. Al entrar al panel (pague o no), el dueño ve `BusinessTypeDialog` y elige el rubro (`setBusinessType`). Quien no contrata un plan sigue con el flujo de siempre.
+
+## Hecho: bajar de plan con débito automático rige desde la renovación (migración 0090 — **falta aplicar**)
+
+- Con débito activo y el mismo ciclo, bajar de plan no crea otra suscripción ni cobra hoy: `scheduleDowngrade` baja el monto del débito (plan nuevo + el mismo paquete de facturas) y guarda `next_plan`; al llegar el cobro de la renovación (`applyAuthorizedPayment`, `renewing`) el plan pasa a `next_plan` y queda en `plan_history`. Elegir de nuevo el plan actual cancela la baja. `applyPreapproval` ya no pisa el plan guardado de una misma suscripción, y `bumpPromoAmount` no sube un monto que se bajó a propósito.
+- Sin débito (pago único) o con otro ciclo sigue el flujo de antes (7 días de gracia). Planes muestra el aviso "El … pasás al Plan X" con "Mantener mi plan".
