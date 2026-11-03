@@ -212,7 +212,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
         <CardHeader>
           <CardTitle>Vincular ARCA</CardTitle>
           <CardDescription>
-            Conectá tu CUIT con ARCA (ex AFIP) para emitir facturas desde Pesito. La clave privada de tu certificado se guarda cifrada y no sale del servidor.
+            Conectá tu CUIT con ARCA (ex AFIP) para emitir facturas desde Pesito. Te guiamos paso a paso.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
