@@ -69,7 +69,7 @@ export default async function SuscribirsePage({
     ? Object.fromEntries(
         [0, ...INVOICE_PACKS.map((p) => p.size)].flatMap((size) => {
           const c = packChange(subscription, plan, cycle, size);
-          return c ? [[size, { kind: c.kind, today: c.today, next: c.next, planPart: chargeAmount(subscription.nextPlan ?? plan, cycle, 0), packFull: chargeAmount(plan, cycle, size) - chargeAmount(plan, cycle, 0), credit: chargeAmount(plan, cycle, subscription.invoicePack) - chargeAmount(plan, cycle, 0) }]] : [];
+          return c ? [[size, { kind: c.kind, today: c.today, next: c.next, planPart: chargeAmount(subscription.nextPlan ?? plan, cycle, 0), packFull: chargeAmount(plan, cycle, size) - chargeAmount(plan, cycle, 0), credit: chargeAmount(plan, cycle, subscription.invoicePack) - chargeAmount(plan, cycle, 0), currentTotal: chargeAmount(subscription.nextPlan ?? plan, cycle, subscription.nextInvoicePack ?? subscription.invoicePack) }]] : [];
         })
       )
     : null;
