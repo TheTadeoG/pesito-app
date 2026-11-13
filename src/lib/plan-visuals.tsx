@@ -56,7 +56,8 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeBg: "bg-amber-500",
     badgeText: "text-amber-950",
     buttonVariant: "gold",
-    panel: "border-r border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100",
+    // Sin variantes dark:: Pesito elige el tema con su propio selector y dark: sigue al sistema. Un tinte translúcido + el texto del tema se lee en los dos.
+    panel: "border-r border-amber-500/40 bg-amber-500/15 text-foreground",
     bar: "bg-amber-500",
   },
   // IA: violeta — se distingue como el tope de gama, con onda "tecnológico".
@@ -67,7 +68,7 @@ export const planAccents: Record<Plan, PlanAccent> = {
     badgeBg: "bg-violet-500",
     badgeText: "text-white",
     buttonVariant: "violet",
-    panel: "border-r border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-500/40 dark:bg-violet-500/15 dark:text-violet-100",
+    panel: "border-r border-violet-500/40 bg-violet-500/15 text-foreground",
     bar: "bg-violet-500",
   },
 };

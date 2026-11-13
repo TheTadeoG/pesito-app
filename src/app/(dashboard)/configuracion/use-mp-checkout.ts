@@ -5,7 +5,7 @@ import type { BillingCycle, Plan } from "@/lib/subscription";
 import type { PaymentMethod } from "@/lib/billing";
 import { checkPendingCheckout, startSubscription } from "@/app/(dashboard)/configuracion/billing-actions";
 
-type Status = "idle" | "opening" | "waiting" | "pending" | "active";
+type Status = "idle" | "opening" | "waiting" | "pending" | "active" | "scheduled";
 
 /**
  * Pago del plan con Mercado Pago: lleva a Mercado Pago en esta misma pestaña
@@ -20,12 +20,19 @@ export function useMercadoPagoCheckout() {
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const [activePlan, setActivePlan] = useState<Plan | null>(null);
   const [periodEnd, setPeriodEnd] = useState<string | null>(null);
+  const [scheduled, setScheduled] = useState<"downgrade" | "restore" | null>(null);
   const checking = useRef(false);
 
   const start = useCallback(async (plan: Plan, cycle: BillingCycle, method: PaymentMethod, pack = 0) => {
     setError(null);
     setStatus("opening");
     const result = await startSubscription(plan, cycle, method, pack);
+    if (result.scheduled) {
+      // Baja de plan programada o cancelada: no hay pago, se confirma en pantalla.
+      setScheduled(result.scheduled);
+      setStatus("scheduled");
+      return;
+    }
     if (result.error || !result.url || !result.checkoutId) {
       setStatus("idle");
       setError(result.error ?? "No pudimos conectar con Mercado Pago.");
@@ -80,5 +87,5 @@ export function useMercadoPagoCheckout() {
     setError(null);
   }, []);
 
-  return { status, error, checkoutUrl, activePlan, periodEnd, start, check, reset };
+  return { status, error, checkoutUrl, activePlan, periodEnd, scheduled, start, check, reset };
 }

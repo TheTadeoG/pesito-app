@@ -40,6 +40,8 @@ export interface BillingActionResult {
   url?: string;
   /** Id del checkout abierto, para preguntar después si se pagó. */
   checkoutId?: string;
+  /** Baja de plan programada (downgrade) o cancelada (restore): no hay pago, la pantalla lo confirma. */
+  scheduled?: "downgrade" | "restore";
 }
 
 const PAID: Plan[] = ["basico", "pro", "max"];
@@ -97,7 +99,7 @@ export async function startSubscription(
       try {
         await scheduleDowngrade(organization.id, sub.billing!.mpPreapprovalId!, sub.plan, plan, cycle, sub.nextInvoicePack ?? sub.invoicePack);
         revalidatePath("/planes");
-        return { url: "/planes", checkoutId: "sin-cobro" };
+        return { scheduled: down.kind };
       } catch (e) {
         console.error("startSubscription (baja de plan)", e instanceof MercadoPagoError ? e.body : e);
         return { error: "No pudimos programar el cambio de plan. Probá de nuevo en un rato." };

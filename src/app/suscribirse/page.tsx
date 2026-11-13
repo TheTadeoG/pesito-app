@@ -133,7 +133,7 @@ export default async function SuscribirsePage({
           },
         ])
       )}
-      planSwitch={planSwitch ? { kind: planSwitch.kind, next: planSwitch.next, planPart: chargeAmount(planSwitch.kind === "restore" ? subscription.plan : plan, downgradeCycle!, 0), pack: subscription.nextInvoicePack ?? subscription.invoicePack, date: longDate(new Date(planSwitch.nextDate)), fromName: planLabels[subscription.plan], limits: planLimits[plan] } : null}
+      planSwitch={planSwitch ? { kind: planSwitch.kind, next: planSwitch.next, planPart: chargeAmount(planSwitch.kind === "restore" ? subscription.plan : plan, downgradeCycle!, 0), pack: subscription.nextInvoicePack ?? subscription.invoicePack, date: longDate(new Date(planSwitch.nextDate)), fromName: planLabels[subscription.plan], fromPlan: subscription.plan, limits: planLimits[plan] } : null}
       currentPack={subscription.invoicePack}
       upgradeFrom={isUpgrade ? planLabels[subscription.plan] : null}
       changes={changes && Object.keys(changes).length > 0 ? changes : null}

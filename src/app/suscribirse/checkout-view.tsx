@@ -69,7 +69,7 @@ export interface CheckoutViewProps {
   /** Paquete de facturas que ya tiene contratado. */
   currentPack: number;
   /** Baja de plan (o cancelar una baja programada) con débito activo: sin cobro hoy, rige desde la renovación. */
-  planSwitch: { kind: "downgrade" | "restore"; next: number; planPart: number; pack: number; date: string; fromName: string; limits: { users: number; openRegisters: number; products: number } } | null;
+  planSwitch: { kind: "downgrade" | "restore"; next: number; planPart: number; pack: number; date: string; fromName: string; fromPlan: Plan; limits: { users: number; openRegisters: number; products: number } } | null;
   /** Próximo cobro (débito) o hasta cuándo queda pago (pago único). */
   dates: Record<BillingCycle, Record<PaymentMethod, string>>;
   current: { planName: string; autoDebit: boolean; samePlan: boolean } | null;
@@ -83,7 +83,7 @@ export function CheckoutView(props: CheckoutViewProps) {
   const change = planSwitch ? null : changes?.[pack] ?? null;
   const [cycle, setCycle] = useState<BillingCycle>(props.initialCycle);
   const [method, setMethod] = useState<PaymentMethod>(props.initialMethod);
-  const { status, error, checkoutUrl, activePlan, periodEnd, start, check } = useMercadoPagoCheckout();
+  const { status, error, checkoutUrl, activePlan, periodEnd, scheduled, start, check } = useMercadoPagoCheckout();
 
   const theme = themes[plan];
   const Icon = planIcons[plan];
@@ -199,7 +199,33 @@ export function CheckoutView(props: CheckoutViewProps) {
         <div className="w-full max-w-md space-y-6">
           {fromSignup && <Steps />}
 
-          {status === "active" ? (
+          {status === "scheduled" && planSwitch ? (
+            <div className="space-y-5 py-4 text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <Check className="h-7 w-7" />
+              </span>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-foreground">
+                  {scheduled === "downgrade" ? "Listo, tu cambio de plan quedó programado" : "Cancelaste el cambio de plan"}
+                </h2>
+                <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+                  {scheduled === "downgrade"
+                    ? `Hoy no se cobró nada y seguís con todo el Plan ${planSwitch.fromName} hasta el ${planSwitch.date}. Ese día pasás al ${planName} y tu débito baja a ${formatCurrency(planSwitch.next)} por ${cycle === "anual" ? "año" : "mes"}.`
+                    : `Seguís con el Plan ${planSwitch.fromName} y tu débito no cambia.`}
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                <a href="/planes">
+                  <Button>Ver mi plan</Button>
+                </a>
+                {scheduled === "downgrade" && (
+                  <Button type="button" variant="outline" onClick={() => start(planSwitch.fromPlan, cycle, "debito", planSwitch.pack)}>
+                    Deshacer el cambio
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : status === "active" ? (
             <Confirmed
               planName={`Plan ${planLabels[activePlan ?? plan]}`}
               periodEnd={periodEnd}

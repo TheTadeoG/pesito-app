@@ -13,6 +13,7 @@ import { planDefinitions, getPlanOwnFeatures } from "@/lib/plan-features";
 import { planAccents, planIcons } from "@/lib/plan-visuals";
 import { chargeAmount } from "@/lib/billing";
 import { SubscribeButton } from "@/app/(dashboard)/configuracion/subscribe-button";
+import { PlanChangeNotice } from "@/app/(dashboard)/planes/plan-change-notice";
 import { BillingStatus } from "@/app/(dashboard)/configuracion/billing-status";
 
 export function SubscriptionSection({
@@ -65,6 +66,8 @@ export function SubscriptionSection({
   const usagePct = usage && subscription.invoicePack > 0 ? Math.min(100, Math.round((usage.used / subscription.invoicePack) * 100)) : 0;
   const usageFull = Boolean(usage && subscription.invoicePack > 0 && usage.used >= subscription.invoicePack);
   const renewalDate = billing?.currentPeriodEnd ? formatDate(billing.currentPeriodEnd) : null;
+  // eslint-disable-next-line react-hooks/purity -- Server Component: se calcula fresco en cada request.
+  const daysUntilRenewal = billing?.currentPeriodEnd ? Math.max(1, Math.ceil((new Date(billing.currentPeriodEnd).getTime() - Date.now()) / 86_400_000)) : 1;
 
   const trialDaysLeft =
     subscription.trialActive && subscription.proTrialEndsAt
@@ -84,16 +87,6 @@ export function SubscriptionSection({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {subscription.nextPlan && billing?.currentPeriodEnd && (
-          <p className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warning/40 bg-warning-bg px-4 py-3 text-sm text-foreground">
-            <span>{`El ${formatDate(billing.currentPeriodEnd)} pasás al Plan ${planLabels[subscription.nextPlan]}. Hasta entonces seguís con el Plan ${planLabels[subscription.plan]}, que ya está pago.`}</span>
-            {canManage && (
-              <Link href={`/suscribirse?plan=${subscription.plan}`} prefetch={false} className="font-medium text-primary hover:underline">
-                Mantener mi plan
-              </Link>
-            )}
-          </p>
-        )}
         <div className={cn("rounded-2xl border p-5 sm:p-6", currentAccent.border, currentAccent.shadow)}>
           {paidView && (
             <div className="space-y-4">
@@ -102,8 +95,26 @@ export function SubscriptionSection({
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tu plan actual</p>
                   <p className="text-2xl font-bold text-foreground">{current.name}</p>
                 </div>
-                <Badge tone={billing?.status === "past_due" ? "warning" : "success"}>{billing?.status === "past_due" ? "Pago pendiente" : "Al día"}</Badge>
+                {subscription.nextPlan ? (
+                  <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 text-xs font-semibold text-foreground">Cambio programado</span>
+                ) : (
+                  <Badge tone={billing?.status === "past_due" ? "warning" : "success"}>{billing?.status === "past_due" ? "Pago pendiente" : "Al día"}</Badge>
+                )}
               </div>
+              {subscription.nextPlan && billing?.currentPeriodEnd && renewalDate && (
+                <PlanChangeNotice
+                  plan={subscription.plan}
+                  cycle={cycle}
+                  pack={subscription.nextInvoicePack ?? subscription.invoicePack}
+                  fromName={planLabels[subscription.plan]}
+                  toName={planLabels[subscription.nextPlan]}
+                  fromTotal={nowTotal}
+                  toTotal={nextTotal}
+                  date={renewalDate}
+                  daysLeft={daysUntilRenewal}
+                  canManage={canManage}
+                />
+              )}
               <div className="grid overflow-hidden rounded-xl border border-border md:grid-cols-[minmax(210px,260px)_1fr]">
                 <div className={cn("grid content-center gap-1.5 p-5", currentAccent.panel)}>
                   <p className="text-xs opacity-90">{renewalDate ? `Próximo débito · ${renewalDate}` : "Próximo débito"}</p>
