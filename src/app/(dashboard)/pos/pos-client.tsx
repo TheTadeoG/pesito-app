@@ -15,7 +15,6 @@ import {
   Plus,
   Percent,
   QrCode,
-  Scale,
   Search,
   Shuffle,
   Trash2,
@@ -1066,15 +1065,6 @@ export function PosClient({
               </div>
 
               <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                <button
-                  type="button"
-                  disabled
-                  title="Balanza (próximamente)"
-                  aria-label="Balanza (próximamente)"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors disabled:opacity-50"
-                >
-                  <Scale className="h-4 w-4" />
-                </button>
                 <button
                   type="button"
                   onClick={() => setShowManualAmount((v) => !v)}
