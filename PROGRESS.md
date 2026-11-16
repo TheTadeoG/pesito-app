@@ -243,6 +243,10 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Admin → Negocios → ficha: casilla "Es una cuenta propia o de prueba" (tabla `admin_internal_orgs`, migración 0095, **falta aplicar en producción**): saca el negocio de "Pagan", del embudo y de remarketing. Sin variables de entorno.
 - Admin → Negocios: la forma de pago se lee de entrada: "débito automático mensual · se renueva solo", "pago único de 1 mes · no se renueva solo · vence 16/12/26", "débito cancelado · vence …" o "asignado a mano (no pagó)", en la lista y en la ficha ("Forma de pago"); segmento nuevo "Pago por vencer (7 días)" para contactar antes del vencimiento.
 
+## Hecho: ingresos del admin con descuentos (16/11/2026)
+- Resumen: el KPI "Cobrado (30 días)" suma lo que de verdad entró (eventos `payment_applied` y `subscription_authorized_payment` aprobados de `billing_events`, cada pago una vez), con promos y descuentos incluidos y sin cuentas propias. "Ingreso recurrente estimado" (Resumen y Estadísticas) ya no usa el precio de lista: es lo que se debita por mes a quien tiene débito automático activo (precio normal + paquete de facturas; el anual dividido en 12; los pagos únicos no cuentan porque no se renuevan solos).
+- Sigue sin contarse en "recurrente" el primer mes con promo (se ve en "Cobrado").
+
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.

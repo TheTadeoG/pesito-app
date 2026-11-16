@@ -15,6 +15,10 @@ export interface AdminOrg {
   paymentStatus: string | null;
   /** Cuenta propia o de prueba (marcada desde el panel): no cuenta como cliente que paga. */
   internal: boolean;
+  /** Ingreso mensual estimado si se renueva (débito automático activo, al precio normal del plan y con su paquete de facturas; el anual dividido en 12). 0 si no se renueva solo. */
+  recurring: number;
+  /** Lo que se cobró de verdad en los últimos 30 días (promos y descuentos incluidos). */
+  collected30: number;
   /** Tiene un débito automático (suscripción de Mercado Pago) asociado. */
   hasDebit: boolean;
   /** Hasta cuándo está pago el plan (débito automático o pago único). */

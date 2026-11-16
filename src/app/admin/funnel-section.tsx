@@ -63,7 +63,7 @@ export function FunnelSection({ funnel }: { funnel: FunnelResult | null }) {
               <Stat label="Vencieron sin pagar" value={String(funnel.trial.expiredUnpaid)} />
               <Stat label="Pasaron a pagar" value={String(funnel.trial.converted)} />
               <Stat label="Conversión de la prueba" value={fmtPct(funnel.trial.conversionPct)} hint="pagaron ÷ (pagaron + vencieron sin pagar)" />
-              <Stat label="Ingreso mensual estimado" value={formatCurrency(funnel.mrr)} hint={`${funnel.payingOrgs} negocios pagan`} />
+              <Stat label="Ingreso recurrente estimado" value={formatCurrency(funnel.mrr)} hint={`${funnel.payingOrgs} negocios pagan · lo que se debita por mes (precio normal, sin promo)`} />
             </CardContent>
           </Card>
         </div>

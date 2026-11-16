@@ -84,6 +84,7 @@ export default async function AdminResumenPage() {
         signedUpOwners: orgs.length + data.signedUpWithoutOrg,
         activity: activityRows.map((a) => ({ ...a, sale_count: Number(a.sale_count), member_count: Number(a.member_count) })),
         subscriptions: new Map(orgs.map((o) => [o.id, { plan: o.plan, trialEndsAt: o.trialEndsAt, paidViaMp: o.paidViaMp && !o.internal, cycle: (o.cycle as "mensual" | "anual" | null) ?? null }])),
+        monthlyByOrg: new Map(orgs.map((o) => [o.id, o.recurring])),
         monthlyPrice: (plan, cycle) => {
           const price = planDefinitions[plan as Plan]?.price ?? 0;
           return cycle === "anual" ? Math.round(price * (1 - ANNUAL_DISCOUNT)) : price;
@@ -91,10 +92,13 @@ export default async function AdminResumenPage() {
       })
     : null;
 
+  // Lo cobrado de verdad en los últimos 30 días (sin las cuentas propias o de prueba).
+  const collected = orgs.filter((o) => !o.internal).reduce((sum, o) => sum + o.collected30, 0);
+
   const kpis: { label: string; value: string; note: string; tone?: string; money?: boolean }[] = [
     { label: "Negocios", value: String(orgs.length), note: `+${newWeek} esta semana`, tone: "text-success" },
     { label: "Pagan", value: String(paying), note: orgs.length ? `${Math.round((paying / orgs.length) * 100)}% de los negocios` : "—" },
-    { label: "Ingreso mensual", value: funnel ? formatCurrency(funnel.mrr) : "—", note: "Estimado, de los que pagan por Mercado Pago", money: true },
+    { label: "Cobrado (30 días)", value: formatCurrency(collected), note: `Real, con promos y descuentos. Recurrente estimado: ${formatCurrency(funnel?.mrr ?? 0)} por mes`, money: true },
     { label: "En prueba gratis", value: String(inTrial), note: trialEnding ? `${trialEnding} vencen en 3 días` : "Ninguna vence pronto", tone: trialEnding ? "text-warning" : undefined },
     { label: "Vendieron esta semana", value: String(soldThisWeek), note: orgs.length ? `${Math.round((soldThisWeek / orgs.length) * 100)}% de los negocios` : "—" },
     { label: "Sin ninguna venta", value: String(noSales), note: "Se registraron y no vendieron" },

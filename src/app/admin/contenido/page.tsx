@@ -26,6 +26,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { OrgPlanManager } from "@/app/admin/org-plan-manager";
 import { FunnelSection } from "@/app/admin/funnel-section";
 import { computeFunnel } from "@/lib/admin-funnel";
+import { loadAdminData } from "@/lib/admin-data";
 import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
 import { LandingStatsManager } from "@/app/admin/landing-stats-manager";
 import { MarketInsightsManager } from "@/app/admin/market-insights-manager";
@@ -259,6 +260,9 @@ export default async function AdminContenidoPage() {
   // que entran por invitación no son altas), negocios que cargaron un producto, vendieron y pagan.
   const ownerUserIds = new Set(memberships.filter((m) => m.role === "owner").map((m) => m.user_id));
   const signedUpOwners = ownerUserIds.size + users.filter((u) => !membersWithOrg.has(u.id)).length;
+  // Lo que se debita de verdad a cada negocio (con su paquete y ciclo) y las cuentas propias o de prueba, del mismo cálculo que el Resumen.
+  const adminOrgs = (await loadAdminData()).orgs;
+  const internalOrgIds = new Set(adminOrgs.filter((o) => o.internal).map((o) => o.id));
   const funnelSubscriptions = new Map(
     (subscriptionsRaw ?? []).map((s) => [
       s.org_id,
@@ -266,7 +270,7 @@ export default async function AdminContenidoPage() {
         plan: s.plan,
         trialEndsAt: s.pro_trial_ends_at,
         // Un plan asignado a mano desde el panel no tiene suscripción ni pago de Mercado Pago.
-        paidViaMp: s.plan !== "gratis" && Boolean(s.mp_preapproval_id || s.payment_status),
+        paidViaMp: !internalOrgIds.has(s.org_id) && s.plan !== "gratis" && Boolean(s.mp_preapproval_id || s.payment_status),
         cycle: s.billing_cycle ?? null,
       },
     ])
@@ -280,6 +284,7 @@ export default async function AdminContenidoPage() {
           member_count: Number(a.member_count),
         })),
         subscriptions: funnelSubscriptions,
+        monthlyByOrg: new Map(adminOrgs.map((o) => [o.id, o.recurring])),
         monthlyPrice: (plan, cycle) => {
           const price = planDefinitions[plan as Plan]?.price ?? 0;
           return cycle === "anual" ? Math.round(price * (1 - ANNUAL_DISCOUNT)) : price;

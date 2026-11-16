@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 import { businessTypes } from "@/lib/business-types";
 import type { AdminOrg } from "@/lib/admin-shared";
+import { chargeAmount } from "@/lib/billing";
+import type { BillingCycle, Plan } from "@/lib/subscription";
 
 export { DAY_MS, SEGMENTS, ago, inSegment, whatsappNumber, type AdminOrg, type SegmentId } from "@/lib/admin-shared";
 
@@ -23,14 +25,35 @@ export interface AdminData {
 export async function loadAdminData(): Promise<AdminData> {
   const admin = createAdminClient();
 
-  const [orgsRaw, subsRaw, activityRes, memberships, internalRes] = await Promise.all([
+  const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const [orgsRaw, subsRaw, activityRes, memberships, internalRes, paymentsRaw] = await Promise.all([
     fetchAll((from, to) => admin.from("organizations").select("id, name, business_type, created_at, phone").order("created_at", { ascending: false }).order("id").range(from, to)),
     fetchAll((from, to) => admin.from("organization_subscriptions").select("*").order("org_id").range(from, to)),
     admin.from("platform_org_activity").select("*"),
     fetchAll((from, to) => admin.from("memberships").select("user_id, org_id, role").order("id").range(from, to)),
     // Negocios propios o de prueba (migración 0095): si la tabla todavía no existe, no hay ninguno.
     admin.from("admin_internal_orgs" as never).select("org_id"),
+    // Cobros aprobados de los últimos 30 días: pagos únicos y cobros del débito automático.
+    fetchAll((from, to) =>
+      admin
+        .from("billing_events")
+        .select("id, org_id, topic, mp_id, status, amount")
+        .in("topic", ["payment_applied", "subscription_authorized_payment"])
+        .eq("status", "approved")
+        .gte("created_at", since30)
+        .order("id")
+        .range(from, to)
+    ),
   ]);
+  // Lo realmente cobrado por negocio (cada pago una sola vez, aunque el aviso de Mercado Pago llegue repetido).
+  const collectedByOrg = new Map<string, number>();
+  const seenPayments = new Set<string>();
+  for (const e of paymentsRaw) {
+    const key = `${e.topic}:${e.mp_id}`;
+    if (!e.org_id || seenPayments.has(key)) continue;
+    seenPayments.add(key);
+    collectedByOrg.set(e.org_id, (collectedByOrg.get(e.org_id) ?? 0) + Number(e.amount ?? 0));
+  }
   const internalOrgs = new Set(((internalRes.data ?? []) as unknown as { org_id: string }[]).map((r) => r.org_id));
 
   // auth.users sólo se lee con la Admin API, paginando.
@@ -88,6 +111,15 @@ export async function loadAdminData(): Promise<AdminData> {
       trialEndsAt: sub?.pro_trial_ends_at ?? null,
       paidViaMp: plan !== "gratis" && Boolean(sub?.mp_preapproval_id || sub?.payment_status),
       internal: internalOrgs.has(o.id),
+      recurring: (() => {
+        const pack = Number((sub as { invoice_pack?: number } | undefined)?.invoice_pack ?? 0);
+        const hasDebit = Boolean(sub?.mp_preapproval_id) && sub?.payment_status !== "cancelled";
+        if (!hasDebit || plan === "gratis") return 0;
+        const cycle: BillingCycle = sub?.billing_cycle === "anual" ? "anual" : "mensual";
+        const total = chargeAmount(plan as Plan, cycle, pack);
+        return cycle === "anual" ? total / 12 : total;
+      })(),
+      collected30: collectedByOrg.get(o.id) ?? 0,
       paymentStatus: sub?.payment_status ?? null,
       hasDebit: Boolean(sub?.mp_preapproval_id),
       periodEnd: (sub as { current_period_end?: string | null } | undefined)?.current_period_end ?? null,

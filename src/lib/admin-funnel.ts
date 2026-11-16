@@ -73,6 +73,8 @@ export function computeFunnel(input: {
   subscriptions: Map<string, OrgSubscription>;
   /** Precio mensual de cada plan (lib/plan-features), para el ingreso estimado. */
   monthlyPrice: (plan: string, cycle: "mensual" | "anual" | null) => number;
+  /** Si se pasa, el ingreso estimado de cada negocio sale de acá (lo que de verdad se le debita) y no del precio de lista. */
+  monthlyByOrg?: Map<string, number>;
   now?: number;
 }): FunnelResult {
   const now = input.now ?? Date.now();
@@ -113,7 +115,8 @@ export function computeFunnel(input: {
   let mrr = 0;
   for (const o of paying) {
     const sub = input.subscriptions.get(o.org_id);
-    if (sub) mrr += input.monthlyPrice(sub.plan, sub.cycle);
+    if (input.monthlyByOrg) mrr += input.monthlyByOrg.get(o.org_id) ?? 0;
+    else if (sub) mrr += input.monthlyPrice(sub.plan, sub.cycle);
   }
 
   const adoptionDefs: [string, (o: OrgActivity) => boolean][] = [
