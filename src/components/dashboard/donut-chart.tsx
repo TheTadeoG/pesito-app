@@ -31,8 +31,9 @@ export function DonutChart({ data, formatValue }: DonutChartProps) {
 
   return (
     <div className="flex flex-col items-center gap-5 sm:flex-row">
-      <svg width="150" height="150" viewBox="0 0 160 160" className="-rotate-90 shrink-0">
-        <circle cx="80" cy="80" r={radius} fill="none" stroke="var(--color-muted)" strokeWidth="20" />
+      <div className="relative shrink-0">
+      <svg width="150" height="150" viewBox="0 0 160 160" className="-rotate-90">
+        <circle cx="80" cy="80" r={radius} fill="none" stroke="var(--color-muted)" strokeWidth="18" />
         {segments.map((segment, i) => (
           <circle
             key={segment.label}
@@ -41,14 +42,19 @@ export function DonutChart({ data, formatValue }: DonutChartProps) {
             r={radius}
             fill="none"
             stroke={PALETTE[i % PALETTE.length]}
-            strokeWidth="20"
+            strokeWidth="18"
             strokeDasharray={`${segment.dash} ${circumference - segment.dash}`}
             strokeDashoffset={segment.dashOffset}
             strokeLinecap="butt"
           />
         ))}
       </svg>
-      <div className="w-full space-y-2">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span className="text-sm font-bold leading-tight tabular-nums text-foreground">{formatValue(total)}</span>
+          <span className="text-[11px] text-muted-foreground">Total</span>
+        </div>
+      </div>
+      <div className="w-full space-y-2.5">
         {data.map((slice, i) => (
           <div key={slice.label} className="flex items-center justify-between gap-2 text-sm">
             <span className="flex min-w-0 items-center gap-2">

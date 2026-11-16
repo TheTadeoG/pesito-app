@@ -222,7 +222,7 @@ export default async function AdminResumenPage() {
             <span className="text-xs text-muted-foreground">Últimos 30 días · {newWeek} en la última semana</span>
           </CardHeader>
           <CardContent>
-            {signups.every((d) => d.value === 0) ? <p className="py-10 text-center text-sm text-muted-foreground">Sin altas en el período.</p> : <BarChart data={signups} labelEvery={5} />}
+            {signups.every((d) => d.value === 0) ? <p className="py-10 text-center text-sm text-muted-foreground">Sin altas en el período.</p> : <BarChart data={signups} labelEvery={5} formatValue={(v) => String(v)} emptyLabel="Sin altas" />}
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">

@@ -535,6 +535,7 @@ export default async function AdminContenidoPage() {
                 showValueLabels={false}
                 labelEvery={3}
                 formatValue={(v) => String(v)}
+                emptyLabel="Sin altas"
               />
             )}
           </CardContent>
