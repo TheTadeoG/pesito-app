@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +32,8 @@ export interface ActivityEvent {
   title: string;
   detail: string | null;
   tone: "neutral" | "success" | "warning" | "danger";
+  /** Sucursal (sólo si el negocio tiene más de una). */
+  branch: string | null;
 }
 
 const KINDS: { id: "todo" | ActivityEvent["kind"]; label: string }[] = [
@@ -55,7 +59,50 @@ function Diff({ value }: { value: number }) {
   );
 }
 
-export function ActividadClient({ users, events, periodKey }: { users: UserSummary[]; events: ActivityEvent[]; periodKey: string }) {
+const KIND_LABEL: Record<ActivityEvent["kind"], string> = { stock: "Stock", caja: "Caja", anulacion: "Anulación" };
+
+type XlsCell = { value: string | number | Date; fontWeight?: "bold"; backgroundColor?: string; format?: string };
+
+// Baja a Excel lo que se está viendo (con los filtros puestos) y, en otra hoja, el resumen por persona.
+async function downloadExcel(users: UserSummary[], rows: ActivityEvent[], rangeLabel: string) {
+  const { default: writeXlsxFile } = await import("write-excel-file/browser");
+  const head = (labels: string[]): XlsCell[] => labels.map((value) => ({ value, fontWeight: "bold", backgroundColor: "#e5e7eb" }));
+  const label = (id: string) => users.find((u) => u.userId === id)?.label ?? "Usuario";
+  const detail: XlsCell[][] = [
+    head(["Fecha", "Persona", "Tipo", "Movimiento", "Detalle", "Sucursal"]),
+    ...rows.map((e): XlsCell[] => [
+      { value: new Date(e.at), format: "dd/mm/yyyy hh:mm" },
+      { value: label(e.userId) },
+      { value: KIND_LABEL[e.kind] },
+      { value: e.title },
+      { value: e.detail ?? "" },
+      { value: e.branch ?? "" },
+    ]),
+  ];
+  const money = (value: number): XlsCell => ({ value, format: "#,##0.00" });
+  const summary: XlsCell[][] = [
+    head(["Persona", "Ventas", "Importe de ventas", "Anulaciones", "Ajustes de stock", "Retiros", "Ingresos", "Cierres de caja", "Diferencia de caja (contado − esperado)"]),
+    ...users.map((u): XlsCell[] => [
+      { value: u.label },
+      { value: u.sales },
+      money(u.salesTotal),
+      { value: u.voids },
+      { value: u.stockAdjustments },
+      money(u.cashOut),
+      money(u.cashIn),
+      { value: u.registersClosed },
+      money(u.cashDifference),
+    ]),
+  ];
+  await writeXlsxFile(
+    [
+      { data: detail, sheet: "Movimientos", columns: [{ width: 18 }, { width: 22 }, { width: 12 }, { width: 60 }, { width: 40 }, { width: 18 }], stickyRowsCount: 1 },
+      { data: summary, sheet: "Por persona", columns: [{ width: 24 }, { width: 10 }, { width: 18 }, { width: 14 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 36 }], stickyRowsCount: 1 },
+    ]
+  ).toFile(`pesito-por-usuario-${rangeLabel.replace(/ a /g, "_al_")}.xlsx`);
+}
+
+export function ActividadClient({ users, events, periodKey, rangeLabel }: { users: UserSummary[]; events: ActivityEvent[]; periodKey: string; rangeLabel: string }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [kind, setKind] = useState<(typeof KINDS)[number]["id"]>("todo");
   const [search, setSearch] = useState("");
@@ -167,6 +214,17 @@ export function ActividadClient({ users, events, periodKey }: { users: UserSumma
                 {k.label}
               </button>
             ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={filtered.length === 0}
+              onClick={() => void downloadExcel(users, filtered, rangeLabel)}
+              className="ml-auto"
+            >
+              <Download className="h-4 w-4" />
+              Exportar a Excel
+            </Button>
             {selected && (
               <button type="button" onClick={() => setUserId(null)} className="rounded-full px-3 py-1 text-xs font-medium text-primary hover:underline">
                 Ver a todos
@@ -185,7 +243,7 @@ export function ActividadClient({ users, events, periodKey }: { users: UserSumma
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{e.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {`${users.find((u) => u.userId === e.userId)?.label ?? "Usuario"} · ${formatDateTime(e.at)}`}
+                      {`${users.find((u) => u.userId === e.userId)?.label ?? "Usuario"} · ${formatDateTime(e.at)}${e.branch ? ` · ${e.branch}` : ""}`}
                     </p>
                     {e.detail && <p className="mt-0.5 text-xs text-foreground/80">{e.detail}</p>}
                   </div>

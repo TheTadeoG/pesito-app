@@ -213,7 +213,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 ## Hecho: Control por usuario — Plan Pro (16/11/2026)
 - Pantalla `/actividad` (solapa "Por usuario" dentro de Reportes, sólo dueño/admin; filtros: Hoy/7/30 días o desde-hasta hasta 92 días, persona, tipo y búsqueda de texto), `canUse(sub, "userActivity")` con `ProLockedCard`. Períodos Hoy / 7 / 30 días. Tabla por persona (ventas, anulaciones, ajustes de stock, retiros, ingresos, cierres de caja con faltante/sobrante) y lista de movimientos paginada con filtros por persona y tipo. Sin migración: usa `sales`, `stock_movements` (sin ventas), `cash_movements` y `cash_registers`.
 - Textos alineados: card del Pro y `planComparison` (ya sin "Pronto"), `faq-data.ts`. Sin cambios en blog ni llms.txt (no lo mencionaban).
-- Pendiente opcional: filtrar por sucursal y exportar a Excel.
+- Filtro por sucursal (si hay más de una) y "Exportar a Excel" (hoja Movimientos con los filtros puestos + hoja Por persona del período).
 
 ## Hecho: precio por porcentaje con vista previa (16/11/2026)
 - Formulario de producto: con el costo cargado aparece "Ganancia sobre el costo (%)" (la misma cuenta del aviso de margen bajo); muestra en cuánto queda el precio y cuánto se gana por unidad, y "Usar este precio" lo aplica. También muestra el % que da el precio actual. Todos los planes, sin cambios en textos públicos.
