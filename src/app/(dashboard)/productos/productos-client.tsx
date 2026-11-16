@@ -55,6 +55,9 @@ import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
+import { AddChoiceDialog } from "@/app/(dashboard)/productos/add-choice-dialog";
+import { BrandFormDialog } from "@/app/(dashboard)/productos/brand-form-dialog";
+import { BrandImportDialog } from "@/app/(dashboard)/productos/brand-import-dialog";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierImportDialog } from "@/app/(dashboard)/proveedores/supplier-import-dialog";
 import { ProductImportDialog } from "@/app/(dashboard)/productos/import-dialog";
@@ -259,6 +262,11 @@ export function ProductosClient({
   const [importOpen, setImportOpen] = useState(false);
   const [supplierImportOpen, setSupplierImportOpen] = useState(false);
   const [supplierFormOpen, setSupplierFormOpen] = useState(false);
+  const [supplierChoiceOpen, setSupplierChoiceOpen] = useState(false);
+  const [brandChoiceOpen, setBrandChoiceOpen] = useState(false);
+  const [brandFormOpen, setBrandFormOpen] = useState(false);
+  const [brandFormKey, setBrandFormKey] = useState(0);
+  const [brandImportOpen, setBrandImportOpen] = useState(false);
   // Se cambia al cerrar para que el formulario de proveedor nuevo arranque vacío la próxima vez.
   const [supplierFormKey, setSupplierFormKey] = useState(0);
   const [importLockedOpen, setImportLockedOpen] = useState(false);
@@ -660,13 +668,9 @@ export function ProductosClient({
                   Cargar desde Excel
                   {importLocked && <Badge tone="accent">Básico</Badge>}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSupplierFormOpen(true)}>
+                <DropdownMenuItem onClick={() => setSupplierChoiceOpen(true)}>
                   <Truck className="h-4 w-4" />
-                  Agregar un proveedor
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSupplierImportOpen(true)}>
-                  <Truck className="h-4 w-4" />
-                  Cargar proveedores desde Excel
+                  Proveedores
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => (labelsLocked ? setLabelsLockedOpen(true) : setLabelsOpen(true))}
@@ -696,7 +700,7 @@ export function ProductosClient({
               Inventario físico
               {inventoryLocked && <Badge tone="accent">Pro</Badge>}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/productos?tab=marcas")}>
+            <DropdownMenuItem onClick={() => setBrandChoiceOpen(true)}>
               <Tag className="h-4 w-4" />
               Marcas
             </DropdownMenuItem>
@@ -1483,6 +1487,35 @@ export function ProductosClient({
           setSupplierFormKey((k) => k + 1);
         }}
       />
+      <AddChoiceDialog
+        open={supplierChoiceOpen}
+        onClose={() => setSupplierChoiceOpen(false)}
+        title="Proveedores"
+        singular="proveedor"
+        plural="proveedores"
+        onManual={() => setSupplierFormOpen(true)}
+        onExcel={() => setSupplierImportOpen(true)}
+        manage={{ label: "Ver y editar mis proveedores", onClick: () => router.push("/proveedores") }}
+      />
+      <AddChoiceDialog
+        open={brandChoiceOpen}
+        onClose={() => setBrandChoiceOpen(false)}
+        title="Marcas"
+        singular="marca"
+        plural="marcas"
+        onManual={() => setBrandFormOpen(true)}
+        onExcel={() => setBrandImportOpen(true)}
+        manage={{ label: "Ver y editar mis marcas", onClick: () => router.push("/productos?tab=marcas") }}
+      />
+      <BrandFormDialog
+        key={brandFormKey}
+        open={brandFormOpen}
+        onClose={() => {
+          setBrandFormOpen(false);
+          setBrandFormKey((k) => k + 1);
+        }}
+      />
+      <BrandImportDialog open={brandImportOpen} onClose={() => setBrandImportOpen(false)} />
       <SupplierImportDialog open={supplierImportOpen} onClose={() => setSupplierImportOpen(false)} />
       <ProductImportDialog
         open={importOpen}
