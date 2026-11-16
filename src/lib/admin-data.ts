@@ -71,6 +71,9 @@ export async function loadAdminData(): Promise<AdminData> {
   }[];
   const activityByOrg = new Map(activityRows.map((a) => [a.org_id, a]));
 
+  // Cuentas propias o de prueba: no cuentan como clientes que pagan (ADMIN_INTERNAL_EMAILS, separadas por coma).
+  const internalEmails = new Set((process.env.ADMIN_INTERNAL_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean));
+
   const orgs: AdminOrg[] = orgsRaw.map((o) => {
     const sub = subByOrg.get(o.id);
     const act = activityByOrg.get(o.id);
@@ -83,7 +86,7 @@ export async function loadAdminData(): Promise<AdminData> {
       createdAt: o.created_at,
       plan,
       trialEndsAt: sub?.pro_trial_ends_at ?? null,
-      paidViaMp: plan !== "gratis" && Boolean(sub?.mp_preapproval_id || sub?.payment_status),
+      paidViaMp: !internalEmails.has((owner?.email ?? "").toLowerCase()) && plan !== "gratis" && Boolean(sub?.mp_preapproval_id || sub?.payment_status),
       paymentStatus: sub?.payment_status ?? null,
       hasDebit: Boolean(sub?.mp_preapproval_id),
       periodEnd: (sub as { current_period_end?: string | null } | undefined)?.current_period_end ?? null,
