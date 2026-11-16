@@ -13,7 +13,6 @@ import { getOrgArca } from "@/lib/arca/client";
 import { arcaMessage } from "@/lib/arca/errors";
 import { buildStoredDocument } from "@/lib/arca/voucher-doc";
 import { invoiceLines, receiverFromDocument, saleConditionLabel } from "@/lib/arca/sale-invoice";
-import { autoInvoiceMethodIds } from "@/lib/arca/auto-invoice";
 import type { Json } from "@/lib/database.types";
 import type { IssuedVoucher } from "facturas";
 import { voucherBadge } from "@/lib/sale-vouchers";
@@ -50,7 +49,7 @@ export async function getInvoicingConfig(orgId: string): Promise<InvoicingConfig
     .eq("environment", settings.active_environment)
     .maybeSingle();
   if (!cred?.verified_at) return { enabled: false, autoMethods: [] };
-  return { enabled: true, autoMethods: (settings.auto_invoice_methods ?? []).filter((m) => autoInvoiceMethodIds.includes(m)) };
+  return { enabled: true, autoMethods: settings.auto_invoice_methods ?? [] };
 }
 
 /**

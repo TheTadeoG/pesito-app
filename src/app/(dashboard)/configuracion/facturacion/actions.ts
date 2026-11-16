@@ -75,7 +75,10 @@ export async function saveArcaProfile(input: ArcaProfileInput): Promise<ArcaResu
 export async function saveArcaAutoMethods(methods: string[]): Promise<ArcaResult> {
   const g = await guard("arca_setup", 60);
   if ("error" in g) return { error: g.error };
-  const clean = autoInvoiceMethodIds.filter((m) => methods.includes(m));
+  // Los fijos y los medios de pago propios de este negocio (se guardan por nombre, igual que en la venta).
+  const { data: custom } = await g.admin.from("payment_methods").select("name").eq("org_id", g.org.id);
+  const allowed = new Set([...autoInvoiceMethodIds, ...(custom ?? []).map((m) => m.name)]);
+  const clean = [...new Set(methods)].filter((m) => allowed.has(m)).slice(0, 50);
   const { error } = await g.admin.from("arca_settings").upsert(
     { org_id: g.org.id, auto_invoice_methods: [...clean], updated_at: new Date().toISOString(), updated_by: g.userId },
     { onConflict: "org_id" }

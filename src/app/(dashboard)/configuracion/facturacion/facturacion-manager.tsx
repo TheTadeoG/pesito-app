@@ -121,7 +121,12 @@ function Message({ text, tone }: { text: string | null; tone: "error" | "ok" }) 
   );
 }
 
-export function FacturacionManager({ status, orgName }: { status: ArcaStatusView; orgName: string }) {
+export function FacturacionManager({ status, orgName, customPaymentMethods = [] }: { status: ArcaStatusView; orgName: string; /** Medios de pago propios del negocio (los que cargó en Configuración → Medios de pago). */ customPaymentMethods?: string[] }) {
+  // Los fijos más los personalizados: una venta con un medio propio guarda su nombre como medio de pago.
+  const autoMethodOptions: { id: string; label: string; note: string | null }[] = [
+    ...AUTO_INVOICE_METHODS,
+    ...customPaymentMethods.map((name) => ({ id: name, label: name, note: "Medio de pago propio." })),
+  ];
   const s = status.settings;
   const [env, setEnv] = useState<Env>(s?.active_environment ?? "production");
   const cred = status.credentials[env];
@@ -632,7 +637,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="divide-y divide-border rounded-xl border border-border">
-            {AUTO_INVOICE_METHODS.map((m) => {
+            {autoMethodOptions.map((m) => {
               const on = autoMethods.includes(m.id);
               const set = (auto: boolean) => setAutoMethods((cur) => (auto ? (cur.includes(m.id) ? cur : [...cur, m.id]) : cur.filter((x) => x !== m.id)));
               return (

@@ -192,7 +192,7 @@ export default async function ConfiguracionPage({
               arcaStatus && (
                 <>
                   {invoiceUsage && <InvoiceUsageCard usage={invoiceUsage} />}
-                  <FacturacionManager status={arcaStatus} orgName={organization.name} />
+                  <FacturacionManager status={arcaStatus} orgName={organization.name} customPaymentMethods={(paymentMethods ?? []).map((m) => m.name)} />
                 </>
               )
             )}
