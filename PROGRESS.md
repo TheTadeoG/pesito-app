@@ -210,6 +210,13 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Compras: cada renglón muestra el precio de venta actual, un campo "Nuevo" (vacío = no cambia) y el botón "Mantener margen" cuando el costo cambió (precio × costo nuevo / costo anterior, redondeado a pesos). Avisa "Venderías a pérdida". Los precios se guardan después de registrar la compra, en la misma acción (sin migración); si alguno falla, la compra queda y se avisa.
 - POS: al cobrar se abre "¡Venta cobrada!" con el total, el vuelto (si pagó en efectivo con más) e "Imprimir ticket". Enter o Escape la cierran; escanear el próximo producto también la cierra y el código entra al buscador. El ticket (`.ticket-print` en globals.css) ocupa el ancho del papel (58/80 mm) y dice "Comprobante no válido como factura".
 
+## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
+- Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
+- Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.
+- Base: tablas `inventory_counts` / `inventory_count_items` (sólo lectura por RLS) y funciones `inventory_start`, `inventory_set_count`, `inventory_apply`, `inventory_cancel` (security definer, `require_plan('pro')`, ajustes como `stock_movements` tipo `ajuste` con "Inventario: <nombre>").
+- Textos alineados: card del Pro y `planComparison` (ya sin "Pronto"), `faq-data.ts`.
+- Pendiente: contar con la cámara del celular (hoy hace falta lector de códigos o tipear); exportar las diferencias a Excel; tour/ayuda.
+
 ## Hecho: Control por usuario — Plan Pro (16/11/2026)
 - Pantalla `/actividad` (solapa "Por usuario" dentro de Reportes, sólo dueño/admin; filtros: Hoy/7/30 días o desde-hasta hasta 92 días, persona, tipo y búsqueda de texto), `canUse(sub, "userActivity")` con `ProLockedCard`. Períodos Hoy / 7 / 30 días. Tabla por persona (ventas, anulaciones, ajustes de stock, retiros, ingresos, cierres de caja con faltante/sobrante) y lista de movimientos paginada con filtros por persona y tipo. Sin migración: usa `sales`, `stock_movements` (sin ventas), `cash_movements` y `cash_registers`.
 - Textos alineados: card del Pro y `planComparison` (ya sin "Pronto"), `faq-data.ts`. Sin cambios en blog ni llms.txt (no lo mencionaban).
@@ -366,7 +373,6 @@ Anunciadas en la web como "Pronto" pero todavía no existen. Al hacer cada una: 
 - [ ] Talles y colores como variantes de un producto — Plan Esencial (`productVariants`). Mencionado también en /como-funciona, /comparacion y /pesito-para/indumentaria.
 - [ ] Ofertas y promociones — Plan Pro (`promotions`).
 - [x] Ganancias separadas por sucursal (reportes) — Plan IA: columna de ganancia estimada en la tabla por sucursal de Reportes.
-- [ ] Inventarios físicos (contar todo el stock y ajustar las diferencias de una vez) — Plan Pro (`physicalInventory`). Hoy sólo existe el ajuste a mano por producto.
 - [ ] Balanzas conectadas — Plan Pro (`scales`). En el POS ya hay un botón "Balanza (próximamente)".
 - [ ] Carteles de precios para imprimir, que se arman solos con el precio actual — Plan Pro (`priceSigns`).
 - [ ] Catálogo online (1 por negocio) — Plan Pro (`onlineCatalog`).

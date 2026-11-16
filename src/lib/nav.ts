@@ -124,6 +124,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   "/usuarios": { title: "Mi equipo", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
   "/en-vivo": { title: "En vivo", description: "Cómo viene el día, vendedor por vendedor." },
   "/actividad": { title: "Control por usuario", description: "Qué hizo cada persona de tu equipo: stock, caja y anulaciones." },
+  "/inventario-fisico": { title: "Inventario físico", description: "Contá tu mercadería y ajustá las diferencias de una vez." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
   "/recomendaciones": { title: "Qué comprar", description: "Qué pedir y qué precios revisar." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },

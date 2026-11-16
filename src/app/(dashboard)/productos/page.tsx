@@ -153,6 +153,7 @@ export default async function ProductosPage({
         initialBrand={marca ?? null}
         orgId={organization.id}
         bulkLocked={!canUse(subscription, "bulkPriceChanges")}
+        inventoryLocked={!canUse(subscription, "physicalInventory")}
         revertLocked={!canUse(subscription, "priceRevert")}
         productUsage={{
           used: activeProducts.length,

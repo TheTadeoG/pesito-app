@@ -119,11 +119,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Reportes avanzados",
       "Mirá el negocio en vivo, desde casa, en tu celular",
       "Control por usuario: su stock, caja y diferencias",
+      "Inventario físico: contás y el stock se ajusta solo",
       `Hasta ${products("pro")}, 6 usuarios y 6 cajas`,
       "Soporte prioritario",
     ],
     soon: [
-      "Controlá inventarios físicos",
       "Soporte para balanzas",
       "Carteles de precios para imprimir",
       "1 catálogo online",
@@ -278,8 +278,8 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         values: { gratis: false, basico: false, pro: false, max: "Pronto" },
       },
       {
-        label: "Inventarios físicos: contás y el stock se ajusta solo",
-        values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
+        label: "Inventarios físicos: contás (con lector de códigos o a mano) y el stock se ajusta solo",
+        values: fromPro,
       },
       { label: "Historial de ventas: ver, reimprimir el ticket, anular con motivo (la venta nunca se borra) y exportar a Excel (CSV)", values: everyPlan },
       { label: "Compras a proveedores", values: everyPlan },

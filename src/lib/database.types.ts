@@ -529,6 +529,42 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["branch_stock"]["Insert"]>;
         Relationships: [];
       };
+      inventory_counts: {
+        Row: {
+          id: string;
+          org_id: string;
+          branch_id: string;
+          name: string;
+          scope_brand: string | null;
+          scope_supplier_id: string | null;
+          status: "abierto" | "aplicado" | "cancelado";
+          created_by: string | null;
+          created_at: string;
+          applied_by: string | null;
+          applied_at: string | null;
+          adjusted_count: number | null;
+          units_plus: number | null;
+          units_minus: number | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      inventory_count_items: {
+        Row: {
+          id: string;
+          count_id: string;
+          org_id: string;
+          product_id: string;
+          counted: number;
+          expected: number;
+          counted_by: string | null;
+          counted_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       brands: {
         Row: {
           id: string;
@@ -1489,6 +1525,22 @@ export interface Database {
       };
       set_member_branch: {
         Args: { p_membership_id: string; p_branch_id: string | null };
+        Returns: undefined;
+      };
+      inventory_start: {
+        Args: { p_org_id: string; p_branch_id: string; p_name: string; p_brand?: string | null; p_supplier_id?: string | null };
+        Returns: string;
+      };
+      inventory_set_count: {
+        Args: { p_count_id: string; p_product_id: string; p_counted: number | null };
+        Returns: number | null;
+      };
+      inventory_apply: {
+        Args: { p_count_id: string };
+        Returns: Json;
+      };
+      inventory_cancel: {
+        Args: { p_count_id: string };
         Returns: undefined;
       };
       adjust_branch_stock: {

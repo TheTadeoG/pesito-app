@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
+  ClipboardCheck,
   Columns3,
   FileSpreadsheet,
   Filter,
@@ -171,6 +172,7 @@ export function ProductosClient({
   initialBrand,
   orgId,
   bulkLocked,
+  inventoryLocked,
   revertLocked,
   productUsage,
   stockAlertsLocked,
@@ -192,6 +194,7 @@ export function ProductosClient({
   initialBrand: string | null;
   // El plan no incluye ajustes masivos: los botones abren el aviso del plan.
   bulkLocked: boolean;
+  inventoryLocked: boolean;
   /** Volver a un precio o costo anterior (Plan Pro). */
   revertLocked: boolean;
   /** Productos activos contra el límite del plan (y el plan que da más). */
@@ -672,6 +675,11 @@ export function ProductosClient({
               <TrendingUp className="h-4 w-4" />
               Ajustar costos
               {bulkLocked && <Badge tone="accent">Pro</Badge>}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/inventario-fisico")}>
+              <ClipboardCheck className="h-4 w-4" />
+              Inventario físico
+              {inventoryLocked && <Badge tone="accent">Pro</Badge>}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/productos?tab=marcas")}>
               <Tag className="h-4 w-4" />
