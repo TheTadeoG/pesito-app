@@ -33,6 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const items: AdminNavItem[] = [
     { href: "/admin", label: "Resumen", badge: trialsEnding ?? 0 },
     { href: "/admin/negocios", label: "Negocios" },
+    { href: "/admin/remarketing", label: "Remarketing" },
     { href: "/admin/mensajes", label: "Mensajes", badge: feedbackNew ?? 0 },
     { href: "/admin/errores", label: "Errores", badge: errorsOpen ?? 0 },
     { href: "/admin/resenas", label: "Reseñas" },

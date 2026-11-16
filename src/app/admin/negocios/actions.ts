@@ -113,7 +113,7 @@ export async function addOrgNote(orgId: string, body: string): Promise<{ note?: 
  * Regala días de prueba Pro a un negocio que está en el plan gratis: suma a lo que le quede (o desde hoy si ya
  * venció). No cobra nada y queda anotado en las notas, con quién lo dio.
  */
-export async function giveTrialDays(orgId: string, days: number): Promise<{ trialEndsAt?: string; note?: OrgNote; error?: string }> {
+export async function giveTrialDays(orgId: string, days: number, audience?: string): Promise<{ trialEndsAt?: string; note?: OrgNote; error?: string }> {
   const { userId } = await requirePlatformAdmin();
   if (![7, 14, 30].includes(days)) return { error: "Elegí 7, 14 o 30 días." };
   const admin = createAdminClient();
@@ -131,6 +131,8 @@ export async function giveTrialDays(orgId: string, days: number): Promise<{ tria
     .insert({ org_id: orgId, author_id: userId, body: `Se regalaron ${days} días de prueba Pro (hasta el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeZone: "America/Argentina/Buenos_Aires" }).format(new Date(trialEndsAt))}).` })
     .select("id, body, created_at")
     .single();
+  // Para medir cuántas pruebas regaladas terminan en un pago (panel de remarketing; sin la migración 0092 no se anota).
+  await admin.from("admin_contacts").insert({ org_id: orgId, kind: "prueba", audience: audience ?? null, days, author_id: userId });
   revalidatePath("/admin", "layout");
   return { trialEndsAt, note: note ? { id: note.id, body: note.body, createdAt: note.created_at } : undefined };
 }

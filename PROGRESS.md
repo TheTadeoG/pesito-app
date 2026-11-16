@@ -734,4 +734,10 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - `/admin` = Resumen: indicadores (negocios, pagan, ingreso mensual estimado, en prueba, vendieron esta semana, sin ventas), embudo con el paso donde más se pierde, "para atender hoy" (links a los segmentos), altas por día, movimiento reciente y quiénes se registraron con WhatsApp/mail.
 - `/admin/negocios`: lista con segmentos (nuevos, sin vender, en prueba, prueba por vencer, pagan, dejaron de vender, cobro fallido), búsqueda, orden y paginación, y la ficha del negocio: contacto, dar 7/14/30 días de prueba Pro (no cobra, queda anotado), asignar plan a mano, qué usa, línea de tiempo y notas internas (`admin_org_notes`).
 - Datos: `src/lib/admin-data.ts` (servidor) y `src/lib/admin-shared.ts` (puro). La migración 0091 agrega `last_sale_at` a `platform_org_activity` y la tabla de notas.
-- Las visitas no se muestran (se miran en Google Analytics). Pendiente (propuesta C, "Remarketing y pruebas"): listas de a quién escribirle con mensajes armados, seguimiento de contactos y pruebas regaladas que terminaron pagando.
+- Las visitas no se muestran (se miran en Google Analytics). El remarketing se hizo en la etapa 2 (abajo).
+
+## Hecho: remarketing en el panel de admin (etapa 2, migración 0092 — **falta aplicar**)
+
+- `/admin/remarketing`: ocho listas de a quién escribirle (pruebas que vencen, sin productos, con productos y sin ventas, prueba vencida, dejaron de vender, gratis con mucho uso, cobro fallido, pagan hace más de 30 días), cada una con su mensaje base editable que se completa por negocio ({nombre}, {negocio}, {dias}, {uso}), WhatsApp (wa.me con el texto armado) y mail, y +7 días de prueba en las listas que lo permiten. Definiciones en `AUDIENCES` e `inSegment` (`src/lib/admin-shared.ts`).
+- Cada WhatsApp o mail se anota en `admin_contacts` (último contacto por negocio y registro de los últimos); las pruebas regaladas (también desde la ficha) se anotan ahí con `kind = 'prueba'` y el panel mide cuántas terminaron pagando.
+- Muestra si los correos automáticos están prendidos o apagados y cuántos se mandaron de cada tipo (`lifecycle_emails`). Prenderlos sigue siendo `LIFECYCLE_EMAILS_ENABLED=true` en Vercel.

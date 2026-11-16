@@ -725,6 +725,29 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["admin_org_notes"]["Insert"]>;
         Relationships: [];
       };
+      /** Contactos de remarketing y pruebas regaladas del panel de admin (0092): sólo la service role. */
+      admin_contacts: {
+        Row: {
+          id: string;
+          org_id: string;
+          kind: "whatsapp" | "mail" | "prueba";
+          audience: string | null;
+          days: number | null;
+          author_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          kind: "whatsapp" | "mail" | "prueba";
+          audience?: string | null;
+          days?: number | null;
+          author_id?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["admin_contacts"]["Insert"]>;
+        Relationships: [];
+      };
       login_events: {
         Row: {
           id: string;
