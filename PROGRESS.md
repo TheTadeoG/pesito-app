@@ -221,6 +221,10 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Planilla modelo: columnas obligatorias en rojo con "*" y hoja "Cómo completarla". Exportar a Excel: números sin separador de miles ni coma de más ("9" en vez de "9,").
 - Pendiente: editar stock desde la planilla (el stock nunca se toca al importar).
 
+## Hecho: cargar proveedores desde Excel (16/11/2026)
+- Menú "Acciones" de Productos → "Cargar proveedores desde Excel" (todos los planes, sólo quien administra). Planilla modelo con Nombre * (obligatorio), Teléfono, Email, Notas y Plazo de entrega (días); revisa antes de guardar. Los que ya existen por nombre no se duplican ni se tocan. `lib/supplier-import.ts`, `proveedores/import-actions.ts`, `proveedores/supplier-import-dialog.tsx`.
+- Pendiente: botón también en la pantalla de Proveedores; actualizar proveedores existentes desde la planilla.
+
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.

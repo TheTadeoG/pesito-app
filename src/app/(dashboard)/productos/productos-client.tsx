@@ -27,6 +27,7 @@ import {
   Trash2,
   TrendingDown,
   TrendingUp,
+  Truck,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -54,6 +55,7 @@ import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
+import { SupplierImportDialog } from "@/app/(dashboard)/proveedores/supplier-import-dialog";
 import { ProductImportDialog } from "@/app/(dashboard)/productos/import-dialog";
 import { BarcodeLabelsDialog } from "@/app/(dashboard)/productos/barcode-labels-dialog";
 import { featureMinPlan } from "@/lib/plan-access";
@@ -254,6 +256,7 @@ export function ProductosClient({
   const [bulkCostOpen, setBulkCostOpen] = useState(false);
   const [bulkLockedOpen, setBulkLockedOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [supplierImportOpen, setSupplierImportOpen] = useState(false);
   const [importLockedOpen, setImportLockedOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [labelsLockedOpen, setLabelsLockedOpen] = useState(false);
@@ -652,6 +655,10 @@ export function ProductosClient({
                   <FileSpreadsheet className="h-4 w-4" />
                   Cargar desde Excel
                   {importLocked && <Badge tone="accent">Básico</Badge>}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSupplierImportOpen(true)}>
+                  <Truck className="h-4 w-4" />
+                  Cargar proveedores desde Excel
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => (labelsLocked ? setLabelsLockedOpen(true) : setLabelsOpen(true))}
@@ -1460,6 +1467,7 @@ export function ProductosClient({
           description="Generá un código único para los productos que no tienen (no se repite nunca) e imprimí las etiquetas listas para pegar."
         />
       </Dialog>
+      <SupplierImportDialog open={supplierImportOpen} onClose={() => setSupplierImportOpen(false)} />
       <ProductImportDialog
         open={importOpen}
         onClose={() => setImportOpen(false)}
