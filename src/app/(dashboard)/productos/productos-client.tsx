@@ -57,6 +57,7 @@ import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
 import { AddChoiceDialog } from "@/app/(dashboard)/productos/add-choice-dialog";
 import { BrandFormDialog } from "@/app/(dashboard)/productos/brand-form-dialog";
+import { downloadSuppliersExcel } from "@/app/(dashboard)/proveedores/supplier-excel";
 import { downloadBrandsExcel } from "@/app/(dashboard)/productos/brand-excel";
 import { BrandImportDialog } from "@/app/(dashboard)/productos/brand-import-dialog";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
@@ -1496,6 +1497,10 @@ export function ProductosClient({
         plural="proveedores"
         onManual={() => setSupplierFormOpen(true)}
         onExcel={() => setSupplierImportOpen(true)}
+        onDownload={{
+          text: "Bajás tus proveedores con sus datos de contacto y entrega.",
+          onClick: () => void downloadSuppliersExcel().then((err) => err && alert(err)),
+        }}
         manage={{ label: "Ver y editar mis proveedores", onClick: () => router.push("/proveedores") }}
       />
       <AddChoiceDialog

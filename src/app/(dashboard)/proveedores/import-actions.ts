@@ -78,3 +78,39 @@ export async function importSuppliers(rows: SupplierImportRow[]): Promise<Suppli
   revalidatePath("/productos");
   return result;
 }
+
+export interface SupplierExportRow {
+  name: string;
+  phone: string;
+  email: string;
+  notes: string;
+  leadTimeDays: number | null;
+  paymentTermsDays: number | null;
+  minOrderAmount: number | null;
+  deliveryDays: number[];
+}
+
+// Todos los proveedores del negocio para bajarlos a Excel (se piden recién al tocar el botón).
+export async function getSuppliersForExport(): Promise<{ rows?: SupplierExportRow[]; error?: string }> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+  try {
+    const rows = await fetchAll((from, to) =>
+      supabase.from("suppliers").select("*").eq("org_id", organization.id).order("name").order("id").range(from, to)
+    );
+    return {
+      rows: rows.map((r) => ({
+        name: r.name,
+        phone: r.phone ?? "",
+        email: r.email ?? "",
+        notes: r.notes ?? "",
+        leadTimeDays: r.lead_time_days ?? null,
+        paymentTermsDays: r.payment_terms_days ?? null,
+        minOrderAmount: r.min_order_amount === null || r.min_order_amount === undefined ? null : Number(r.min_order_amount),
+        deliveryDays: r.delivery_days ?? [],
+      })),
+    };
+  } catch {
+    return { error: "No pudimos cargar los proveedores. Probá de nuevo." };
+  }
+}

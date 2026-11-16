@@ -247,6 +247,9 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Resumen: el KPI "Cobrado (30 días)" suma lo que de verdad entró (eventos `payment_applied` y `subscription_authorized_payment` aprobados de `billing_events`, cada pago una vez), con promos y descuentos incluidos y sin cuentas propias. "Ingreso recurrente estimado" (Resumen y Estadísticas) ya no usa el precio de lista: es lo que se debita por mes a quien tiene débito automático activo (precio normal + paquete de facturas; el anual dividido en 12; los pagos únicos no cuentan porque no se renuevan solos).
 - Sigue sin contarse en "recurrente" el primer mes con promo (se ve en "Cobrado").
 
+## Hecho: descargar proveedores a Excel (16/11/2026)
+- Pantalla Proveedores ("Descargar proveedores") y pop up de Productos → Acciones → Proveedores → "Descargar Excel". Columnas: Nombre, Teléfono, Email, Notas, Plazo de entrega (las de la planilla de carga) + plazo de pago, pedido mínimo y días de entrega. Al volver a subirla los que ya existen por nombre se omiten (no se actualizan desde la planilla).
+
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.

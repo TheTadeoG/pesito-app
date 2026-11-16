@@ -40,6 +40,7 @@ import { getPurchaseDetail, type PurchaseDetail } from "@/app/(dashboard)/compra
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import { deleteSupplier, setPurchaseDueDate } from "@/app/(dashboard)/proveedores/actions";
+import { downloadSuppliersExcel } from "@/app/(dashboard)/proveedores/supplier-excel";
 import { downloadDebtExcel } from "@/app/(dashboard)/proveedores/debt-excel";
 import {
   agoLabel,
@@ -338,6 +339,10 @@ export function ProveedoresClient({
               Registrar pago
             </Button>
           )}
+          <Button variant="outline" onClick={() => void downloadSuppliersExcel().then((err) => err && alert(err))}>
+            <Download className="h-4 w-4" />
+            Descargar proveedores
+          </Button>
           <Button
             onClick={() => {
               setEditing(null);
