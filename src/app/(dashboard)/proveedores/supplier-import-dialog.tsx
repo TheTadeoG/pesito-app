@@ -9,34 +9,11 @@ import { useToast } from "@/components/toast/toast-provider";
 import { parseCsv } from "@/lib/product-import";
 import {
   SUPPLIER_IMPORT_MAX_ROWS,
-  SUPPLIER_TEMPLATE_COLUMNS,
   parseSupplierSheet,
   type ParsedSupplierImport,
 } from "@/lib/supplier-import";
+import { downloadSupplierTemplate } from "@/app/(dashboard)/proveedores/supplier-template";
 import { importSuppliers, type SupplierImportResult } from "@/app/(dashboard)/proveedores/import-actions";
-
-async function downloadTemplate() {
-  const { default: writeXlsxFile } = await import("write-excel-file/browser");
-  const header = SUPPLIER_TEMPLATE_COLUMNS.map((c) =>
-    c.required
-      ? { value: `${c.title} *`, fontWeight: "bold" as const, textColor: "#b91c1c", backgroundColor: "#fee2e2" }
-      : { value: c.title, fontWeight: "bold" as const, backgroundColor: "#f3f4f6" }
-  );
-  const example = SUPPLIER_TEMPLATE_COLUMNS.map((c) => c.example);
-  await writeXlsxFile([
-    { data: [header, example], sheet: "Proveedores", columns: SUPPLIER_TEMPLATE_COLUMNS.map((c) => ({ width: Math.max(18, c.title.length + 6) })), stickyRowsCount: 1 },
-    {
-      data: [
-        [{ value: "Cómo completar la planilla", fontWeight: "bold" as const }],
-        [{ value: "* Sólo el Nombre es obligatorio. Las demás columnas son opcionales." }],
-        [{ value: "Los proveedores que ya tengas cargados con el mismo nombre no se duplican ni se modifican." }],
-        [{ value: "La primera fila de la hoja “Proveedores” es un ejemplo: borrala o reemplazala." }],
-      ],
-      sheet: "Cómo completarla",
-      columns: [{ width: 100 }],
-    },
-  ]).toFile("pesito-proveedores.xlsx");
-}
 
 async function readFile(file: File): Promise<unknown[][]> {
   const name = file.name.toLowerCase();
@@ -200,7 +177,7 @@ export function SupplierImportDialog({ open, onClose }: { open: boolean; onClose
           </ol>
           <p className="text-xs text-muted-foreground">Obligatoria: Nombre. Las demás (teléfono, email, notas y plazo de entrega) son opcionales.</p>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => void downloadTemplate()}>
+            <Button variant="outline" onClick={() => void downloadSupplierTemplate()}>
               <Download className="h-4 w-4" />
               Descargar planilla modelo
             </Button>

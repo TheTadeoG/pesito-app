@@ -11,7 +11,7 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
-  Download,
+  FileSpreadsheet,
   ListFilter,
   MessageCircle,
   MoreHorizontal,
@@ -41,8 +41,9 @@ import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import { deleteSupplier, setPurchaseDueDate } from "@/app/(dashboard)/proveedores/actions";
 import { supplierCode } from "@/lib/codes";
-import { downloadSuppliersExcel } from "@/app/(dashboard)/proveedores/supplier-excel";
-import { downloadDebtExcel } from "@/app/(dashboard)/proveedores/debt-excel";
+import { useAccountStatement } from "@/components/dashboard/statement-button";
+import { SupplierExcelDialog } from "@/app/(dashboard)/proveedores/supplier-excel-dialog";
+import { SupplierImportDialog } from "@/app/(dashboard)/proveedores/supplier-import-dialog";
 import {
   agoLabel,
   debtSummary,
@@ -143,6 +144,9 @@ export function ProveedoresClient({
   const allItems = useMemo(() => rows.flatMap((r) => r.items), [rows]);
   const totals = useMemo(() => totalsOf(allItems), [allItems]);
   const upcoming = useMemo(() => nextDue(allItems), [allItems]);
+  const [excelOpen, setExcelOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const statement = useAccountStatement("proveedor");
   const debtors = useMemo(
     () => rows.filter((r) => r.balance > 0).sort((a, b) => b.balance - a.balance),
     [rows]
@@ -341,10 +345,23 @@ export function ProveedoresClient({
               Registrar pago
             </Button>
           )}
-          <Button variant="outline" onClick={() => void downloadSuppliersExcel().then((err) => err && alert(err))}>
-            <Download className="h-4 w-4" />
-            Descargar proveedores
-          </Button>
+          <DropdownMenu
+            trigger={
+              <Button variant="outline" className="whitespace-nowrap">
+                Acciones
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            }
+          >
+            <DropdownMenuItem onClick={() => setExcelOpen(true)}>
+              <FileSpreadsheet className="h-4 w-4" />
+              Descargar Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet className="h-4 w-4" />
+              Cargar desde Excel
+            </DropdownMenuItem>
+          </DropdownMenu>
           <Button
             onClick={() => {
               setEditing(null);
@@ -674,18 +691,6 @@ export function ProveedoresClient({
                 </button>
               </FilterPanel>
             )}
-            {accountsEnabled && debtors.length > 0 && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-9 px-0"
-                onClick={() => downloadDebtExcel(rows, todayKey)}
-                title="Descargar la deuda en Excel"
-                aria-label="Descargar la deuda en Excel"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            )}
           </div>
 
           {accountsEnabled && dayFilter && (
@@ -893,6 +898,12 @@ export function ProveedoresClient({
                           <DropdownMenuItem onClick={() => router.push(`/proveedores/${s.id}`)}>
                             Ver ficha
                           </DropdownMenuItem>
+                          {accountsEnabled && (
+                            <DropdownMenuItem disabled={statement.busy} onClick={() => void statement.download(s.id)}>
+                              <FileSpreadsheet className="h-4 w-4" />
+                              Estado de cuenta (Excel)
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => {
                               setEditing(s);
@@ -948,6 +959,8 @@ export function ProveedoresClient({
         purchase={detail.purchase}
         dueDate={detail.dueDate}
       />
+      <SupplierExcelDialog open={excelOpen} onClose={() => setExcelOpen(false)} rows={rows} todayKey={todayKey} accountsEnabled={accountsEnabled} />
+      <SupplierImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
       <SupplierForm
         key={editing?.id ?? "new"}
         open={formOpen}

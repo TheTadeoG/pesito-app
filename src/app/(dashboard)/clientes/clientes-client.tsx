@@ -38,6 +38,7 @@ import { CustomerForm } from "@/app/(dashboard)/clientes/customer-form";
 import { PaymentDialog } from "@/app/(dashboard)/clientes/payment-dialog";
 import { deleteCustomer } from "@/app/(dashboard)/clientes/actions";
 import { CustomerImportDialog } from "@/app/(dashboard)/clientes/customer-import-dialog";
+import { useAccountStatement } from "@/components/dashboard/statement-button";
 import { CustomerExcelDialog } from "@/app/(dashboard)/clientes/customer-excel-dialog";
 
 export interface ClienteRow extends Customer {
@@ -105,6 +106,7 @@ export function ClientesClient({
   const todayKey = todayInArgentina();
   const hasDebtors = customers.some((c) => c.balance > 0);
   const [excelOpen, setExcelOpen] = useState(false);
+  const statement = useAccountStatement("cliente");
 
   const [query, setQuery] = useState("");
   const [ages, setAges] = useState<Set<AgeKey>>(() => new Set(hasDebtors ? WITH_DEBT : []));
@@ -529,6 +531,10 @@ export function ClientesClient({
                         >
                           <Pencil className="h-4 w-4" />
                           Editar datos
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled={statement.busy} onClick={() => void statement.download(c.id)}>
+                          <FileSpreadsheet className="h-4 w-4" />
+                          Estado de cuenta (Excel)
                         </DropdownMenuItem>
                         <DropdownMenuItem danger disabled={busyId === c.id} onClick={() => handleDelete(c)}>
                           <Trash2 className="h-4 w-4" />

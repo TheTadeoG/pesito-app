@@ -258,6 +258,11 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 ## Hecho: Clientes → Acciones (16/11/2026)
 - El botón "Excel" de Clientes pasa a llamarse "Acciones" (como el de Productos) con "Descargar Excel" y "Cargar desde Excel". "Descargar Excel" abre una ventana para elegir: todos los clientes, sólo los que deben o la planilla modelo vacía.
 
+## Hecho: Proveedores → Acciones y estado de cuenta en Excel (16/11/2026)
+- Proveedores: "Descargar proveedores" y el ícono suelto de la deuda pasan al menú "Acciones" (Descargar Excel y Cargar desde Excel). "Descargar Excel" abre una ventana para elegir: todos los proveedores, lo que les debés (compra por compra) o la planilla modelo. La carga de proveedores ahora también está en esta pantalla.
+- Estado de cuenta en Excel (clientes y proveedores): botón "Estado de cuenta" en la ficha y "Estado de cuenta (Excel)" en el menú ⋯ de cada fila. Trae los datos de la persona, la fecha, el saldo actual y los movimientos de más viejo a más nuevo con el saldo corriendo (clientes: ventas a fiado y cobros; proveedores: compras a cuenta y pagos, Plan Básico). Las anuladas no cuentan. `lib/actions/account-statement.ts` + `lib/account-statement-excel.ts`.
+- Pendiente: elegir un rango de fechas para el estado de cuenta; mostrar vencimientos de cada compra en el estado del proveedor.
+
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.

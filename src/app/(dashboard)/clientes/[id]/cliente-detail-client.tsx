@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { CustomerForm } from "@/app/(dashboard)/clientes/customer-form";
+import { StatementButton } from "@/components/dashboard/statement-button";
 import { PaymentDialog } from "@/app/(dashboard)/clientes/payment-dialog";
 import type { Customer } from "@/lib/types";
 
@@ -73,6 +74,7 @@ export function ClienteDetailClient({
                 Registrar pago
               </Button>
             )}
+            <StatementButton kind="cliente" id={customer.id} />
             <Button variant="outline" onClick={() => setEditing(true)}>
               <Pencil className="h-4 w-4" />
               Editar

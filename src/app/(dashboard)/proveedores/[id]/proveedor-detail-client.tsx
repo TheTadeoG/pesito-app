@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Pencil, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StatementButton } from "@/components/dashboard/statement-button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
@@ -55,6 +56,7 @@ export function ProveedorDetailClient({
                 Registrar pago
               </Button>
             )}
+            <StatementButton kind="proveedor" id={supplier.id} />
             <Button variant="outline" onClick={() => setEditing(true)}>
               <Pencil className="h-4 w-4" />
               Editar
