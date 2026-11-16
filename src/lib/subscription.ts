@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { argDateString, argMidnightUTC } from "@/lib/timezone";
+import { normalizePlanParam } from "@/lib/plan-ids";
 
 export type Plan = "gratis" | "basico" | "pro" | "max";
 
@@ -114,7 +115,9 @@ export async function getSubscription(
   const data = raw as SubscriptionRow | null;
 
   const now = new Date();
-  const paidPlan: Plan = data?.plan ?? "gratis";
+  // Un plan guardado con un nombre viejo (esencial, ia) o desconocido nunca debe romper las pantallas: se traduce o vale Gratis.
+  const stored = normalizePlanParam(data?.plan as string | undefined);
+  const paidPlan: Plan = planOrder.includes(stored as Plan) ? (stored as Plan) : "gratis";
   const downgrade = data ? downgradeGrace(data, now) : null;
   const plan: Plan = downgrade ? downgrade.plan : data && lapsedToFree(data, now) ? "gratis" : paidPlan;
 

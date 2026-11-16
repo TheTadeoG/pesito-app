@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import {
   generateArcaCsr,
   issueArcaTestVoucher,
@@ -565,7 +565,7 @@ export function FacturacionManager({ status, orgName }: { status: ArcaStatusView
               <div className="min-w-0">
                 <p className="font-semibold text-success">Conexión con ARCA lista</p>
                 <p className="text-xs text-muted-foreground">
-                  {`${cred?.sales_point ? `Punto de venta ${cred.sales_point} habilitado. ` : ""}Última prueba: ${new Date(cred!.verified_at!).toLocaleString("es-AR")}.`}
+                  {`${cred?.sales_point ? `Punto de venta ${cred.sales_point} habilitado. ` : ""}Última prueba: ${formatDateTime(cred!.verified_at!)}.`}
                 </p>
               </div>
             </div>
