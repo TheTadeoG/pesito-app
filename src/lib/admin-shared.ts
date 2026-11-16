@@ -13,6 +13,8 @@ export interface AdminOrg {
   /** Paga o pagó por Mercado Pago (un plan asignado a mano no cuenta). */
   paidViaMp: boolean;
   paymentStatus: string | null;
+  /** Tiene un débito automático (suscripción de Mercado Pago) asociado. */
+  hasDebit: boolean;
   /** Hasta cuándo está pago el plan (débito automático o pago único). */
   periodEnd: string | null;
   cycle: string | null;
@@ -38,6 +40,7 @@ export type SegmentId =
   | "pagan"
   | "dejaron"
   | "cobro-fallido"
+  | "pago-por-vencer"
   // Listas de remarketing
   | "sin-productos"
   | "con-productos-sin-ventas"
@@ -76,6 +79,9 @@ export function inSegment(o: AdminOrg, seg: SegmentId, now: number): boolean {
       return o.saleCount > 0 && o.lastSaleAt !== null && now - new Date(o.lastSaleAt).getTime() > 14 * DAY_MS;
     case "cobro-fallido":
       return o.paymentStatus === "past_due";
+    case "pago-por-vencer":
+      // Pagó pero no se renueva solo (pago único o débito cancelado) y vence en los próximos 7 días.
+      return isPaying(o, now) && o.paymentStatus === "cancelled" && o.periodEnd !== null && new Date(o.periodEnd).getTime() - now <= 7 * DAY_MS;
     case "sin-productos":
       return o.productCount === 0 && age > DAY_MS;
     case "con-productos-sin-ventas":
@@ -98,6 +104,7 @@ export const SEGMENTS: { id: SegmentId; label: string }[] = [
   { id: "pagan", label: "Pagan" },
   { id: "dejaron", label: "Dejaron de vender" },
   { id: "cobro-fallido", label: "Cobro fallido" },
+  { id: "pago-por-vencer", label: "Pago por vencer (7 días)" },
 ];
 
 /** Número de WhatsApp para wa.me (Argentina: 54 9 + área + número). */
