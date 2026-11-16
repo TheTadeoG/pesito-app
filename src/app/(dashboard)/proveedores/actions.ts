@@ -98,6 +98,7 @@ export async function saveSupplier(input: SupplierFormInput): Promise<ActionStat
 
   revalidatePath("/proveedores");
   revalidatePath("/compras");
+  revalidatePath("/productos");
   return {};
 }
 

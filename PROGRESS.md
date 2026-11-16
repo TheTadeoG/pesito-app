@@ -223,7 +223,8 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 
 ## Hecho: cargar proveedores desde Excel (16/11/2026)
 - Menú "Acciones" de Productos → "Cargar proveedores desde Excel" (todos los planes, sólo quien administra). Planilla modelo con Nombre * (obligatorio), Teléfono, Email, Notas y Plazo de entrega (días); revisa antes de guardar. Los que ya existen por nombre no se duplican ni se tocan. `lib/supplier-import.ts`, `proveedores/import-actions.ts`, `proveedores/supplier-import-dialog.tsx`.
-- Pendiente: botón también en la pantalla de Proveedores; actualizar proveedores existentes desde la planilla.
+- También "Agregar un proveedor" (formulario completo) en el mismo menú.
+- Pendiente: botón de carga desde Excel también en la pantalla de Proveedores; actualizar proveedores existentes desde la planilla.
 
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.

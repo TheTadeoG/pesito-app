@@ -55,6 +55,7 @@ import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
+import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierImportDialog } from "@/app/(dashboard)/proveedores/supplier-import-dialog";
 import { ProductImportDialog } from "@/app/(dashboard)/productos/import-dialog";
 import { BarcodeLabelsDialog } from "@/app/(dashboard)/productos/barcode-labels-dialog";
@@ -257,6 +258,9 @@ export function ProductosClient({
   const [bulkLockedOpen, setBulkLockedOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [supplierImportOpen, setSupplierImportOpen] = useState(false);
+  const [supplierFormOpen, setSupplierFormOpen] = useState(false);
+  // Se cambia al cerrar para que el formulario de proveedor nuevo arranque vacío la próxima vez.
+  const [supplierFormKey, setSupplierFormKey] = useState(0);
   const [importLockedOpen, setImportLockedOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [labelsLockedOpen, setLabelsLockedOpen] = useState(false);
@@ -655,6 +659,10 @@ export function ProductosClient({
                   <FileSpreadsheet className="h-4 w-4" />
                   Cargar desde Excel
                   {importLocked && <Badge tone="accent">Básico</Badge>}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSupplierFormOpen(true)}>
+                  <Truck className="h-4 w-4" />
+                  Agregar un proveedor
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSupplierImportOpen(true)}>
                   <Truck className="h-4 w-4" />
@@ -1467,6 +1475,14 @@ export function ProductosClient({
           description="Generá un código único para los productos que no tienen (no se repite nunca) e imprimí las etiquetas listas para pegar."
         />
       </Dialog>
+      <SupplierForm
+        key={supplierFormKey}
+        open={supplierFormOpen}
+        onClose={() => {
+          setSupplierFormOpen(false);
+          setSupplierFormKey((k) => k + 1);
+        }}
+      />
       <SupplierImportDialog open={supplierImportOpen} onClose={() => setSupplierImportOpen(false)} />
       <ProductImportDialog
         open={importOpen}
