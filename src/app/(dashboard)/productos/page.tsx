@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 import { getBranchContext, withBranchStock } from "@/lib/branches";
 import { isOrgAdmin } from "@/lib/roles";
+import { getMemberLabelsById } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan, limitsFor, planForLimit } from "@/lib/plan-access";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
@@ -57,10 +58,12 @@ export default async function ProductosPage({
       tab === "movimientos" && !stockLocked
         ? supabase
             .from("stock_movements")
-            .select("id, product_id, type, quantity, reference, created_at")
+            .select("id, product_id, type, quantity, reference, created_at, user_id")
             .eq("org_id", organization.id)
             // Con sucursales, los movimientos de la sucursal actual.
             .match(branch ? { branch_id: branch.id } : {})
+            // Con un producto elegido, sus movimientos (no los 500 últimos de todos).
+            .match(producto && /^[0-9a-f-]{36}$/i.test(producto) ? { product_id: producto } : {})
             .order("created_at", { ascending: false })
             .limit(500)
         : Promise.resolve({ data: [] }),
@@ -95,9 +98,14 @@ export default async function ProductosPage({
     // Sin filtrar por activo: un movimiento puede referenciar un producto
     // ya desactivado, y lo necesitamos igual para mostrar/filtrar por SKU.
     const productById = new Map(normalized.map((p) => [p.id, p]));
+    // Quién hizo cada movimiento: sólo lo ven quienes administran el negocio.
+    const memberLabels = isOrgAdmin(membership.role) ? await getMemberLabelsById(supabase, organization.id) : null;
     const normalizedMovements = (movements ?? []).map((m) => {
       const product = productById.get(m.product_id);
       return {
+        user_label: memberLabels && m.user_id ? memberLabels.get(m.user_id) ?? "Usuario eliminado" : null,
+        unit: product?.unit ?? "u",
+        stock_now: product ? product.stock : null,
         id: m.id,
         product_id: m.product_id,
         type: m.type,
