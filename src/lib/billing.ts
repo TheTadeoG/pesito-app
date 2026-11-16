@@ -446,10 +446,11 @@ export interface PlanChange {
 export function planChange(sub: SubscriptionInfo, plan: Plan, cycle: BillingCycle, now = new Date()): PlanChange | null {
   const b = sub.billing;
   if (sub.plan === "gratis" || !b || b.status !== "active" || !b.mpPreapprovalId || b.cycle !== cycle || !b.currentPeriodEnd) return null;
-  if (new Date(b.currentPeriodEnd) <= now) return null;
   const pack = sub.nextInvoicePack ?? sub.invoicePack;
   const nextDate = new Date(b.currentPeriodEnd).toISOString();
+  // Deshacer una baja programada se puede siempre, aunque la fecha de renovación ya haya pasado (el cobro todavía no entró).
   if (plan === sub.plan) return sub.nextPlan ? { kind: "restore", next: chargeAmount(sub.plan, cycle, pack), nextDate } : null;
+  if (new Date(b.currentPeriodEnd) <= now) return null;
   if (plan === "gratis" || planOrder.indexOf(plan) > planOrder.indexOf(sub.plan)) return null;
   return { kind: "downgrade", next: chargeAmount(plan, cycle, pack), nextDate };
 }
