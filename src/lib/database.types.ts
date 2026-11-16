@@ -97,7 +97,7 @@ export interface Database {
           category_id: string | null;
           name: string;
           barcode: string | null;
-          sku: string | null;
+          sku: string;
           price: number;
           cost: number | null;
           stock: number;
@@ -119,7 +119,7 @@ export interface Database {
           category_id?: string | null;
           name: string;
           barcode?: string | null;
-          sku?: string | null;
+          sku: string;
           price?: number;
           cost?: number | null;
           stock?: number;

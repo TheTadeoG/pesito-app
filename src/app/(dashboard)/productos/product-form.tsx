@@ -14,6 +14,7 @@ import { compressImage } from "@/lib/compress-image";
 import {
   saveProduct,
   createBrandQuick,
+  suggestSku,
   createSupplierQuick,
   type ProductFormInput,
   type SaveProductResult,
@@ -265,6 +266,12 @@ export function ProductForm({
     setGeneratingBarcode(false);
     if (res.code) setBarcode(res.code);
     else setBarcodeNote(res.error ?? "No pudimos generar el código.");
+  }
+  const [generatingSku, setGeneratingSku] = useState(false);
+  async function handleGenerateSku() {
+    setGeneratingSku(true);
+    setSku(await suggestSku());
+    setGeneratingSku(false);
   }
   const [name, setName] = useState(product?.name ?? "");
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(
@@ -641,8 +648,16 @@ export function ProductForm({
             {barcodeNote && <p className="mt-1 text-xs text-warning">{barcodeNote}</p>}
           </div>
           <div>
-            <Label htmlFor="p-sku">SKU (opcional)</Label>
-            <Input id="p-sku" value={sku} onChange={(e) => setSku(e.target.value)} />
+            <Label htmlFor="p-sku" required>
+              SKU
+            </Label>
+            <div className="flex gap-2">
+              <Input id="p-sku" value={sku} onChange={(e) => setSku(e.target.value)} maxLength={60} required placeholder="Código propio, único" />
+              <Button type="button" variant="outline" onClick={() => void handleGenerateSku()} disabled={generatingSku} title="Genera el próximo SKU libre (P-00001, P-00002…)">
+                {generatingSku ? "…" : "Generar"}
+              </Button>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Identifica al producto: no se puede repetir.</p>
           </div>
         </div>
         <MarketHintNote barcode={barcode} price={price} cost={cost} onUse={(v) => {

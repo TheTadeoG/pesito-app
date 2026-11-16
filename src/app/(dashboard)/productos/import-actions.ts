@@ -98,7 +98,7 @@ export async function importProductsChunk(
       org_id: string;
       name: string;
       barcode: string | null;
-      sku: string | null;
+      sku: string;
       brand: string | null;
       cost: number | null;
       price: number;
@@ -130,6 +130,8 @@ export async function importProductsChunk(
     if (
       !name ||
       name.length > 200 ||
+      !sku ||
+      sku.length > 60 ||
       !Number.isFinite(price) ||
       price < 0 ||
       (cost !== null && (!Number.isFinite(cost) || cost < 0)) ||
@@ -143,7 +145,7 @@ export async function importProductsChunk(
       continue;
     }
 
-    const match = matcher.find({ name, barcode, sku });
+    const match = matcher.find({ sku });
     const existingId = match?.id ?? null;
     if (match && existingId) {
       const fields = new Set(
@@ -169,8 +171,7 @@ export async function importProductsChunk(
       if (fields.has("name")) patch.name = name;
       if (fields.has("minStock")) patch.min_stock = minStock;
       if (fields.has("unit")) patch.unit = unit;
-      // Un SKU o código que ya usa otro producto no se pisa (rompería la búsqueda).
-      if (fields.has("sku") && sku && (matcher.skuOwner(sku)?.id ?? existingId) === existingId) patch.sku = sku;
+      // Un código de barras que ya usa otro producto no se pisa (rompería la búsqueda en el POS).
       if (fields.has("barcode") && barcode && (matcher.barcodeOwner(barcode)?.id ?? existingId) === existingId) {
         patch.barcode = barcode;
       }
@@ -183,7 +184,7 @@ export async function importProductsChunk(
     }
 
     // Repetido dentro del mismo archivo: el primero gana.
-    const dupKey = barcode ? `b:${key(barcode)}` : sku ? `s:${key(sku)}` : null;
+    const dupKey = `s:${key(sku)}`;
     if (dupKey && seenInChunk.has(dupKey)) {
       result.skipped++;
       continue;
@@ -205,7 +206,7 @@ export async function importProductsChunk(
         org_id: organization.id,
         name,
         barcode: barcode || null,
-        sku: sku || null,
+        sku,
         brand: brand || null,
         cost,
         price,

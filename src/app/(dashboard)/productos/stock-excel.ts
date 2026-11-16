@@ -35,7 +35,6 @@ export interface ExcelColumn {
 
 /** Columnas que se pueden elegir. "Producto" va siempre primero y no se elige. */
 export const EXCEL_COLUMNS: ExcelColumn[] = [
-  { id: "sku", label: "SKU", width: 16, cell: (r) => ({ value: r.sku ?? "" }) },
   { id: "barcode", label: "Código de barras", width: 20, cell: (r) => ({ value: r.barcode ?? "" }) },
   { id: "brand", label: "Marca", width: 18, cell: (r) => ({ value: r.brand ?? "" }) },
   { id: "supplier", label: "Proveedor", width: 24, cell: (r) => ({ value: r.supplier ?? "" }) },
@@ -65,20 +64,21 @@ export const EXCEL_COLUMNS: ExcelColumn[] = [
 
 /**
  * Baja a Excel los productos que se elijan, con las columnas que se elijan (`columnIds`; por
- * defecto todas las disponibles). Todo es para mirar: no se vuelve a importar (para cargar o
- * corregir productos hay una planilla aparte).
+ * defecto todas las disponibles). El nombre y el SKU van siempre: el SKU identifica a cada producto, así la planilla se
+ * puede editar y volver a subir desde "Cargar desde Excel".
  */
 export async function downloadStockExcel(rows: readonly StockRow[], withCover: boolean, columnIds?: readonly string[]) {
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const columns = EXCEL_COLUMNS.filter((c) => (withCover || !c.max) && (!columnIds || columnIds.includes(c.id)));
   const header: Cell[] = [
     { value: "Producto", fontWeight: "bold", backgroundColor: "#e5e7eb" },
+    { value: "SKU", fontWeight: "bold", backgroundColor: "#e5e7eb" },
     ...columns.map((c) => ({ value: c.label, fontWeight: "bold" as const, backgroundColor: "#e5e7eb" })),
   ];
-  const body: Cell[][] = rows.map((r) => [{ value: r.name }, ...columns.map((c) => c.cell(r))]);
+  const body: Cell[][] = rows.map((r) => [{ value: r.name }, { value: r.sku ?? "" }, ...columns.map((c) => c.cell(r))]);
 
   await writeXlsxFile([header, ...body], {
-    columns: [{ width: 38 }, ...columns.map((c) => ({ width: c.width }))],
+    columns: [{ width: 38 }, { width: 16 }, ...columns.map((c) => ({ width: c.width }))],
     stickyRowsCount: 1,
   }).toFile(`pesito-stock-${todayStamp()}.xlsx`);
 }

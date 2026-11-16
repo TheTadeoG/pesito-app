@@ -26,7 +26,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   /** Códigos y SKU que ya existen, para avisar cuáles se repiten antes de guardar. */
-  existing: { id: string; name: string; barcode: string | null; sku: string | null; price: number; cost: number | null }[];
+  existing: { id: string; name: string; barcode: string | null; sku: string; price: number; cost: number | null }[];
   /** Cuántos productos activos más entran en el plan. */
   remainingCapacity: number;
 }
@@ -42,7 +42,7 @@ interface Summary {
 }
 
 // Columnas que hay que completar sí o sí (en rojo y con *): el nombre y el precio (o costo + % de ganancia).
-const REQUIRED_TITLES = new Set(["Nombre", "Precio de venta"]);
+const REQUIRED_TITLES = new Set(["Nombre", "SKU", "Precio de venta"]);
 
 async function downloadTemplate() {
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
@@ -54,10 +54,11 @@ async function downloadTemplate() {
   const example = TEMPLATE_COLUMNS.map((c) => c.example);
   const help: { value: string; fontWeight?: "bold"; textColor?: string }[][] = [
     [{ value: "Cómo completar la planilla", fontWeight: "bold" }],
-    [{ value: "* Las columnas en rojo son obligatorias: Nombre y Precio de venta." }],
+    [{ value: "* Las columnas en rojo son obligatorias: Nombre, SKU y Precio de venta." }],
+    [{ value: "El SKU es el código propio de cada producto y no se puede repetir: es lo que usamos para reconocerlo. Si ya existe un producto con ese SKU, no se duplica: se actualiza (si lo elegís al subir) o se omite." }],
     [{ value: "En vez del precio podés poner el Costo y la Ganancia sobre el costo (%): el precio se calcula solo. Si cargás precio y %, vale el precio." }],
     [{ value: "Todas las demás columnas son opcionales. Podés borrar las que no uses, pero no cambies los títulos." }],
-    [{ value: "Si un producto ya existe (mismo código de barras o SKU, o el mismo nombre si no tiene código) no se duplica: al subirla podés elegir actualizar su precio, costo, marca o proveedor. El stock nunca se modifica." }],
+    [{ value: "Si un producto ya existe (mismo SKU) no se duplica: al subirla podés elegir actualizar su precio, costo, marca, proveedor, etc. El stock nunca se modifica." }],
     [{ value: "Unidad: u, kg, g, l, ml, pack o caja. La marca y el proveedor que no existan se crean." }],
     [{ value: "La primera fila de la hoja “Productos” es un ejemplo: borrala o reemplazala." }],
   ];
@@ -110,7 +111,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
     return { fresh: parsed.rows.length - known, known };
   }, [parsed, existingKeys]);
 
-  // Qué cambiaría en los productos que ya existen (mismo criterio que el servidor: primero código de barras, después SKU).
+  // Qué cambiaría en los productos que ya existen (mismo criterio que el servidor: se reconocen por SKU).
   const changes = useMemo(() => {
     if (!parsed || !updateExisting) return [];
     const out: PriceChange[] = [];
@@ -240,7 +241,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
           <p className="text-xs text-muted-foreground">
             {`Obligatorias: ${TEMPLATE_COLUMNS.filter((c) => c.required)
               .map((c) => c.title)
-              .join(" y ")} y el precio: el Precio de venta, o el Costo con la Ganancia sobre el costo (%) y el precio se calcula solo (si cargás los dos, vale el precio). Las demás son opcionales. Si un producto ya existe (mismo código de barras o SKU), no se crea de nuevo: por defecto se deja como está y no se modifica. Si querés, antes de cargar podés elegir qué datos actualizar con los de la planilla (precio, costo, marca, nombre, etc.). Su stock nunca se toca.`}
+              .join(" y ")} y el precio: el Precio de venta, o el Costo con la Ganancia sobre el costo (%) y el precio se calcula solo (si cargás los dos, vale el precio). Las demás son opcionales. Si un producto ya existe (mismo SKU), no se crea de nuevo: por defecto se deja como está y no se modifica. Si querés, antes de cargar podés elegir qué datos actualizar con los de la planilla (precio, costo, marca, nombre, etc.). Su stock nunca se toca.`}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => void downloadTemplate()}>
@@ -338,7 +339,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
                 <thead className="bg-muted text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">Nombre</th>
-                    <th className="px-3 py-2">Código</th>
+                    <th className="px-3 py-2">SKU</th>
                     <th className="px-3 py-2 text-right">Costo</th>
                     <th className="px-3 py-2 text-right">Precio</th>
                     <th className="px-3 py-2 text-right">Stock</th>
@@ -348,7 +349,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
                   {parsed.rows.slice(0, 5).map((r) => (
                     <tr key={r.line} className="border-t border-border">
                       <td className="max-w-[14rem] truncate px-3 py-2 text-foreground">{r.name}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{r.barcode || r.sku || "—"}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{r.sku}</td>
                       <td className="px-3 py-2 text-right text-muted-foreground">{r.cost ?? "—"}</td>
                       <td className="px-3 py-2 text-right text-foreground">{r.price}</td>
                       <td className="px-3 py-2 text-right text-muted-foreground">{r.stock}</td>

@@ -130,7 +130,7 @@ export function ExcelExportDialog({
               {chosen === available.length ? "Quitar todas" : "Marcar todas"}
             </button>
           </div>
-          <p className="mb-2 text-xs text-muted-foreground">El nombre del producto va siempre. Para editar precios, costos o ganancias en Excel y volver a subir la planilla (Cargar productos → Actualizar los que ya existen), dejá marcados el código de barras o SKU, el costo y el precio de venta.</p>
+          <p className="mb-2 text-xs text-muted-foreground">El nombre y el SKU van siempre. Para editar precios, costos o ganancias en Excel y volver a subir la planilla (Cargar productos → Actualizar los que ya existen), dejá marcados el costo y el precio de venta.</p>
           <div className="grid grid-cols-2 gap-2">
             {available.map((c) => (
               <label key={c.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted">

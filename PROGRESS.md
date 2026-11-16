@@ -226,6 +226,12 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - También "Agregar un proveedor" (formulario completo) en el mismo menú.
 - Pendiente: botón de carga desde Excel también en la pantalla de Proveedores; actualizar proveedores existentes desde la planilla.
 
+## Hecho: el SKU identifica a cada producto — obligatorio y único (16/11/2026) — migración 0094 (**falta aplicar en producción**)
+- Regla: cada producto tiene un SKU obligatorio, único por negocio (sin importar mayúsculas ni espacios al borde). Formulario de producto: SKU obligatorio con botón "Generar" (próximo "P-00001"); `saveProduct` rechaza SKU vacío o repetido con el nombre del producto que ya lo usa.
+- Carga de Excel: la columna SKU es obligatoria (en rojo en la planilla modelo); los productos se reconocen sólo por SKU (ya no por código de barras ni nombre); SKU repetidos en la planilla: gana el primero y se reportan; el SKU ya no es un dato "actualizable". La descarga de Excel trae siempre Producto y SKU, para poder editarla y volver a subirla.
+- Migración 0094: asigna "P-00001…" a los productos sin SKU (por negocio, por antigüedad), renombra los SKU repetidos (el más viejo se queda con el suyo, los demás pasan a "SKU-2", "SKU-3"…), y agrega NOT NULL, CHECK no vacío e índice único `(org_id, lower(btrim(sku)))`. **Cambia datos de los clientes existentes.**
+- FAQ: la planilla descargada ya sí se puede volver a subir (corregido).
+
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.

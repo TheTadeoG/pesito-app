@@ -11,7 +11,7 @@ export const IMPORT_CHUNK_SIZE = 250;
 export const IMPORT_MAX_ROWS = 20000;
 
 /** Datos de un producto que ya existe que la carga puede actualizar (el stock nunca: sólo se mueve con ventas, compras y ajustes). */
-export type UpdateField = "price" | "cost" | "brand" | "supplier" | "name" | "minStock" | "unit" | "sku" | "barcode";
+export type UpdateField = "price" | "cost" | "brand" | "supplier" | "name" | "minStock" | "unit" | "barcode";
 
 export const UPDATE_FIELDS: { field: UpdateField; label: string; hint: string; defaultOn: boolean }[] = [
   { field: "price", label: "Precio de venta", hint: "Se reemplaza por el de la planilla.", defaultOn: true },
@@ -21,7 +21,6 @@ export const UPDATE_FIELDS: { field: UpdateField; label: string; hint: string; d
   { field: "name", label: "Nombre", hint: "Cambia el nombre del producto.", defaultOn: false },
   { field: "minStock", label: "Stock mínimo", hint: "Cambia el aviso de reposición.", defaultOn: false },
   { field: "unit", label: "Unidad", hint: "Unidad, kg, litro, etc.", defaultOn: false },
-  { field: "sku", label: "SKU", hint: "Si la celda está vacía, se deja el actual.", defaultOn: false },
   { field: "barcode", label: "Código de barras", hint: "Si la celda está vacía, se deja el actual.", defaultOn: false },
 ];
 
@@ -64,8 +63,8 @@ type Field = "name" | "barcode" | "sku" | "brand" | "supplier" | "cost" | "price
 /** Columnas de la planilla modelo, en este orden. */
 export const TEMPLATE_COLUMNS: { field: Field; title: string; required?: boolean; example: string | number }[] = [
   { field: "name", title: "Nombre", required: true, example: "Yerba mate 1 kg" },
+  { field: "sku", title: "SKU", required: true, example: "YER-001" },
   { field: "barcode", title: "Código de barras", example: "7790387000012" },
-  { field: "sku", title: "SKU", example: "YER-001" },
   { field: "brand", title: "Marca", example: "Taragüí" },
   { field: "supplier", title: "Proveedor", example: "Distribuidora Norte" },
   { field: "cost", title: "Costo", example: 2800 },
@@ -201,6 +200,7 @@ export function parseProductSheet(matrix: unknown[][]): ParsedImport {
     return index === undefined ? undefined : row[index];
   };
 
+  const seenSkus = new Set<string>();
   for (let i = headerIndex + 1; i < matrix.length; i++) {
     const row = matrix[i];
     const line = i + 1;
@@ -220,6 +220,21 @@ export function parseProductSheet(matrix: unknown[][]): ParsedImport {
     }
 
     // Precio: el de la planilla; si falta, costo + % de ganancia sobre el costo.
+    const sku = cellText(get(row, "sku"));
+    if (!sku) {
+      result.problems.push({ line, message: `“${name}”: falta el SKU (el código propio que identifica al producto).` });
+      continue;
+    }
+    if (sku.length > 60) {
+      result.problems.push({ line, message: `“${name}”: el SKU es demasiado largo (máximo 60 caracteres).` });
+      continue;
+    }
+    if (seenSkus.has(sku.toLowerCase())) {
+      result.problems.push({ line, message: `“${name}”: el SKU ${sku} está repetido en la planilla (se carga la primera vez).` });
+      continue;
+    }
+    seenSkus.add(sku.toLowerCase());
+
     const priceRaw = get(row, "price");
     const markupRaw = get(row, "markup");
     let price = cellText(priceRaw) === "" ? null : parseNumber(priceRaw);
@@ -271,7 +286,7 @@ export function parseProductSheet(matrix: unknown[][]): ParsedImport {
       line,
       name,
       barcode: cellText(get(row, "barcode")),
-      sku: cellText(get(row, "sku")),
+      sku,
       brand: cellText(get(row, "brand")),
       supplier: cellText(get(row, "supplier")),
       cost,
@@ -351,29 +366,21 @@ export function resolveExistingPrice(row: ImportRow, current: { price: number; c
 }
 
 /**
- * Productos existentes por código de barras, SKU y, si la fila no trae ninguno de los dos, por nombre (sólo si el
- * nombre es único). Así una planilla bajada de Pesito se puede volver a subir sin duplicar los productos sin código.
+ * Productos existentes por SKU (lo que identifica a cada producto: obligatorio y único en el negocio, sin importar
+ * mayúsculas ni espacios al borde).
  */
-export function makeProductMatcher<T extends { name: string; barcode: string | null; sku: string | null }>(products: readonly T[]) {
-  const byBarcode = new Map<string, T>();
+export function makeProductMatcher<T extends { sku: string; barcode: string | null }>(products: readonly T[]) {
   const bySku = new Map<string, T>();
-  const byName = new Map<string, T | null>();
+  const byBarcode = new Map<string, T>();
   for (const p of products) {
-    if (p.barcode) byBarcode.set(p.barcode.trim().toLowerCase(), p);
     if (p.sku) bySku.set(p.sku.trim().toLowerCase(), p);
-    const n = normalizeText(p.name);
-    byName.set(n, byName.has(n) ? null : p);
+    if (p.barcode) byBarcode.set(p.barcode.trim().toLowerCase(), p);
   }
   return {
-    find(row: { name: string; barcode: string; sku: string }): T | null {
-      const code = row.barcode.trim().toLowerCase();
-      const sku = row.sku.trim().toLowerCase();
-      if (code && byBarcode.has(code)) return byBarcode.get(code) ?? null;
-      if (sku && bySku.has(sku)) return bySku.get(sku) ?? null;
-      if (!code && !sku) return byName.get(normalizeText(row.name)) ?? null;
-      return null;
+    find(row: { sku: string }): T | null {
+      return bySku.get(row.sku.trim().toLowerCase()) ?? null;
     },
+    /** Producto que ya usa ese código de barras (para no pisarlo al actualizar otro). */
     barcodeOwner: (code: string) => byBarcode.get(code.trim().toLowerCase()) ?? null,
-    skuOwner: (sku: string) => bySku.get(sku.trim().toLowerCase()) ?? null,
   };
 }

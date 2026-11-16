@@ -5,6 +5,7 @@ import { checkProductLimit } from "@/lib/plan-limits";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureLockedMessage } from "@/lib/plan-access";
 import { getBranchContext } from "@/lib/branches";
@@ -40,7 +41,7 @@ export interface SaveProductResult extends ActionState {
     id: string;
     name: string;
     barcode: string | null;
-    sku: string | null;
+    sku: string;
     cost: number | null;
     price: number;
     stock: number;
@@ -56,6 +57,16 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
 
   if (!input.name.trim()) {
     return { error: "El producto necesita un nombre." };
+  }
+
+  // El SKU identifica al producto: obligatorio y único en el negocio (sin importar mayúsculas).
+  const sku = input.sku.trim();
+  if (!sku) return { error: "El producto necesita un SKU (su código propio, único). Podés generar uno con el botón “Generar”." };
+  if (sku.length > 60) return { error: "El SKU es demasiado largo (máximo 60 caracteres)." };
+  {
+    const { data: clash } = await supabase.from("products").select("id, name").eq("org_id", organization.id).ilike("sku", sku.replace(/[\\%_]/g, "\\$&")).limit(2);
+    const other = (clash ?? []).find((p) => p.id !== input.id);
+    if (other) return { error: `Ya hay un producto con el SKU “${sku}”: ${other.name}. Cada producto necesita un SKU distinto.` };
   }
 
   if (input.stock < 0) {
@@ -79,7 +90,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     name: input.name.trim(),
     brand: input.brand.trim() || null,
     barcode: input.barcode.trim() || null,
-    sku: input.sku.trim() || null,
+    sku,
     price: input.price,
     cost: input.cost,
     min_stock: input.minStock,
@@ -107,7 +118,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
 
   if (input.id) {
     const { error } = await supabase.from("products").update(payload).eq("id", input.id);
-    if (error) return { error: "No pudimos guardar los cambios." };
+    if (error) return { error: error.code === "23505" ? `Ya hay un producto con el SKU “${sku}”.` : "No pudimos guardar los cambios." };
 
     revalidatePath("/productos");
     revalidatePath("/pos");
@@ -123,6 +134,7 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     .select("id, name, barcode, sku, cost, price, stock, min_stock, unit, image_url")
     .single();
 
+  if (error?.code === "23505") return { error: `Ya hay un producto con el SKU “${sku}”.` };
   if (error || !data) return { error: "No pudimos crear el producto." };
 
   if (branch && input.stock > 0) {
@@ -792,4 +804,19 @@ export async function revertProductField(
   revalidatePath("/productos");
   revalidatePath("/pos");
   return {};
+}
+
+/** Próximo SKU libre con el formato "P-00001" (para el botón "Generar" del formulario de producto). */
+export async function suggestSku(): Promise<string> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+  const rows = await fetchAll((from, to) =>
+    supabase.from("products").select("id, sku").eq("org_id", organization.id).ilike("sku", "P-%").order("id").range(from, to)
+  );
+  let max = 0;
+  for (const r of rows) {
+    const m = /^P-(\d{1,9})$/i.exec(r.sku.trim());
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  return `P-${String(max + 1).padStart(5, "0")}`;
 }
