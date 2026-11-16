@@ -49,7 +49,7 @@ export async function updateOrgPlan(orgId: string, plan: Plan): Promise<ActionSt
       .insert({ org_id: orgId, from_plan: previousPlan, to_plan: plan, changed_by: userId });
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { success: true };
 }
 
@@ -89,7 +89,7 @@ export async function updateLandingStatsOffsets(input: {
 
   if (error) return { error: "No pudimos guardar los valores." };
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   revalidatePath("/");
   return { success: true };
 }
@@ -117,7 +117,7 @@ export async function createMarketInsight(input: MarketInsightInput): Promise<Ac
     source: input.source.trim() || null,
   });
   if (error) return { error: "No pudimos guardar la nota." };
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { success: true };
 }
 
@@ -125,6 +125,6 @@ export async function deleteMarketInsight(id: string): Promise<ActionState> {
   await requirePlatformAdmin();
   const { error } = await createAdminClient().from("market_insights").delete().eq("id", id);
   if (error) return { error: "No pudimos borrar la nota." };
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { success: true };
 }

@@ -1,283 +1,89 @@
 import Link from "next/link";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  Download,
-  DollarSign,
-  MessageSquareQuote,
-  MessageSquareText,
-  Package,
-  Receipt,
-  ShoppingBag,
-  Sparkles,
-  Store,
-  TrendingDown,
-  TrendingUp,
-  Truck,
-  UserPlus,
-  Users,
-  UsersRound,
-  Wallet,
-} from "lucide-react";
 import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { OrgPlanManager } from "@/app/admin/org-plan-manager";
-import { FunnelSection } from "@/app/admin/funnel-section";
-import { computeFunnel } from "@/lib/admin-funnel";
+import { loadAdminData } from "@/lib/admin-data";
+import { DAY_MS, SEGMENTS, ago, inSegment, whatsappNumber, type AdminOrg, type SegmentId } from "@/lib/admin-shared";
+import { computeFunnel, formatDuration } from "@/lib/admin-funnel";
 import { ANNUAL_DISCOUNT, planDefinitions } from "@/lib/plan-features";
-import { LandingStatsManager } from "@/app/admin/landing-stats-manager";
-import { MarketInsightsManager } from "@/app/admin/market-insights-manager";
+import { planLabels, type Plan } from "@/lib/subscription";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { BarChart, type BarChartDatum } from "@/components/dashboard/bar-chart";
-import { DonutChart } from "@/components/dashboard/donut-chart";
-import { cn, formatCurrency } from "@/lib/utils";
-import { businessTypes } from "@/lib/business-types";
 import { ARG_TZ, argDateString, argMidnightUTC } from "@/lib/timezone";
-import { paymentLabels } from "@/lib/payment-labels";
-import { roleLabels } from "@/lib/roles";
-import { planLabels, planOrder, type Plan } from "@/lib/subscription";
+import { cn, formatCurrency } from "@/lib/utils";
 
-const businessTypeLabels: Record<string, string> = Object.fromEntries(
-  businessTypes.map((t) => [t.value, t.label])
-);
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+export const metadata = { title: "Resumen" };
 
 function dayLabel(date: Date) {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "numeric",
-    month: "short",
-    timeZone: ARG_TZ,
-  }).format(date);
+  return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", timeZone: ARG_TZ }).format(date);
 }
 
-function formatDateTime(iso: string) {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: ARG_TZ,
-  }).format(new Date(iso));
-}
-
-function bucketByDay<T>(
-  rows: T[],
-  getDate: (row: T) => string,
-  days: number,
-  getValue: (row: T) => number = () => 1
-): BarChartDatum[] {
-  const todayMidnight = argMidnightUTC(argDateString());
-  const start = new Date(todayMidnight);
+function signupsByDay(orgs: AdminOrg[], days: number): BarChartDatum[] {
+  const start = new Date(argMidnightUTC(argDateString()));
   start.setUTCDate(start.getUTCDate() - (days - 1));
-
-  const buckets = Array.from({ length: days }, (_, i) => {
-    const date = new Date(start);
-    date.setUTCDate(date.getUTCDate() + i);
-    return date;
-  });
-
-  return buckets.map((date) => {
-    const next = new Date(date);
-    next.setUTCDate(next.getUTCDate() + 1);
-    const value = rows
-      .filter((r) => {
-        const created = new Date(getDate(r));
-        return created >= date && created < next;
-      })
-      .reduce((acc, r) => acc + getValue(r), 0);
-    return { label: dayLabel(date), value };
+  return Array.from({ length: days }, (_, i) => {
+    const from = new Date(start);
+    from.setUTCDate(from.getUTCDate() + i);
+    const to = new Date(from);
+    to.setUTCDate(to.getUTCDate() + 1);
+    const value = orgs.filter((o) => {
+      const t = new Date(o.createdAt);
+      return t >= from && t < to;
+    }).length;
+    return { label: dayLabel(from), value };
   });
 }
 
-const tileIcons = {
-  store: Store,
-  users: Users,
-  dollar: DollarSign,
-  receipt: Receipt,
-  trending: TrendingUp,
-  check: CheckCircle2,
-  wallet: Wallet,
-  bag: ShoppingBag,
-  clock: Clock,
-  userPlus: UserPlus,
-};
+function PlanChip({ org }: { org: AdminOrg }) {
+  let label = planLabels[org.plan as Plan] ?? org.plan;
+  let tone = "bg-muted text-muted-foreground";
+  if (org.paymentStatus === "past_due") {
+    label = `${label} (cobro fallido)`;
+    tone = "bg-danger-bg text-danger";
+  } else if (org.plan !== "gratis") {
+    tone = "bg-success-bg text-success";
+  } else if (org.trialEndsAt) {
+    // eslint-disable-next-line react-hooks/purity -- Server Component: se calcula fresco en cada request.
+    const left = new Date(org.trialEndsAt).getTime() - Date.now();
+    label = left > 0 ? "Prueba Pro" : "Prueba vencida";
+    tone = left > 0 ? "bg-warning-bg text-warning" : "bg-danger-bg text-danger";
+  }
+  return <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", tone)}>{label}</span>;
+}
 
-export default async function AdminPage() {
+function whatDid(o: AdminOrg): { text: string; tone: string } {
+  if (o.saleCount > 0) return { text: `${o.saleCount} ${o.saleCount === 1 ? "venta" : "ventas"}`, tone: "text-success" };
+  if (o.productCount > 0) return { text: `${o.productCount} productos, sin ventas`, tone: "text-warning" };
+  return { text: "Sólo se registró", tone: "text-warning" };
+}
+
+export default async function AdminResumenPage() {
   await requirePlatformAdmin();
   const admin = createAdminClient();
+  const data = await loadAdminData();
+  const { orgs } = data;
+  // eslint-disable-next-line react-hooks/purity -- Server Component: se calcula fresco en cada request.
+  const now = Date.now();
 
-  // Sin la migración 0051 la consulta da error y la lista queda vacía.
-  const { data: marketInsightsRaw } = await admin
-    .from("market_insights")
-    .select("id, title, business_type, published_at")
-    .order("published_at", { ascending: false })
-    .limit(50);
-
-  const [
-    { data: orgsRaw },
-    { data: subscriptionsRaw },
-    { data: salesRaw },
-    { data: purchasesRaw },
-    { data: membershipRows },
-    { data: fiadoRows },
-    { count: productsCount },
-    { count: customersCount },
-    { count: suppliersCount },
-    { count: openRegistersCount },
-    { count: testimonialsCount },
-    { count: publishedTestimonialsCount },
-    { count: newFeedbackCount },
-    { data: landingStatsRow },
-    { data: activityRows },
-  ] = await Promise.all([
-    admin.from("organizations").select("id, name, business_type, created_at"),
-    admin.from("organization_subscriptions").select("org_id, plan, pro_trial_ends_at, mp_preapproval_id, payment_status, billing_cycle"),
-    // Tope de 20.000 ventas más recientes: de sobra para esta etapa. Si la
-    // plataforma crece mucho más, esto pasa a subestimar el total histórico
-    // y conviene mover los totales a una función agregada en SQL.
-    admin
-      .from("sales")
-      .select("id, org_id, total, payment_method, created_at")
-      .eq("status", "completada")
-      .order("created_at", { ascending: false })
-      .limit(20000),
-    admin.from("purchases").select("id, total").eq("status", "completada"),
-    admin.from("memberships").select("user_id, org_id, role"),
-    admin.from("customers").select("balance").gt("balance", 0),
-    admin.from("products").select("id", { count: "exact", head: true }),
-    admin.from("customers").select("id", { count: "exact", head: true }),
-    admin.from("suppliers").select("id", { count: "exact", head: true }),
-    admin
-      .from("cash_registers")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "abierta"),
-    admin.from("testimonials").select("id", { count: "exact", head: true }),
-    admin
-      .from("testimonials")
-      .select("id", { count: "exact", head: true })
-      .eq("published", true),
-    admin.from("feedback").select("id", { count: "exact", head: true }).eq("status", "new"),
-    admin.from("landing_stats").select("*").eq("id", "main").maybeSingle(),
-    // Una fila por negocio con lo que hizo (migración 0075); null si todavía no está aplicada.
+  const [{ data: activityRows }, { data: historyRows }] = await Promise.all([
     admin.from("platform_org_activity").select("*"),
+    admin.from("plan_history").select("org_id, from_plan, to_plan, created_at").order("created_at", { ascending: false }).limit(10),
   ]);
 
-  // Errores abiertos de la app (migración 0076; 0 si todavía no está aplicada).
-  const { count: openErrorsCount } = await admin.from("app_errors").select("id", { count: "exact", head: true }).eq("status", "new");
+  const count = (seg: SegmentId) => orgs.filter((o) => inSegment(o, seg, now)).length;
+  const paying = count("pagan");
+  const inTrial = count("en-prueba");
+  const trialEnding = count("prueba-por-vencer");
+  const newWeek = count("nuevos");
+  const noSales = count("sin-vender");
+  const stopped = count("dejaron");
+  const failed = count("cobro-fallido");
+  const soldThisWeek = orgs.filter((o) => o.lastSaleAt && now - new Date(o.lastSaleAt).getTime() <= 7 * DAY_MS).length;
 
-  // auth.users no se puede leer con .from() ni siquiera con la service role;
-  // hay que paginar con la Admin API. Con un tope de 20 páginas (20.000
-  // usuarios) alcanza de sobra para esta etapa del producto.
-  const users: { id: string; created_at: string; last_sign_in_at: string | null }[] = [];
-  for (let page = 1; page <= 20; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-    if (error || !data) break;
-    users.push(
-      ...data.users.map((u) => ({
-        id: u.id,
-        created_at: u.created_at,
-        last_sign_in_at: u.last_sign_in_at ?? null,
-      }))
-    );
-    if (!data.nextPage) break;
-  }
-
-  const organizations = orgsRaw ?? [];
-  const subscriptionByOrgId = new Map(
-    (subscriptionsRaw ?? []).map((s) => [s.org_id, { plan: s.plan, proTrialEndsAt: s.pro_trial_ends_at }])
-  );
-  const sales = (salesRaw ?? []).map((s) => ({ ...s, total: Number(s.total) }));
-  const purchases = (purchasesRaw ?? []).map((p) => ({ ...p, total: Number(p.total) }));
-  const memberships = membershipRows ?? [];
-  const membersWithOrg = new Set(memberships.map((m) => m.user_id));
-
-  const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
-  const totalSales = sales.length;
-  const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
-  const totalPurchaseAmount = purchases.reduce((acc, p) => acc + p.total, 0);
-  const totalFiadoPending = (fiadoRows ?? []).reduce((acc, c) => acc + Number(c.balance), 0);
-
-  const paymentTotals = new Map<string, number>();
-  for (const s of sales) {
-    paymentTotals.set(s.payment_method, (paymentTotals.get(s.payment_method) ?? 0) + s.total);
-  }
-  const paymentBreakdown = Array.from(paymentTotals.entries())
-    .map(([method, value]) => ({ label: paymentLabels[method] ?? method, value }))
-    .sort((a, b) => b.value - a.value);
-
-  const orgNameById = new Map(organizations.map((o) => [o.id, o.name]));
-  const revenueByOrg = new Map<string, number>();
-  // Las ventas vienen ordenadas por fecha desc, así que la primera vez que
-  // aparece cada org_id es su venta más reciente.
-  const lastSaleByOrg = new Map<string, string>();
-  for (const s of sales) {
-    revenueByOrg.set(s.org_id, (revenueByOrg.get(s.org_id) ?? 0) + s.total);
-    if (!lastSaleByOrg.has(s.org_id)) lastSaleByOrg.set(s.org_id, s.created_at);
-  }
-  const topOrgs = Array.from(revenueByOrg.entries())
-    .map(([orgId, total]) => ({ name: orgNameById.get(orgId) ?? "Negocio eliminado", total }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10);
-
-  // eslint-disable-next-line react-hooks/purity
-  const now = Date.now();
-  const activeOrgs7d = new Set(
-    sales
-      .filter((s) => now - new Date(s.created_at).getTime() <= 7 * DAY_MS)
-      .map((s) => s.org_id)
-  ).size;
-  const activeOrgs30d = new Set(
-    sales
-      .filter((s) => now - new Date(s.created_at).getTime() <= 30 * DAY_MS)
-      .map((s) => s.org_id)
-  ).size;
-
-  const businessTypeTotals = new Map<string, number>();
-  for (const org of organizations) {
-    const key = org.business_type || "otro";
-    businessTypeTotals.set(key, (businessTypeTotals.get(key) ?? 0) + 1);
-  }
-  const businessTypeBreakdown = Array.from(businessTypeTotals.entries())
-    .map(([type, value]) => ({ label: businessTypeLabels[type] ?? type, value }))
-    .sort((a, b) => b.value - a.value);
-
-  const revenueChart = bucketByDay(sales, (s) => s.created_at, 30, (s) => s.total);
-  const signupsChart = bucketByDay(organizations, (o) => o.created_at, 30);
-
-  const totalUsers = users.length;
-  const usersWithOrg = users.filter((u) => membersWithOrg.has(u.id)).length;
-  const onboardingRate = totalUsers > 0 ? (usersWithOrg / totalUsers) * 100 : 0;
-
-  // Embudo de activación: dueños que se registraron (con o sin negocio todavía; los empleados
-  // que entran por invitación no son altas), negocios que cargaron un producto, vendieron y pagan.
-  const ownerUserIds = new Set(memberships.filter((m) => m.role === "owner").map((m) => m.user_id));
-  const signedUpOwners = ownerUserIds.size + users.filter((u) => !membersWithOrg.has(u.id)).length;
-  const funnelSubscriptions = new Map(
-    (subscriptionsRaw ?? []).map((s) => [
-      s.org_id,
-      {
-        plan: s.plan,
-        trialEndsAt: s.pro_trial_ends_at,
-        // Un plan asignado a mano desde el panel no tiene suscripción ni pago de Mercado Pago.
-        paidViaMp: s.plan !== "gratis" && Boolean(s.mp_preapproval_id || s.payment_status),
-        cycle: s.billing_cycle ?? null,
-      },
-    ])
-  );
   const funnel = activityRows
     ? computeFunnel({
-        signedUpOwners,
-        activity: activityRows.map((a) => ({
-          ...a,
-          sale_count: Number(a.sale_count),
-          member_count: Number(a.member_count),
-        })),
-        subscriptions: funnelSubscriptions,
+        signedUpOwners: orgs.length + data.signedUpWithoutOrg,
+        activity: activityRows.map((a) => ({ ...a, sale_count: Number(a.sale_count), member_count: Number(a.member_count) })),
+        subscriptions: new Map(orgs.map((o) => [o.id, { plan: o.plan, trialEndsAt: o.trialEndsAt, paidViaMp: o.paidViaMp, cycle: (o.cycle as "mensual" | "anual" | null) ?? null }])),
         monthlyPrice: (plan, cycle) => {
           const price = planDefinitions[plan as Plan]?.price ?? 0;
           return cycle === "anual" ? Math.round(price * (1 - ANNUAL_DISCOUNT)) : price;
@@ -285,619 +91,200 @@ export default async function AdminPage() {
       })
     : null;
 
-  // "En línea" de verdad necesitaría presencia en tiempo real (websockets);
-  // esto es la mejor aproximación posible con lo que ya tenemos: último
-  // login de cada usuario.
-  const activeLastHour = users.filter(
-    (u) => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() <= 60 * 60 * 1000
-  ).length;
-  const activeToday = users.filter(
-    (u) => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() <= DAY_MS
-  ).length;
-
-  const weekRevenue = sales
-    .filter((s) => now - new Date(s.created_at).getTime() <= 7 * DAY_MS)
-    .reduce((acc, s) => acc + s.total, 0);
-  const prevWeekRevenue = sales
-    .filter((s) => {
-      const age = now - new Date(s.created_at).getTime();
-      return age > 7 * DAY_MS && age <= 14 * DAY_MS;
-    })
-    .reduce((acc, s) => acc + s.total, 0);
-  const weekGrowthPct =
-    prevWeekRevenue > 0 ? ((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100 : null;
-
-  // Activación: negocios que se dieron de alta pero todavía no cargaron
-  // ninguna venta. Buen indicador de a quién ayudar a arrancar.
-  const neverSoldOrgs = organizations
-    .filter((o) => !revenueByOrg.has(o.id))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-  // En riesgo: llevan más de 14 días de alta y no venden hace más de 14
-  // días (o nunca vendieron).
-  const atRiskOrgs = organizations
-    .filter((o) => now - new Date(o.created_at).getTime() > 14 * DAY_MS)
-    .map((o) => {
-      const lastSale = lastSaleByOrg.get(o.id);
-      const daysInactive = lastSale
-        ? Math.floor((now - new Date(lastSale).getTime()) / DAY_MS)
-        : Math.floor((now - new Date(o.created_at).getTime()) / DAY_MS);
-      return { name: o.name, daysInactive, everSold: Boolean(lastSale) };
-    })
-    .filter((o) => o.daysInactive > 14)
-    .sort((a, b) => b.daysInactive - a.daysInactive)
-    .slice(0, 10);
-
-  const teamsByOrg = new Map<string, number>();
-  const roleTotals = new Map<string, number>();
-  for (const m of memberships) {
-    teamsByOrg.set(m.org_id, (teamsByOrg.get(m.org_id) ?? 0) + 1);
-    roleTotals.set(m.role, (roleTotals.get(m.role) ?? 0) + 1);
-  }
-  const orgsWithTeam = Array.from(teamsByOrg.values()).filter((n) => n > 1).length;
-  const roleBreakdown = Array.from(roleTotals.entries())
-    .map(([role, value]) => ({ label: roleLabels[role as keyof typeof roleLabels] ?? role, value }))
-    .sort((a, b) => b.value - a.value);
-
-  const recentOrgs = [...organizations]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 10)
-    .map((o) => ({ ...o, hasSold: revenueByOrg.has(o.id) }));
-
-  const planCounts = new Map<Plan, number>(planOrder.map((p) => [p, 0]));
-  for (const org of organizations) {
-    const plan = (subscriptionByOrgId.get(org.id)?.plan ?? "gratis") as Plan;
-    planCounts.set(plan, (planCounts.get(plan) ?? 0) + 1);
-  }
-
-  const orgsForPlanManager = [...organizations]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((o) => ({
-      id: o.id,
-      name: o.name,
-      plan: subscriptionByOrgId.get(o.id)?.plan ?? "gratis",
-      proTrialEndsAt: subscriptionByOrgId.get(o.id)?.proTrialEndsAt ?? null,
-    }));
-
-  const recentSales = sales.slice(0, 15).map((s) => ({
-    ...s,
-    orgName: orgNameById.get(s.org_id) ?? "Negocio eliminado",
-  }));
-
-  const tiles: { icon: keyof typeof tileIcons; label: string; value: string }[] = [
-    { icon: "store", label: "Negocios registrados", value: String(organizations.length) },
-    { icon: "users", label: "Usuarios registrados", value: String(totalUsers) },
-    { icon: "dollar", label: "Ingresos totales", value: formatCurrency(totalRevenue) },
-    { icon: "receipt", label: "Ventas totales", value: String(totalSales) },
-    { icon: "trending", label: "Ticket promedio", value: formatCurrency(avgTicket) },
-    {
-      icon: "check",
-      label: "Completaron el alta",
-      value: `${onboardingRate.toFixed(0)}% (${usersWithOrg}/${totalUsers})`,
-    },
-    { icon: "wallet", label: "Cajas abiertas ahora", value: String(openRegistersCount ?? 0) },
-    {
-      icon: "bag",
-      label: "Compras registradas",
-      value: `${purchases.length} · ${formatCurrency(totalPurchaseAmount)}`,
-    },
+  const kpis: { label: string; value: string; note: string; tone?: string }[] = [
+    { label: "Negocios", value: String(orgs.length), note: `+${newWeek} esta semana`, tone: "text-success" },
+    { label: "Pagan", value: String(paying), note: orgs.length ? `${Math.round((paying / orgs.length) * 100)}% de los negocios` : "—" },
+    { label: "Ingreso mensual", value: funnel ? formatCurrency(funnel.mrr) : "—", note: "Estimado, de los que pagan por Mercado Pago" },
+    { label: "En prueba gratis", value: String(inTrial), note: trialEnding ? `${trialEnding} vencen en 3 días` : "Ninguna vence pronto", tone: trialEnding ? "text-warning" : undefined },
+    { label: "Vendieron esta semana", value: String(soldThisWeek), note: orgs.length ? `${Math.round((soldThisWeek / orgs.length) * 100)}% de los negocios` : "—" },
+    { label: "Sin ninguna venta", value: String(noSales), note: "Se registraron y no vendieron" },
   ];
 
-  const activityTiles: { icon: keyof typeof tileIcons; label: string; value: string }[] = [
-    { icon: "clock", label: "Activos última hora", value: String(activeLastHour) },
-    { icon: "userPlus", label: "Activos hoy", value: String(activeToday) },
-    { icon: "wallet", label: "Fiado pendiente (plataforma)", value: formatCurrency(totalFiadoPending) },
+  const attention: { title: string; sub: string; n: number; seg: SegmentId; tone: string }[] = [
+    { title: "Pruebas que vencen", sub: "En los próximos 3 días", n: trialEnding, seg: "prueba-por-vencer", tone: "border-l-warning" },
+    { title: "Se registraron y no vendieron", sub: "Todavía sin una venta", n: noSales, seg: "sin-vender", tone: "border-l-primary" },
+    { title: "Cobros fallidos", sub: "En período de gracia", n: failed, seg: "cobro-fallido", tone: "border-l-danger" },
+    { title: "Dejaron de vender", sub: "Vendían y pararon hace 14 días o más", n: stopped, seg: "dejaron", tone: "border-l-warning" },
   ];
+
+  // Movimiento reciente: altas, primeras ventas y cambios de plan.
+  const nameById = new Map(orgs.map((o) => [o.id, o.name]));
+  const feed: { at: string; who: string; what: string }[] = [
+    ...orgs.slice(0, 12).map((o) => ({ at: o.createdAt, who: o.name, what: "se registró" })),
+    ...orgs.filter((o) => o.firstSaleAt).map((o) => ({ at: o.firstSaleAt!, who: o.name, what: "hizo su primera venta" })),
+    ...(historyRows ?? []).map((h) => ({
+      at: h.created_at,
+      who: nameById.get(h.org_id) ?? "Un negocio",
+      what: `pasó de ${planLabels[h.from_plan as Plan] ?? h.from_plan} a ${planLabels[h.to_plan as Plan] ?? h.to_plan}`,
+    })),
+  ]
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, 8);
+
+  const recent = orgs.slice(0, 10);
+  const signups = signupsByDay(orgs, 30);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">Estado de Pesito</h1>
-        <p className="text-sm text-muted-foreground">
-          Estadísticas de toda la plataforma, en tiempo real.
+        <h1 className="text-xl font-bold text-foreground">Resumen</h1>
+        <p className="text-sm text-muted-foreground">Qué pasó, quién necesita atención y cómo va el embudo.</p>
+      </div>
+
+      {!data.hasLastSale && (
+        <p className="rounded-xl border border-warning/40 bg-warning-bg px-4 py-3 text-sm text-foreground">
+          Falta aplicar la migración 0091 en Supabase: sin ella no se sabe cuándo vendió cada negocio por última vez ni se pueden guardar notas.
         </p>
-      </div>
+      )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {tiles.map((tile) => {
-          const Icon = tileIcons[tile.icon];
-          return (
-            <Card key={tile.label}>
-              <CardContent className="flex items-center gap-3 py-5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-xs text-muted-foreground">{tile.label}</p>
-                  <p className="truncate text-lg font-bold text-foreground">{tile.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {kpis.map((k) => (
+          <Card key={k.label}>
+            <CardContent className="space-y-1 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{k.label}</p>
+              <p className="text-3xl font-bold leading-none text-foreground">{k.value}</p>
+              <p className={cn("text-sm text-muted-foreground", k.tone)}>{k.note}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {activityTiles.map((tile) => {
-          const Icon = tileIcons[tile.icon];
-          return (
-            <Card key={tile.label}>
-              <CardContent className="flex items-center gap-3 py-5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-xs text-muted-foreground">{tile.label}</p>
-                  <p className="truncate text-lg font-bold text-foreground">{tile.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-        <Card>
-          <CardContent className="flex items-center gap-3 py-5">
-            <span
-              className={cn(
-                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
-                weekGrowthPct === null
-                  ? "bg-accent text-accent-foreground"
-                  : weekGrowthPct >= 0
-                    ? "bg-success-bg text-success"
-                    : "bg-danger-bg text-danger"
-              )}
-            >
-              {weekGrowthPct !== null && weekGrowthPct < 0 ? (
-                <TrendingDown className="h-5 w-5" />
-              ) : (
-                <TrendingUp className="h-5 w-5" />
-              )}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-xs text-muted-foreground">
-                Ingresos esta semana vs. anterior
-              </p>
-              <p className="truncate text-lg font-bold text-foreground">
-                {formatCurrency(weekRevenue)}
-                {weekGrowthPct !== null && (
-                  <span
-                    className={cn(
-                      "ml-1.5 text-sm font-semibold",
-                      weekGrowthPct >= 0 ? "text-success" : "text-danger"
-                    )}
-                  >
-                    {weekGrowthPct >= 0 ? "+" : ""}
-                    {weekGrowthPct.toFixed(0)}%
-                  </span>
-                )}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardContent className="flex items-center gap-3 py-5">
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Negocios activos (con ventas)</p>
-              <p className="text-lg font-bold text-foreground">
-                {activeOrgs7d} <span className="text-sm font-normal text-muted-foreground">últimos 7 días</span>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {activeOrgs30d} en los últimos 30 días
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 py-5">
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Catálogo cargado en total</p>
-              <p className="text-sm text-foreground">
-                <Package className="mr-1 inline h-3.5 w-3.5" />
-                {productsCount ?? 0} productos · {customersCount ?? 0} clientes ·{" "}
-                <Truck className="mr-1 inline h-3.5 w-3.5" />
-                {suppliersCount ?? 0} proveedores
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ingresos por día (últimos 30 días)</CardTitle>
+      <div className="grid gap-4 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <CardHeader className="flex flex-row items-baseline justify-between gap-2">
+            <CardTitle className="text-base">Embudo: de registrarse a pagar</CardTitle>
+            <Link href="/admin/contenido" className="text-sm font-medium text-primary hover:underline">Ver el detalle</Link>
           </CardHeader>
-          <CardContent>
-            {revenueChart.every((d) => d.value === 0) ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">Sin ventas todavía.</p>
-            ) : (
-              <BarChart data={revenueChart} labelEvery={3} />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Negocios nuevos por día (últimos 30 días)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {signupsChart.every((d) => d.value === 0) ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Sin negocios nuevos todavía.
-              </p>
-            ) : (
-              <BarChart
-                data={signupsChart}
-                showValueLabels={false}
-                labelEvery={3}
-                formatValue={(v) => String(v)}
-              />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Medios de pago (global)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {paymentBreakdown.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">Sin ventas todavía.</p>
-            ) : (
-              <DonutChart data={paymentBreakdown} formatValue={formatCurrency} />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Tipo de negocio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {businessTypeBreakdown.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Sin negocios todavía.
-              </p>
-            ) : (
-              <DonutChart data={businessTypeBreakdown} formatValue={(v) => String(v)} />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <FunnelSection funnel={funnel} />
-
-      <div>
-        <h2 className="mb-3 text-base font-semibold text-foreground">Activación y retención</h2>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center gap-2">
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base">
-                Nunca vendieron ({neverSoldOrgs.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {neverSoldOrgs.length === 0 ? (
-                <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                  Todos los negocios ya hicieron al menos una venta.
-                </p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {neverSoldOrgs.slice(0, 8).map((org) => (
-                    <div
-                      key={org.id}
-                      className="flex items-center justify-between px-5 py-2.5 text-sm"
-                    >
-                      <span className="truncate text-foreground">{org.name}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        alta: {formatDateTime(org.created_at)}
+          <CardContent className="space-y-3">
+            {funnel ? (
+              <>
+                {funnel.steps.map((s, i) => {
+                  const top = funnel.steps[0]?.count || 1;
+                  return (
+                    <div key={s.label} className="grid grid-cols-[minmax(0,150px)_1fr_auto] items-center gap-3 text-sm">
+                      <span className="font-medium text-foreground">{s.label}</span>
+                      <div className="h-6 overflow-hidden rounded-lg bg-muted">
+                        <div className="h-full rounded-lg bg-primary" style={{ width: `${Math.max(2, (s.count / top) * 100)}%`, opacity: 0.45 + 0.55 * (1 - i / Math.max(1, funnel.steps.length)) }} />
+                      </div>
+                      <span className="text-right text-foreground">
+                        <b>{s.count}</b>
+                        {i > 0 && s.pctPrev !== null && <span className="text-muted-foreground">{` · ${Math.round(s.pctPrev)}%`}</span>}
                       </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base">Negocios en riesgo ({atRiskOrgs.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {atRiskOrgs.length === 0 ? (
-                <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                  Nadie lleva más de 14 días sin vender.
+                  );
+                })}
+                <p className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm text-foreground">
+                  {(() => {
+                    let worst = 1;
+                    for (let i = 2; i < funnel.steps.length; i++) {
+                      if ((funnel.steps[i].pctPrev ?? 100) < (funnel.steps[worst].pctPrev ?? 100)) worst = i;
+                    }
+                    const step = funnel.steps[worst];
+                    const prev = funnel.steps[worst - 1];
+                    return step && prev
+                      ? `Donde más se pierde la gente: de “${prev.label}” a “${step.label}” (${prev.count - step.count} negocios no pasaron). Tiempo típico hasta la primera venta: ${formatDuration(funnel.medianHoursToFirstSale)}.`
+                      : "Todavía no hay suficientes datos para ver dónde se pierde la gente.";
+                  })()}
                 </p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {atRiskOrgs.map((org) => (
-                    <div
-                      key={org.name}
-                      className="flex items-center justify-between px-5 py-2.5 text-sm"
-                    >
-                      <span className="truncate text-foreground">{org.name}</span>
-                      <Badge tone="warning">
-                        {org.everSold ? `${org.daysInactive}d sin vender` : "nunca vendió"}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Falta aplicar la migración 0075 para ver el embudo.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Para atender hoy</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {attention.map((a) => (
+              <Link
+                key={a.seg}
+                href={`/admin/negocios?seg=${a.seg}`}
+                className={cn("flex items-center justify-between gap-3 rounded-xl border border-border border-l-4 px-3 py-2.5 transition-colors hover:bg-muted/50", a.tone)}
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">{a.title}</span>
+                  <span className="block text-xs text-muted-foreground">{a.sub}</span>
+                </span>
+                <span className="text-2xl font-bold text-foreground">{a.n}</span>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
       </div>
 
-      <div>
-        <h2 className="mb-3 text-base font-semibold text-foreground">Equipos</h2>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardContent className="flex items-center gap-3 py-5">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                <UsersRound className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Negocios con más de 1 usuario</p>
-                <p className="text-lg font-bold text-foreground">
-                  {orgsWithTeam}{" "}
-                  <span className="text-sm font-normal text-muted-foreground">
-                    de {organizations.length} ({organizations.length > 0 ? ((orgsWithTeam / organizations.length) * 100).toFixed(0) : 0}%)
-                  </span>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Roles en toda la plataforma</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {roleBreakdown.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">Sin datos.</p>
-              ) : (
-                <DonutChart data={roleBreakdown} formatValue={(v) => String(v)} />
-              )}
-            </CardContent>
-          </Card>
-        </div>
+      <div className="grid gap-4 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <CardHeader className="flex flex-row items-baseline justify-between gap-2">
+            <CardTitle className="text-base">Altas por día</CardTitle>
+            <span className="text-xs text-muted-foreground">Últimos 30 días · {newWeek} en la última semana</span>
+          </CardHeader>
+          <CardContent>
+            {signups.every((d) => d.value === 0) ? <p className="py-10 text-center text-sm text-muted-foreground">Sin altas en el período.</p> : <BarChart data={signups} labelEvery={5} />}
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Movimiento reciente</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2.5">
+            {feed.length === 0 && <p className="text-sm text-muted-foreground">Sin movimiento todavía.</p>}
+            {feed.map((e, i) => (
+              <p key={`${e.at}-${i}`} className="grid grid-cols-[72px_1fr] gap-2 text-sm leading-snug">
+                <span className="text-muted-foreground">{ago(e.at, now)}</span>
+                <span className="text-foreground">
+                  <b>{e.who}</b> {e.what}
+                </span>
+              </p>
+            ))}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Negocios con más ventas</CardTitle>
+        <CardHeader className="flex flex-row items-baseline justify-between gap-2">
+          <CardTitle className="text-base">Quiénes se registraron</CardTitle>
+          <Link href="/admin/negocios" className="text-sm font-medium text-primary hover:underline">Ver todos los negocios</Link>
         </CardHeader>
-        <CardContent className="p-0">
-          {topOrgs.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-              Sin ventas todavía.
-            </p>
-          ) : (
-            <div className="divide-y divide-border">
-              {topOrgs.map((org, i) => (
-                <div
-                  key={`${org.name}-${i}`}
-                  className="flex items-center justify-between px-5 py-2.5 text-sm"
-                >
-                  <span className="flex items-center gap-2 text-foreground">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                      {i + 1}
-                    </span>
-                    {org.name}
-                  </span>
-                  <span className="font-semibold text-foreground">{formatCurrency(org.total)}</span>
-                </div>
-              ))}
+        <CardContent className="overflow-x-auto p-0">
+          <div className="min-w-[860px] divide-y divide-border text-sm">
+            <div className="grid grid-cols-[2fr_1fr_1fr_1.4fr_1fr_1.4fr] gap-3 px-5 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              <span>Negocio</span><span>Alta</span><span>Plan</span><span>Qué hizo</span><span>Última venta</span><span>Contactar</span>
             </div>
-          )}
+            {recent.map((o) => {
+              const wa = whatsappNumber(o.phone);
+              const did = whatDid(o);
+              return (
+                <div key={o.id} className="grid grid-cols-[2fr_1fr_1fr_1.4fr_1fr_1.4fr] items-center gap-3 px-5 py-2.5">
+                  <Link href={`/admin/negocios?org=${o.id}`} className="min-w-0">
+                    <span className="block truncate font-semibold text-foreground hover:underline">{o.name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{`${o.type}${o.ownerName ? ` · ${o.ownerName}` : ""}`}</span>
+                  </Link>
+                  <span className="text-muted-foreground">{ago(o.createdAt, now)}</span>
+                  <span><PlanChip org={o} /></span>
+                  <span className={did.tone}>{did.text}</span>
+                  <span className="text-muted-foreground">{o.lastSaleAt ? ago(o.lastSaleAt, now) : "—"}</span>
+                  <span className="flex flex-wrap gap-1.5">
+                    {wa && (
+                      <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted">WhatsApp</a>
+                    )}
+                    {o.ownerEmail && (
+                      <a href={`mailto:${o.ownerEmail}`} className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted">Mail</a>
+                    )}
+                    <Link href={`/admin/negocios?org=${o.id}`} className="rounded-lg bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">Ver ficha</Link>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Últimos negocios registrados</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {recentOrgs.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                Sin negocios todavía.
-              </p>
-            ) : (
-              <div className="divide-y divide-border">
-                {recentOrgs.map((org) => (
-                  <div
-                    key={org.id}
-                    className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-foreground">{org.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {businessTypeLabels[org.business_type] ?? org.business_type} ·{" "}
-                        {formatDateTime(org.created_at)}
-                      </p>
-                    </div>
-                    <Badge tone={org.hasSold ? "success" : "default"}>
-                      {org.hasSold ? "Ya vendió" : "Pendiente"}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base">Planes</CardTitle>
-            </div>
-            <Link href="/admin/export/clientes">
-              <Button variant="outline" size="sm">
-                <Download className="h-3.5 w-3.5" />
-                Descargar clientes (CSV)
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {planOrder.map((plan) => (
-                <Badge key={plan} tone={plan === "gratis" ? "default" : "accent"}>
-                  {planLabels[plan]}: {planCounts.get(plan) ?? 0}
-                </Badge>
-              ))}
-            </div>
-            <div className="-mx-5 -mb-5 border-t border-border">
-              <OrgPlanManager orgs={orgsForPlanManager} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                <MessageSquareText className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-xs text-muted-foreground">Sugerencias y problemas</p>
-                <p className="text-lg font-bold text-foreground">
-                  {newFeedbackCount ?? 0}{" "}
-                  <span className="text-sm font-normal text-muted-foreground">sin leer</span>
-                </p>
-              </div>
-            </div>
-            <Link href="/admin/mensajes">
-              <Button variant="outline" size="sm">
-                Ver mensajes
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                <AlertTriangle className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-xs text-muted-foreground">Errores de la app</p>
-                <p className="text-lg font-bold text-foreground">
-                  {openErrorsCount ?? 0} <span className="text-sm font-normal text-muted-foreground">abiertos</span>
-                </p>
-              </div>
-            </div>
-            <Link href="/admin/errores">
-              <Button variant="outline" size="sm">
-                Ver errores
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
-            <div>
-              <p className="text-xs text-muted-foreground">Precios de supermercados</p>
-              <p className="text-sm text-foreground">Probar la recolección contra los súper</p>
-            </div>
-            <Link href="/admin/precios">
-              <Button variant="outline" size="sm">
-                Abrir
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                <MessageSquareQuote className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-xs text-muted-foreground">Reseñas para la landing</p>
-                <p className="text-lg font-bold text-foreground">
-                  {publishedTestimonialsCount ?? 0}{" "}
-                  <span className="text-sm font-normal text-muted-foreground">
-                    publicadas de {testimonialsCount ?? 0}
-                  </span>
-                </p>
-              </div>
-            </div>
-            <Link href="/admin/resenas">
-              <Button variant="outline" size="sm">
-                Gestionar reseñas
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Contador de uso real (landing)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LandingStatsManager
-              initial={{
-                kioscosOffset: landingStatsRow?.kioscos_offset ?? 0,
-                ventasOffset: landingStatsRow?.ventas_offset ?? 0,
-                montoOffset: Number(landingStatsRow?.monto_offset ?? 0),
-              }}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Análisis de mercado (Plan Max)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MarketInsightsManager items={marketInsightsRaw ?? []} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Actividad reciente</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {recentSales.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                Sin ventas todavía.
-              </p>
-            ) : (
-              <div className="divide-y divide-border">
-                {recentSales.map((s) => (
-                  <div
-                    key={s.id}
-                    className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-foreground">{s.orgName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {paymentLabels[s.payment_method] ?? s.payment_method} ·{" "}
-                        {formatDateTime(s.created_at)}
-                      </p>
-                    </div>
-                    <span className="shrink-0 font-semibold text-foreground">
-                      {formatCurrency(s.total)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <p className="text-xs text-muted-foreground">
+        {`Segmentos disponibles en Negocios: ${SEGMENTS.map((s) => s.label).join(", ")}. Las visitas a la web se miran en Google Analytics.`}
+      </p>
     </div>
   );
 }

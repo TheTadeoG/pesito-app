@@ -706,6 +706,25 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["billing_events"]["Insert"]>;
         Relationships: [];
       };
+      /** Notas internas del panel de admin por negocio (0091): sólo la service role. */
+      admin_org_notes: {
+        Row: {
+          id: string;
+          org_id: string;
+          author_id: string | null;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          author_id?: string | null;
+          body: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["admin_org_notes"]["Insert"]>;
+        Relationships: [];
+      };
       login_events: {
         Row: {
           id: string;
@@ -1191,6 +1210,8 @@ export interface Database {
           has_customer: boolean;
           has_supplier: boolean;
           member_count: number;
+          /** Desde la migración 0091. */
+          last_sale_at?: string | null;
         };
         Relationships: [];
       };
