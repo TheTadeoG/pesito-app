@@ -297,6 +297,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         values: { gratis: false, basico: "Pronto", pro: "Pronto", max: "Pronto" },
       },
       { label: "Comprobante interno X (no fiscal) con numeración propia, para las ventas sin factura", values: everyPlan },
+      { label: "Impresión directa del ticket en impresora térmica de 58 u 80 mm, sin abrir el diálogo (Chrome o Edge; en prueba)", values: everyPlan },
       { label: "Historial de precios de cada producto", values: everyPlan },
       { label: "Cuenta corriente con proveedores (vencimientos y calendario)", values: fromBasico },
       { label: "Aumentos masivos de precios y costos, con deshacer", values: fromPro },

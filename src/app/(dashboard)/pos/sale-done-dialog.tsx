@@ -9,6 +9,8 @@ import { INTERNAL_VOUCHER_LEGEND, internalTicketTitle } from "@/lib/internal-vou
 import { VoucherDialog, type VoucherFormat } from "@/components/dashboard/voucher-view";
 import { issueSaleInvoice, type InvoicingConfig } from "@/lib/actions/invoicing";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { printReceiptDirect } from "@/lib/receipt-escpos";
+import { loadPrinterSettings } from "@/lib/thermal-printer";
 
 export interface SaleReceipt {
   /** Para facturar la venta (sólo ventas recién cobradas en el POS). */
@@ -145,6 +147,20 @@ export function SaleDoneDialog({
     void emit(saleId);
   }, [isAuto, saleId, emit]);
 
+  // Imprime el ticket: directo en la térmica si hay una conectada; si no, o si falla, con el diálogo del navegador.
+  const printTicket = useCallback(async () => {
+    if (receipt && (await printReceiptDirect(receipt))) return;
+    window.print();
+  }, [receipt]);
+
+  // «Imprimir al cobrar»: sólo en una venta nueva y sólo si hay una impresora conectada (si no, no se abre nada solo).
+  const autoPrinted = useRef<string | null>(null);
+  useEffect(() => {
+    if (!receipt?.saleId || receipt.copy || autoPrinted.current === receipt.saleId) return;
+    autoPrinted.current = receipt.saleId;
+    if (loadPrinterSettings().auto) void printReceiptDirect(receipt);
+  }, [receipt]);
+
   // Enter o Escape cierran y siguen vendiendo. Cualquier otra tecla (el
   // lector de códigos "tipea") también cierra: el POS manda esa tecla al
   // buscador, así que escanear el próximo producto no se pierde.
@@ -155,7 +171,7 @@ export function SaleDoneDialog({
       if (!e.altKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
         e.stopPropagation();
-        if (!e.repeat) window.print();
+        if (!e.repeat) void printTicket();
         return;
       }
       // F: factura en ticket 80 mm (o facturar / reintentar si todavía no está). A: factura en hoja A4.
@@ -188,7 +204,7 @@ export function SaleDoneDialog({
     }
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [receipt, viewVoucher, onClose, canInvoice, saleId, invoice, emit]);
+  }, [receipt, viewVoucher, onClose, canInvoice, saleId, invoice, emit, printTicket]);
 
   useEffect(() => {
     if (receipt) newSaleRef.current?.focus();
@@ -276,7 +292,7 @@ export function SaleDoneDialog({
           )}
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => window.print()}>
+            <Button type="button" variant="outline" onClick={() => void printTicket()}>
               <Printer className="h-4 w-4" />
               Imprimir ticket (no fiscal)
               <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline">

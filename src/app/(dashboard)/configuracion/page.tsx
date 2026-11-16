@@ -8,6 +8,7 @@ import { formatDateTime } from "@/lib/utils";
 import { roleLabels } from "@/lib/roles";
 import { OrgNameForm } from "@/app/(dashboard)/configuracion/org-name-form";
 import { AccountIds } from "@/app/(dashboard)/configuracion/account-ids";
+import { PrinterSettingsCard } from "@/app/(dashboard)/configuracion/printer-settings";
 import { TicketOptions } from "@/app/(dashboard)/configuracion/ticket-options";
 import { CashCloseTimeForm } from "@/app/(dashboard)/configuracion/cash-close-time-form";
 import { normalizeCloseTime } from "@/lib/cash-reminder";
@@ -209,6 +210,18 @@ export default async function ConfiguracionPage({
                   initialShowOrgName={organization.ticket_show_org_name !== false}
                   initialShowNumber={organization.ticket_show_number !== false}
                 />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Impresora térmica (impresión directa)</CardTitle>
+                <CardDescription>
+                  Conectá la impresora de esta computadora una sola vez y los tickets salen directo, sin abrir el diálogo de impresión.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PrinterSettingsCard />
               </CardContent>
             </Card>
           </>
