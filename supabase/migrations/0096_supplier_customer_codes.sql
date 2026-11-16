@@ -48,7 +48,8 @@ select org_id, 'customer', max(code) from public.customers group by org_id
 on conflict (org_id, kind) do update set last_value = greatest(public.org_counters.last_value, excluded.last_value);
 
 -- Al crear: siempre lo asigna el sistema (aunque la app mande otro valor). Al editar: no cambia.
-create or replace function public.set_supplier_code() returns trigger language plpgsql as $$
+-- security definer: el contador sólo lo puede llamar la base, no quien crea el registro.
+create or replace function public.set_supplier_code() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'INSERT' then
     new.code := public.next_org_code(new.org_id, 'supplier');
@@ -58,7 +59,7 @@ begin
   return new;
 end;
 $$;
-create or replace function public.set_customer_code() returns trigger language plpgsql as $$
+create or replace function public.set_customer_code() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'INSERT' then
     new.code := public.next_org_code(new.org_id, 'customer');
@@ -69,6 +70,8 @@ begin
 end;
 $$;
 drop trigger if exists suppliers_set_code on public.suppliers;
+revoke all on function public.set_supplier_code() from public, anon, authenticated;
+revoke all on function public.set_customer_code() from public, anon, authenticated;
 create trigger suppliers_set_code before insert or update on public.suppliers for each row execute function public.set_supplier_code();
 drop trigger if exists customers_set_code on public.customers;
 create trigger customers_set_code before insert or update on public.customers for each row execute function public.set_customer_code();
