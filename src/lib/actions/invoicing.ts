@@ -186,7 +186,8 @@ export async function issueSaleInvoice(saleId: string): Promise<InvoiceResult> {
             ...(customer.address ? { address: [customer.address, customer.city, customer.postal_code, customer.province].filter(Boolean).join(", ") } : {}),
           }
         : undefined,
-      saleConditions: saleConditionLabel[sale.payment_method] ?? "Contado",
+      // Un medio de pago propio figura con su nombre (ej.: "Mercado Pago"); si no hay nada, Contado.
+      saleConditions: saleConditionLabel[sale.payment_method] ?? (sale.payment_method?.trim().slice(0, 60) || "Contado"),
       observations: "observations" in outcome ? (outcome as { observations?: { code?: string | number }[] }).observations : undefined,
     });
     const fields = {
