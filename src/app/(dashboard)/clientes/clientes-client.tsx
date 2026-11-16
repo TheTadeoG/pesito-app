@@ -9,7 +9,6 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
-  Download,
   FileSpreadsheet,
   ListFilter,
   MessageCircle,
