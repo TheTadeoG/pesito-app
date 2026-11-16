@@ -3,12 +3,13 @@
 import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { Check, Download, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { RowActions } from "@/components/dashboard/row-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Brand } from "@/lib/types";
+import { downloadBrandsExcel } from "@/app/(dashboard)/productos/brand-excel";
 import { saveBrand, deleteBrand } from "@/app/(dashboard)/productos/actions";
 
 export function MarcasTab({
@@ -87,6 +88,11 @@ export function MarcasTab({
             className="pl-10"
           />
         </div>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+        <Button type="button" variant="outline" onClick={() => void downloadBrandsExcel(brands, productCountByBrand)} disabled={brands.length === 0}>
+          <Download className="h-4 w-4" />
+          Descargar Excel
+        </Button>
         <form onSubmit={handleCreate} className="flex w-full gap-2 sm:w-auto">
           <Input
             value={newName}
@@ -99,6 +105,7 @@ export function MarcasTab({
             {creating ? "Creando…" : "Nueva marca"}
           </Button>
         </form>
+        </div>
       </div>
 
       {error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}

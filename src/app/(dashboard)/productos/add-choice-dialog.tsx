@@ -1,6 +1,6 @@
 "use client";
 
-import { FileSpreadsheet, PencilLine } from "lucide-react";
+import { Download, FileSpreadsheet, PencilLine } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 
 // Pop up del menú Acciones para proveedores y marcas: se elige cómo cargarlos (a mano o desde Excel).
@@ -12,6 +12,7 @@ export function AddChoiceDialog({
   plural,
   onManual,
   onExcel,
+  onDownload,
   manage,
 }: {
   open: boolean;
@@ -22,16 +23,19 @@ export function AddChoiceDialog({
   plural: string;
   onManual: () => void;
   onExcel: () => void;
+  /** Bajar lo que ya hay a Excel (opcional). */
+  onDownload?: { text: string; onClick: () => void };
   /** Ver y editar los que ya hay. */
   manage?: { label: string; onClick: () => void };
 }) {
   const options = [
     { icon: PencilLine, title: "A mano", text: `Cargás un ${singular} escribiendo sus datos.`, onClick: onManual },
     { icon: FileSpreadsheet, title: "Desde Excel", text: `Subís una planilla y cargás varios ${plural} juntos.`, onClick: onExcel },
+    ...(onDownload ? [{ icon: Download, title: "Descargar Excel", text: onDownload.text, onClick: onDownload.onClick }] : []),
   ];
   return (
     <Dialog open={open} onClose={onClose} title={title} description={`¿Cómo querés cargar ${plural}?`}>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={onDownload ? "grid gap-3 sm:grid-cols-3" : "grid gap-3 sm:grid-cols-2"}>
         {options.map((o) => (
           <button
             key={o.title}

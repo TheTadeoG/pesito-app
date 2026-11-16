@@ -57,6 +57,7 @@ import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
 import { AddChoiceDialog } from "@/app/(dashboard)/productos/add-choice-dialog";
 import { BrandFormDialog } from "@/app/(dashboard)/productos/brand-form-dialog";
+import { downloadBrandsExcel } from "@/app/(dashboard)/productos/brand-excel";
 import { BrandImportDialog } from "@/app/(dashboard)/productos/brand-import-dialog";
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierImportDialog } from "@/app/(dashboard)/proveedores/supplier-import-dialog";
@@ -1480,7 +1481,7 @@ export function ProductosClient({
         />
       </Dialog>
       <SupplierForm
-        key={supplierFormKey}
+        key={`supplier-form-${supplierFormKey}`}
         open={supplierFormOpen}
         onClose={() => {
           setSupplierFormOpen(false);
@@ -1505,10 +1506,18 @@ export function ProductosClient({
         plural="marcas"
         onManual={() => setBrandFormOpen(true)}
         onExcel={() => setBrandImportOpen(true)}
+        onDownload={{
+          text: "Bajás tus marcas (con cuántos productos tiene cada una).",
+          onClick: () => {
+            const counts: Record<string, number> = {};
+            for (const p of products) if (p.active && p.brand) counts[p.brand] = (counts[p.brand] ?? 0) + 1;
+            void downloadBrandsExcel(brands, counts);
+          },
+        }}
         manage={{ label: "Ver y editar mis marcas", onClick: () => router.push("/productos?tab=marcas") }}
       />
       <BrandFormDialog
-        key={brandFormKey}
+        key={`brand-form-${brandFormKey}`}
         open={brandFormOpen}
         onClose={() => {
           setBrandFormOpen(false);

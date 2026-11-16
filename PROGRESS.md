@@ -236,6 +236,11 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Productos → Movimientos: agrupados por día (con lo que entró y salió ese día), ícono y color por tipo, hora, SKU, detalle limpio (sin ids internos) y quién lo hizo (sólo se muestra a quienes administran). Resumen del filtro (movimientos, productos distintos, unidades que entraron y salieron), filtro por persona, botón Excel y detalle al tocar un movimiento (con stock actual y link a todos los movimientos del producto, que ahora se piden por producto).
 - Sigue el tope de 500 movimientos recientes por sucursal (con aviso). Pendiente: stock "antes → después" de cada movimiento (no se guarda).
 
+## Arreglos (16/11/2026)
+- Productos → Acciones → Proveedores/Marcas "A mano": el Cancelar y la X no cerraban porque el formulario de proveedor y el de marca tenían el mismo `key` (React dejaba la ventana colgada). Ahora tienen claves distintas (verificado en un navegador). Regla: dos elementos hermanos nunca comparten `key`.
+- Marcas: "Descargar Excel" (Nombre y cantidad de productos; se puede volver a subir) en la pestaña Marcas y en el pop up de Acciones → Marcas.
+- Panel de admin: "Pagan" ahora cuenta también los pagos únicos (la base los guarda como "cancelado" sin débito, pero el plan sigue pago hasta `current_period_end`): `isPaying` en `lib/admin-shared.ts`. Un débito cancelado con el período vencido no cuenta.
+
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.

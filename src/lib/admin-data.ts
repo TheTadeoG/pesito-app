@@ -85,6 +85,7 @@ export async function loadAdminData(): Promise<AdminData> {
       trialEndsAt: sub?.pro_trial_ends_at ?? null,
       paidViaMp: plan !== "gratis" && Boolean(sub?.mp_preapproval_id || sub?.payment_status),
       paymentStatus: sub?.payment_status ?? null,
+      periodEnd: (sub as { current_period_end?: string | null } | undefined)?.current_period_end ?? null,
       cycle: sub?.billing_cycle ?? null,
       invoicePack: Number((sub as { invoice_pack?: number } | undefined)?.invoice_pack ?? 0),
       productCount: Number(act?.product_count ?? 0),

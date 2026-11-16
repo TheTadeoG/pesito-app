@@ -13,6 +13,8 @@ export interface AdminOrg {
   /** Paga o pagó por Mercado Pago (un plan asignado a mano no cuenta). */
   paidViaMp: boolean;
   paymentStatus: string | null;
+  /** Hasta cuándo está pago el plan (débito automático o pago único). */
+  periodEnd: string | null;
   cycle: string | null;
   invoicePack: number;
   productCount: number;
@@ -43,6 +45,17 @@ export type SegmentId =
   | "gratis-mucho-uso"
   | "pagan-30";
 
+/**
+ * Está pagando ahora: plan pago por Mercado Pago y vigente. Un pago único (tarjeta, dinero en cuenta o efectivo) queda
+ * guardado como "cancelado" porque no hay débito que renovar, pero el plan sigue pago hasta que vence su período: ese
+ * también paga. Un débito cancelado cuyo período ya terminó no.
+ */
+export function isPaying(o: AdminOrg, now: number): boolean {
+  if (!o.paidViaMp || o.plan === "gratis") return false;
+  if (o.paymentStatus !== "cancelled") return true;
+  return o.periodEnd !== null && new Date(o.periodEnd).getTime() > now;
+}
+
 export function inSegment(o: AdminOrg, seg: SegmentId, now: number): boolean {
   const age = now - new Date(o.createdAt).getTime();
   const trialLeft = o.trialEndsAt ? new Date(o.trialEndsAt).getTime() - now : null;
@@ -58,7 +71,7 @@ export function inSegment(o: AdminOrg, seg: SegmentId, now: number): boolean {
     case "prueba-por-vencer":
       return o.plan === "gratis" && trialLeft !== null && trialLeft > 0 && trialLeft <= 3 * DAY_MS;
     case "pagan":
-      return o.paidViaMp && o.plan !== "gratis" && o.paymentStatus !== "cancelled";
+      return isPaying(o, now);
     case "dejaron":
       return o.saleCount > 0 && o.lastSaleAt !== null && now - new Date(o.lastSaleAt).getTime() > 14 * DAY_MS;
     case "cobro-fallido":
@@ -72,7 +85,7 @@ export function inSegment(o: AdminOrg, seg: SegmentId, now: number): boolean {
     case "gratis-mucho-uso":
       return o.plan === "gratis" && !(trialLeft !== null && trialLeft > 0) && o.saleCount >= 100 && o.lastSaleAt !== null && now - new Date(o.lastSaleAt).getTime() <= 7 * DAY_MS;
     case "pagan-30":
-      return o.paidViaMp && o.plan !== "gratis" && o.paymentStatus !== "cancelled" && age > 30 * DAY_MS;
+      return isPaying(o, now) && age > 30 * DAY_MS;
   }
 }
 
