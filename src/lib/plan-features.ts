@@ -118,11 +118,11 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Aviso cuando sube el costo y no actualizaste el precio",
       "Reportes avanzados",
       "Mirá el negocio en vivo, desde casa, en tu celular",
+      "Control por usuario: su stock, caja y diferencias",
       `Hasta ${products("pro")}, 6 usuarios y 6 cajas`,
       "Soporte prioritario",
     ],
     soon: [
-      "Control por usuario: su stock, caja y diferencias",
       "Controlá inventarios físicos",
       "Soporte para balanzas",
       "Carteles de precios para imprimir",
@@ -222,7 +222,7 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
       },
       {
         label: "Balanzas conectadas",
-        values: { gratis: false, basico: false, pro: "Pronto", max: "Pronto" },
+        values: fromPro,
       },
       {
         label: "Carteles de precios para imprimir, siempre actualizados",

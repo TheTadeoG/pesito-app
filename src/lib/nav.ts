@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   LifeBuoy,
   Radio,
+  ScanEye,
   Settings,
   ShoppingBag,
   ShoppingCart,
@@ -71,6 +72,7 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/reportes", label: "Reportes", icon: BarChart3, alsoActiveOn: ["/ventas", "/caja"] },
       { href: "/en-vivo", label: "En vivo", icon: Radio, adminOnly: true, feature: "liveView" },
+      { href: "/actividad", label: "Por usuario", icon: ScanEye, adminOnly: true, feature: "userActivity" },
     ],
   },
   {
@@ -123,6 +125,7 @@ export const pageTitles: Record<string, { title: string; description: string }> 
   },
   "/usuarios": { title: "Mi equipo", description: "Invitá a tu equipo y elegí qué puede hacer cada uno." },
   "/en-vivo": { title: "En vivo", description: "Cómo viene el día, vendedor por vendedor." },
+  "/actividad": { title: "Control por usuario", description: "Qué hizo cada persona de tu equipo: stock, caja y anulaciones." },
   "/reportes": { title: "Reportes", description: "El estado de tu negocio de un vistazo." },
   "/recomendaciones": { title: "Qué comprar", description: "Qué pedir y qué precios revisar." },
   "/baja-rotacion": { title: "Baja rotación", description: "Productos que no se están moviendo." },
