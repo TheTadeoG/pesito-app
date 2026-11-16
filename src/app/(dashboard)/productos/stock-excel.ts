@@ -51,6 +51,12 @@ export const EXCEL_COLUMNS: ExcelColumn[] = [
   { id: "cost", label: "Costo", width: 14, cell: (r) => num(r.cost, "#,##0.00") },
   { id: "value", label: "Valor al costo", width: 16, cell: (r) => num(r.value, "#,##0.00") },
   { id: "price", label: "Precio de venta", width: 16, cell: (r) => num(r.price, "#,##0.00") },
+  {
+    id: "markup",
+    label: "Ganancia sobre el costo (%)",
+    width: 26,
+    cell: (r) => num(r.cost !== null && r.cost > 0 ? Math.round((r.price / r.cost - 1) * 1000) / 10 : null, "#,##0.0"),
+  },
 ];
 
 /**

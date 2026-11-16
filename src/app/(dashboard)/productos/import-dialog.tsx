@@ -213,7 +213,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
           <p className="text-xs text-muted-foreground">
             {`Obligatorias: ${TEMPLATE_COLUMNS.filter((c) => c.required)
               .map((c) => c.title)
-              .join(" y ")}. Las demás son opcionales. Si un producto ya existe (mismo código de barras o SKU), no se crea de nuevo: por defecto se deja como está y no se modifica. Si querés, antes de cargar podés elegir qué datos actualizar con los de la planilla (precio, costo, marca, nombre, etc.). Su stock nunca se toca.`}
+              .join(" y ")} y el precio: el Precio de venta, o el Costo con la Ganancia sobre el costo (%) y el precio se calcula solo (si cargás los dos, vale el precio). Las demás son opcionales. Si un producto ya existe (mismo código de barras o SKU), no se crea de nuevo: por defecto se deja como está y no se modifica. Si querés, antes de cargar podés elegir qué datos actualizar con los de la planilla (precio, costo, marca, nombre, etc.). Su stock nunca se toca.`}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => void downloadTemplate()}>

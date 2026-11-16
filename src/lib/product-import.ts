@@ -53,7 +53,7 @@ export interface ParsedImport {
   missingColumns: string[];
 }
 
-type Field = "name" | "barcode" | "sku" | "brand" | "cost" | "price" | "stock" | "minStock" | "unit";
+type Field = "name" | "barcode" | "sku" | "brand" | "cost" | "price" | "markup" | "stock" | "minStock" | "unit";
 
 /** Columnas de la planilla modelo, en este orden. */
 export const TEMPLATE_COLUMNS: { field: Field; title: string; required?: boolean; example: string | number }[] = [
@@ -62,7 +62,9 @@ export const TEMPLATE_COLUMNS: { field: Field; title: string; required?: boolean
   { field: "sku", title: "SKU", example: "YER-001" },
   { field: "brand", title: "Marca", example: "Taragüí" },
   { field: "cost", title: "Costo", example: 2800 },
-  { field: "price", title: "Precio de venta", required: true, example: 4200 },
+  { field: "price", title: "Precio de venta", example: 4200 },
+  // Alternativa al precio: con costo y este %, el precio se calcula solo (si ya hay precio, se usa el precio).
+  { field: "markup", title: "Ganancia sobre el costo (%)", example: 50 },
   { field: "stock", title: "Stock", example: 24 },
   { field: "minStock", title: "Stock mínimo", example: 6 },
   { field: "unit", title: "Unidad", example: "u" },
@@ -75,6 +77,7 @@ const ALIASES: Record<Field, string[]> = {
   brand: ["marca", "brand"],
   cost: ["costo", "precio de costo", "precio costo", "cost", "costo unitario"],
   price: ["precio", "precio de venta", "precio venta", "pvp", "precio publico", "price", "precio final"],
+  markup: ["ganancia sobre el costo", "ganancia sobre costo", "ganancia", "margen", "markup", "porcentaje de ganancia", "recargo"],
   stock: ["stock", "cantidad", "existencia", "existencias", "stock actual", "stock inicial"],
   minStock: ["stock minimo", "minimo", "stock min", "min stock", "minimo de stock"],
   unit: ["unidad", "unidad de medida", "medida", "um", "unit"],
@@ -178,6 +181,8 @@ export function parseProductSheet(matrix: unknown[][]): ParsedImport {
   for (const { field, title, required } of TEMPLATE_COLUMNS) {
     if (required && !columns.has(field)) result.missingColumns.push(title);
   }
+  // El precio de venta puede venir directo o calcularse con el costo y el % de ganancia.
+  if (!columns.has("price") && !columns.has("markup")) result.missingColumns.push("Precio de venta");
   if (result.missingColumns.length > 0) return result;
 
   const get = (row: unknown[], field: Field): unknown => {
@@ -196,21 +201,35 @@ export function parseProductSheet(matrix: unknown[][]): ParsedImport {
       continue;
     }
 
-    const priceRaw = get(row, "price");
-    const price = cellText(priceRaw) === "" ? null : parseNumber(priceRaw);
-    if (price === null) {
-      result.problems.push({ line, message: `“${name}”: el precio de venta falta o no es un número.` });
-      continue;
-    }
-    if (price < 0) {
-      result.problems.push({ line, message: `“${name}”: el precio no puede ser negativo.` });
-      continue;
-    }
-
     const costRaw = get(row, "cost");
     const cost = cellText(costRaw) === "" ? null : parseNumber(costRaw);
     if (cellText(costRaw) !== "" && (cost === null || cost < 0)) {
       result.problems.push({ line, message: `“${name}”: el costo no es un número válido.` });
+      continue;
+    }
+
+    // Precio: el de la planilla; si falta, costo + % de ganancia sobre el costo.
+    const priceRaw = get(row, "price");
+    const markupRaw = get(row, "markup");
+    let price = cellText(priceRaw) === "" ? null : parseNumber(priceRaw);
+    if (price === null && cellText(priceRaw) === "" && cellText(markupRaw) !== "") {
+      const markup = parseNumber(markupRaw);
+      if (markup === null || markup <= -100) {
+        result.problems.push({ line, message: `“${name}”: la ganancia sobre el costo no es un número válido.` });
+        continue;
+      }
+      if (cost === null || cost <= 0) {
+        result.problems.push({ line, message: `“${name}”: para calcular el precio con el % de ganancia hace falta el costo.` });
+        continue;
+      }
+      price = Math.round(cost * (1 + markup / 100) * 100) / 100;
+    }
+    if (price === null) {
+      result.problems.push({ line, message: `“${name}”: falta el precio de venta (o el costo y el % de ganancia).` });
+      continue;
+    }
+    if (price < 0) {
+      result.problems.push({ line, message: `“${name}”: el precio no puede ser negativo.` });
       continue;
     }
 
