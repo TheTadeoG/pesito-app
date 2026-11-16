@@ -211,7 +211,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - POS: al cobrar se abre "¡Venta cobrada!" con el total, el vuelto (si pagó en efectivo con más) e "Imprimir ticket". Enter o Escape la cierran; escanear el próximo producto también la cierra y el código entra al buscador. El ticket (`.ticket-print` en globals.css) ocupa el ancho del papel (58/80 mm) y dice "Comprobante no válido como factura".
 
 ## Hecho: Control por usuario — Plan Pro (16/11/2026)
-- Pantalla `/actividad` ("Por usuario" en Análisis, sólo dueño/admin), `canUse(sub, "userActivity")` con `ProLockedCard`. Períodos Hoy / 7 / 30 días. Tabla por persona (ventas, anulaciones, ajustes de stock, retiros, ingresos, cierres de caja con faltante/sobrante) y lista de movimientos paginada con filtros por persona y tipo. Sin migración: usa `sales`, `stock_movements` (sin ventas), `cash_movements` y `cash_registers`.
+- Pantalla `/actividad` (solapa "Por usuario" dentro de Reportes, sólo dueño/admin; filtros: Hoy/7/30 días o desde-hasta hasta 92 días, persona, tipo y búsqueda de texto), `canUse(sub, "userActivity")` con `ProLockedCard`. Períodos Hoy / 7 / 30 días. Tabla por persona (ventas, anulaciones, ajustes de stock, retiros, ingresos, cierres de caja con faltante/sobrante) y lista de movimientos paginada con filtros por persona y tipo. Sin migración: usa `sales`, `stock_movements` (sin ventas), `cash_movements` y `cash_registers`.
 - Textos alineados: card del Pro y `planComparison` (ya sin "Pronto"), `faq-data.ts`. Sin cambios en blog ni llms.txt (no lo mencionaban).
 - Pendiente opcional: filtrar por sucursal y exportar a Excel.
 

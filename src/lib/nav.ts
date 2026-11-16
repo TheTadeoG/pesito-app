@@ -7,7 +7,6 @@ import {
   LayoutGrid,
   LifeBuoy,
   Radio,
-  ScanEye,
   Settings,
   ShoppingBag,
   ShoppingCart,
@@ -70,9 +69,8 @@ export const navSections: NavSection[] = [
   {
     title: "Análisis",
     items: [
-      { href: "/reportes", label: "Reportes", icon: BarChart3, alsoActiveOn: ["/ventas", "/caja"] },
+      { href: "/reportes", label: "Reportes", icon: BarChart3, alsoActiveOn: ["/ventas", "/caja", "/actividad"] },
       { href: "/en-vivo", label: "En vivo", icon: Radio, adminOnly: true, feature: "liveView" },
-      { href: "/actividad", label: "Por usuario", icon: ScanEye, adminOnly: true, feature: "userActivity" },
     ],
   },
   {

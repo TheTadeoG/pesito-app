@@ -8,6 +8,7 @@ import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { getSubscription } from "@/lib/subscription";
 import { canUse, featureMinPlan } from "@/lib/plan-access";
 import { cn } from "@/lib/utils";
+import { ReportesTabs } from "@/components/dashboard/reportes-tabs";
 import { ActividadClient, type ActivityEvent, type UserSummary } from "@/app/(dashboard)/actividad/actividad-client";
 
 const PERIODS = [
@@ -18,16 +19,19 @@ const PERIODS = [
 
 const num = (v: unknown) => Number(v ?? 0) || 0;
 
-export default async function ActividadPage({ searchParams }: { searchParams: Promise<{ dias?: string }> }) {
+export default async function ActividadPage({ searchParams }: { searchParams: Promise<{ dias?: string; desde?: string; hasta?: string }> }) {
   const { organization, membership } = await requireOrgContext();
 
   if (membership.role !== "owner" && membership.role !== "admin") {
     return (
-      <Card>
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          Sólo el dueño o un administrador pueden ver el control por usuario.
-        </CardContent>
-      </Card>
+      <div className="space-y-5">
+        <ReportesTabs active="actividad" />
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            Sólo el dueño o un administrador pueden ver el control por usuario.
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -35,22 +39,36 @@ export default async function ActividadPage({ searchParams }: { searchParams: Pr
   const subscription = await getSubscription(supabase, organization.id);
   if (!canUse(subscription, "userActivity")) {
     return (
-      <ProLockedCard
-        title="Control por usuario"
-        plan={featureMinPlan.userActivity}
-        preview="list"
-        description="Mirá qué hizo cada persona de tu equipo: ventas anuladas, ajustes de stock, retiros e ingresos de caja y diferencias al cerrar."
-      />
+      <div className="space-y-5">
+        <ReportesTabs active="actividad" />
+        <ProLockedCard
+          title="Control por usuario"
+          plan={featureMinPlan.userActivity}
+          preview="list"
+          description="Mirá qué hizo cada persona de tu equipo: ventas anuladas, ajustes de stock, retiros e ingresos de caja y diferencias al cerrar."
+        />
+      </div>
     );
   }
 
   const params = await searchParams;
+  // Fechas a medida (desde/hasta, hasta 92 días) o un atajo (Hoy / 7 / 30 días). Todo en hora de Argentina (UTC-3).
+  const DAY = 86_400_000;
+  const AR = 3 * 3600_000;
+  const dateParam = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) ? Date.parse(v) + AR : null);
+  const fromCustom = dateParam(params.desde);
+  const toCustom = dateParam(params.hasta);
+  const custom = fromCustom !== null && toCustom !== null && toCustom >= fromCustom && toCustom - fromCustom <= 92 * DAY;
   const days = PERIODS.some((p) => String(p.days) === params.dias) ? Number(params.dias) : 7;
-  // "Hoy" = desde las 0 h de Argentina (UTC-3, sin horario de verano); el resto, días corridos hacia atrás.
   // eslint-disable-next-line react-hooks/purity -- Server Component: se calcula fresco en cada request.
   const nowMs = Date.now();
-  const arStart = new Date(Math.floor((nowMs - 3 * 3600_000) / 86_400_000) * 86_400_000 + 3 * 3600_000);
-  const since = new Date(arStart.getTime() - (days - 1) * 86_400_000).toISOString();
+  const arStart = Math.floor((nowMs - AR) / DAY) * DAY + AR;
+  const sinceMs = custom ? (fromCustom as number) : arStart - (days - 1) * DAY;
+  const untilMs = custom ? (toCustom as number) + DAY : arStart + DAY;
+  const since = new Date(sinceMs).toISOString();
+  const until = new Date(untilMs).toISOString();
+  const fromInput = custom ? params.desde : "";
+  const toInput = custom ? params.hasta : "";
   const orgId = organization.id;
 
   const [labels, sales, stock, cashMoves, registers] = await Promise.all([
@@ -60,7 +78,7 @@ export default async function ActividadPage({ searchParams }: { searchParams: Pr
         .from("sales")
         .select("id, user_id, total, status, created_at, voided_at, voided_by, void_reason, internal_number")
         .eq("org_id", orgId)
-        .or(`created_at.gte.${since},voided_at.gte.${since}`)
+        .or(`and(created_at.gte.${since},created_at.lt.${until}),and(voided_at.gte.${since},voided_at.lt.${until})`)
         .order("id")
         .range(from, to)
     ),
@@ -71,6 +89,7 @@ export default async function ActividadPage({ searchParams }: { searchParams: Pr
         .eq("org_id", orgId)
         .neq("type", "venta")
         .gte("created_at", since)
+        .lt("created_at", until)
         .order("id")
         .range(from, to)
     ),
@@ -80,6 +99,7 @@ export default async function ActividadPage({ searchParams }: { searchParams: Pr
         .select("id, type, amount, reason, user_id, created_at")
         .eq("org_id", orgId)
         .gte("created_at", since)
+        .lt("created_at", until)
         .order("id")
         .range(from, to)
     ),
@@ -88,7 +108,7 @@ export default async function ActividadPage({ searchParams }: { searchParams: Pr
         .from("cash_registers")
         .select("id, user_id, opening_amount, closing_amount, expected_amount, status, opened_at, closed_at")
         .eq("org_id", orgId)
-        .or(`opened_at.gte.${since},closed_at.gte.${since}`)
+        .or(`and(opened_at.gte.${since},opened_at.lt.${until}),and(closed_at.gte.${since},closed_at.lt.${until})`)
         .order("id")
         .range(from, to)
     ),
@@ -130,7 +150,7 @@ export default async function ActividadPage({ searchParams }: { searchParams: Pr
   for (const id of labels.keys()) row(id);
 
   const events: ActivityEvent[] = [];
-  const inRange = (iso: string | null) => iso !== null && iso >= since;
+  const inRange = (iso: string | null) => iso !== null && iso >= since && iso < until;
 
   for (const s of sales) {
     if (inRange(s.created_at) && s.status !== "anulada") {
@@ -221,6 +241,7 @@ export default async function ActividadPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-5">
+      <ReportesTabs active="actividad" />
       <div className="flex flex-wrap items-center gap-2">
         {PERIODS.map((p) => (
           <Link
@@ -229,14 +250,30 @@ export default async function ActividadPage({ searchParams }: { searchParams: Pr
             prefetch={false}
             className={cn(
               "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
-              p.days === days ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-muted"
+              !custom && p.days === days ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-muted"
             )}
           >
             {p.label}
           </Link>
         ))}
+        <form action="/actividad" className="flex flex-wrap items-center gap-2 sm:ml-2">
+          <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            Desde
+            <input type="date" name="desde" required defaultValue={fromInput} className="h-9 rounded-lg border border-border bg-card px-2 text-sm text-foreground" />
+          </label>
+          <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            Hasta
+            <input type="date" name="hasta" required defaultValue={toInput} className="h-9 rounded-lg border border-border bg-card px-2 text-sm text-foreground" />
+          </label>
+          <button type="submit" className={cn("h-9 rounded-lg border px-3 text-sm font-medium", custom ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-muted")}>
+            Aplicar
+          </button>
+        </form>
       </div>
-      <ActividadClient users={users} events={events} periodKey={String(days)} />
+      {(params.desde || params.hasta) && !custom && (
+        <p className="text-xs text-warning">Elegí las dos fechas (desde no puede ser después de hasta, y hasta 92 días): mostramos los últimos 7 días.</p>
+      )}
+      <ActividadClient users={users} events={events} periodKey={`${since}|${until}`} />
     </div>
   );
 }

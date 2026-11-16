@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
@@ -56,12 +58,21 @@ function Diff({ value }: { value: number }) {
 export function ActividadClient({ users, events, periodKey }: { users: UserSummary[]; events: ActivityEvent[]; periodKey: string }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [kind, setKind] = useState<(typeof KINDS)[number]["id"]>("todo");
+  const [search, setSearch] = useState("");
 
   const filtered = useMemo(
-    () => events.filter((e) => (userId === null || e.userId === userId) && (kind === "todo" || e.kind === kind)),
-    [events, userId, kind]
+    () => {
+      const q = search.trim().toLowerCase();
+      return events.filter(
+        (e) =>
+          (userId === null || e.userId === userId) &&
+          (kind === "todo" || e.kind === kind) &&
+          (q === "" || `${e.title} ${e.detail ?? ""}`.toLowerCase().includes(q))
+      );
+    },
+    [events, userId, kind, search]
   );
-  const pg = usePagination(filtered.length, `${periodKey}|${userId}|${kind}`, "pesito:actividad:pagesize");
+  const pg = usePagination(filtered.length, `${periodKey}|${userId}|${kind}|${search}`, "pesito:actividad:pagesize");
   const selected = users.find((u) => u.userId === userId) ?? null;
 
   return (
@@ -129,7 +140,20 @@ export function ActividadClient({ users, events, periodKey }: { users: UserSumma
       <Card>
         <CardHeader className="gap-3">
           <CardTitle className="text-base">{selected ? `Movimientos de ${selected.label}` : "Todos los movimientos"}</CardTitle>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="w-44">
+              <Select value={userId ?? ""} onChange={(e) => setUserId(e.target.value || null)} aria-label="Persona" className="h-9 px-2.5">
+                <option value="">Todas las personas</option>
+                {users.map((u) => (
+                  <option key={u.userId} value={u.userId}>
+                    {u.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="w-56">
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar: producto, motivo…" className="h-9" aria-label="Buscar" />
+            </div>
             {KINDS.map((k) => (
               <button
                 key={k.id}
