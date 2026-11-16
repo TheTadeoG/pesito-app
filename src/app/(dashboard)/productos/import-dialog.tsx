@@ -14,7 +14,9 @@ import {
   TEMPLATE_COLUMNS,
   UPDATE_FIELDS,
   parseCsv,
+  makeProductMatcher,
   parseProductSheet,
+  resolveExistingPrice,
   type ImportProblem,
   type ParsedImport,
   type UpdateField,
@@ -79,23 +81,14 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
   const [summary, setSummary] = useState<Summary | null>(null);
 
   const existingKeys = useMemo(() => {
-    const barcodes = new Map<string, (typeof existing)[number]>();
-    const skus = new Map<string, (typeof existing)[number]>();
-    for (const p of existing) {
-      if (p.barcode) barcodes.set(p.barcode.trim().toLowerCase(), p);
-      if (p.sku) skus.set(p.sku.trim().toLowerCase(), p);
-    }
-    return { barcodes, skus };
+    return makeProductMatcher(existing);
   }, [existing]);
 
   const counts = useMemo(() => {
     if (!parsed) return { fresh: 0, known: 0 };
     let known = 0;
     for (const row of parsed.rows) {
-      const isKnown =
-        (row.barcode && existingKeys.barcodes.has(row.barcode.toLowerCase())) ||
-        (row.sku && existingKeys.skus.has(row.sku.toLowerCase()));
-      if (isKnown) known++;
+      if (existingKeys.find(row)) known++;
     }
     return { fresh: parsed.rows.length - known, known };
   }, [parsed, existingKeys]);
@@ -105,12 +98,10 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
     if (!parsed || !updateExisting) return [];
     const out: PriceChange[] = [];
     for (const row of parsed.rows) {
-      const product =
-        (row.barcode && existingKeys.barcodes.get(row.barcode.trim().toLowerCase())) ||
-        (row.sku && existingKeys.skus.get(row.sku.trim().toLowerCase())) ||
-        null;
+      const product = existingKeys.find(row);
       if (!product) continue;
-      const newPrice = fields.has("price") && row.price !== product.price ? row.price : null;
+      const resolved = fields.has("price") ? resolveExistingPrice(row, product) : null;
+      const newPrice = resolved !== null && Math.abs(resolved - product.price) > 0.005 ? resolved : null;
       const newCost = fields.has("cost") && row.cost !== null && row.cost !== product.cost ? row.cost : null;
       if (newPrice === null && newCost === null) continue;
       out.push({ key: `${row.line}`, name: product.name, oldPrice: product.price, newPrice, oldCost: product.cost, newCost });
@@ -222,7 +213,7 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
           <ol className="space-y-2 text-sm text-foreground">
             <li>
               <span className="font-semibold">1.</span> Descargá la planilla modelo y completala con tus
-              productos (o usá la tuya, con esos mismos títulos de columna).
+              productos (o usá la tuya, con esos mismos títulos de columna). También sirve la planilla que bajás de Pesito con “Descargar Excel”: editala y volvela a subir para cambiar precios, costos o ganancias de muchos productos juntos.
             </li>
             <li>
               <span className="font-semibold">2.</span> Subila acá. Antes de guardar te mostramos cómo

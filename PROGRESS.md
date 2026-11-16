@@ -213,6 +213,12 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 ## Hecho: % de ganancia sobre el costo en las planillas de productos (16/11/2026)
 - Planilla modelo de importar: columna opcional "Ganancia sobre el costo (%)" (alias: ganancia, margen, markup, recargo). Si el precio de venta está vacío y hay costo, el precio se calcula (costo × (1 + %/100), 2 decimales); si hay precio, vale el precio. El precio de venta deja de ser columna obligatoria si está la del %. Exportar a Excel (Stock): columna "Ganancia sobre el costo (%)". Al importar con "Actualizar los que ya existen": vista previa paginada "antes → después" de precio y costo (con % de cambio y filtro de los de 30% o más, para detectar errores de planilla).
 
+## Hecho: la planilla que se baja se puede volver a subir (16/11/2026)
+- Los títulos de "Descargar Excel" ya los reconoce "Cargar productos" (Producto, SKU, Código de barras, Marca, Stock, Unidad, Mínimo, Costo, Precio de venta, Ganancia %). Las columnas sólo informativas (Falta para el mínimo, Alcanza para, Estado, Valor al costo) se ignoran sin avisar; "Proveedor" se avisa como no usada (la carga no cambia proveedores).
+- Productos sin código de barras ni SKU: se reconocen por nombre (si el nombre es único); antes se habrían duplicado. Lógica compartida en `makeProductMatcher` (`lib/product-import.ts`).
+- Precio y % a la vez (`resolveExistingPrice`): vale lo que se editó. Si cambió el precio, el precio; si no y el % ya no coincide con el del precio y costo actuales, el % (sobre el costo de la planilla); si nada cambió, el precio queda (cambiar sólo el costo no lo mueve). Con la vista previa "antes → después" antes de confirmar.
+- Pendiente: importar/exportar proveedor y editar stock desde la planilla (el stock nunca se toca al importar).
+
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.

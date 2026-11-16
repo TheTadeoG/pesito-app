@@ -32,7 +32,11 @@ export interface ImportRow {
   sku: string;
   brand: string;
   cost: number | null;
+  /** Precio efectivo: el de la planilla, o el calculado con el costo y el % de ganancia. */
   price: number;
+  /** Lo que decía la celda de precio (null si estaba vacía) y la de % de ganancia. Sirven para saber qué se editó. */
+  sheetPrice: number | null;
+  markup: number | null;
   stock: number;
   minStock: number;
   unit: string;
@@ -82,6 +86,9 @@ const ALIASES: Record<Field, string[]> = {
   minStock: ["stock minimo", "minimo", "stock min", "min stock", "minimo de stock"],
   unit: ["unidad", "unidad de medida", "medida", "um", "unit"],
 };
+
+/** Columnas de la planilla que se baja de Pesito y son sólo informativas: al volver a subirla se ignoran sin avisar. */
+const INFO_COLUMNS = ["falta para el minimo", "alcanza para dias", "estado", "valor al costo"];
 
 /** Minúsculas, sin acentos ni signos: "Código de Barras (EAN)" → "codigo de barras ean". */
 export function normalizeText(value: unknown): string {
@@ -175,7 +182,7 @@ export function parseProductSheet(matrix: unknown[][]): ParsedImport {
   matrix[headerIndex].forEach((header, index) => {
     const field = fieldForHeader(header);
     if (field && !columns.has(field)) columns.set(field, index);
-    else if (!field && cellText(header)) result.ignoredColumns.push(cellText(header));
+    else if (!field && cellText(header) && !INFO_COLUMNS.includes(normalizeText(header))) result.ignoredColumns.push(cellText(header));
   });
 
   for (const { field, title, required } of TEMPLATE_COLUMNS) {
@@ -264,6 +271,8 @@ export function parseProductSheet(matrix: unknown[][]): ParsedImport {
       brand: cellText(get(row, "brand")),
       cost,
       price,
+      sheetPrice: cellText(priceRaw) === "" ? null : parseNumber(priceRaw),
+      markup: cellText(markupRaw) === "" ? null : parseNumber(markupRaw),
       stock,
       minStock,
       unit,
@@ -316,4 +325,50 @@ export function parseCsv(text: string): string[][] {
     rows.push(row);
   }
   return rows;
+}
+
+/**
+ * Precio de un producto que ya existe cuando la planilla trae precio y % de ganancia (por ejemplo, la que se baja de
+ * Pesito y se vuelve a subir): lo que se editó es lo que manda.
+ *  - Si el precio cambió respecto del que tiene el producto, vale el precio.
+ *  - Si no, y el % ya no coincide con el que daba el precio y costo actuales, vale el % (sobre el costo de la planilla,
+ *    o el actual si no vino).
+ *  - Si nada cambió, el precio queda igual (editar sólo el costo no mueve el precio).
+ */
+export function resolveExistingPrice(row: ImportRow, current: { price: number; cost: number | null }): number {
+  if (row.sheetPrice !== null && Math.abs(row.sheetPrice - current.price) > 0.005) return row.sheetPrice;
+  if (row.markup !== null && current.cost !== null && current.cost > 0) {
+    const was = (current.price / current.cost - 1) * 100;
+    const basis = row.cost !== null && row.cost > 0 ? row.cost : current.cost;
+    if (Math.abs(row.markup - was) > 0.06 && row.markup > -100) return Math.round(basis * (1 + row.markup / 100) * 100) / 100;
+  }
+  return row.sheetPrice ?? row.price;
+}
+
+/**
+ * Productos existentes por código de barras, SKU y, si la fila no trae ninguno de los dos, por nombre (sólo si el
+ * nombre es único). Así una planilla bajada de Pesito se puede volver a subir sin duplicar los productos sin código.
+ */
+export function makeProductMatcher<T extends { name: string; barcode: string | null; sku: string | null }>(products: readonly T[]) {
+  const byBarcode = new Map<string, T>();
+  const bySku = new Map<string, T>();
+  const byName = new Map<string, T | null>();
+  for (const p of products) {
+    if (p.barcode) byBarcode.set(p.barcode.trim().toLowerCase(), p);
+    if (p.sku) bySku.set(p.sku.trim().toLowerCase(), p);
+    const n = normalizeText(p.name);
+    byName.set(n, byName.has(n) ? null : p);
+  }
+  return {
+    find(row: { name: string; barcode: string; sku: string }): T | null {
+      const code = row.barcode.trim().toLowerCase();
+      const sku = row.sku.trim().toLowerCase();
+      if (code && byBarcode.has(code)) return byBarcode.get(code) ?? null;
+      if (sku && bySku.has(sku)) return bySku.get(sku) ?? null;
+      if (!code && !sku) return byName.get(normalizeText(row.name)) ?? null;
+      return null;
+    },
+    barcodeOwner: (code: string) => byBarcode.get(code.trim().toLowerCase()) ?? null,
+    skuOwner: (sku: string) => bySku.get(sku.trim().toLowerCase()) ?? null,
+  };
 }

@@ -15,7 +15,9 @@ import {
   IMPORT_CHUNK_SIZE,
   IMPORT_UNITS,
   UPDATE_FIELDS,
+  makeProductMatcher,
   normalizeText,
+  resolveExistingPrice,
   type ImportRow,
   type UpdateField,
 } from "@/lib/product-import";
@@ -74,17 +76,12 @@ export async function importProductsChunk(
   const existing = await fetchAll((from, to) =>
     supabase
       .from("products")
-      .select("id, barcode, sku")
+      .select("id, name, barcode, sku, price, cost")
       .eq("org_id", organization.id)
       .order("id")
       .range(from, to)
   );
-  const byBarcode = new Map<string, string>();
-  const bySku = new Map<string, string>();
-  for (const p of existing) {
-    if (p.barcode) byBarcode.set(key(p.barcode), p.id);
-    if (p.sku) bySku.set(key(p.sku), p.id);
-  }
+  const matcher = makeProductMatcher(existing);
 
   // Marcas nuevas (una por nombre, sin importar mayúsculas ni acentos).
   const { data: brandRows } = await supabase.from("brands").select("name").eq("org_id", organization.id);
@@ -143,9 +140,9 @@ export async function importProductsChunk(
       continue;
     }
 
-    const existingId =
-      (barcode && byBarcode.get(key(barcode))) || (sku && bySku.get(key(sku))) || null;
-    if (existingId) {
+    const match = matcher.find({ name, barcode, sku });
+    const existingId = match?.id ?? null;
+    if (match && existingId) {
       const fields = new Set(
         (Array.isArray(options.updateFields) ? options.updateFields : []).filter((f) =>
           UPDATE_FIELDS.some((u) => u.field === f)
@@ -156,15 +153,22 @@ export async function importProductsChunk(
         continue;
       }
       const patch: ProductPatch = {};
-      if (fields.has("price")) patch.price = price;
+      if (fields.has("price")) {
+        const num = (v: unknown) => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+        const resolved = resolveExistingPrice(
+          { ...raw, price, cost, sheetPrice: num(raw.sheetPrice), markup: num(raw.markup) },
+          { price: Number(match.price), cost: match.cost === null ? null : Number(match.cost) }
+        );
+        patch.price = Number.isFinite(resolved) && resolved >= 0 ? resolved : price;
+      }
       if (fields.has("cost") && cost !== null) patch.cost = cost;
       if (fields.has("brand") && brand) patch.brand = brand;
       if (fields.has("name")) patch.name = name;
       if (fields.has("minStock")) patch.min_stock = minStock;
       if (fields.has("unit")) patch.unit = unit;
       // Un SKU o código que ya usa otro producto no se pisa (rompería la búsqueda).
-      if (fields.has("sku") && sku && (bySku.get(key(sku)) ?? existingId) === existingId) patch.sku = sku;
-      if (fields.has("barcode") && barcode && (byBarcode.get(key(barcode)) ?? existingId) === existingId) {
+      if (fields.has("sku") && sku && (matcher.skuOwner(sku)?.id ?? existingId) === existingId) patch.sku = sku;
+      if (fields.has("barcode") && barcode && (matcher.barcodeOwner(barcode)?.id ?? existingId) === existingId) {
         patch.barcode = barcode;
       }
       if (Object.keys(patch).length === 0) {
