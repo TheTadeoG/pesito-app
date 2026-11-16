@@ -65,52 +65,17 @@ function BlurredContent({ kind }: { kind: LockedPreview }) {
   }
   return (
     <div className="divide-y divide-border px-6 pb-2 blur-[4px]">
-      {FAKE_ROWS.map(([name, value]) => (
-        <div key={name} className="flex items-center justify-between py-2 text-sm">
-          <span className="text-foreground">{name}</span>
-          <span className="font-semibold text-foreground">{value}</span>
+      {FAKE_ROWS.map(([name, value], i) => (
+        <div key={name} className="flex items-center gap-3 py-2.5 text-sm">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-xs font-bold text-primary">{i + 1}</span>
+          <span className="flex-1 text-foreground">{name}</span>
+          <span className="rounded-full bg-success-bg px-2 py-0.5 text-xs font-semibold text-success">+{(5 - i) * 4}%</span>
+          <span className="w-20 text-right font-semibold text-foreground">{value}</span>
         </div>
       ))}
     </div>
   );
 }
-const LIST_WIDTHS = [78, 64, 70, 52, 60];
-
-function PreviewSkeleton({ kind }: { kind: LockedPreview }) {
-  if (kind === "bars") {
-    return (
-      <div className="flex h-44 items-end gap-2 px-6 pb-6">
-        {BAR_HEIGHTS.map((h, i) => (
-          <div key={i} className="flex-1 rounded-t-md bg-primary/25" style={{ height: `${h}%` }} />
-        ))}
-      </div>
-    );
-  }
-  if (kind === "comparison") {
-    return (
-      <div className="grid grid-cols-2 gap-4 p-6">
-        {[0, 1].map((i) => (
-          <div key={i} className="space-y-2 rounded-xl border border-border p-4">
-            <div className="h-3 w-1/2 rounded-full bg-muted-foreground/20" />
-            <div className="h-7 w-3/4 rounded-lg bg-muted-foreground/25" />
-            <div className="h-3 w-1/3 rounded-full bg-success/30" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return (
-    <div className="space-y-3 p-6">
-      {LIST_WIDTHS.map((w, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <div className="h-3 rounded-full bg-muted-foreground/20" style={{ width: `${w}%` }} />
-          <div className="ml-auto h-3 w-16 shrink-0 rounded-full bg-muted-foreground/25" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /**
  * Card que reemplaza a una función cuando el plan no la incluye. Con
  * `preview` se ve una silueta gris del reporte de fondo (barras, lista o
@@ -198,15 +163,15 @@ export function ProLockedCard({
   }
 
   return (
-    <Card className="relative overflow-hidden">
-      <div aria-hidden className="pointer-events-none select-none opacity-70 blur-[2px]">
-        <div className="px-6 pt-5">
-          <div className="h-4 w-48 rounded-full bg-muted-foreground/20" />
+    <Card className="relative min-h-72 overflow-hidden">
+      <div aria-hidden className="pointer-events-none select-none opacity-60">
+        <div className="flex items-center gap-2 px-6 pb-3 pt-5">
+          <p className="font-semibold text-foreground">{title}</p>
         </div>
-        <PreviewSkeleton kind={preview} />
+        <BlurredContent kind={preview} />
       </div>
-      <div className="absolute inset-0 flex items-center justify-center bg-card/60 p-4 backdrop-blur-[1px]">
-        <div className="rounded-2xl border border-border bg-card/95 px-5 py-5 shadow-lg">{message}</div>
+      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-card/30 via-card/80 to-card/90 p-4">
+        <div className="max-w-lg rounded-2xl border border-border bg-card/95 px-6 py-5 shadow-xl">{message}</div>
       </div>
     </Card>
   );
