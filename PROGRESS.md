@@ -217,7 +217,9 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Los títulos de "Descargar Excel" ya los reconoce "Cargar productos" (Producto, SKU, Código de barras, Marca, Stock, Unidad, Mínimo, Costo, Precio de venta, Ganancia %). Las columnas sólo informativas (Falta para el mínimo, Alcanza para, Estado, Valor al costo) se ignoran sin avisar; "Proveedor" se avisa como no usada (la carga no cambia proveedores).
 - Productos sin código de barras ni SKU: se reconocen por nombre (si el nombre es único); antes se habrían duplicado. Lógica compartida en `makeProductMatcher` (`lib/product-import.ts`).
 - Precio y % a la vez (`resolveExistingPrice`): vale lo que se editó. Si cambió el precio, el precio; si no y el % ya no coincide con el del precio y costo actuales, el % (sobre el costo de la planilla); si nada cambió, el precio queda (cambiar sólo el costo no lo mueve). Con la vista previa "antes → después" antes de confirmar.
-- Pendiente: importar/exportar proveedor y editar stock desde la planilla (el stock nunca se toca al importar).
+- Proveedor: columna "Proveedor" en la planilla (busca por nombre, crea los que no existen y lo deja como proveedor por defecto del producto; opción "Proveedor" al actualizar existentes, vacía = se deja el actual).
+- Planilla modelo: columnas obligatorias en rojo con "*" y hoja "Cómo completarla". Exportar a Excel: números sin separador de miles ni coma de más ("9" en vez de "9,").
+- Pendiente: editar stock desde la planilla (el stock nunca se toca al importar).
 
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.

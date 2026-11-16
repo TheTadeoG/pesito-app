@@ -11,12 +11,13 @@ export const IMPORT_CHUNK_SIZE = 250;
 export const IMPORT_MAX_ROWS = 20000;
 
 /** Datos de un producto que ya existe que la carga puede actualizar (el stock nunca: sólo se mueve con ventas, compras y ajustes). */
-export type UpdateField = "price" | "cost" | "brand" | "name" | "minStock" | "unit" | "sku" | "barcode";
+export type UpdateField = "price" | "cost" | "brand" | "supplier" | "name" | "minStock" | "unit" | "sku" | "barcode";
 
 export const UPDATE_FIELDS: { field: UpdateField; label: string; hint: string; defaultOn: boolean }[] = [
   { field: "price", label: "Precio de venta", hint: "Se reemplaza por el de la planilla.", defaultOn: true },
   { field: "cost", label: "Costo", hint: "Si la celda está vacía, se deja el costo actual.", defaultOn: true },
   { field: "brand", label: "Marca", hint: "Si la celda está vacía, se deja la marca actual.", defaultOn: true },
+  { field: "supplier", label: "Proveedor", hint: "Si la celda está vacía, se deja el proveedor actual. Si no existe, se crea.", defaultOn: true },
   { field: "name", label: "Nombre", hint: "Cambia el nombre del producto.", defaultOn: false },
   { field: "minStock", label: "Stock mínimo", hint: "Cambia el aviso de reposición.", defaultOn: false },
   { field: "unit", label: "Unidad", hint: "Unidad, kg, litro, etc.", defaultOn: false },
@@ -31,6 +32,7 @@ export interface ImportRow {
   barcode: string;
   sku: string;
   brand: string;
+  supplier: string;
   cost: number | null;
   /** Precio efectivo: el de la planilla, o el calculado con el costo y el % de ganancia. */
   price: number;
@@ -57,7 +59,7 @@ export interface ParsedImport {
   missingColumns: string[];
 }
 
-type Field = "name" | "barcode" | "sku" | "brand" | "cost" | "price" | "markup" | "stock" | "minStock" | "unit";
+type Field = "name" | "barcode" | "sku" | "brand" | "supplier" | "cost" | "price" | "markup" | "stock" | "minStock" | "unit";
 
 /** Columnas de la planilla modelo, en este orden. */
 export const TEMPLATE_COLUMNS: { field: Field; title: string; required?: boolean; example: string | number }[] = [
@@ -65,6 +67,7 @@ export const TEMPLATE_COLUMNS: { field: Field; title: string; required?: boolean
   { field: "barcode", title: "Código de barras", example: "7790387000012" },
   { field: "sku", title: "SKU", example: "YER-001" },
   { field: "brand", title: "Marca", example: "Taragüí" },
+  { field: "supplier", title: "Proveedor", example: "Distribuidora Norte" },
   { field: "cost", title: "Costo", example: 2800 },
   { field: "price", title: "Precio de venta", example: 4200 },
   // Alternativa al precio: con costo y este %, el precio se calcula solo (si ya hay precio, se usa el precio).
@@ -79,6 +82,7 @@ const ALIASES: Record<Field, string[]> = {
   barcode: ["codigo de barras", "codigo barras", "codigo de barra", "ean", "ean13", "cod barras", "barcode", "codigo"],
   sku: ["sku", "codigo interno", "cod interno", "referencia", "ref", "codigo propio"],
   brand: ["marca", "brand"],
+  supplier: ["proveedor", "distribuidor", "supplier"],
   cost: ["costo", "precio de costo", "precio costo", "cost", "costo unitario"],
   price: ["precio", "precio de venta", "precio venta", "pvp", "precio publico", "price", "precio final"],
   markup: ["ganancia sobre el costo", "ganancia sobre costo", "ganancia", "margen", "markup", "porcentaje de ganancia", "recargo"],
@@ -269,6 +273,7 @@ export function parseProductSheet(matrix: unknown[][]): ParsedImport {
       barcode: cellText(get(row, "barcode")),
       sku: cellText(get(row, "sku")),
       brand: cellText(get(row, "brand")),
+      supplier: cellText(get(row, "supplier")),
       cost,
       price,
       sheetPrice: cellText(priceRaw) === "" ? null : parseNumber(priceRaw),

@@ -104,12 +104,14 @@ export async function importProductsChunk(
       price: number;
       min_stock: number;
       unit: string;
+      default_supplier_id?: string | null;
     };
     stock: number;
+    supplier: string;
   };
   const toCreate: Clean[] = [];
   type ProductPatch = Database["public"]["Tables"]["products"]["Update"];
-  const toUpdate: { line: number; id: string; patch: ProductPatch }[] = [];
+  const toUpdate: { line: number; id: string; patch: ProductPatch; supplier: string }[] = [];
   const seenInChunk = new Set<string>();
 
   for (const raw of rows) {
@@ -123,6 +125,7 @@ export async function importProductsChunk(
     const barcode = String(raw.barcode ?? "").trim();
     const sku = String(raw.sku ?? "").trim();
     const brand = String(raw.brand ?? "").trim();
+    const supplier = String(raw.supplier ?? "").trim().slice(0, 120);
 
     if (
       !name ||
@@ -175,7 +178,7 @@ export async function importProductsChunk(
         result.skipped++;
         continue;
       }
-      toUpdate.push({ line, id: existingId, patch });
+      toUpdate.push({ line, id: existingId, patch, supplier: fields.has("supplier") ? supplier : "" });
       continue;
     }
 
@@ -197,6 +200,7 @@ export async function importProductsChunk(
     toCreate.push({
       line,
       stock,
+      supplier,
       payload: {
         org_id: organization.id,
         name,
@@ -229,6 +233,32 @@ export async function importProductsChunk(
     await supabase
       .from("brands")
       .insert([...newBrands.values()].map((name) => ({ org_id: organization.id, name })));
+  }
+
+  // Proveedores: se buscan por nombre (sin importar mayúsculas ni acentos) y los que no existen se crean.
+  const wantedSuppliers = new Map<string, string>();
+  for (const name of [...toCreate.map((c) => c.supplier), ...toUpdate.map((u) => u.supplier)]) {
+    if (name && !wantedSuppliers.has(normalizeText(name))) wantedSuppliers.set(normalizeText(name), name);
+  }
+  const supplierIds = new Map<string, string>();
+  if (wantedSuppliers.size > 0) {
+    const knownSuppliers = await fetchAll((from, to) =>
+      supabase.from("suppliers").select("id, name").eq("org_id", organization.id).order("id").range(from, to)
+    );
+    for (const sp of knownSuppliers) supplierIds.set(normalizeText(sp.name), sp.id);
+    const missing = [...wantedSuppliers].filter(([k]) => !supplierIds.has(k)).map(([, name]) => ({ org_id: organization.id, name }));
+    if (missing.length > 0) {
+      const { data: madeSuppliers } = await supabase.from("suppliers").insert(missing).select("id, name");
+      for (const sp of madeSuppliers ?? []) supplierIds.set(normalizeText(sp.name), sp.id);
+    }
+  }
+  for (const c of toCreate) {
+    const id = c.supplier ? supplierIds.get(normalizeText(c.supplier)) : undefined;
+    if (id) c.payload.default_supplier_id = id;
+  }
+  for (const u of toUpdate) {
+    const id = u.supplier ? supplierIds.get(normalizeText(u.supplier)) : undefined;
+    if (id) u.patch.default_supplier_id = id;
   }
 
   // Productos nuevos. Con sucursales el stock inicial se carga en la sucursal

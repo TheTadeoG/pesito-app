@@ -41,13 +41,30 @@ interface Summary {
   error?: string;
 }
 
+// Columnas que hay que completar sí o sí (en rojo y con *): el nombre y el precio (o costo + % de ganancia).
+const REQUIRED_TITLES = new Set(["Nombre", "Precio de venta"]);
+
 async function downloadTemplate() {
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
-  const header = TEMPLATE_COLUMNS.map((c) => ({ value: c.title, fontWeight: "bold" as const }));
+  const header = TEMPLATE_COLUMNS.map((c) =>
+    REQUIRED_TITLES.has(c.title)
+      ? { value: `${c.title} *`, fontWeight: "bold" as const, textColor: "#b91c1c", backgroundColor: "#fee2e2" }
+      : { value: c.title, fontWeight: "bold" as const, backgroundColor: "#f3f4f6" }
+  );
   const example = TEMPLATE_COLUMNS.map((c) => c.example);
-  await writeXlsxFile([header, example], {
-    columns: TEMPLATE_COLUMNS.map((c) => ({ width: Math.max(14, c.title.length + 4) })),
-  }).toFile("pesito-productos.xlsx");
+  const help: { value: string; fontWeight?: "bold"; textColor?: string }[][] = [
+    [{ value: "Cómo completar la planilla", fontWeight: "bold" }],
+    [{ value: "* Las columnas en rojo son obligatorias: Nombre y Precio de venta." }],
+    [{ value: "En vez del precio podés poner el Costo y la Ganancia sobre el costo (%): el precio se calcula solo. Si cargás precio y %, vale el precio." }],
+    [{ value: "Todas las demás columnas son opcionales. Podés borrar las que no uses, pero no cambies los títulos." }],
+    [{ value: "Si un producto ya existe (mismo código de barras o SKU, o el mismo nombre si no tiene código) no se duplica: al subirla podés elegir actualizar su precio, costo, marca o proveedor. El stock nunca se modifica." }],
+    [{ value: "Unidad: u, kg, g, l, ml, pack o caja. La marca y el proveedor que no existan se crean." }],
+    [{ value: "La primera fila de la hoja “Productos” es un ejemplo: borrala o reemplazala." }],
+  ];
+  await writeXlsxFile([
+    { data: [header, example], sheet: "Productos", columns: TEMPLATE_COLUMNS.map((c) => ({ width: Math.max(16, c.title.length + 6) })), stickyRowsCount: 1 },
+    { data: help, sheet: "Cómo completarla", columns: [{ width: 120 }] },
+  ]).toFile("pesito-productos.xlsx");
 }
 
 async function readFile(file: File): Promise<unknown[][]> {
