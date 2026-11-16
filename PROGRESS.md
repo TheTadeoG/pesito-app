@@ -240,7 +240,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Productos → Acciones → Proveedores/Marcas "A mano": el Cancelar y la X no cerraban porque el formulario de proveedor y el de marca tenían el mismo `key` (React dejaba la ventana colgada). Ahora tienen claves distintas (verificado en un navegador). Regla: dos elementos hermanos nunca comparten `key`.
 - Marcas: "Descargar Excel" (Nombre y cantidad de productos; se puede volver a subir) en la pestaña Marcas y en el pop up de Acciones → Marcas.
 - Panel de admin: "Pagan" ahora cuenta también los pagos únicos (la base los guarda como "cancelado" sin débito, pero el plan sigue pago hasta `current_period_end`): `isPaying` en `lib/admin-shared.ts`. Un débito cancelado con el período vencido no cuenta.
-- Admin: la variable `ADMIN_INTERNAL_EMAILS` (emails separados por coma, en Vercel) saca esas cuentas de "Pagan", del embudo y de remarketing (no cuentan como clientes que pagan).
+- Admin → Negocios → ficha: casilla "Es una cuenta propia o de prueba" (tabla `admin_internal_orgs`, migración 0095, **falta aplicar en producción**): saca el negocio de "Pagan", del embudo y de remarketing. Sin variables de entorno.
 - Admin → Negocios: la forma de pago se lee de entrada: "débito automático mensual · se renueva solo", "pago único de 1 mes · no se renueva solo · vence 16/12/26", "débito cancelado · vence …" o "asignado a mano (no pagó)", en la lista y en la ficha ("Forma de pago"); segmento nuevo "Pago por vencer (7 días)" para contactar antes del vencimiento.
 
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)

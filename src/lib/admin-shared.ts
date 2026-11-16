@@ -13,6 +13,8 @@ export interface AdminOrg {
   /** Paga o pagó por Mercado Pago (un plan asignado a mano no cuenta). */
   paidViaMp: boolean;
   paymentStatus: string | null;
+  /** Cuenta propia o de prueba (marcada desde el panel): no cuenta como cliente que paga. */
+  internal: boolean;
   /** Tiene un débito automático (suscripción de Mercado Pago) asociado. */
   hasDebit: boolean;
   /** Hasta cuándo está pago el plan (débito automático o pago único). */
@@ -54,7 +56,7 @@ export type SegmentId =
  * también paga. Un débito cancelado cuyo período ya terminó no.
  */
 export function isPaying(o: AdminOrg, now: number): boolean {
-  if (!o.paidViaMp || o.plan === "gratis") return false;
+  if (o.internal || !o.paidViaMp || o.plan === "gratis") return false;
   if (o.paymentStatus !== "cancelled") return true;
   return o.periodEnd !== null && new Date(o.periodEnd).getTime() > now;
 }

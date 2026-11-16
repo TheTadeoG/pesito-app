@@ -35,7 +35,7 @@ export default async function AdminRemarketingPage() {
   // Pruebas regaladas: cuántas, a cuántos negocios y cuántos de ellos terminaron pagando.
   const gifts = contacts.filter((c) => c.kind === "prueba");
   const giftedOrgs = new Set(gifts.map((g) => g.org_id));
-  const paidById = new Map(orgs.map((o) => [o.id, o.paidViaMp && o.plan !== "gratis"]));
+  const paidById = new Map(orgs.map((o) => [o.id, o.paidViaMp && !o.internal && o.plan !== "gratis"]));
   const converted = [...giftedOrgs].filter((id) => paidById.get(id)).length;
   // eslint-disable-next-line react-hooks/purity -- Server Component: se calcula fresco en cada request.
   const now = Date.now();

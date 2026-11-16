@@ -83,7 +83,7 @@ export default async function AdminResumenPage() {
     ? computeFunnel({
         signedUpOwners: orgs.length + data.signedUpWithoutOrg,
         activity: activityRows.map((a) => ({ ...a, sale_count: Number(a.sale_count), member_count: Number(a.member_count) })),
-        subscriptions: new Map(orgs.map((o) => [o.id, { plan: o.plan, trialEndsAt: o.trialEndsAt, paidViaMp: o.paidViaMp, cycle: (o.cycle as "mensual" | "anual" | null) ?? null }])),
+        subscriptions: new Map(orgs.map((o) => [o.id, { plan: o.plan, trialEndsAt: o.trialEndsAt, paidViaMp: o.paidViaMp && !o.internal, cycle: (o.cycle as "mensual" | "anual" | null) ?? null }])),
         monthlyPrice: (plan, cycle) => {
           const price = planDefinitions[plan as Plan]?.price ?? 0;
           return cycle === "anual" ? Math.round(price * (1 - ANNUAL_DISCOUNT)) : price;

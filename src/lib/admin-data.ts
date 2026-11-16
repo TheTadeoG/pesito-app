@@ -23,12 +23,15 @@ export interface AdminData {
 export async function loadAdminData(): Promise<AdminData> {
   const admin = createAdminClient();
 
-  const [orgsRaw, subsRaw, activityRes, memberships] = await Promise.all([
+  const [orgsRaw, subsRaw, activityRes, memberships, internalRes] = await Promise.all([
     fetchAll((from, to) => admin.from("organizations").select("id, name, business_type, created_at, phone").order("created_at", { ascending: false }).order("id").range(from, to)),
     fetchAll((from, to) => admin.from("organization_subscriptions").select("*").order("org_id").range(from, to)),
     admin.from("platform_org_activity").select("*"),
     fetchAll((from, to) => admin.from("memberships").select("user_id, org_id, role").order("id").range(from, to)),
+    // Negocios propios o de prueba (migración 0095): si la tabla todavía no existe, no hay ninguno.
+    admin.from("admin_internal_orgs" as never).select("org_id"),
   ]);
+  const internalOrgs = new Set(((internalRes.data ?? []) as unknown as { org_id: string }[]).map((r) => r.org_id));
 
   // auth.users sólo se lee con la Admin API, paginando.
   const users: { id: string; email: string | null; created_at: string; last_sign_in_at: string | null; name: string | null }[] = [];
@@ -71,9 +74,6 @@ export async function loadAdminData(): Promise<AdminData> {
   }[];
   const activityByOrg = new Map(activityRows.map((a) => [a.org_id, a]));
 
-  // Cuentas propias o de prueba: no cuentan como clientes que pagan (ADMIN_INTERNAL_EMAILS, separadas por coma).
-  const internalEmails = new Set((process.env.ADMIN_INTERNAL_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean));
-
   const orgs: AdminOrg[] = orgsRaw.map((o) => {
     const sub = subByOrg.get(o.id);
     const act = activityByOrg.get(o.id);
@@ -86,7 +86,8 @@ export async function loadAdminData(): Promise<AdminData> {
       createdAt: o.created_at,
       plan,
       trialEndsAt: sub?.pro_trial_ends_at ?? null,
-      paidViaMp: !internalEmails.has((owner?.email ?? "").toLowerCase()) && plan !== "gratis" && Boolean(sub?.mp_preapproval_id || sub?.payment_status),
+      paidViaMp: plan !== "gratis" && Boolean(sub?.mp_preapproval_id || sub?.payment_status),
+      internal: internalOrgs.has(o.id),
       paymentStatus: sub?.payment_status ?? null,
       hasDebit: Boolean(sub?.mp_preapproval_id),
       periodEnd: (sub as { current_period_end?: string | null } | undefined)?.current_period_end ?? null,

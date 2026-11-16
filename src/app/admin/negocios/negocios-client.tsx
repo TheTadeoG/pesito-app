@@ -12,7 +12,7 @@ import { SEGMENTS, ago, inSegment, whatsappNumber, type AdminOrg, type SegmentId
 import { planLabels, planOrder, type Plan } from "@/lib/subscription";
 import { cn, formatDate } from "@/lib/utils";
 import { updateOrgPlan } from "@/app/admin/actions";
-import { addOrgNote, getOrgDetail, giveTrialDays, type OrgDetail } from "@/app/admin/negocios/actions";
+import { addOrgNote, getOrgDetail, giveTrialDays, setOrgInternal, type OrgDetail } from "@/app/admin/negocios/actions";
 
 type Sort = "reciente" | "venta" | "nombre";
 
@@ -27,6 +27,7 @@ function planChip(org: AdminOrg, now: number): { label: string; tone: string } {
 }
 
 function planNote(org: AdminOrg, now: number): string {
+  if (org.internal && org.plan !== "gratis") return "cuenta propia (no cuenta como cliente)";
   if (org.plan === "gratis" && org.trialEndsAt) {
     const days = Math.ceil((new Date(org.trialEndsAt).getTime() - now) / 86_400_000);
     return days > 0 ? `quedan ${days} ${days === 1 ? "día" : "días"}` : `venció ${formatDate(org.trialEndsAt)}`;
@@ -313,6 +314,30 @@ function Ficha({ org, now, onChange }: { org: AdminOrg; now: number; onChange: (
             </div>
           </div>
           <p className="text-xs text-muted-foreground">Dar días o asignar un plan no cobra nada y queda anotado.</p>
+          <label className="flex cursor-pointer items-start gap-2 pt-1 text-sm text-foreground">
+            <input
+              type="checkbox"
+              checked={org.internal}
+              disabled={pending}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setMessage(null);
+                startTransition(async () => {
+                  const res = await setOrgInternal(org.id, next);
+                  if (res.error) setMessage({ text: res.error, tone: "error" });
+                  else {
+                    onChange({ internal: next });
+                    setMessage({ text: next ? "Marcado como cuenta propia: ya no cuenta como cliente que paga." : "Ya cuenta como un cliente más.", tone: "ok" });
+                  }
+                });
+              }}
+              className="mt-0.5 h-4 w-4 accent-primary"
+            />
+            <span>
+              Es una cuenta propia o de prueba
+              <span className="block text-xs text-muted-foreground">No cuenta en “Pagan”, el embudo ni el remarketing.</span>
+            </span>
+          </label>
           {message && <p className={cn("rounded-lg px-3 py-2 text-sm", message.tone === "ok" ? "bg-success-bg text-success" : "bg-danger-bg text-danger")}>{message.text}</p>}
         </section>
 

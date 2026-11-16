@@ -136,3 +136,17 @@ export async function giveTrialDays(orgId: string, days: number, audience?: stri
   revalidatePath("/admin", "layout");
   return { trialEndsAt, note: note ? { id: note.id, body: note.body, createdAt: note.created_at } : undefined };
 }
+
+/** Marca (o desmarca) un negocio como cuenta propia o de prueba: deja de contar como cliente que paga. Migración 0095. */
+export async function setOrgInternal(orgId: string, internal: boolean): Promise<{ error?: string }> {
+  await requirePlatformAdmin();
+  const admin = createAdminClient();
+  const table = admin.from("admin_internal_orgs" as never);
+  const { error } = internal
+    ? await table.upsert({ org_id: orgId } as never, { onConflict: "org_id" })
+    : await table.delete().eq("org_id", orgId);
+  if (error) return { error: "No pudimos guardar el cambio. ¿Está aplicada la migración 0095?" };
+  revalidatePath("/admin");
+  revalidatePath("/admin/negocios");
+  return {};
+}
