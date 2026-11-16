@@ -237,7 +237,8 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.
 - Base: tablas `inventory_counts` / `inventory_count_items` (sólo lectura por RLS) y funciones `inventory_start`, `inventory_set_count`, `inventory_apply`, `inventory_cancel` (security definer, `require_plan('pro')`, ajustes como `stock_movements` tipo `ajuste` con "Inventario: <nombre>").
 - Textos alineados: card del Pro y `planComparison` (ya sin "Pronto"), `faq-data.ts`.
-- Pendiente: contar con la cámara del celular (hoy hace falta lector de códigos o tipear); exportar las diferencias a Excel; tour/ayuda.
+- Inventarios anteriores: se tocan para ver el detalle (quién lo hizo y cuándo, cuántos con diferencia, producto por producto sistema vs contado, buscador, "sólo con diferencia", paginado y Exportar a Excel).
+- Pendiente: contar con la cámara del celular (hoy hace falta lector de códigos o tipear); tour/ayuda.
 
 ## Hecho: Control por usuario — Plan Pro (16/11/2026)
 - Pantalla `/actividad` (solapa "Por usuario" dentro de Reportes, sólo dueño/admin; filtros: Hoy/7/30 días o desde-hasta hasta 92 días, persona, tipo y búsqueda de texto), `canUse(sub, "userActivity")` con `ProLockedCard`. Períodos Hoy / 7 / 30 días. Tabla por persona (ventas, anulaciones, ajustes de stock, retiros, ingresos, cierres de caja con faltante/sobrante) y lista de movimientos paginada con filtros por persona y tipo. Sin migración: usa `sales`, `stock_movements` (sin ventas), `cash_movements` y `cash_registers`.

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/utils";
+import { InventoryDetailDialog } from "@/app/(dashboard)/inventario-fisico/detail-dialog";
 import { startInventory } from "@/app/(dashboard)/inventario-fisico/actions";
 
 export interface PastCount {
@@ -41,6 +42,7 @@ export function StartCard({
   const [supplierId, setSupplierId] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   async function start(e: React.FormEvent) {
     e.preventDefault();
@@ -122,7 +124,12 @@ export function StartCard({
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
               {history.map((h) => (
-                <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 px-6 py-3 text-sm">
+                <li key={h.id}>
+                  <button
+                    type="button"
+                    onClick={() => setDetailId(h.id)}
+                    className="flex w-full flex-wrap items-center justify-between gap-2 px-6 py-3 text-left text-sm transition-colors hover:bg-muted/50"
+                  >
                   <div className="min-w-0">
                     <p className="font-medium text-foreground">{h.name}</p>
                     <p className="text-xs text-muted-foreground">{`${h.appliedAt ? formatDateTime(h.appliedAt) : ""}${h.branch ? ` · ${h.branch}` : ""}`}</p>
@@ -140,12 +147,15 @@ export function StartCard({
                       </>
                     )}
                   </p>
+                  <span className="text-xs font-medium text-primary">Ver detalle</span>
+                  </button>
                 </li>
               ))}
             </ul>
           </CardContent>
         </Card>
       )}
+      <InventoryDetailDialog countId={detailId} onClose={() => setDetailId(null)} />
     </div>
   );
 }

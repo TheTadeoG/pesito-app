@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { getBranchContext } from "@/lib/branches";
+import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
+import { getMemberLabelsById } from "@/lib/member-labels";
+import { isOrgAdmin } from "@/lib/roles";
 
 export interface InventoryActionResult {
   error?: string;
@@ -64,4 +67,71 @@ export async function cancelInventory(countId: string): Promise<InventoryActionR
   if (error) return { error: message(error, "No pudimos cancelar el inventario. Probá de nuevo.") };
   revalidatePath("/inventario-fisico");
   return {};
+}
+
+export interface InventoryDetail {
+  error?: string;
+  name?: string;
+  status?: string;
+  branch?: string | null;
+  scope?: string;
+  createdAt?: string;
+  createdBy?: string | null;
+  appliedAt?: string | null;
+  appliedBy?: string | null;
+  adjusted?: number;
+  plus?: number;
+  minus?: number;
+  items?: { productId: string; name: string; sku: string; unit: string; expected: number; counted: number }[];
+}
+
+// Detalle de un inventario: qué se contó de cada producto, contra lo que decía el sistema en ese momento.
+export async function getInventoryDetail(countId: string): Promise<InventoryDetail> {
+  const { organization, membership } = await requireOrgContext();
+  if (!isOrgAdmin(membership.role)) return { error: "Sólo el dueño o un administrador pueden ver los inventarios." };
+  const supabase = await createClient();
+  const { data: count } = await supabase
+    .from("inventory_counts")
+    .select("id, name, status, branch_id, scope_brand, scope_supplier_id, created_at, created_by, applied_at, applied_by, adjusted_count, units_plus, units_minus")
+    .eq("id", countId)
+    .eq("org_id", organization.id)
+    .maybeSingle();
+  if (!count) return { error: "No encontramos el inventario." };
+
+  const [rows, labels, branchRes, supplierRes] = await Promise.all([
+    fetchAll((from, to) =>
+      supabase.from("inventory_count_items").select("id, product_id, counted, expected").eq("count_id", countId).order("id").range(from, to)
+    ),
+    getMemberLabelsById(supabase, organization.id),
+    supabase.from("branches").select("name").eq("id", count.branch_id).maybeSingle(),
+    count.scope_supplier_id ? supabase.from("suppliers").select("name").eq("id", count.scope_supplier_id).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const products = new Map(
+    (
+      await fetchAllIn(
+        rows.map((r) => r.product_id),
+        (ids, from, to) => supabase.from("products").select("id, name, sku, unit").in("id", ids).order("id").range(from, to)
+      )
+    ).map((p) => [p.id, p])
+  );
+  const who = (id: string | null) => (id ? labels.get(id) ?? "Usuario eliminado" : null);
+  return {
+    name: count.name,
+    status: count.status,
+    branch: branchRes.data?.name ?? null,
+    scope: count.scope_brand ? `Marca: ${count.scope_brand}` : supplierRes.data?.name ? `Proveedor: ${supplierRes.data.name}` : "Todos los productos",
+    createdAt: count.created_at,
+    createdBy: who(count.created_by),
+    appliedAt: count.applied_at,
+    appliedBy: who(count.applied_by),
+    adjusted: count.adjusted_count ?? 0,
+    plus: Number(count.units_plus ?? 0),
+    minus: Number(count.units_minus ?? 0),
+    items: rows
+      .map((r) => {
+        const p = products.get(r.product_id);
+        return { productId: r.product_id, name: p?.name ?? "Producto eliminado", sku: p?.sku ?? "", unit: p?.unit ?? "u", expected: Number(r.expected), counted: Number(r.counted) };
+      })
+      .sort((a, b) => Math.abs(b.counted - b.expected) - Math.abs(a.counted - a.expected) || a.name.localeCompare(b.name)),
+  };
 }
