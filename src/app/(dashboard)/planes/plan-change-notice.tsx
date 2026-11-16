@@ -60,7 +60,7 @@ export function PlanChangeNotice({
           {`Cambio programado para el ${date}`}
         </p>
         <span className="rounded-full border border-sky-500/40 px-2.5 py-0.5 text-xs font-semibold text-foreground">
-          {daysLeft === 1 ? "Falta 1 día" : `Faltan ${daysLeft} días`}
+          {daysLeft < 0 ? "Cobro pendiente" : daysLeft === 0 ? "Hoy" : daysLeft === 1 ? "Falta 1 día" : `Faltan ${daysLeft} días`}
         </span>
       </div>
       <div className="grid items-stretch gap-2 sm:grid-cols-[1fr_auto_1fr]">

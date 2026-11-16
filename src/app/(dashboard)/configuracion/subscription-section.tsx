@@ -67,7 +67,7 @@ export function SubscriptionSection({
   const usageFull = Boolean(usage && subscription.invoicePack > 0 && usage.used >= subscription.invoicePack);
   const renewalDate = billing?.currentPeriodEnd ? formatDate(billing.currentPeriodEnd) : null;
   // eslint-disable-next-line react-hooks/purity -- Server Component: se calcula fresco en cada request.
-  const daysUntilRenewal = billing?.currentPeriodEnd ? Math.max(1, Math.ceil((new Date(billing.currentPeriodEnd).getTime() - Date.now()) / 86_400_000)) : 1;
+  const daysUntilRenewal = billing?.currentPeriodEnd ? Math.ceil((new Date(billing.currentPeriodEnd).getTime() - Date.now()) / 86_400_000) : 1;
 
   const trialDaysLeft =
     subscription.trialActive && subscription.proTrialEndsAt
