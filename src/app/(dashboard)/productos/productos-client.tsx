@@ -1463,7 +1463,7 @@ export function ProductosClient({
       <ProductImportDialog
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        existing={products.map((p) => ({ barcode: p.barcode, sku: p.sku }))}
+        existing={products.map((p) => ({ id: p.id, name: p.name, barcode: p.barcode, sku: p.sku, price: p.price, cost: p.cost }))}
         remainingCapacity={Math.max(0, productUsage.limit - productUsage.used)}
       />
       <BarcodeLabelsDialog

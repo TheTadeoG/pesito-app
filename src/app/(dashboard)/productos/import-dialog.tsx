@@ -5,6 +5,7 @@ import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/toast/toast-provider";
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { cn } from "@/lib/utils";
 import { importProductsChunk } from "@/app/(dashboard)/productos/import-actions";
 import {
@@ -23,7 +24,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   /** Códigos y SKU que ya existen, para avisar cuáles se repiten antes de guardar. */
-  existing: { barcode: string | null; sku: string | null }[];
+  existing: { id: string; name: string; barcode: string | null; sku: string | null; price: number; cost: number | null }[];
   /** Cuántos productos activos más entran en el plan. */
   remainingCapacity: number;
 }
@@ -78,11 +79,11 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
   const [summary, setSummary] = useState<Summary | null>(null);
 
   const existingKeys = useMemo(() => {
-    const barcodes = new Set<string>();
-    const skus = new Set<string>();
+    const barcodes = new Map<string, (typeof existing)[number]>();
+    const skus = new Map<string, (typeof existing)[number]>();
     for (const p of existing) {
-      if (p.barcode) barcodes.add(p.barcode.trim().toLowerCase());
-      if (p.sku) skus.add(p.sku.trim().toLowerCase());
+      if (p.barcode) barcodes.set(p.barcode.trim().toLowerCase(), p);
+      if (p.sku) skus.set(p.sku.trim().toLowerCase(), p);
     }
     return { barcodes, skus };
   }, [existing]);
@@ -98,6 +99,24 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
     }
     return { fresh: parsed.rows.length - known, known };
   }, [parsed, existingKeys]);
+
+  // Qué cambiaría en los productos que ya existen (mismo criterio que el servidor: primero código de barras, después SKU).
+  const changes = useMemo(() => {
+    if (!parsed || !updateExisting) return [];
+    const out: PriceChange[] = [];
+    for (const row of parsed.rows) {
+      const product =
+        (row.barcode && existingKeys.barcodes.get(row.barcode.trim().toLowerCase())) ||
+        (row.sku && existingKeys.skus.get(row.sku.trim().toLowerCase())) ||
+        null;
+      if (!product) continue;
+      const newPrice = fields.has("price") && row.price !== product.price ? row.price : null;
+      const newCost = fields.has("cost") && row.cost !== null && row.cost !== product.cost ? row.cost : null;
+      if (newPrice === null && newCost === null) continue;
+      out.push({ key: `${row.line}`, name: product.name, oldPrice: product.price, newPrice, oldCost: product.cost, newCost });
+    }
+    return out;
+  }, [parsed, updateExisting, fields, existingKeys]);
 
   function reset() {
     setStep("pick");
@@ -300,6 +319,8 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
             </div>
           )}
 
+          {updateExisting && (fields.has("price") || fields.has("cost")) && <PriceChangesPreview changes={changes} />}
+
           <div>
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Vista previa (primeros 5)
@@ -385,6 +406,96 @@ export function ProductImportDialog({ open, onClose, existing, remainingCapacity
         </div>
       )}
     </Dialog>
+  );
+}
+
+interface PriceChange {
+  key: string;
+  name: string;
+  oldPrice: number;
+  newPrice: number | null;
+  oldCost: number | null;
+  newCost: number | null;
+}
+
+const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 2 })}`;
+const pctOf = (from: number, to: number) => (from > 0 ? ((to / from - 1) * 100) : null);
+
+// "Antes → después" de los precios y costos de los productos que ya existen, para revisar antes de confirmar.
+function PriceChangesPreview({ changes }: { changes: PriceChange[] }) {
+  const [onlyBig, setOnlyBig] = useState(false);
+  const isBig = (c: PriceChange) => {
+    const p = c.newPrice !== null ? pctOf(c.oldPrice, c.newPrice) : null;
+    return p !== null && Math.abs(p) >= 30;
+  };
+  const shown = onlyBig ? changes.filter(isBig) : changes;
+  const pg = usePagination(shown.length, String(onlyBig), "pesito:import-preview:pagesize");
+  const up = changes.filter((c) => c.newPrice !== null && c.newPrice > c.oldPrice).length;
+  const down = changes.filter((c) => c.newPrice !== null && c.newPrice < c.oldPrice).length;
+  const big = changes.filter(isBig).length;
+
+  if (changes.length === 0) {
+    return <p className="rounded-xl bg-muted px-3.5 py-2.5 text-sm text-muted-foreground">Ningún producto existente cambia de precio ni de costo con esta planilla.</p>;
+  }
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cambios en productos que ya existen</p>
+      <p className="text-sm text-foreground">
+        {`${changes.length.toLocaleString("es-AR")} cambian`}
+        {up + down > 0 && ` · precio: ${up.toLocaleString("es-AR")} suben, ${down.toLocaleString("es-AR")} bajan`}
+      </p>
+      {big > 0 && (
+        <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-warning-bg px-3 py-2 text-xs text-foreground">
+          <input type="checkbox" checked={onlyBig} onChange={(e) => setOnlyBig(e.target.checked)} className="h-3.5 w-3.5 accent-primary" />
+          {`Mostrar sólo los ${big.toLocaleString("es-AR")} con un cambio de precio de 30% o más (revisalos por si hay un error en la planilla)`}
+        </label>
+      )}
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-left text-xs">
+          <thead className="bg-muted text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2">Producto</th>
+              <th className="px-3 py-2 text-right">Precio</th>
+              <th className="px-3 py-2 text-right">Costo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.slice(pg.start, pg.end).map((c) => {
+              const p = c.newPrice !== null ? pctOf(c.oldPrice, c.newPrice) : null;
+              return (
+                <tr key={c.key} className="border-t border-border">
+                  <td className="max-w-[14rem] truncate px-3 py-2 text-foreground">{c.name}</td>
+                  <td className="px-3 py-2 text-right">
+                    {c.newPrice === null ? (
+                      <span className="text-muted-foreground">sin cambio</span>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground line-through">{money(c.oldPrice)}</span>
+                        {" → "}
+                        <b className="text-foreground">{money(c.newPrice)}</b>
+                        {p !== null && <span className={p > 0 ? "text-success" : "text-danger"}>{` (${p > 0 ? "+" : ""}${p.toLocaleString("es-AR", { maximumFractionDigits: 1 })}%)`}</span>}
+                      </>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {c.newCost === null ? (
+                      <span className="text-muted-foreground">sin cambio</span>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground line-through">{c.oldCost === null ? "—" : money(c.oldCost)}</span>
+                        {" → "}
+                        <b className="text-foreground">{money(c.newCost)}</b>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <PaginationBar total={shown.length} page={pg.page} pageSize={pg.pageSize} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} noun="productos" />
+      </div>
+    </div>
   );
 }
 
