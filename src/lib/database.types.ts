@@ -286,6 +286,8 @@ export interface Database {
       customers: {
         Row: {
           id: string;
+          /** Código interno automático por negocio (0096). undefined si falta la migración. */
+          code?: number;
           org_id: string;
           name: string;
           razon_social: string | null;
@@ -584,6 +586,8 @@ export interface Database {
       suppliers: {
         Row: {
           id: string;
+          /** Código interno automático por negocio (0096). undefined si falta la migración. */
+          code?: number;
           org_id: string;
           name: string;
           phone: string | null;

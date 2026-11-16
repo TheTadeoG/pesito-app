@@ -80,6 +80,7 @@ export async function importSuppliers(rows: SupplierImportRow[]): Promise<Suppli
 }
 
 export interface SupplierExportRow {
+  code: number | null;
   name: string;
   phone: string;
   email: string;
@@ -100,6 +101,7 @@ export async function getSuppliersForExport(): Promise<{ rows?: SupplierExportRo
     );
     return {
       rows: rows.map((r) => ({
+        code: r.code ?? null,
         name: r.name,
         phone: r.phone ?? "",
         email: r.email ?? "",

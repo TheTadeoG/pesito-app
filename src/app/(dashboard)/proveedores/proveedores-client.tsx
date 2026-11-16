@@ -40,6 +40,7 @@ import { getPurchaseDetail, type PurchaseDetail } from "@/app/(dashboard)/compra
 import { SupplierForm } from "@/app/(dashboard)/proveedores/supplier-form";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
 import { deleteSupplier, setPurchaseDueDate } from "@/app/(dashboard)/proveedores/actions";
+import { supplierCode } from "@/lib/codes";
 import { downloadSuppliersExcel } from "@/app/(dashboard)/proveedores/supplier-excel";
 import { downloadDebtExcel } from "@/app/(dashboard)/proveedores/debt-excel";
 import {
@@ -202,6 +203,7 @@ export function ProveedoresClient({
       if (!q) return true;
       return (
         s.name.toLowerCase().includes(q) ||
+        Boolean(supplierCode(s.code)?.toLowerCase().includes(q)) ||
         Boolean(s.phone?.toLowerCase().includes(q)) ||
         Boolean(s.email?.toLowerCase().includes(q))
       );
@@ -797,9 +799,9 @@ export function ProveedoresClient({
                           className="min-w-0 rounded-lg px-1.5 py-0.5 transition-colors hover:bg-muted"
                         >
                           <p className="truncate text-sm font-semibold text-foreground">{s.name}</p>
-                          {(s.phone || s.email) && (
+                          {(supplierCode(s.code) || s.phone || s.email) && (
                             <p className="truncate text-xs text-muted-foreground">
-                              {[s.phone, s.email].filter(Boolean).join(" · ")}
+                              {[supplierCode(s.code), s.phone, s.email].filter(Boolean).join(" · ")}
                             </p>
                           )}
                         </Link>

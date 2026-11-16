@@ -1,5 +1,6 @@
 "use client";
 
+import { customerCode } from "@/lib/codes";
 import { documentTypeLabel, formatDocument, inferDocumentType } from "@/lib/tax-id";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -38,6 +39,7 @@ export function ClienteDetailClient({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-bold text-foreground">{customer.name}</h1>
+              {customerCode(customer.code) && <Badge>{customerCode(customer.code)}</Badge>}
               {customer.balance > 0 && (
                 <Badge tone="warning">Debe {formatCurrency(customer.balance)}</Badge>
               )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { customerCode } from "@/lib/codes";
 import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -153,6 +154,7 @@ export function ClientesClient({
       if (!q) return true;
       return (
         c.name.toLowerCase().includes(q) ||
+        Boolean(customerCode(c.code)?.toLowerCase().includes(q)) ||
         Boolean(c.phone?.toLowerCase().includes(q)) ||
         Boolean(c.document?.toLowerCase().includes(q)) ||
         (qDigits.length >= 3 && Boolean(c.document?.includes(qDigits)))
@@ -454,7 +456,7 @@ export function ClientesClient({
                     >
                       <p className="truncate text-sm font-semibold text-foreground">{c.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {[c.phone, c.email].filter(Boolean).join(" · ") || "Sin datos de contacto"}
+                        {[customerCode(c.code), c.phone, c.email].filter(Boolean).join(" · ") || "Sin datos de contacto"}
                       </p>
                     </Link>
 

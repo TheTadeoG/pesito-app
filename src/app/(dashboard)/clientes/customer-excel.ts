@@ -1,3 +1,4 @@
+import { customerCode } from "@/lib/codes";
 import { dayKey } from "@/lib/supplier-debt";
 import { CUSTOMER_TEMPLATE_COLUMNS } from "@/lib/customer-import";
 import type { ClienteRow } from "@/app/(dashboard)/clientes/clientes-client";
@@ -36,7 +37,7 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
   const list = onlyDebt ? rows.filter((r) => r.balance > 0) : rows;
 
   const editable = ["ID", ...CUSTOMER_TEMPLATE_COLUMNS.map((c) => c.title)];
-  const readOnly = ["Saldo", "Debe desde", "Último pago", "Última compra"];
+  const readOnly = ["Código", "Saldo", "Debe desde", "Último pago", "Última compra"];
   const header: Cell[] = [
     ...editable.map((value) => ({ value, fontWeight: "bold" as const })),
     ...readOnly.map((value) => ({ value, fontWeight: "bold" as const, backgroundColor: "#e5e7eb" })),
@@ -56,6 +57,7 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
     { value: c.tax_condition ? (TAX_CONDITION_LABEL[c.tax_condition] ?? "") : "" },
     { value: c.invoice_type ? (INVOICE_LABEL[c.invoice_type] ?? "") : "" },
     { value: c.notes ?? "" },
+    { value: customerCode(c.code) ?? "", backgroundColor: "#f3f4f6" },
     { value: c.balance, format: "#,##0.00", backgroundColor: "#f3f4f6" },
     { value: c.balance > 0 ? fullDate(c.debtSince) : "", backgroundColor: "#f3f4f6" },
     { value: fullDate(c.lastPaymentAt), backgroundColor: "#f3f4f6" },
@@ -77,6 +79,7 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
       { width: 22 },
       { width: 18 },
       { width: 30 },
+      { width: 12 },
       { width: 14 },
       { width: 14 },
       { width: 14 },

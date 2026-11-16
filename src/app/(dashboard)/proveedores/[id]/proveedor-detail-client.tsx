@@ -1,5 +1,6 @@
 "use client";
 
+import { supplierCode } from "@/lib/codes";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Wallet } from "lucide-react";
@@ -33,6 +34,7 @@ export function ProveedorDetailClient({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-bold text-foreground">{supplier.name}</h1>
+              {supplierCode(supplier.code) && <Badge>{supplierCode(supplier.code)}</Badge>}
               {supplier.balance > 0 && (
                 <Badge tone="warning">Le debés {formatCurrency(supplier.balance)}</Badge>
               )}
