@@ -63,7 +63,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </form>
         </div>
       </header>
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8 lg:px-8">
+      <div className="mx-auto flex w-full max-w-[2000px] flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8 lg:px-8">
         <aside className="lg:w-56 lg:shrink-0">
           <div className="lg:sticky lg:top-24">
             <AdminNav items={items} />

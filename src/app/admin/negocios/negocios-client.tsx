@@ -148,7 +148,7 @@ export function NegociosClient({ initialOrgs, now, initialSeg, initialOrgId }: {
           </CardContent>
         </Card>
 
-        <div className="lg:w-[380px] lg:shrink-0">
+        <div className="lg:w-[400px] lg:shrink-0 xl:w-[440px]">
           {selected ? (
             <Ficha
               key={selected.id}

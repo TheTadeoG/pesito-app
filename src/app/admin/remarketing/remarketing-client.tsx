@@ -187,7 +187,7 @@ export function RemarketingClient({ initialOrgs, now, lastContacts: initialConta
           </CardContent>
         </Card>
 
-        <div className="space-y-4 lg:w-[360px] lg:shrink-0">
+        <div className="space-y-4 lg:w-[360px] lg:shrink-0 xl:w-[400px]">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Pruebas regaladas</CardTitle>
