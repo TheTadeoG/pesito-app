@@ -1,4 +1,5 @@
 import { customerCode } from "@/lib/codes";
+import { columnHeader, optionalHeader } from "@/lib/excel-headers";
 import { dayKey } from "@/lib/supplier-debt";
 import { CUSTOMER_TEMPLATE_COLUMNS } from "@/lib/customer-import";
 import type { ClienteRow } from "@/app/(dashboard)/clientes/clientes-client";
@@ -36,11 +37,12 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const list = onlyDebt ? rows.filter((r) => r.balance > 0) : rows;
 
-  const editable = ["ID", ...CUSTOMER_TEMPLATE_COLUMNS.map((c) => c.title)];
   const readOnly = ["Código", "Saldo", "Debe desde", "Último pago", "Última compra"];
+  // Lo obligatorio va en rojo con asterisco; "ID" y lo de sólo lectura no se completan a mano.
   const header: Cell[] = [
-    ...editable.map((value) => ({ value, fontWeight: "bold" as const })),
-    ...readOnly.map((value) => ({ value, fontWeight: "bold" as const, backgroundColor: "#e5e7eb" })),
+    optionalHeader("ID", "#e5e7eb"),
+    ...CUSTOMER_TEMPLATE_COLUMNS.map((c) => columnHeader(c.title, c.required)),
+    ...readOnly.map((value) => optionalHeader(value, "#e5e7eb")),
   ];
 
   const body: Cell[][] = list.map((c) => [
@@ -90,9 +92,19 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
 
 export async function downloadCustomerTemplate() {
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
-  const header = CUSTOMER_TEMPLATE_COLUMNS.map((c) => ({ value: c.title, fontWeight: "bold" as const }));
+  const header = CUSTOMER_TEMPLATE_COLUMNS.map((c) => columnHeader(c.title, c.required));
   const example = CUSTOMER_TEMPLATE_COLUMNS.map((c) => c.example);
-  await writeXlsxFile([header, example], {
-    columns: CUSTOMER_TEMPLATE_COLUMNS.map((c) => ({ width: Math.max(16, c.title.length + 6) })),
-  }).toFile("pesito-clientes.xlsx");
+  await writeXlsxFile([
+    { data: [header, example], sheet: "Clientes", columns: CUSTOMER_TEMPLATE_COLUMNS.map((c) => ({ width: Math.max(16, c.title.length + 6) })), stickyRowsCount: 1 },
+    {
+      data: [
+        [{ value: "Cómo completar la planilla", fontWeight: "bold" as const }],
+        [{ value: "* Las columnas en rojo son obligatorias: Nombre. Las demás son opcionales." }],
+        [{ value: "Si un cliente ya existe (mismo documento, email o teléfono) no se duplica." }],
+        [{ value: "La primera fila de la hoja “Clientes” es un ejemplo: borrala o reemplazala." }],
+      ],
+      sheet: "Cómo completarla",
+      columns: [{ width: 100 }],
+    },
+  ]).toFile("pesito-clientes.xlsx");
 }

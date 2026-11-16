@@ -263,6 +263,10 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Estado de cuenta en Excel (clientes y proveedores): botón "Estado de cuenta" en la ficha y "Estado de cuenta (Excel)" en el menú ⋯ de cada fila. Trae los datos de la persona, la fecha, el saldo actual y los movimientos de más viejo a más nuevo con el saldo corriendo (clientes: ventas a fiado y cobros; proveedores: compras a cuenta y pagos, Plan Básico). Las anuladas no cuentan. `lib/actions/account-statement.ts` + `lib/account-statement-excel.ts`.
 - Pendiente: elegir un rango de fechas para el estado de cuenta; mostrar vencimientos de cada compra en el estado del proveedor.
 
+## Hecho: obligatorias en rojo con * en todas las planillas (16/11/2026)
+- Helper `lib/excel-headers.ts` (`requiredHeader`, `optionalHeader`, `columnHeader`). Marcan lo obligatorio: planillas modelo de productos, proveedores, marcas y clientes (esta última con hoja "Cómo completarla"), y las planillas descargadas que se pueden volver a subir (productos: Producto y SKU; proveedores: Nombre; marcas: Nombre; clientes: Nombre). Los importadores ignoran el asterisco. Los reportes de sólo lectura (deuda, movimientos, estado de cuenta, inventario, por usuario) no llevan marcas.
+- Regla: una planilla nueva que se pueda volver a subir usa `columnHeader` para sus títulos.
+
 ## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.

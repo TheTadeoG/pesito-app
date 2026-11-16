@@ -1,3 +1,4 @@
+import { requiredHeader } from "@/lib/excel-headers";
 import { dayKey } from "@/lib/supplier-debt";
 import type { StockRow, StockStatus } from "@/lib/stock-rows";
 
@@ -71,8 +72,8 @@ export async function downloadStockExcel(rows: readonly StockRow[], withCover: b
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const columns = EXCEL_COLUMNS.filter((c) => (withCover || !c.max) && (!columnIds || columnIds.includes(c.id)));
   const header: Cell[] = [
-    { value: "Producto", fontWeight: "bold", backgroundColor: "#e5e7eb" },
-    { value: "SKU", fontWeight: "bold", backgroundColor: "#e5e7eb" },
+    requiredHeader("Producto"),
+    requiredHeader("SKU"),
     ...columns.map((c) => ({ value: c.label, fontWeight: "bold" as const, backgroundColor: "#e5e7eb" })),
   ];
   const body: Cell[][] = rows.map((r) => [{ value: r.name }, { value: r.sku ?? "" }, ...columns.map((c) => c.cell(r))]);
