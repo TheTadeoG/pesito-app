@@ -210,6 +210,10 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Compras: cada renglón muestra el precio de venta actual, un campo "Nuevo" (vacío = no cambia) y el botón "Mantener margen" cuando el costo cambió (precio × costo nuevo / costo anterior, redondeado a pesos). Avisa "Venderías a pérdida". Los precios se guardan después de registrar la compra, en la misma acción (sin migración); si alguno falla, la compra queda y se avisa.
 - POS: al cobrar se abre "¡Venta cobrada!" con el total, el vuelto (si pagó en efectivo con más) e "Imprimir ticket". Enter o Escape la cierran; escanear el próximo producto también la cierra y el código entra al buscador. El ticket (`.ticket-print` en globals.css) ocupa el ancho del papel (58/80 mm) y dice "Comprobante no válido como factura".
 
+## Hecho: precio por porcentaje con vista previa (16/11/2026)
+- Formulario de producto: con el costo cargado aparece "Ganancia sobre el costo (%)" (la misma cuenta del aviso de margen bajo); muestra en cuánto queda el precio y cuánto se gana por unidad, y "Usar este precio" lo aplica. También muestra el % que da el precio actual. Todos los planes, sin cambios en textos públicos.
+- Ajuste masivo (aumentar/bajar precios o costos): vista previa con un producto de la selección (antes → después).
+
 ## Hecho: aumento de costo que sube también el precio
 
 - Migración 0040 (aplicada en producción el 2026-09-25): `bulk_increase_cost_with_price`. En "Aumentar costos", la casilla "Aumentar también el precio de venta en la misma proporción" sube cada precio × costo nuevo / costo anterior (con % es el mismo %; con monto fijo, cada producto en su proporción). Sólo productos con costo > 0. Deja un aumento de costo y otro de precio, cada uno se deshace por separado; el de precio con monto fijo figura como "Proporcional al costo".

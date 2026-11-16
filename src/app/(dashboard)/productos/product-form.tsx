@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/compress-image";
 import {
@@ -50,6 +50,46 @@ const IVA_RATES = [
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
+}
+
+// Poner el precio como un porcentaje de ganancia sobre el costo (la misma cuenta del aviso de margen bajo): se escribe
+// el %, se ve en cuánto queda el precio y se aplica con un botón. Sólo ayuda: lo que se guarda es el precio final.
+function PriceFromCost({ cost, price, onUse }: { cost: string; price: string; onUse: (value: string) => void }) {
+  const [percent, setPercent] = useState("");
+  const c = Number(cost);
+  if (cost.trim() === "" || Number.isNaN(c) || c <= 0) return null;
+  const p = Number(percent);
+  const valid = percent.trim() !== "" && !Number.isNaN(p) && p > -100;
+  const result = valid ? round2(c * (1 + p / 100)) : null;
+  const current = Number(price);
+  const currentPct = price.trim() !== "" && current > 0 ? (current / c - 1) * 100 : null;
+  return (
+    <div className="-mt-1 rounded-xl border border-border bg-muted/40 p-3">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-36">
+          <Label htmlFor="p-markup">Ganancia sobre el costo (%)</Label>
+          <Input id="p-markup" type="number" step="0.1" min={0} value={percent} onChange={(e) => setPercent(e.target.value)} placeholder="Ej: 40" />
+        </div>
+        <div className="min-w-0 flex-1 pb-1.5 text-sm">
+          {result !== null ? (
+            <p className="text-foreground">
+              {`Con ${p.toLocaleString("es-AR")}% sobre ${formatCurrency(c)} el precio queda en `}
+              <b>{formatCurrency(result)}</b>
+              <span className="text-muted-foreground">{` (ganás ${formatCurrency(round2(result - c))} por unidad)`}</span>
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Escribí un porcentaje y te mostramos en cuánto queda el precio.</p>
+          )}
+        </div>
+        <Button type="button" size="sm" variant="outline" disabled={result === null} onClick={() => result !== null && onUse(String(result))}>
+          Usar este precio
+        </Button>
+      </div>
+      {currentPct !== null && (
+        <p className="mt-2 text-xs text-muted-foreground">{`Con el precio actual ganás ${currentPct.toLocaleString("es-AR", { maximumFractionDigits: 1 })}% sobre el costo.`}</p>
+      )}
+    </div>
+  );
 }
 
 // Ayudante opcional para no tener que sacar cuentas a mano: mostrás el
@@ -626,6 +666,14 @@ export function ProductForm({
           />
           <PriceWithIvaField id="p-cost" label="Costo (opcional)" value={cost} onChange={setCost} />
         </div>
+        <PriceFromCost
+          cost={cost}
+          price={price}
+          onUse={(v) => {
+            setPrice(v);
+            setPriceKey((k) => k + 1); // rearma «Sin IVA» con el precio nuevo
+          }}
+        />
         {priceBelowCost && (
           <p className="-mt-2 rounded-xl bg-danger-bg px-3 py-2 text-xs font-medium text-danger">
             El precio de venta es menor al costo: estarías vendiendo a pérdida.

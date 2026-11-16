@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import { useToast } from "@/components/toast/toast-provider";
 import {
   bulkIncreaseField,
@@ -216,6 +216,23 @@ export function BulkFieldIncreaseDialog({
     if (!brandName) return 0;
     return withField.filter((p) => p.brand === brandName).length;
   }, [products, field, groupBy, supplierId, brandName]);
+
+  // Vista previa con un producto de la selección: cómo cambia su valor con lo que se escribió.
+  const preview = useMemo(() => {
+    const magnitude = Number(value);
+    if (!value || Number.isNaN(magnitude) || magnitude <= 0 || affectedCount === 0) return null;
+    const sample = products.find(
+      (p) =>
+        p.active &&
+        (field === "price" || p.cost !== null) &&
+        (groupBy === "supplier" ? p.default_supplier_id === supplierId : p.brand === brandName)
+    );
+    if (!sample) return null;
+    const before = field === "price" ? sample.price : (sample.cost ?? 0);
+    const delta = mode === "percent" ? before * (magnitude / 100) : magnitude;
+    const after = Math.max(0, Math.round((before + (direction === "up" ? delta : -delta)) * 100) / 100);
+    return { name: sample.name, before, after };
+  }, [products, field, groupBy, supplierId, brandName, value, mode, direction, affectedCount]);
 
   function resetAndClose() {
     setGroupBy("supplier");
@@ -435,6 +452,18 @@ export function BulkFieldIncreaseDialog({
             autoFocus
           />
         </div>
+
+        {preview && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 px-3.5 py-2.5 text-sm">
+            <p className="text-xs text-muted-foreground">{`Así quedaría, por ejemplo, «${preview.name}»`}</p>
+            <p className="mt-0.5 flex flex-wrap items-center gap-2 text-foreground">
+              <span className="text-muted-foreground line-through">{formatCurrency(preview.before)}</span>
+              <span>→</span>
+              <b className="text-base">{formatCurrency(preview.after)}</b>
+              <span className="text-xs text-muted-foreground">{`(${field === "price" ? "precio" : "costo"})`}</span>
+            </p>
+          </div>
+        )}
 
         {field === "cost" && (
           <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-border px-3.5 py-2.5 text-sm">
