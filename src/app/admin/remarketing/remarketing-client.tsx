@@ -141,8 +141,8 @@ export function RemarketingClient({ initialOrgs, now, lastContacts: initialConta
                   return (
                     <div key={o.id} className="grid grid-cols-[2fr_1.5fr_1.2fr_1.8fr] items-center gap-3 py-3">
                       <Link href={`/admin/negocios?org=${o.id}`} className="min-w-0">
-                        <span className="block truncate font-semibold text-foreground hover:underline">{o.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">{`${o.ownerName ?? "Dueño sin nombre"} · alta ${ago(o.createdAt, now)}`}</span>
+                        <span className="admin-sensitive block truncate font-semibold text-foreground hover:underline">{o.name}</span>
+                        <span className="admin-sensitive block truncate text-xs text-muted-foreground">{`${o.ownerName ?? "Dueño sin nombre"} · alta ${ago(o.createdAt, now)}`}</span>
                       </Link>
                       <span className="text-xs text-muted-foreground">
                         {`${o.productCount} productos · ${o.saleCount} ventas`}
@@ -238,7 +238,7 @@ export function RemarketingClient({ initialOrgs, now, lastContacts: initialConta
                 <p key={`${c.at}-${i}`} className="grid grid-cols-[72px_1fr] gap-2 text-sm leading-snug">
                   <span className="text-muted-foreground">{ago(c.at, now)}</span>
                   <span className="text-foreground">
-                    <b>{c.who}</b> · {c.what}
+                    <b className="admin-sensitive">{c.who}</b> · {c.what}
                   </span>
                 </p>
               ))}

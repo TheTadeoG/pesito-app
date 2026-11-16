@@ -91,10 +91,10 @@ export default async function AdminResumenPage() {
       })
     : null;
 
-  const kpis: { label: string; value: string; note: string; tone?: string }[] = [
+  const kpis: { label: string; value: string; note: string; tone?: string; money?: boolean }[] = [
     { label: "Negocios", value: String(orgs.length), note: `+${newWeek} esta semana`, tone: "text-success" },
     { label: "Pagan", value: String(paying), note: orgs.length ? `${Math.round((paying / orgs.length) * 100)}% de los negocios` : "—" },
-    { label: "Ingreso mensual", value: funnel ? formatCurrency(funnel.mrr) : "—", note: "Estimado, de los que pagan por Mercado Pago" },
+    { label: "Ingreso mensual", value: funnel ? formatCurrency(funnel.mrr) : "—", note: "Estimado, de los que pagan por Mercado Pago", money: true },
     { label: "En prueba gratis", value: String(inTrial), note: trialEnding ? `${trialEnding} vencen en 3 días` : "Ninguna vence pronto", tone: trialEnding ? "text-warning" : undefined },
     { label: "Vendieron esta semana", value: String(soldThisWeek), note: orgs.length ? `${Math.round((soldThisWeek / orgs.length) * 100)}% de los negocios` : "—" },
     { label: "Sin ninguna venta", value: String(noSales), note: "Se registraron y no vendieron" },
@@ -142,7 +142,7 @@ export default async function AdminResumenPage() {
           <Card key={k.label}>
             <CardContent className="space-y-1 py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{k.label}</p>
-              <p className="text-3xl font-bold leading-none text-foreground">{k.value}</p>
+              <p className={cn("text-3xl font-bold leading-none text-foreground", k.money && "admin-sensitive")}>{k.value}</p>
               <p className={cn("text-sm text-muted-foreground", k.tone)}>{k.note}</p>
             </CardContent>
           </Card>
@@ -235,7 +235,7 @@ export default async function AdminResumenPage() {
               <p key={`${e.at}-${i}`} className="grid grid-cols-[72px_1fr] gap-2 text-sm leading-snug">
                 <span className="text-muted-foreground">{ago(e.at, now)}</span>
                 <span className="text-foreground">
-                  <b>{e.who}</b> {e.what}
+                  <b className="admin-sensitive">{e.who}</b> {e.what}
                 </span>
               </p>
             ))}
@@ -259,8 +259,8 @@ export default async function AdminResumenPage() {
               return (
                 <div key={o.id} className="grid grid-cols-[2fr_1fr_1fr_1.4fr_1fr_1.4fr] items-center gap-3 px-5 py-2.5">
                   <Link href={`/admin/negocios?org=${o.id}`} className="min-w-0">
-                    <span className="block truncate font-semibold text-foreground hover:underline">{o.name}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{`${o.type}${o.ownerName ? ` · ${o.ownerName}` : ""}`}</span>
+                    <span className="admin-sensitive block truncate font-semibold text-foreground hover:underline">{o.name}</span>
+                    <span className="admin-sensitive block truncate text-xs text-muted-foreground">{`${o.type}${o.ownerName ? ` · ${o.ownerName}` : ""}`}</span>
                   </Link>
                   <span className="text-muted-foreground">{ago(o.createdAt, now)}</span>
                   <span><PlanChip org={o} /></span>

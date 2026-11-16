@@ -110,7 +110,7 @@ export function FeedbackInbox({ rows: initial }: { rows: FeedbackRow[] }) {
                 <p className="whitespace-pre-wrap break-words text-sm text-foreground">{r.message}</p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                   {r.email && (
-                    <a href={`mailto:${r.email}`} className="text-primary hover:underline">
+                    <a href={`mailto:${r.email}`} className="admin-sensitive text-primary hover:underline">
                       {r.email}
                     </a>
                   )}

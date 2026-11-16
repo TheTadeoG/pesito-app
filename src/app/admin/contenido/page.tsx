@@ -595,7 +595,7 @@ export default async function AdminContenidoPage() {
                       key={org.id}
                       className="flex items-center justify-between px-5 py-2.5 text-sm"
                     >
-                      <span className="truncate text-foreground">{org.name}</span>
+                      <span className="admin-sensitive truncate text-foreground">{org.name}</span>
                       <span className="shrink-0 text-xs text-muted-foreground">
                         alta: {formatDateTime(org.created_at)}
                       </span>
@@ -623,7 +623,7 @@ export default async function AdminContenidoPage() {
                       key={org.name}
                       className="flex items-center justify-between px-5 py-2.5 text-sm"
                     >
-                      <span className="truncate text-foreground">{org.name}</span>
+                      <span className="admin-sensitive truncate text-foreground">{org.name}</span>
                       <Badge tone="warning">
                         {org.everSold ? `${org.daysInactive}d sin vender` : "nunca vendió"}
                       </Badge>
@@ -719,7 +719,7 @@ export default async function AdminContenidoPage() {
                     className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-foreground">{org.name}</p>
+                      <p className="admin-sensitive truncate text-foreground">{org.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {businessTypeLabels[org.business_type] ?? org.business_type} ·{" "}
                         {formatDateTime(org.created_at)}
@@ -884,7 +884,7 @@ export default async function AdminContenidoPage() {
                     className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-foreground">{s.orgName}</p>
+                      <p className="admin-sensitive truncate text-foreground">{s.orgName}</p>
                       <p className="text-xs text-muted-foreground">
                         {paymentLabels[s.payment_method] ?? s.payment_method} ·{" "}
                         {formatDateTime(s.created_at)}

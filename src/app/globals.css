@@ -881,3 +881,10 @@ html:has(body.driver-active),
 @media (prefers-reduced-motion: reduce) {
   .arca-pop, .arca-pulse, .arca-type, .arca-appear, .arca-fly, .arca-drop, .arca-drag { animation: none; opacity: 1; clip-path: none; transform: none; }
 }
+
+/* Panel interno: con "Ocultar datos" se desenfocan los datos de los negocios para poder sacar capturas. */
+html[data-admin-blur="1"] .admin-sensitive {
+  filter: blur(7px);
+  user-select: none;
+  pointer-events: none;
+}

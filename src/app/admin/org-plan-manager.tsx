@@ -43,7 +43,7 @@ export function OrgPlanManager({ orgs }: { orgs: OrgPlanRow[] }) {
       {rows.map((org) => (
         <div key={org.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-2.5 text-sm">
           <div className="min-w-0">
-            <p className="truncate text-foreground">{org.name}</p>
+            <p className="admin-sensitive truncate text-foreground">{org.name}</p>
             {org.plan === "gratis" && org.proTrialEndsAt && (
               <p className="text-xs text-muted-foreground">
                 Prueba Pro hasta {formatDateTime(org.proTrialEndsAt)}

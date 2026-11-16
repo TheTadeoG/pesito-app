@@ -130,7 +130,7 @@ export function NegociosClient({ initialOrgs, now, initialSeg, initialOrgId }: {
                       className={cn("grid w-full grid-cols-[2.2fr_1.2fr_1.6fr_1fr] items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-muted/50", selectedId === o.id && "bg-accent/60")}
                     >
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold text-foreground">{o.name}</span>
+                        <span className="admin-sensitive block truncate font-semibold text-foreground">{o.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">{`${o.type} · alta ${ago(o.createdAt, now)}`}</span>
                       </span>
                       <span className="flex flex-col items-start gap-0.5">
@@ -243,7 +243,7 @@ function Ficha({ org, now, onChange }: { org: AdminOrg; now: number; onChange: (
       <CardContent className="space-y-5 p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-bold text-foreground">{org.name}</h2>
+            <h2 className="admin-sensitive truncate text-lg font-bold text-foreground">{org.name}</h2>
             <p className="text-xs text-muted-foreground">{`${org.type} · alta el ${formatDate(org.createdAt)}`}</p>
           </div>
           <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold", chip.tone)}>{chip.label}</span>
@@ -251,7 +251,7 @@ function Ficha({ org, now, onChange }: { org: AdminOrg; now: number; onChange: (
 
         <section className="space-y-2">
           <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Contacto</h3>
-          <div className="space-y-0.5 text-sm text-foreground">
+          <div className="admin-sensitive space-y-0.5 text-sm text-foreground">
             <p>{org.ownerName ?? "Dueño sin nombre"}</p>
             <p className="break-all text-muted-foreground">{org.ownerEmail ?? "Sin email"}</p>
             <p className="text-muted-foreground">{org.phone ?? "Sin teléfono"}</p>
@@ -331,7 +331,7 @@ function Ficha({ org, now, onChange }: { org: AdminOrg; now: number; onChange: (
           <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Notas internas</h3>
           {detail && !detail.notesAvailable && <p className="text-xs text-warning">Falta aplicar la migración 0091 para guardar notas.</p>}
           {(detail?.notes ?? []).map((n) => (
-            <div key={n.id} className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm leading-relaxed">
+            <div key={n.id} className="admin-sensitive rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm leading-relaxed">
               <p className="text-foreground">{n.body}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(n.createdAt)}</p>
             </div>

@@ -8,6 +8,7 @@ import { Wordmark } from "@/components/marketing/wordmark";
 import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminNav, type AdminNavItem } from "@/app/admin/admin-nav";
+import { PrivacyToggle } from "@/app/admin/privacy-toggle";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -53,6 +54,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <PrivacyToggle />
           <ThemeToggle />
           <form action={signOut}>
             <Button variant="outline" size="icon" aria-label="Cerrar sesión" type="submit">
