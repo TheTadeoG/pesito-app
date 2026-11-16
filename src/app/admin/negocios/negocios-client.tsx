@@ -31,15 +31,17 @@ function planNote(org: AdminOrg, now: number): string {
     const days = Math.ceil((new Date(org.trialEndsAt).getTime() - now) / 86_400_000);
     return days > 0 ? `quedan ${days} ${days === 1 ? "día" : "días"}` : `venció ${formatDate(org.trialEndsAt)}`;
   }
-  if (org.plan !== "gratis" && org.cycle) {
-    const cycle = org.cycle === "anual" ? "anual" : "mensual";
-    // Sin débito automático (pago único, o débito cancelado) no se renueva solo: se muestra cuándo vence.
-    if (org.paymentStatus === "cancelled" && org.periodEnd) {
-      const days = Math.ceil((new Date(org.periodEnd).getTime() - now) / 86_400_000);
-      const kind = org.hasDebit ? "débito cancelado" : "pago único";
-      return days > 0 ? `${cycle} · ${kind} · vence ${formatDate(org.periodEnd)}` : `${cycle} · ${kind} · venció ${formatDate(org.periodEnd)}`;
+  if (org.plan !== "gratis") {
+    const year = org.cycle === "anual";
+    const left = org.periodEnd ? Math.ceil((new Date(org.periodEnd).getTime() - now) / 86_400_000) : null;
+    const until = org.periodEnd ? `${left !== null && left <= 0 ? "venció" : "vence"} ${formatDate(org.periodEnd)}` : "";
+    // Pago único o débito cancelado: no se renueva solo, se muestra hasta cuándo está pago.
+    if (org.paymentStatus === "cancelled") {
+      return org.hasDebit ? `débito cancelado · ${until}` : `pago único de ${year ? "1 año" : "1 mes"} · no se renueva solo · ${until}`;
     }
-    return cycle;
+    if (org.hasDebit) return `débito automático ${year ? "anual" : "mensual"} · se renueva solo`;
+    if (!org.paidViaMp) return "asignado a mano (no pagó)";
+    return year ? "anual" : "mensual";
   }
   return "";
 }
@@ -254,7 +256,6 @@ function Ficha({ org, now, onChange }: { org: AdminOrg; now: number; onChange: (
           <div className="min-w-0">
             <h2 className="admin-sensitive truncate text-lg font-bold text-foreground">{org.name}</h2>
             <p className="text-xs text-muted-foreground">{`${org.type} · alta el ${formatDate(org.createdAt)}`}</p>
-            {planNote(org, now) && <p className="text-xs text-muted-foreground">{`Plan ${planNote(org, now)}`}</p>}
           </div>
           <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold", chip.tone)}>{chip.label}</span>
         </div>
@@ -289,7 +290,12 @@ function Ficha({ org, now, onChange }: { org: AdminOrg; now: number; onChange: (
               <b>{trialLeftDays > 0 ? `quedan ${trialLeftDays} ${trialLeftDays === 1 ? "día" : "días"}` : "ya no está activa"}</b>
             </p>
           )}
-          {org.plan !== "gratis" && <p className="text-sm text-foreground">{`Plan ${planLabels[org.plan as Plan] ?? org.plan}${org.cycle ? ` · ${org.cycle}` : ""}${org.invoicePack ? ` · paquete de ${org.invoicePack} facturas` : ""}`}</p>}
+          {org.plan !== "gratis" && (
+            <div className="space-y-0.5">
+              <p className="text-sm text-foreground">{`Plan ${planLabels[org.plan as Plan] ?? org.plan}${org.invoicePack ? ` · paquete de ${org.invoicePack} facturas` : ""}`}</p>
+              {planNote(org, now) && <p className="text-xs text-muted-foreground">{`Forma de pago: ${planNote(org, now)}`}</p>}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             {org.plan === "gratis" && (
               <>
