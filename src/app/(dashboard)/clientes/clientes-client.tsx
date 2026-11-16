@@ -39,7 +39,7 @@ import { CustomerForm } from "@/app/(dashboard)/clientes/customer-form";
 import { PaymentDialog } from "@/app/(dashboard)/clientes/payment-dialog";
 import { deleteCustomer } from "@/app/(dashboard)/clientes/actions";
 import { CustomerImportDialog } from "@/app/(dashboard)/clientes/customer-import-dialog";
-import { downloadCustomersExcel, downloadCustomerTemplate } from "@/app/(dashboard)/clientes/customer-excel";
+import { CustomerExcelDialog } from "@/app/(dashboard)/clientes/customer-excel-dialog";
 
 export interface ClienteRow extends Customer {
   /** Desde cuándo debe (la compra a fiado más vieja que sigue sin pagarse). */
@@ -105,6 +105,7 @@ export function ClientesClient({
   const router = useRouter();
   const todayKey = todayInArgentina();
   const hasDebtors = customers.some((c) => c.balance > 0);
+  const [excelOpen, setExcelOpen] = useState(false);
 
   const [query, setQuery] = useState("");
   const [ages, setAges] = useState<Set<AgeKey>>(() => new Set(hasDebtors ? WITH_DEBT : []));
@@ -228,31 +229,19 @@ export function ClientesClient({
             <DropdownMenu
               trigger={
                 <Button variant="outline" className="whitespace-nowrap">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Excel
+                  Acciones
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               }
             >
+              <DropdownMenuItem onClick={() => setExcelOpen(true)}>
+                <FileSpreadsheet className="h-4 w-4" />
+                Descargar Excel
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => (importLocked ? setImportLockedOpen(true) : setImportOpen(true))}>
                 <FileSpreadsheet className="h-4 w-4" />
                 Cargar desde Excel
                 {importLocked && <Badge tone="accent">Básico</Badge>}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void downloadCustomersExcel(customers, todayKey)}>
-                <Download className="h-4 w-4" />
-                Exportar todos los clientes
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!hasDebtors}
-                onClick={() => void downloadCustomersExcel(customers, todayKey, true)}
-              >
-                <Download className="h-4 w-4" />
-                Exportar solo los que deben
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void downloadCustomerTemplate()}>
-                <Download className="h-4 w-4" />
-                Descargar planilla modelo
               </DropdownMenuItem>
             </DropdownMenu>
           )}
@@ -570,6 +559,7 @@ export function ClientesClient({
         onClose={() => setFormOpen(false)}
         customer={editing}
       />
+      <CustomerExcelDialog open={excelOpen} onClose={() => setExcelOpen(false)} customers={customers} todayKey={todayKey} />
       <CustomerImportDialog
         open={importOpen}
         onClose={() => setImportOpen(false)}
