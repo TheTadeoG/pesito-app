@@ -199,10 +199,14 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
         <Link
           href="/caja"
           data-tour="nav-/caja"
-          className="flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-white/20 px-2.5 py-2 text-xs font-bold transition-colors hover:bg-white/30"
+          className={cn(
+            "flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-white/20 px-2.5 py-2 text-xs font-bold transition-colors hover:bg-white/30",
+            // "Cerrar caja" más el aviso necesitan más lugar que "Vender": sin ícono y con más ancho para que no se corte.
+            closing ? "flex-[1.7]" : "flex-1"
+          )}
         >
-          {!(showHints && !closing) && <Wallet className="h-4 w-4 shrink-0" />}
-          <span className="min-w-0 truncate">{closing ? "Cerrar caja" : "Caja"}</span>
+          {!closing && !showHints && <Wallet className="h-4 w-4 shrink-0" />}
+          <span className="min-w-0">{closing ? "Cerrar caja" : "Caja"}</span>
           {/* Sobre el verde/ámbar el fondo de aviso se pierde: píldora blanca. */}
           <ModuleBadge
             module="caja"

@@ -281,7 +281,9 @@ export function ProductForm({
   // Al editar cualquier producto: solapas "Producto" y "Variantes".
   // Combos y kits: un producto armado con otros productos (sin stock propio).
   const isBundleProduct = Boolean(product?.is_bundle);
-  const [bundleChecked, setBundleChecked] = useState(false);
+  // Al crear: qué tipo de producto es (uno solo a la vez).
+  const [kind, setKind] = useState<"simple" | "variants" | "bundle">("simple");
+  const bundleChecked = !isEdit && kind === "bundle";
   const bundleOn = Boolean(bundleConfig) && !bundleConfig?.locked && (isBundleProduct || (!isEdit && bundleChecked));
   const [bundleItems, setBundleItems] = useState<BundleItemState[]>(() =>
     (product && bundleConfig?.itemsByBundle[product.id] ? bundleConfig.itemsByBundle[product.id] : []).map((i) => ({ componentId: i.componentId, quantity: String(i.quantity) })),
@@ -321,7 +323,7 @@ export function ProductForm({
   const isVariant = Boolean(product?.variant_group_id);
   const [variantSize, setVariantSize] = useState(product?.variant_size ?? "");
   const [variantColor, setVariantColor] = useState(product?.variant_color ?? "");
-  const variantsOn = !isEdit && Boolean(variantsConfig) && !variantsConfig?.locked && variants.enabled && !bundleChecked;
+  const variantsOn = !isEdit && Boolean(variantsConfig) && !variantsConfig?.locked && kind === "variants";
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(
     product?.brand ?? null
   );
@@ -883,27 +885,39 @@ export function ProductForm({
           </div>
         </div>
 
-        {!isEdit && bundleConfig && (
-          <div className="rounded-xl border border-border bg-muted/30 p-3.5">
-            <label className={cn("flex items-start gap-2.5 text-sm", bundleConfig.locked ? "cursor-not-allowed opacity-70" : "cursor-pointer")}>
-              <input
-                type="checkbox"
-                checked={bundleChecked && !bundleConfig.locked}
-                disabled={bundleConfig.locked}
-                onChange={(e) => {
-                  setBundleChecked(e.target.checked);
-                  if (e.target.checked) setVariants((v) => ({ ...v, enabled: false }));
-                }}
-                className="mt-0.5 h-4 w-4 accent-primary"
-              />
-              <span>
-                <span className="font-medium text-foreground">Es un combo o kit</span>
-                <span className="block text-xs text-muted-foreground">Se arma con otros productos tuyos (ej: pack de 2 gaseosas + papas). Al venderlo se descuenta el stock de cada uno.</span>
-              </span>
-            </label>
-            {bundleConfig.locked && (
-              <PlanLockNote plan="basico" className="mt-3">
-                Los combos y kits están desde el Plan Básico.
+        {!isEdit && (variantsConfig || bundleConfig) && (
+          <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3.5">
+            <p className="text-sm font-medium text-foreground">¿Qué tipo de producto es?</p>
+            <div role="radiogroup" aria-label="Tipo de producto" className="grid gap-2 sm:grid-cols-3">
+              {([
+                { id: "simple", title: "Simple", help: "Un solo producto, con su SKU, stock y precio.", locked: false },
+                { id: "variants", title: "Con talles o colores", help: "Un mismo producto en varios talles y colores, cada uno con su SKU, stock y precio.", locked: !variantsConfig || variantsConfig.locked },
+                { id: "bundle", title: "Combo o kit", help: "Se arma con otros productos tuyos y al venderlo descuenta el stock de cada uno.", locked: !bundleConfig || bundleConfig.locked },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={kind === opt.id}
+                  disabled={opt.locked}
+                  onClick={() => setKind(opt.id)}
+                  className={cn(
+                    "rounded-xl border p-3 text-left transition-colors",
+                    kind === opt.id ? "border-primary bg-accent" : "border-border bg-card hover:border-primary/50",
+                    opt.locked && "cursor-not-allowed opacity-60 hover:border-border"
+                  )}
+                >
+                  <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    {opt.title}
+                    {opt.locked && <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">Básico</span>}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{opt.help}</span>
+                </button>
+              ))}
+            </div>
+            {((variantsConfig && variantsConfig.locked) || (bundleConfig && bundleConfig.locked)) && (
+              <PlanLockNote plan="basico" className="mt-1">
+                Los talles y colores, y los combos y kits, están desde el Plan Básico.
               </PlanLockNote>
             )}
           </div>
@@ -1010,11 +1024,12 @@ export function ProductForm({
           </p>
         )}
 
-        {!isEdit && variantsConfig && !bundleChecked && (
+        {!isEdit && variantsConfig && kind === "variants" && !variantsConfig.locked && (
           <VariantsSection
-            state={variants}
+            embedded
+            state={{ ...variants, enabled: true }}
             onChange={setVariants}
-            locked={variantsConfig.locked}
+            locked={false}
             baseName={name}
             baseSku={sku}
             basePrice={price}
