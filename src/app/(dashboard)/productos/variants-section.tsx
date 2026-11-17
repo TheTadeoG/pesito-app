@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
@@ -16,15 +17,17 @@ export interface VariantsState {
   colorsText: string;
   /** Cambios a mano por variante ("talle|color" en minúsculas): lo que no se tocó se arma solo. */
   edits: Record<string, Partial<Record<"sku" | "barcode" | "stock" | "price", string>>>;
+  /** Combinaciones que ese talle no tiene ("talle|color" en minúsculas), para elegir los colores de cada talle. */
+  excluded: string[];
 }
 
-export const EMPTY_VARIANTS: VariantsState = { enabled: false, sizesText: "", colorsText: "", edits: {} };
+export const EMPTY_VARIANTS: VariantsState = { enabled: false, sizesText: "", colorsText: "", edits: {}, excluded: [] };
 
 const keyOf = (size: string, color: string) => `${size.toLowerCase()}|${color.toLowerCase()}`;
 
 /** Filas de variantes listas para mostrar y guardar: cada combinación con su SKU, código, stock y precio. */
 export function resolveVariantRows(state: VariantsState, baseSku: string, basePrice: string) {
-  const combos = combinations(parseList(state.sizesText), parseList(state.colorsText));
+  const combos = combinations(parseList(state.sizesText), parseList(state.colorsText)).filter(({ size, color }) => !state.excluded.includes(keyOf(size, color)));
   return combos.map(({ size, color }) => {
     const edit = state.edits[keyOf(size, color)] ?? {};
     return {
@@ -68,6 +71,8 @@ export function VariantsSection({
   showStock: boolean;
 }) {
   const rows = useMemo(() => resolveVariantRows(state, baseSku, basePrice), [state, baseSku, basePrice]);
+  const sizes = parseList(state.sizesText);
+  const colors = parseList(state.colorsText);
   const pg = usePagination(rows.length, `${state.sizesText}|${state.colorsText}`, "pesito-variantes-pagesize");
 
   function edit(key: string, field: "sku" | "barcode" | "stock" | "price", value: string) {
@@ -97,35 +102,59 @@ export function VariantsSection({
 
       {state.enabled && !locked && (
         <div className="mt-4 space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="v-sizes">Talles</Label>
-              <Input
-                id="v-sizes"
-                list="v-size-suggestions"
-                value={state.sizesText}
-                onChange={(e) => onChange({ ...state, sizesText: e.target.value })}
-                placeholder="Ej: S, M, L, XL  o  38, 40, 42"
-              />
-              <datalist id="v-size-suggestions">
-                {sizeSuggestions.map((s) => (
-                  <option key={s} value={s} />
-                ))}
-              </datalist>
-            </div>
-            <div>
-              <Label htmlFor="v-colors">Colores</Label>
-              <Input id="v-colors" list="v-color-suggestions" value={state.colorsText} onChange={(e) => onChange({ ...state, colorsText: e.target.value })} placeholder="Ej: Azul, Negro, Blanco" />
-              <datalist id="v-color-suggestions">
-                {colorSuggestions.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
-            </div>
+          <div className="space-y-4">
+            <ChipPicker
+              id="v-sizes"
+              label="Talles"
+              values={parseList(state.sizesText)}
+              onChange={(list) => onChange({ ...state, sizesText: list.join(", ") })}
+              quickGroups={[
+                { title: "Ropa", options: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] },
+                { title: "Calzado", options: ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"] },
+              ]}
+              previous={sizeSuggestions}
+              placeholder="Otro talle (ej: Único, 6 meses)"
+            />
+            <ChipPicker
+              id="v-colors"
+              label="Colores"
+              values={parseList(state.colorsText)}
+              onChange={(list) => onChange({ ...state, colorsText: list.join(", ") })}
+              quickGroups={[{ title: "Comunes", options: ["Negro", "Blanco", "Gris", "Azul", "Rojo", "Verde", "Amarillo", "Rosa", "Beige", "Marrón"] }]}
+              previous={colorSuggestions}
+              placeholder="Otro color (ej: Azul marino)"
+            />
           </div>
+          {sizes.length > 0 && colors.length > 0 && (
+            <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+              <p className="text-sm font-medium text-foreground">Colores de cada talle</p>
+              <p className="text-xs text-muted-foreground">Todos los colores están en todos los talles. Tocá un color para sacarlo de un talle que no lo tiene.</p>
+              <div className="space-y-1.5">
+                {sizes.map((size) => (
+                  <div key={size} className="flex flex-wrap items-center gap-1.5">
+                    <span className="w-20 shrink-0 truncate text-sm font-semibold text-foreground" title={size}>{`Talle ${size}`}</span>
+                    {colors.map((color) => {
+                      const key = keyOf(size, color);
+                      const off = state.excluded.includes(key);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-pressed={!off}
+                          onClick={() => onChange({ ...state, excluded: off ? state.excluded.filter((k) => k !== key) : [...state.excluded, key] })}
+                          className={cn(chipBase, off ? "border-border bg-muted/40 text-muted-foreground line-through" : "border-primary bg-accent text-foreground")}
+                        >
+                          {color}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
-            Separá con comas. Se arma una variante por cada combinación; podés usar sólo talles o sólo colores
-            {sizeSuggestions.length + colorSuggestions.length > 0 ? " (te sugerimos los que ya usaste)" : ""}.
+            Tocá los talles y colores que tenga. Se arma una variante por cada combinación; podés usar sólo talles o sólo colores.
           </p>
 
           {rows.length > 0 && (
@@ -173,6 +202,114 @@ export function VariantsSection({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+const chipBase = "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium transition-colors";
+
+/**
+ * Elegir talles o colores con botones: los más comunes se tocan para sumar o quitar, lo que ya usó el negocio aparece
+ * aparte, y cualquier otro se escribe y se suma con Enter. Lo elegido se ve arriba y se saca con la ×.
+ */
+function ChipPicker({
+  id,
+  label,
+  values,
+  onChange,
+  quickGroups,
+  previous,
+  placeholder,
+}: {
+  id: string;
+  label: string;
+  values: string[];
+  onChange: (list: string[]) => void;
+  quickGroups: { title: string; options: string[] }[];
+  /** Los que ya usó el negocio en otros productos. */
+  previous: string[];
+  placeholder: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+  const has = (v: string) => values.some((x) => same(x, v));
+  const toggle = (v: string) => onChange(has(v) ? values.filter((x) => !same(x, v)) : [...values, v]);
+  const quickAll = quickGroups.flatMap((g) => g.options);
+  const used = previous.filter((p) => !quickAll.some((q) => same(q, p)));
+
+  function addDraft() {
+    const items = parseList(draft);
+    if (items.length === 0) return;
+    const next = [...values];
+    for (const item of items) if (!next.some((x) => same(x, item))) next.push(item);
+    onChange(next);
+    setDraft("");
+  }
+
+  const chip = (v: string) => (
+    <button
+      key={v}
+      type="button"
+      onClick={() => toggle(v)}
+      aria-pressed={has(v)}
+      className={cn(chipBase, has(v) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-primary/50")}
+    >
+      {v}
+    </button>
+  );
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      {values.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {values.map((v) => (
+            <span key={v} className={cn(chipBase, "border-primary bg-accent text-foreground")}>
+              {v}
+              <button type="button" onClick={() => toggle(v)} aria-label={`Quitar ${v}`} className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {quickGroups.map((g) => (
+        <div key={g.title} className="flex flex-wrap items-center gap-1.5">
+          <span className="w-16 shrink-0 text-xs text-muted-foreground">{g.title}</span>
+          {g.options.map(chip)}
+        </div>
+      ))}
+      {used.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-16 shrink-0 text-xs text-muted-foreground">Ya usaste</span>
+          {used.map(chip)}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Input
+          id={id}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter suma el valor escrito (sin enviar el formulario del producto).
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addDraft();
+            }
+          }}
+          placeholder={placeholder}
+          className="h-9 max-w-xs"
+        />
+        <button
+          type="button"
+          onClick={addDraft}
+          disabled={draft.trim() === ""}
+          className="inline-flex h-9 items-center gap-1 rounded-xl border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+        >
+          <Plus className="h-4 w-4" />
+          Agregar
+        </button>
+      </div>
     </div>
   );
 }
