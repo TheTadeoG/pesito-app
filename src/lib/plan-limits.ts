@@ -57,15 +57,14 @@ export async function getProductUsage(
   supabase: SupabaseClient<Database>,
   orgId: string
 ): Promise<{ used: number; limit: number }> {
-  const [subscription, { count }] = await Promise.all([
-    getSubscription(supabase, orgId),
-    supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("org_id", orgId)
-      .eq("active", true),
-  ]);
-  return { used: count ?? 0, limit: limitsFor(subscription).products };
+  // Un producto con variantes (talles y colores) cuenta una sola vez (0097). Sin la migración, se cuentan todas las filas.
+  const [subscription, usage] = await Promise.all([getSubscription(supabase, orgId), supabase.rpc("org_product_usage", { p_org_id: orgId })]);
+  let used = typeof usage.data === "number" ? usage.data : null;
+  if (used === null) {
+    const { count } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("active", true);
+    used = count ?? 0;
+  }
+  return { used, limit: limitsFor(subscription).products };
 }
 
 export async function checkProductLimit(

@@ -94,12 +94,13 @@ export const planDefinitions: Record<Plan, PlanDefinition> = {
       "Cuentas corrientes de clientes y proveedores, con vencimientos y calendario de pagos",
       "Control de caja por empleado",
       `Factura electrónica con ARCA (Factura C para monotributistas e IVA exento), con nota de crédito, con paquetes de facturas por mes a tu medida`,
+      "Talles y colores: cada variante con su SKU, stock y precio",
       "Carga masiva de productos y clientes con Excel",
       "Códigos de barras propios y etiquetas para imprimir",
       `Hasta ${products("basico")}, 2 usuarios y 2 cajas`,
     ],
     soon: [
-      "Talles, combos y kits",
+      "Combos y kits",
       "Factura A y B para responsables inscriptos",
     ],
   },
@@ -237,8 +238,8 @@ export const planComparison: { title: string; rows: ComparisonRow[] }[] = [
         values: { gratis: false, basico: "Pronto", pro: "Pronto", max: "Pronto" },
       },
       {
-        label: "Talles y colores (variantes)",
-        values: { gratis: false, basico: "Pronto", pro: "Pronto", max: "Pronto" },
+        label: "Talles y colores (variantes, cada una con su SKU, stock y precio)",
+        values: fromBasico,
       },
       {
         label: "Ofertas y promociones",

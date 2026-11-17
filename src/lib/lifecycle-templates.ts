@@ -40,7 +40,7 @@ export function renderLifecycleEmail(template: LifecycleTemplate, ctx: Lifecycle
           "¡Hola! Gracias por crear tu negocio en Pesito.",
           "",
           "Para hacer tu primera venta hoy alcanzan 3 pasos:",
-          `1. Cargá tu primer producto (nombre y precio alcanzan): ${site}/productos`,
+          `1. Cargá tu primer producto (nombre, SKU y precio alcanzan): ${site}/productos`,
           `2. Abrí la caja: ${site}/caja`,
           `3. Cobrá tu primera venta: ${site}/pos`,
           "",

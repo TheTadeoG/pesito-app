@@ -10,6 +10,7 @@ import { getSubscription } from "@/lib/subscription";
 import { canUse, featureLockedMessage } from "@/lib/plan-access";
 import { getBranchContext } from "@/lib/branches";
 import { formatCurrency } from "@/lib/utils";
+import { variantName } from "@/lib/variants";
 
 export interface ProductFormInput {
   id?: string;
@@ -30,6 +31,9 @@ export interface ProductFormInput {
   active: boolean;
   imageUrl: string | null;
   defaultSupplierId: string | null;
+  /** Talle y color de una variante (0097). Sólo se mandan al editar un producto que ya es variante. */
+  variantSize?: string;
+  variantColor?: string;
 }
 
 export interface ActionState {
@@ -100,6 +104,9 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
     active: input.active,
     image_url: input.imageUrl,
     default_supplier_id: input.defaultSupplierId,
+    ...(input.variantSize !== undefined || input.variantColor !== undefined
+      ? { variant_size: (input.variantSize ?? "").trim().slice(0, 40) || null, variant_color: (input.variantColor ?? "").trim().slice(0, 40) || null }
+      : {}),
   };
 
   // Límite de productos activos del plan: al crear uno activo o al
@@ -163,6 +170,146 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
       min_stock: Number(data.min_stock),
     },
   };
+}
+
+export interface VariantInput {
+  size: string;
+  color: string;
+  sku: string;
+  barcode: string;
+  stock: number;
+  price: number;
+}
+
+export interface SaveVariantsResult extends ActionState {
+  created?: number;
+}
+
+/**
+ * Crea un producto con variantes (talles y colores): un grupo y una fila de producto por variante, cada una con su SKU,
+ * código, stock y precio. Plan Esencial. El grupo cuenta como un solo producto para el límite del plan.
+ */
+export async function saveProductWithVariants(
+  base: Omit<ProductFormInput, "id" | "sku" | "barcode" | "stock" | "price" | "variantSize" | "variantColor">,
+  variants: VariantInput[]
+): Promise<SaveVariantsResult> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const subscription = await getSubscription(supabase, organization.id);
+  if (!canUse(subscription, "productVariants")) return { error: featureLockedMessage("productVariants") };
+
+  const baseName = base.name.trim();
+  if (!baseName) return { error: "El producto necesita un nombre." };
+  if (base.minStock < 0) return { error: "El stock mínimo no puede ser negativo." };
+  if (variants.length === 0) return { error: "Elegí al menos un talle o un color." };
+  if (variants.length > 200) return { error: "Son demasiadas variantes juntas (máximo 200). Cargalas en dos tandas." };
+
+  const seenSkus = new Set<string>();
+  const seenCombos = new Set<string>();
+  for (const v of variants) {
+    const size = v.size.trim();
+    const color = v.color.trim();
+    const sku = v.sku.trim();
+    const label = [size, color].filter(Boolean).join(" · ");
+    if (!size && !color) return { error: "Cada variante necesita un talle o un color." };
+    if (size.length > 40 || color.length > 40) return { error: `“${label}”: el talle y el color pueden tener hasta 40 caracteres.` };
+    if (!sku) return { error: `Falta el SKU de la variante ${label}.` };
+    if (sku.length > 60) return { error: `El SKU de ${label} es demasiado largo (máximo 60 caracteres).` };
+    if (!Number.isFinite(v.stock) || v.stock < 0) return { error: `El stock de ${label} no es válido.` };
+    if (!Number.isFinite(v.price) || v.price < 0) return { error: `El precio de ${label} no es válido.` };
+    const combo = `${size.toLowerCase()}|${color.toLowerCase()}`;
+    if (seenCombos.has(combo)) return { error: `La variante ${label} está repetida.` };
+    seenCombos.add(combo);
+    if (seenSkus.has(sku.toLowerCase())) return { error: `El SKU “${sku}” está repetido entre las variantes.` };
+    seenSkus.add(sku.toLowerCase());
+  }
+
+  // Los SKU no pueden estar en uso por otros productos del negocio (sin importar mayúsculas).
+  const existing = await fetchAll((from, to) =>
+    supabase.from("products").select("id, sku").eq("org_id", organization.id).order("id").range(from, to)
+  );
+  const used = new Set(existing.map((p) => p.sku.trim().toLowerCase()));
+  const clash = variants.find((v) => used.has(v.sku.trim().toLowerCase()));
+  if (clash) return { error: `Ya hay un producto con el SKU “${clash.sku.trim()}”. Cambialo para seguir.` };
+
+  if (base.active) {
+    const limitError = await checkProductLimit(supabase, organization.id);
+    if (limitError) return { error: limitError };
+  }
+
+  const packRaw = base.packSize.trim().replace(",", ".");
+  const packSize = packRaw === "" ? null : Number(packRaw);
+  if (packSize !== null && (!Number.isFinite(packSize) || packSize <= 0 || packSize > 100000)) {
+    return { error: "Las unidades por bulto tienen que ser un número mayor a cero." };
+  }
+
+  const { data: group, error: groupError } = await supabase
+    .from("product_variant_groups")
+    .insert({ org_id: organization.id, name: baseName.slice(0, 200) })
+    .select("id")
+    .single();
+  if (groupError || !group) {
+    return { error: "No pudimos crear el producto con variantes. ¿Está aplicada la migración de variantes y tu plan las incluye?" };
+  }
+
+  // Con sucursales, el stock inicial se carga en la sucursal actual (un insert con stock iría a la principal).
+  const { current: branch } = await getBranchContext();
+  const rows = variants.map((v) => ({
+    org_id: organization.id,
+    name: variantName(baseName, v.size, v.color).slice(0, 200),
+    brand: base.brand.trim() || null,
+    barcode: v.barcode.trim() || null,
+    sku: v.sku.trim(),
+    price: v.price,
+    cost: base.cost,
+    min_stock: base.minStock,
+    unit: base.unit,
+    package_label: base.packageLabel.trim() || null,
+    ...(packSize !== null ? { pack_size: packSize } : {}),
+    active: base.active,
+    image_url: base.imageUrl,
+    default_supplier_id: base.defaultSupplierId,
+    variant_group_id: group.id,
+    variant_size: v.size.trim() || null,
+    variant_color: v.color.trim() || null,
+    stock: branch ? 0 : v.stock,
+  }));
+
+  const { data: created, error } = await supabase.from("products").insert(rows).select("id, sku");
+  if (error || !created) {
+    // No quedan variantes a medias: se saca el grupo (las variantes no llegaron a crearse).
+    await supabase.from("product_variant_groups").delete().eq("id", group.id);
+    return { error: error?.code === "23505" ? "Alguno de los SKU ya está en uso. Revisalos." : error?.message?.startsWith("Tu plan incluye") ? error.message : "No pudimos crear las variantes. Probá de nuevo." };
+  }
+
+  if (branch) {
+    const stockBySku = new Map(variants.map((v) => [v.sku.trim().toLowerCase(), v.stock]));
+    const withStock = created.filter((c) => (stockBySku.get(c.sku.trim().toLowerCase()) ?? 0) > 0);
+    let failed = 0;
+    for (let i = 0; i < withStock.length; i += 10) {
+      await Promise.all(
+        withStock.slice(i, i + 10).map(async (c) => {
+          const { error: stockError } = await supabase.rpc("adjust_branch_stock", {
+            p_branch_id: branch.id,
+            p_product_id: c.id,
+            p_delta: stockBySku.get(c.sku.trim().toLowerCase()) ?? 0,
+            p_reason: "Stock inicial",
+          });
+          if (stockError) failed++;
+        })
+      );
+    }
+    if (failed > 0) {
+      revalidatePath("/productos");
+      return { created: created.length, error: `Creamos las variantes, pero no pudimos cargar el stock inicial de ${failed}. Cargalo con un ajuste.` };
+    }
+  }
+
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  revalidatePath("/compras");
+  return { created: created.length };
 }
 
 /**

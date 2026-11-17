@@ -181,6 +181,7 @@ export function ProductosClient({
   orgId,
   bulkLocked,
   inventoryLocked,
+  variantsLocked,
   revertLocked,
   productUsage,
   stockAlertsLocked,
@@ -203,6 +204,8 @@ export function ProductosClient({
   // El plan no incluye ajustes masivos: los botones abren el aviso del plan.
   bulkLocked: boolean;
   inventoryLocked: boolean;
+  /** El plan no incluye talles y colores (Plan Esencial). */
+  variantsLocked: boolean;
   /** Volver a un precio o costo anterior (Plan Pro). */
   revertLocked: boolean;
   /** Productos activos contra el límite del plan (y el plan que da más). */
@@ -1263,6 +1266,11 @@ export function ProductosClient({
         brands={localBrands}
         suppliers={localSuppliers}
         barcodeGenerate={{ locked: labelsLocked }}
+        variantsConfig={{
+          locked: variantsLocked,
+          sizeSuggestions: Array.from(new Set(products.map((p) => p.variant_size).filter((v): v is string => Boolean(v)))).sort((a, b) => a.localeCompare(b, "es", { numeric: true })),
+          colorSuggestions: Array.from(new Set(products.map((p) => p.variant_color).filter((v): v is string => Boolean(v)))).sort((a, b) => a.localeCompare(b, "es")),
+        }}
         onBrandCreated={(brand) =>
           setLocalBrands((current) => [...current, brand])
         }

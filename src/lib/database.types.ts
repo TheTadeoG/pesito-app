@@ -90,6 +90,22 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
         Relationships: [];
       };
+      product_variant_groups: {
+        Row: {
+          id: string;
+          org_id: string;
+          name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          name: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["product_variant_groups"]["Insert"]>;
+        Relationships: [];
+      };
       products: {
         Row: {
           id: string;
@@ -110,6 +126,10 @@ export interface Database {
           /** Unidades por bulto del proveedor (0052). undefined si falta la migración. */
           pack_size?: number | null;
           active: boolean;
+          /** Talles y colores (0097): grupo de variantes, talle y color. undefined si falta la migración. */
+          variant_group_id?: string | null;
+          variant_size?: string | null;
+          variant_color?: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -128,6 +148,9 @@ export interface Database {
           brand?: string | null;
           image_url?: string | null;
           default_supplier_id?: string | null;
+          variant_group_id?: string | null;
+          variant_size?: string | null;
+          variant_color?: string | null;
           package_label?: string | null;
           pack_size?: number | null;
           active?: boolean;
@@ -1530,6 +1553,10 @@ export interface Database {
       set_member_branch: {
         Args: { p_membership_id: string; p_branch_id: string | null };
         Returns: undefined;
+      };
+      org_product_usage: {
+        Args: { p_org_id: string };
+        Returns: number;
       };
       inventory_start: {
         Args: { p_org_id: string; p_branch_id: string; p_name: string; p_brand?: string | null; p_supplier_id?: string | null };

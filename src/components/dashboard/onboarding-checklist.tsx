@@ -51,7 +51,7 @@ const FIRST_SALE: Step[] = [
   {
     id: "product",
     title: "Cargá tu primer producto",
-    text: "Nombre y precio alcanzan. El costo y el stock los podés sumar después. Si ya tenés una lista, subila desde Acciones → Cargar desde Excel.",
+    text: "Nombre, SKU y precio alcanzan (el SKU lo generás con un botón). El costo y el stock los podés sumar después. Si ya tenés una lista, subila desde Acciones → Cargar desde Excel.",
     href: "/productos",
     cta: "Cargar producto",
     icon: PackagePlus,

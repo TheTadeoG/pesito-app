@@ -11,14 +11,17 @@ import { Select } from "@/components/ui/select";
 import { cn, formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/compress-image";
+import { EMPTY_VARIANTS, VariantsSection, resolveVariantRows, toVariantInputs, type VariantsState } from "@/app/(dashboard)/productos/variants-section";
 import {
   saveProduct,
+  saveProductWithVariants,
   createBrandQuick,
   suggestSku,
   createSupplierQuick,
   type ProductFormInput,
   type SaveProductResult,
 } from "@/app/(dashboard)/productos/actions";
+import { variantName } from "@/lib/variants";
 import { MarketHintNote } from "@/app/(dashboard)/productos/market-hint";
 import { generateBarcode } from "@/app/(dashboard)/productos/barcode-actions";
 import { featureLockedMessage } from "@/lib/plan-access";
@@ -238,6 +241,8 @@ interface ProductFormProps {
   initialStockAsPurchase?: boolean;
   /** Botón "Generar" junto al código de barras (Plan Básico); `locked` si el plan no lo incluye. */
   barcodeGenerate?: { locked: boolean };
+  /** Talles y colores: sólo al crear. `locked` si el plan no los incluye; las sugerencias salen de lo que ya se usó. */
+  variantsConfig?: { locked: boolean; sizeSuggestions: string[]; colorSuggestions: string[] };
 }
 
 export function ProductForm({
@@ -252,6 +257,7 @@ export function ProductForm({
   onSupplierCreated,
   initialStockAsPurchase = false,
   barcodeGenerate,
+  variantsConfig,
 }: ProductFormProps) {
   const isEdit = Boolean(product);
 
@@ -274,6 +280,12 @@ export function ProductForm({
     setGeneratingSku(false);
   }
   const [name, setName] = useState(product?.name ?? "");
+  const [variants, setVariants] = useState<VariantsState>(EMPTY_VARIANTS);
+  // Al editar una variante: su talle y color (el nombre acompaña el cambio).
+  const isVariant = Boolean(product?.variant_group_id);
+  const [variantSize, setVariantSize] = useState(product?.variant_size ?? "");
+  const [variantColor, setVariantColor] = useState(product?.variant_color ?? "");
+  const variantsOn = !isEdit && Boolean(variantsConfig) && !variantsConfig?.locked && variants.enabled;
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(
     product?.brand ?? null
   );
@@ -436,10 +448,54 @@ export function ProductForm({
     setPending(true);
     setError(null);
 
+    if (variantsOn) {
+      const rows = resolveVariantRows(variants, sku, price);
+      if (rows.length === 0) {
+        setPending(false);
+        setError("Escribí al menos un talle o un color para armar las variantes.");
+        return;
+      }
+      const res = await saveProductWithVariants(
+        {
+          name,
+          brand: selectedBrandName ?? "",
+          minStock: Number(minStock) || 0,
+          cost: cost ? Number(cost) : null,
+          unit,
+          packageLabel,
+          packSize,
+          hadPackSize: false,
+          active: true,
+          imageUrl,
+          defaultSupplierId,
+        },
+        toVariantInputs(rows).map((v) => ({ ...v, stock: initialStockAsPurchase ? 0 : v.stock }))
+      );
+      markCatalogDirty();
+      setPending(false);
+      if (res.error) {
+        setError(res.error);
+        // Si las variantes se crearon pero falló el stock, se avisa y se cierra igual.
+        if (!res.created) return;
+      }
+      resetAndClose();
+      return;
+    }
+
+    // Al editar una variante, el nombre acompaña el cambio de talle o color.
+    let finalName = name;
+    if (isVariant && product) {
+      const oldSuffix = variantName("", product.variant_size ?? "", product.variant_color ?? "").replace(/^ · /, "");
+      const newSuffix = variantName("", variantSize, variantColor).replace(/^ · /, "");
+      if (oldSuffix !== newSuffix && oldSuffix && name.endsWith(` · ${oldSuffix}`)) {
+        finalName = `${name.slice(0, name.length - oldSuffix.length - 3)}${newSuffix ? ` · ${newSuffix}` : ""}`;
+      }
+    }
+
     const enteredStock = Number(stock) || 0;
     const input: ProductFormInput = {
       id: product?.id,
-      name,
+      name: finalName,
       brand: selectedBrandName ?? "",
       barcode,
       sku,
@@ -454,6 +510,7 @@ export function ProductForm({
       active: product?.active ?? true,
       imageUrl,
       defaultSupplierId,
+      ...(isVariant ? { variantSize, variantColor } : {}),
     };
 
     const result = await saveProduct(input);
@@ -629,6 +686,7 @@ export function ProductForm({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
+          {!variantsOn && (
           <div>
             <Label htmlFor="p-barcode">Código de barras (opcional)</Label>
             <div className="flex gap-2">
@@ -647,9 +705,10 @@ export function ProductForm({
             </div>
             {barcodeNote && <p className="mt-1 text-xs text-warning">{barcodeNote}</p>}
           </div>
+          )}
           <div>
             <Label htmlFor="p-sku" required>
-              SKU
+              {variantsOn ? "SKU base" : "SKU"}
             </Label>
             <div className="flex gap-2">
               <Input id="p-sku" value={sku} onChange={(e) => setSku(e.target.value)} maxLength={60} required placeholder="Código propio, único" />
@@ -657,7 +716,7 @@ export function ProductForm({
                 {generatingSku ? "…" : "Generar"}
               </Button>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Identifica al producto: no se puede repetir.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{variantsOn ? "De acá se arma el SKU de cada variante." : "Identifica al producto: no se puede repetir."}</p>
           </div>
         </div>
         <MarketHintNote barcode={barcode} price={price} cost={cost} onUse={(v) => {
@@ -665,10 +724,12 @@ export function ProductForm({
           setPriceKey((k) => k + 1); // rearma «Sin IVA» con el precio nuevo
         }}
         />
-        <p className="-mt-2 text-xs text-muted-foreground">
-          El código de barras lo podés escanear con un lector en el campo de arriba, o cargarlo a
-          mano si no tenés lector.
-        </p>
+        {!variantsOn && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            El código de barras lo podés escanear con un lector en el campo de arriba, o cargarlo a
+            mano si no tenés lector.
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <PriceWithIvaField
@@ -695,7 +756,36 @@ export function ProductForm({
           </p>
         )}
 
-        <div data-tour="p-stock" className="grid grid-cols-3 gap-3">
+        {!isEdit && variantsConfig && (
+          <VariantsSection
+            state={variants}
+            onChange={setVariants}
+            locked={variantsConfig.locked}
+            baseName={name}
+            baseSku={sku}
+            basePrice={price}
+            sizeSuggestions={variantsConfig.sizeSuggestions}
+            colorSuggestions={variantsConfig.colorSuggestions}
+            showStock={!initialStockAsPurchase}
+          />
+        )}
+
+        {isVariant && (
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-muted/30 p-3.5">
+            <p className="col-span-2 text-xs text-muted-foreground">Es una variante de un producto con talles o colores: cada una tiene su SKU, stock y precio.</p>
+            <div>
+              <Label htmlFor="p-vsize">Talle</Label>
+              <Input id="p-vsize" value={variantSize} onChange={(e) => setVariantSize(e.target.value)} maxLength={40} placeholder="Ej: M" />
+            </div>
+            <div>
+              <Label htmlFor="p-vcolor">Color</Label>
+              <Input id="p-vcolor" value={variantColor} onChange={(e) => setVariantColor(e.target.value)} maxLength={40} placeholder="Ej: Azul" />
+            </div>
+          </div>
+        )}
+
+        <div data-tour="p-stock" className={cn("grid gap-3", variantsOn ? "grid-cols-2" : "grid-cols-3")}>
+          {!variantsOn && (
           <div>
             <Label htmlFor="p-stock" className="flex min-h-9 items-end">
               {initialStockAsPurchase ? "Cantidad a recibir" : "Stock inicial (opcional)"}
@@ -710,6 +800,7 @@ export function ProductForm({
               disabled={isEdit}
             />
           </div>
+          )}
           <div>
             <Label htmlFor="p-min" className="flex min-h-9 items-end">
               Stock mínimo (opcional)

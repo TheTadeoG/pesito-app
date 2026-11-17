@@ -193,8 +193,8 @@ export const rubroPages: RubroPage[] = [
     ],
     features: [
       {
-        title: "Talles y colores (pronto)",
-        description: "Pronto vas a poder cargar talle y color como variantes de una misma prenda, desde el Plan Básico. Hoy cada combinación se carga como un producto con su propio stock.",
+        title: "Talles y colores",
+        description: "Cargás la prenda una sola vez y elegís los talles y colores: cada combinación queda con su propio SKU, stock y precio, así contás y ajustás el stock de cada variante. Desde el Plan Básico.",
       },
       {
         title: "Detección de baja rotación",

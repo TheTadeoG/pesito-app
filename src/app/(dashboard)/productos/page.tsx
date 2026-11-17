@@ -162,6 +162,7 @@ export default async function ProductosPage({
         orgId={organization.id}
         bulkLocked={!canUse(subscription, "bulkPriceChanges")}
         inventoryLocked={!canUse(subscription, "physicalInventory")}
+        variantsLocked={!canUse(subscription, "productVariants")}
         revertLocked={!canUse(subscription, "priceRevert")}
         productUsage={{
           used: activeProducts.length,
