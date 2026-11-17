@@ -1084,8 +1084,10 @@ export function ProductosClient({
                         <VariantGroupRows
                           key={`group-${item.id}`}
                           members={item.members}
-                          colSpan={2 + COLUMNS.filter((c) => showColumn(c.id)).length}
-                          onEdit={() => openGroupEdit(item.id, "variantes")}
+                          show={(c) => showColumn(c as ColumnId)}
+                          supplierName={
+                            (item.members[0].default_supplier_id && supplierNameById.get(item.members[0].default_supplier_id)) || undefined
+                          }
                           onAdjust={setAdjusting}
                           onEditGroup={(tab) => openGroupEdit(item.id, tab)}
                         />

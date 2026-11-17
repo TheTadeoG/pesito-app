@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronDown, ImageIcon, Pencil, Plus, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ImageIcon, Pencil, SlidersHorizontal } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { sortSizes } from "@/lib/variants";
+import { Badge } from "@/components/ui/badge";
 import { ColorDot } from "@/app/(dashboard)/productos/variants-section";
 import type { Product } from "@/lib/types";
 
@@ -35,53 +36,61 @@ export function variantTagLabel(members: Product[]): string {
   return `Tiene ${what} · ${members.length}`;
 }
 
+/** Las variantes en orden natural: por talle (XS, S, M, L…) y después por color. */
+function sortMembers(members: Product[]): Product[] {
+  const order = sortSizes(unique(members.map((m) => m.variant_size)));
+  return [...members].sort(
+    (a, b) =>
+      order.indexOf((a.variant_size ?? "").trim()) - order.indexOf((b.variant_size ?? "").trim()) ||
+      (a.variant_color ?? "").localeCompare(b.variant_color ?? "", "es"),
+  );
+}
+
+/** Cuántas variantes se muestran de entrada; el resto, con "Ver todas". */
+const INITIAL_VISIBLE = 8;
+
 /**
- * Un producto con variantes ocupa una sola fila con la etiqueta "Tiene talles";
- * al tocarla se despliega el stock por talle y color. Cada variante sigue siendo un producto
- * con su SKU, stock y precio.
+ * Un producto con variantes: una fila con el producto (y la etiqueta "Tiene talles", que cierra o abre la lista) y debajo
+ * una fila por variante, con las mismas columnas de la tabla: SKU, costo, precio, stock y mínimo de cada una.
  */
 export function VariantGroupRows({
   members,
-  colSpan,
-  onEdit,
+  show,
+  supplierName,
   onAdjust,
   onEditGroup,
 }: {
   members: Product[];
-  colSpan: number;
-  onEdit: (p: Product) => void;
+  /** Si la columna está visible en la tabla ("brand", "supplier", "sku", "barcode", "cost", "price", "stock", "minStock"). */
+  show: (column: string) => boolean;
+  supplierName?: string;
   onAdjust: (p: Product) => void;
   /** Abre la ventana del producto, en la solapa que se pida. */
   onEditGroup: (tab: "datos" | "variantes") => void;
 }) {
   const [open, setOpen] = useState(false);
-  const first = members[0];
+  const [all, setAll] = useState(false);
+  const sorted = sortMembers(members);
+  const first = sorted[0];
+  const shown = all ? sorted : sorted.slice(0, INITIAL_VISIBLE);
   const total = members.reduce((sum, m) => sum + m.stock, 0);
   const prices = members.map((m) => m.price);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
-  const priceText =
-    minPrice === maxPrice ? formatCurrency(minPrice) : `${formatCurrency(minPrice)} – ${formatCurrency(maxPrice)}`;
-  const sizes = sortSizes(unique(members.map((m) => m.variant_size)));
-  const colors = unique(members.map((m) => m.variant_color));
+  const priceText = minPrice === maxPrice ? formatCurrency(minPrice) : `${formatCurrency(minPrice)} – ${formatCurrency(maxPrice)}`;
   const allInactive = members.every((m) => !m.active);
+  const sameCost = members.every((m) => (m.cost ?? 0) === (first.cost ?? 0));
+  const minStocks = members.map((m) => m.min_stock);
+  const sameMin = minStocks.every((v) => v === minStocks[0]);
   const low = members.filter((m) => m.active && m.stock <= m.min_stock).length;
   const unit = first.unit ?? "";
   const image = members.find((m) => m.image_url)?.image_url ?? null;
-  const cell = (size: string | null, color: string | null) =>
-    members.find(
-      (m) =>
-        (m.variant_size ?? "").trim().toLowerCase() === (size ?? "").trim().toLowerCase() &&
-        (m.variant_color ?? "").trim().toLowerCase() === (color ?? "").trim().toLowerCase(),
-    );
-  // Sólo talles, sólo colores o ninguno de los dos: la grilla tiene una fila o una columna "única".
-  const rowKeys: (string | null)[] = sizes.length ? sizes : [null];
-  const colKeys: (string | null)[] = colors.length ? colors : [null];
+  const dim = allInactive && "opacity-60";
 
   return (
     <Fragment>
-      <tr className={cn("align-middle hover:bg-muted/30", open && "bg-success-bg/40")}>
-        <td className={cn("px-4 py-2.5", allInactive && "opacity-60")}>
+      <tr className="align-middle hover:bg-muted/30">
+        <td className={cn("px-4 py-2.5", dim)}>
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/50 text-muted-foreground">
               {image ? (
@@ -105,110 +114,86 @@ export function VariantGroupRows({
             </div>
           </div>
         </td>
-        <td colSpan={Math.max(1, colSpan - 2)} className={cn("px-3 py-2.5 text-muted-foreground", allInactive && "opacity-60")}>
-          <span className="font-semibold text-foreground">{`Stock total ${total}${unit}`}</span>
-          <span>{` · ${priceText}`}</span>
-          {low > 0 && (
-            <span className="ml-2 font-medium text-danger">{`${low} ${low === 1 ? "variante con stock bajo" : "variantes con stock bajo"}`}</span>
-          )}
-        </td>
+        {show("brand") && <td className={cn("px-3 py-2.5 text-muted-foreground", dim)}>{first.brand || "—"}</td>}
+        {show("supplier") && <td className={cn("px-3 py-2.5 text-muted-foreground", dim)}>{supplierName || "—"}</td>}
+        {show("sku") && <td className={cn("px-3 py-2.5 text-muted-foreground", dim)}>{`${members.length} SKU`}</td>}
+        {show("barcode") && <td className={cn("px-3 py-2.5 text-muted-foreground", dim)}>—</td>}
+        {show("cost") && (
+          <td className={cn("px-3 py-2.5 text-right text-muted-foreground", dim)}>{sameCost ? (first.cost ? formatCurrency(first.cost) : "—") : "Varios"}</td>
+        )}
+        {show("price") && <td className={cn("whitespace-nowrap px-3 py-2.5 text-right font-semibold text-foreground", dim)}>{priceText}</td>}
+        {show("stock") && (
+          <td className={cn("px-3 py-2.5 text-right", dim)}>
+            <span className={cn("font-medium", low > 0 ? "text-danger" : "text-foreground")}>{`${total}${unit}`}</span>
+          </td>
+        )}
+        {show("minStock") && (
+          <td className={cn("px-3 py-2.5 text-right text-muted-foreground", dim)}>{sameMin ? `${minStocks[0]}${unit}` : "Varios"}</td>
+        )}
         <td className="px-4 py-2.5">
           <div className="flex items-center justify-end gap-1.5">
-            <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
-              {open ? "Cerrar" : "Ver variantes"}
+            <Button variant="outline" size="icon" onClick={() => onEditGroup("datos")} aria-label="Editar" title="Editar">
+              <Pencil className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onEditGroup("datos")}
-              aria-label="Editar producto"
-              title="Editar producto"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-label={open ? "Ocultar variantes" : "Ver variantes"}
+              title={open ? "Ocultar variantes" : "Ver variantes"}
             >
-              <Pencil className="h-4 w-4" />
+              <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
             </Button>
           </div>
         </td>
       </tr>
-      {open && (
-        <tr>
-          <td colSpan={colSpan} className="bg-success-bg/40 px-4 pb-4 pt-1 sm:pl-16">
-            <p className="mb-2 text-sm font-semibold text-foreground">
-              {colors.length && sizes.length ? "Stock por talle y color" : colors.length ? "Stock por color" : "Stock por talle"}
-            </p>
-            <div className="overflow-x-auto">
-              <table className="border-separate border-spacing-1.5 text-sm">
-                <thead>
-                  <tr>
-                    <th />
-                    {colKeys.map((c) => (
-                      <th key={c ?? "-"} className="px-2 text-center text-xs font-semibold text-foreground">
-                        <span className="inline-flex items-center gap-1.5">
-                          {c && <ColorDot name={c} chosen={members.find((m) => (m.variant_color ?? "").toLowerCase() === c.toLowerCase())?.variant_color_hex} />}
-                          {c ?? ""}
-                        </span>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rowKeys.map((s) => (
-                    <tr key={s ?? "-"}>
-                      <td className="pr-2 text-right text-xs font-bold text-foreground">{s ?? ""}</td>
-                      {colKeys.map((c) => {
-                        const v = cell(s, c);
-                        if (!v) return <td key={c ?? "-"} className="min-w-[96px] rounded-lg border border-dashed border-border text-center text-muted-foreground">—</td>;
-                        const zero = v.stock <= 0;
-                        const lowStock = !zero && v.stock <= v.min_stock;
-                        return (
-                          <td
-                            key={c ?? "-"}
-                            className={cn(
-                              "min-w-[96px] rounded-lg border px-2 py-1.5 text-center",
-                              zero
-                                ? "border-danger/40 bg-danger-bg"
-                                : lowStock
-                                  ? "border-warning/40 bg-warning-bg"
-                                  : "border-border bg-card",
-                              !v.active && "opacity-60",
-                            )}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => onEdit(v)}
-                              className="block w-full"
-                              title={`Editar ${v.name}`}
-                            >
-                              <span className={cn("block text-base font-bold", zero ? "text-danger" : "text-foreground")}>
-                                {`${v.stock}${v.unit ?? ""}`}
-                              </span>
-                              <span className="block text-[10.5px] leading-tight text-muted-foreground">{v.sku}</span>
-                              <span className="block text-[10.5px] leading-tight text-muted-foreground">{formatCurrency(v.price)}</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onAdjust(v)}
-                              className="mt-0.5 inline-flex items-center gap-1 text-[10.5px] font-semibold text-accent-foreground hover:underline"
-                            >
-                              <SlidersHorizontal className="h-3 w-3" />
-                              Ajustar
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Button size="sm" onClick={() => onEditGroup("variantes")}>
-                <Plus className="h-4 w-4" />
-                Agregar talles o colores
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Tocá una celda para editar esa variante, o &quot;Ajustar&quot; para corregir su stock.
-              </p>
-            </div>
+      {open &&
+        shown.map((m) => {
+          const lowStock = m.active && m.stock <= m.min_stock;
+          const faded = !m.active && "opacity-60";
+          return (
+            <tr key={m.id} className="align-middle bg-muted/30 hover:bg-muted/50">
+              <td className={cn("py-2 pl-[4.25rem] pr-4", faded)}>
+                <div className="flex items-center gap-2 text-sm">
+                  {m.variant_color && <ColorDot name={m.variant_color} chosen={m.variant_color_hex} />}
+                  <span className="font-medium text-foreground">{[m.variant_size, m.variant_color].filter(Boolean).join(" · ") || m.name}</span>
+                  {!m.active && <Badge>Inactivo</Badge>}
+                </div>
+              </td>
+              {show("brand") && <td />}
+              {show("supplier") && <td />}
+              {show("sku") && <td className={cn("whitespace-nowrap px-3 py-2 text-muted-foreground", faded)}>{m.sku || "—"}</td>}
+              {show("barcode") && <td className={cn("px-3 py-2 text-muted-foreground", faded)}>{m.barcode || "—"}</td>}
+              {show("cost") && <td className={cn("px-3 py-2 text-right text-muted-foreground", faded)}>{m.cost ? formatCurrency(m.cost) : "—"}</td>}
+              {show("price") && <td className={cn("px-3 py-2 text-right font-semibold text-foreground", faded)}>{formatCurrency(m.price)}</td>}
+              {show("stock") && (
+                <td className={cn("px-3 py-2 text-right", faded)}>
+                  <span className={cn("font-medium", lowStock ? "text-danger" : "text-foreground")}>{`${m.stock}${m.unit ?? ""}`}</span>
+                </td>
+              )}
+              {show("minStock") && <td className={cn("px-3 py-2 text-right text-muted-foreground", faded)}>{`${m.min_stock}${m.unit ?? ""}`}</td>}
+              <td className="px-4 py-2">
+                <div className="flex items-center justify-end gap-1.5">
+                  <Button variant="outline" size="sm" onClick={() => onAdjust(m)} title={`Ajustar el stock de ${m.name}`}>
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    Ajustar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => onEditGroup("variantes")} title="Editar las variantes">
+                    <Pencil className="h-3.5 w-3.5" />
+                    Editar
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      {open && sorted.length > INITIAL_VISIBLE && (
+        <tr className="bg-muted/30">
+          <td colSpan={20} className="py-2 pl-[4.25rem] pr-4">
+            <button type="button" onClick={() => setAll((v) => !v)} className="text-xs font-semibold text-accent-foreground hover:underline">
+              {all ? "Ver menos" : `Ver las ${sorted.length} variantes`}
+            </button>
           </td>
         </tr>
       )}
