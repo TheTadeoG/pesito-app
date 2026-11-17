@@ -30,6 +30,9 @@ export const comprobantesDocs: DocArticle[] = [
     ],
     keywords: ["impresora termica", "ticket", "imprimir", "58mm", "80mm", "usb", "bluetooth", "cajon de dinero", "cortar papel", "impresora"],
     related: ["como-imprimir-el-ticket-de-una-venta"],
+    connections: [
+      { slug: "como-personalizar-el-ticket", text: "Qué muestra el ticket se elige en **Ajustes**." },
+    ],
     updatedAt: UPDATED,
   },
 ];

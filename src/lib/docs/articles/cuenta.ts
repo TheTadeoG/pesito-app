@@ -86,6 +86,9 @@ export const cuentaDocs: DocArticle[] = [
     ],
     keywords: ["sucursal", "otro local", "segundo local", "nuevo local", "varias sucursales", "multisucursal"],
     related: ["como-transferir-mercaderia-entre-sucursales", "como-invitar-a-tu-equipo"],
+    connections: [
+      { slug: "como-transferir-mercaderia-entre-sucursales", text: "Podés pasar mercadería de una sucursal a otra." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -107,6 +110,9 @@ export const cuentaDocs: DocArticle[] = [
     ],
     keywords: ["medio de pago", "mercado pago", "uala", "talo", "qr", "billetera virtual", "forma de pago", "agregar medio"],
     related: ["como-cobrar-con-varios-medios-de-pago", "como-cerrar-la-caja"],
+    connections: [
+      { slug: "como-cobrar-con-varios-medios-de-pago", text: "Los medios que agregues aparecen al cobrar y en Compras." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -150,6 +156,9 @@ export const cuentaDocs: DocArticle[] = [
     ],
     keywords: ["avisos", "alertas", "notificaciones", "campana", "margen", "configurar avisos", "recordatorios"],
     related: ["como-configurar-los-avisos-del-negocio"],
+    connections: [
+      { slug: "como-usar-los-avisos-de-productos", text: "Algunos avisos se ven también dentro de **Productos**." },
+    ],
     updatedAt: UPDATED,
   },
   {

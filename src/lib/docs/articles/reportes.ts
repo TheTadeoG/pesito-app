@@ -24,6 +24,10 @@ export const reportesDocs: DocArticle[] = [
     ],
     keywords: ["reportes", "ventas del mes", "ganancia", "ingresos", "mas vendidos", "estadisticas", "balance", "cuanto gane", "stock valorizado"],
     related: ["como-ver-las-ventas-de-cada-vendedor", "como-ver-el-historial-de-ventas"],
+    connections: [
+      { slug: "como-cargar-un-producto", text: "La ganancia se calcula con el **Costo** cargado en cada producto." },
+      { slug: "como-registrar-una-compra", text: "Cada compra actualiza el costo." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -42,6 +46,9 @@ export const reportesDocs: DocArticle[] = [
     tips: ["Si una persona ya no está en el equipo, sus ventas aparecen como **Usuario eliminado**."],
     keywords: ["vendedor", "empleado", "ventas por vendedor", "quien vendio", "diferencias de caja", "faltante", "comisiones"],
     related: ["como-ver-lo-que-hizo-cada-persona-del-equipo", "como-invitar-a-tu-equipo"],
+    connections: [
+      { slug: "como-invitar-a-tu-equipo", text: "Cada persona del equipo es un vendedor." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -120,6 +127,10 @@ export const reportesDocs: DocArticle[] = [
     ],
     keywords: ["que comprar", "reposicion", "pedido", "reponer", "recomendaciones", "whatsapp", "proveedor", "faltantes", "sugerencia de precios"],
     related: ["como-ver-los-productos-con-stock-bajo", "como-registrar-una-compra"],
+    connections: [
+      { slug: "como-definir-la-unidad-y-la-presentacion-de-un-producto", text: "Con las unidades por bulto pide cajas o fardos enteros." },
+      { slug: "como-registrar-una-compra", text: "El pedido se cierra solo cuando cargás la compra." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -137,6 +148,9 @@ export const reportesDocs: DocArticle[] = [
     tips: ["Sirve para decidir qué liquidar, bajar de precio o dejar de comprar."],
     keywords: ["baja rotacion", "no se vende", "productos parados", "stock parado", "liquidar", "plata parada", "sin movimiento"],
     related: ["como-saber-que-productos-comprar"],
+    connections: [
+      { slug: "como-hacer-aumentos-masivos-de-precios", text: "Podés ajustar precios de lo que no rota." },
+    ],
     updatedAt: UPDATED,
   },
 ];

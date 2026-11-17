@@ -23,6 +23,9 @@ export const clientesDocs: DocArticle[] = [
     ],
     keywords: ["cliente", "nuevo cliente", "cargar cliente", "alta de cliente", "agregar cliente", "datos del cliente", "excel clientes", "carga masiva"],
     related: ["como-vender-fiado", "como-cobrar-la-deuda-de-un-cliente"],
+    connections: [
+      { slug: "como-vender-fiado", text: "Los clientes se usan para vender fiado." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -50,6 +53,10 @@ export const clientesDocs: DocArticle[] = [
     ],
     keywords: ["cobrar deuda", "fiado", "pago de cliente", "cuenta corriente", "saldo", "registrar pago", "deudores", "cobrar fiado", "recordar deuda"],
     related: ["como-vender-fiado", "como-descargar-el-estado-de-cuenta-de-un-cliente"],
+    connections: [
+      { slug: "como-abrir-la-caja", text: "Si te paga en efectivo, la caja tiene que estar abierta." },
+      { slug: "como-vender-fiado", text: "La deuda viene de las ventas fiadas." },
+    ],
     updatedAt: UPDATED,
   },
   {

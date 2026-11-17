@@ -33,6 +33,14 @@ export interface DocStep {
   note?: string;
 }
 
+/** Un efecto en otro módulo ("Al vender, el stock baja solo"), con la guía donde se explica. */
+export interface DocConnection {
+  /** Guía del otro módulo (slug). */
+  slug: string;
+  /** Qué pasa o qué conviene saber; nombres de botones en **negrita**. */
+  text: string;
+}
+
 export interface DocArticle {
   /** Va en la dirección (/ayuda/<slug>): minúsculas, sin tildes, con guiones. */
   slug: string;
@@ -53,6 +61,8 @@ export interface DocArticle {
   keywords: string[];
   /** Otras guías relacionadas (slugs). */
   related?: string[];
+  /** Cómo se conecta con otros módulos: qué pasa en otra parte del sistema por lo que se hace acá (con la guía de esa parte). */
+  connections?: DocConnection[];
   /** Fecha de la última revisión contra el sistema (AAAA-MM-DD). */
   updatedAt: string;
 }

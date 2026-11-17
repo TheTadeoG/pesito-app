@@ -20,6 +20,12 @@ for (const a of docArticles) {
   assert.equal((a.where.match(/\*\*/g) ?? []).length % 2, 0, `${a.slug}: negritas sin cerrar en "where"`);
   for (const s of a.steps) assert.equal((s.text.match(/\*\*/g) ?? []).length % 2, 0, `${a.slug}: negritas sin cerrar en un paso`);
 }
+for (const a of docArticles)
+  for (const c of a.connections ?? []) {
+    assert.ok(slugs.has(c.slug), `${a.slug}: la conexión "${c.slug}" no existe`);
+    assert.notEqual(c.slug, a.slug, `${a.slug}: se conecta consigo misma`);
+    assert.ok(c.text.length >= 15 && (c.text.match(/\*\*/g) ?? []).length % 2 === 0, `${a.slug}: texto de conexión inválido`);
+  }
 for (const a of docArticles) for (const r of a.related ?? []) assert.ok(slugs.has(r), `${a.slug}: la guía relacionada "${r}" no existe`);
 
 // --- Formato ---

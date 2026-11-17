@@ -22,6 +22,9 @@ export const cajaDocs: DocArticle[] = [
     ],
     keywords: ["abrir caja", "empezar el dia", "monto inicial", "apertura", "caja cerrada", "no puedo vender", "iniciar turno"],
     related: ["como-cerrar-la-caja", "como-hacer-una-venta", "como-usar-mas-de-una-caja"],
+    connections: [
+      { slug: "como-hacer-una-venta", text: "Con la caja abierta ya podés cobrar en el **Punto de Venta**." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -44,6 +47,9 @@ export const cajaDocs: DocArticle[] = [
     ],
     keywords: ["ingresar efectivo", "retirar efectivo", "sacar plata", "poner plata", "cambio", "retiro", "ingreso", "movimiento de caja", "gastos"],
     related: ["como-cerrar-la-caja", "como-abrir-la-caja"],
+    connections: [
+      { slug: "como-cerrar-la-caja", text: "Los ingresos y retiros se tienen en cuenta en el cierre." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -71,6 +77,10 @@ export const cajaDocs: DocArticle[] = [
     ],
     keywords: ["cerrar caja", "arqueo", "cierre", "faltante", "sobrante", "diferencia", "contar plata", "fin del dia", "cierre de turno"],
     related: ["como-ver-el-historial-de-cierres-de-caja", "como-ingresar-o-retirar-efectivo-de-la-caja"],
+    connections: [
+      { slug: "como-cobrar-en-efectivo-y-dar-vuelto", text: "El efectivo esperado sale de las ventas en efectivo del día." },
+      { slug: "como-ver-lo-que-hizo-cada-persona-del-equipo", text: "Las diferencias de caja de cada persona se ven en **Reportes** (Plan Pro)." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -112,6 +122,10 @@ export const cajaDocs: DocArticle[] = [
     ],
     keywords: ["varias cajas", "dos cajas", "mas de una caja", "empleados caja", "cajas abiertas", "limite de cajas", "equipo"],
     related: ["como-invitar-a-tu-equipo", "como-elegir-o-cambiar-de-plan"],
+    connections: [
+      { slug: "como-invitar-a-tu-equipo", text: "Cada persona del equipo puede trabajar con su propia caja." },
+      { slug: "como-crear-una-sucursal", text: "Cada sucursal tiene sus propias cajas (Plan Max)." },
+    ],
     updatedAt: UPDATED,
   },
 ];

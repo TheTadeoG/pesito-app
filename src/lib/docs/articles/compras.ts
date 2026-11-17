@@ -30,6 +30,12 @@ export const comprasDocs: DocArticle[] = [
     ],
     keywords: ["compra", "registrar compra", "cargar compra", "mercaderia", "factura de compra", "remito", "reponer", "proveedor"],
     related: ["como-anular-una-compra", "como-ver-lo-que-le-debes-a-un-proveedor"],
+    connections: [
+      { slug: "como-ajustar-el-stock-de-un-producto", text: "La compra suma stock; para correcciones usá **Ajustar stock**." },
+      { slug: "como-abrir-la-caja", text: "Si pagás en efectivo, se descuenta de la caja y tiene que estar abierta." },
+      { slug: "como-ver-lo-que-le-debes-a-un-proveedor", text: "Si la dejás en cuenta corriente, queda como deuda con el proveedor." },
+      { slug: "como-cambiar-el-precio-de-un-producto", text: "El costo nuevo puede subir el precio de venta en la misma proporción." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -50,6 +56,10 @@ export const comprasDocs: DocArticle[] = [
     ],
     keywords: ["anular compra", "cancelar compra", "borrar compra", "error de carga", "me equivoque", "revertir compra"],
     related: ["como-registrar-una-compra"],
+    connections: [
+      { slug: "como-ver-lo-que-le-debes-a-un-proveedor", text: "Si estaba en cuenta corriente, deja de ser deuda." },
+      { slug: "como-ver-los-movimientos-de-stock", text: "Se revierte el stock que había sumado." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -70,6 +80,9 @@ export const comprasDocs: DocArticle[] = [
     ],
     keywords: ["proveedor", "nuevo proveedor", "cargar proveedores", "excel proveedores", "alta de proveedor", "contacto"],
     related: ["como-registrar-una-compra", "como-ver-lo-que-le-debes-a-un-proveedor"],
+    connections: [
+      { slug: "como-registrar-una-compra", text: "El proveedor se elige al registrar una compra." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -94,6 +107,10 @@ export const comprasDocs: DocArticle[] = [
     ],
     keywords: ["deuda proveedor", "cuenta corriente proveedor", "pagar proveedor", "vencimientos", "cuanto debo", "registrar pago", "calendario de pagos"],
     related: ["como-registrar-una-compra", "como-cargar-proveedores"],
+    connections: [
+      { slug: "como-abrir-la-caja", text: "Si pagás en efectivo, la caja tiene que estar abierta." },
+      { slug: "como-usar-el-calendario-de-pagos-a-proveedores", text: "Los vencimientos se ven en el calendario." },
+    ],
     updatedAt: UPDATED,
   },
   {

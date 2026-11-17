@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Lightbulb, MapPin } from "lucide-react";
+import { ArrowLeft, Lightbulb, Link2, MapPin } from "lucide-react";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
@@ -42,6 +42,10 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
   const article = getDocBySlug(slug);
   if (!article) notFound();
   const category = docCategories.find((c) => c.id === article.category);
+  const connections = (article.connections ?? []).flatMap((c) => {
+    const target = getDocBySlug(c.slug);
+    return target ? [{ ...c, target }] : [];
+  });
   const related = (article.related ?? []).map((s) => getDocBySlug(s)).filter((a): a is NonNullable<typeof a> => Boolean(a));
   const [y, m, d] = article.updatedAt.split("-");
   const url = `${siteUrl}/ayuda/${article.slug}`;
@@ -159,6 +163,25 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
                 {article.tips.map((t) => (
                   <li key={t}>
                     <Inline text={t} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {connections.length > 0 && (
+            <section className="mt-6 rounded-card border border-border px-5 py-4">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+                <Link2 className="h-4 w-4" aria-hidden />
+                Cómo se conecta con otras partes de Pesito
+              </h2>
+              <ul className="mt-2 space-y-2 text-sm text-foreground">
+                {connections.map((c) => (
+                  <li key={c.slug}>
+                    <Inline text={c.text} />{" "}
+                    <Link href={`/ayuda/${c.slug}`} className="font-medium text-primary hover:underline">
+                      {`Ver: ${c.target.title}`}
+                    </Link>
                   </li>
                 ))}
               </ul>

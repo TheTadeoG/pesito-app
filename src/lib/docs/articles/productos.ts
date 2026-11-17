@@ -33,6 +33,11 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["cargar producto", "nuevo producto", "agregar producto", "alta de producto", "crear producto", "sku", "codigo de barras", "precio", "catalogo"],
     related: ["como-cargar-productos-desde-excel", "como-cambiar-el-precio-de-un-producto", "como-ajustar-el-stock-de-un-producto"],
+    connections: [
+      { slug: "como-registrar-una-compra", text: "Cuando comprás mercadería, el stock sube solo y el costo se actualiza." },
+      { slug: "como-hacer-una-venta", text: "Lo que cargás aparece en el **Punto de Venta**." },
+      { slug: "como-ver-los-productos-con-stock-bajo", text: "El stock mínimo que pongas activa los avisos de stock bajo." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -63,6 +68,10 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["excel", "planilla", "importar", "carga masiva", "subir productos", "csv", "muchos productos", "catalogo", "migrar"],
     related: ["como-descargar-tus-productos-a-excel", "como-cargar-un-producto"],
+    connections: [
+      { slug: "como-cargar-y-administrar-marcas", text: "Si la marca de la planilla no existe, se crea." },
+      { slug: "como-cargar-proveedores", text: "Si el proveedor de la planilla no existe, se crea." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -111,6 +120,10 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["talles", "colores", "variantes", "ropa", "indumentaria", "calzado", "remera", "prenda", "sku por talle"],
     related: ["como-agregar-talles-o-colores-a-un-producto", "como-vender-productos-con-talles-y-colores"],
+    connections: [
+      { slug: "como-vender-productos-con-talles-y-colores", text: "En el **Punto de Venta** se eligen desde una grilla." },
+      { slug: "como-elegir-o-cambiar-de-plan", text: "Es una función del Plan Básico o superior." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -165,6 +178,10 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["combo", "kit", "pack", "promo", "armar combo", "crear combo", "varios productos juntos", "oferta"],
     related: ["como-vender-un-combo-o-kit", "como-cargar-un-producto"],
+    connections: [
+      { slug: "como-vender-un-combo-o-kit", text: "En el **Punto de Venta** hay un atajo para encontrarlos." },
+      { slug: "como-ver-los-movimientos-de-stock", text: "El combo no tiene stock propio: al venderlo baja el de sus productos." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -186,6 +203,9 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["cambiar precio", "modificar precio", "editar precio", "actualizar precio", "remarcar", "precio de venta", "historial de precios"],
     related: ["como-poner-el-precio-con-un-porcentaje-sobre-el-costo", "como-hacer-aumentos-masivos-de-precios"],
+    connections: [
+      { slug: "como-hacer-una-venta", text: "El precio nuevo se usa desde la próxima venta en el **Punto de Venta**." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -237,6 +257,10 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["aumento masivo", "aumentar precios", "subir precios", "inflacion", "ajuste de precios", "remarcar", "actualizar costos", "porcentaje", "proveedor aumento"],
     related: ["como-cambiar-el-precio-de-un-producto", "como-poner-el-precio-con-un-porcentaje-sobre-el-costo"],
+    connections: [
+      { slug: "como-cargar-y-administrar-marcas", text: "El aumento se puede aplicar por marca o por proveedor." },
+      { slug: "como-cargar-proveedores", text: "El aumento se puede aplicar por proveedor." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -262,6 +286,9 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["codigo de barras", "etiquetas", "imprimir etiquetas", "generar codigo", "sin codigo", "ean", "rollo", "etiquetera"],
     related: ["como-cargar-un-producto"],
+    connections: [
+      { slug: "como-buscar-y-agregar-productos-al-carrito", text: "El código de barras permite escanear el producto en el **Punto de Venta**." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -283,6 +310,9 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["marcas", "nueva marca", "cargar marcas", "administrar marcas", "excel marcas"],
     related: ["como-cargar-un-producto", "como-hacer-aumentos-masivos-de-precios"],
+    connections: [
+      { slug: "como-buscar-y-filtrar-productos", text: "Con las marcas podés filtrar la lista de productos." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -304,6 +334,10 @@ export const productosDocs: DocArticle[] = [
     ],
     keywords: ["desactivar producto", "borrar producto", "eliminar producto", "dar de baja", "producto inactivo", "ocultar producto", "discontinuado"],
     related: ["como-buscar-y-filtrar-productos"],
+    connections: [
+      { slug: "como-hacer-una-venta", text: "Un producto desactivado deja de aparecer en el **Punto de Venta**." },
+      { slug: "como-elegir-o-cambiar-de-plan", text: "Los productos desactivados no cuentan para el máximo de tu plan." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -342,6 +376,99 @@ export const productosDocs: DocArticle[] = [
     tips: ["Sirve para ver desde cuándo vendés a un precio, o cuánto subió el costo con el tiempo."],
     keywords: ["historial de precios", "historial de costos", "cuando cambio el precio", "precio anterior", "cambios de precio", "auditoria"],
     related: ["como-cambiar-el-precio-de-un-producto", "como-hacer-aumentos-masivos-de-precios"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-subir-una-imagen-a-un-producto",
+    title: "Cómo ponerle una imagen a un producto",
+    category: "productos",
+    summary: "Subí una foto del producto para reconocerlo más rápido en la lista y en el Punto de Venta.",
+    plan: null,
+    where: "**Productos → Nuevo producto o lápiz del producto**",
+    steps: [
+      { text: "Abrí el producto (**Nuevo producto** o el lápiz de uno existente)." },
+      { text: "Tocá **Subir imagen** y elegí un archivo de imagen de tu dispositivo." },
+      { text: "Guardá el producto." },
+    ],
+    tips: [
+      "Para cambiarla, tocá **Cambiar imagen**; para sacarla, usá el link de quitar al lado.",
+      "La imagen aparece en la lista de Productos y al buscar en el Punto de Venta.",
+    ],
+    keywords: ["imagen", "foto", "fotografia", "subir imagen", "cambiar imagen", "producto con foto"],
+    related: ["como-cargar-un-producto"],
+    connections: [
+      { slug: "como-buscar-y-agregar-productos-al-carrito", text: "La imagen se ve al buscar en el **Punto de Venta**." },
+    ],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-cargar-el-precio-sin-iva",
+    title: "Cómo calcular el precio final desde un precio sin IVA",
+    category: "productos",
+    summary: "Si tu precio viene sin IVA, cargalo y elegí la alícuota: Pesito calcula el precio final que se cobra.",
+    plan: null,
+    where: "**Productos → Nuevo producto o lápiz → Calcular con IVA**",
+    steps: [
+      { text: "Abrí el producto (**Nuevo producto** o el lápiz de uno existente)." },
+      { text: "Junto al **Precio de venta**, tocá **Calcular con IVA**." },
+      { text: "Elegí la alícuota (21%, 10,5%, 27% o **Exento / 0%**)." },
+      { text: "Escribí el precio en **Sin IVA**: el **Final (con IVA)** se calcula solo y es el que queda cargado." },
+      { text: "Guardá el producto." },
+    ],
+    tips: [
+      "Se guarda y se cobra siempre el precio final (con IVA). La alícuota sólo ayuda a calcular.",
+      "Con **Ocultar IVA** volvés a ver sólo el precio de venta.",
+    ],
+    keywords: ["iva", "precio sin iva", "precio final", "alicuota", "21", "10,5", "calcular iva", "neto", "impuesto"],
+    related: ["como-cambiar-el-precio-de-un-producto", "como-poner-el-precio-con-un-porcentaje-sobre-el-costo"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-definir-la-unidad-y-la-presentacion-de-un-producto",
+    title: "Cómo definir la unidad y la presentación de un producto",
+    category: "productos",
+    summary: "Elegí si se vende por unidad, kilo, litro, pack o caja, y cuántas unidades trae cada bulto del proveedor.",
+    plan: null,
+    where: "**Productos → Nuevo producto o lápiz → Cómo lo vendés**",
+    steps: [
+      { text: "Abrí el producto (**Nuevo producto** o el lápiz de uno existente)." },
+      { text: "En **Cómo lo vendés** elegí la unidad: **Unidad**, **Kilogramo**, **Gramo**, **Litro**, **Mililitro**, **Pack** o **Caja**." },
+      { text: "En **Presentación (opcional)** aclará cómo viene agrupado (por ejemplo, “Pack de 6”, “Fardo de 12”) para que se entienda al vender." },
+      { text: "En **Unidades por bulto del proveedor (opcional)** poné cuántas unidades trae cada caja, fardo o pack que te vende el proveedor." },
+      { text: "Guardá el producto." },
+    ],
+    tips: [
+      "El stock y el stock mínimo se manejan en la unidad que elijas.",
+      "Las recomendaciones de compra de **Qué comprar** piden bultos enteros: por eso conviene cargar las unidades por bulto.",
+    ],
+    keywords: ["unidad", "kilo", "litro", "pack", "caja", "bulto", "fardo", "docena", "presentacion", "unidades por bulto", "medida"],
+    related: ["como-cargar-un-producto", "como-saber-que-productos-comprar"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-usar-los-avisos-de-productos",
+    title: "Cómo usar los avisos de Productos (stock bajo y pérdidas)",
+    category: "productos",
+    summary: "Mirá de un vistazo qué productos tienen poco stock, se venden a pérdida o tienen datos para corregir.",
+    plan: null,
+    where: "**Productos → Avisos de Productos**",
+    steps: [
+      { text: "Entrá a **Productos** y abrí **Avisos de Productos**." },
+      { text: "En **Stock bajo** ves los productos que están en el mínimo o por debajo." },
+      { text: "En **Vendiendo a pérdida** ves los que tienen el precio por debajo del costo." },
+      { text: "En **Números para revisar** ves los que tienen stock negativo, no tienen costo cargado o no tienen stock mínimo." },
+      { text: "Tocá cada grupo para filtrar la lista y corregirlos uno por uno." },
+    ],
+    tips: [
+      "Para corregir el stock, usá **Ajustar stock** en los tres puntitos del producto.",
+      "Para corregir un precio que da pérdida, editá el producto o usá el porcentaje sobre el costo.",
+      "El detalle de stock bajo y sin mínimo es del Plan Básico: en el Gratis ves cuántos son.",
+    ],
+    keywords: ["avisos", "alertas", "stock bajo", "vendiendo a perdida", "stock negativo", "sin costo", "revisar", "perdida"],
+    related: ["como-ver-los-productos-con-stock-bajo", "como-poner-el-precio-con-un-porcentaje-sobre-el-costo"],
+    connections: [
+      { slug: "como-elegir-que-avisos-recibir", text: "Podés elegir qué avisos recibir en **Ajustes**." },
+    ],
     updatedAt: UPDATED,
   },
 ];

@@ -32,6 +32,12 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["vender", "cobrar", "carrito", "punto de venta", "pos", "caja registradora", "escanear", "lector", "mostrador", "nueva venta"],
     related: ["como-buscar-y-agregar-productos-al-carrito", "como-cobrar-en-efectivo-y-dar-vuelto", "como-cobrar-con-varios-medios-de-pago", "atajos-de-teclado-del-punto-de-venta"],
+    connections: [
+      { slug: "como-abrir-la-caja", text: "Para cobrar necesitás la caja abierta, y lo cobrado en efectivo entra en su arqueo." },
+      { slug: "como-ajustar-el-stock-de-un-producto", text: "Cada venta descuenta el stock de lo vendido; si el número real es otro, se corrige con **Ajustar stock**." },
+      { slug: "como-vender-fiado", text: "Si la venta es fiada, queda como deuda del cliente en **Clientes**." },
+      { slug: "como-ver-cuanto-vendiste-y-cuanto-ganaste", text: "Lo que vendés alimenta los **Reportes**." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -54,6 +60,9 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["efectivo", "vuelto", "cambio", "billetes", "con cuanto paga", "plata", "cobrar efectivo"],
     related: ["como-hacer-una-venta", "como-cerrar-la-caja"],
+    connections: [
+      { slug: "como-cerrar-la-caja", text: "El efectivo cobrado cuenta para el arqueo cuando cerrás la caja." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -73,6 +82,10 @@ export const venderDocs: DocArticle[] = [
     tips: ["Una parte puede ir a **Fiado**: en ese caso elegí el cliente en **Cliente para la parte fiado**."],
     keywords: ["mixto", "combinar", "dividir pago", "pago combinado", "parte efectivo parte tarjeta", "varios medios"],
     related: ["como-hacer-una-venta", "como-vender-fiado"],
+    connections: [
+      { slug: "como-agregar-un-medio-de-pago", text: "Los medios de pago propios (Mercado Pago, Ualá…) se cargan en **Ajustes**." },
+      { slug: "como-cerrar-la-caja", text: "Sólo el efectivo entra en el arqueo de la caja." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -95,6 +108,10 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["fiado", "fiar", "cuenta corriente", "deuda", "a cuenta", "debe", "libreta"],
     related: ["como-cobrar-la-deuda-de-un-cliente", "como-cobrar-con-varios-medios-de-pago"],
+    connections: [
+      { slug: "como-cobrar-la-deuda-de-un-cliente", text: "La deuda aparece en **Clientes**, donde registrás los pagos." },
+      { slug: "como-cargar-un-cliente", text: "El cliente tiene que estar cargado antes de fiarle." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -117,6 +134,9 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["descuento", "recargo", "interes", "porcentaje", "rebaja", "promocion", "tarjeta recargo"],
     related: ["como-hacer-una-venta", "como-cambiar-el-precio-de-un-producto"],
+    connections: [
+      { slug: "como-ver-cuanto-vendiste-y-cuanto-ganaste", text: "El descuento baja el ingreso y la ganancia que ves en **Reportes**." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -157,6 +177,10 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["talle", "talles", "color", "variantes", "ropa", "indumentaria", "calzado", "prenda"],
     related: ["como-cargar-un-producto-con-talles-y-colores", "como-hacer-una-venta"],
+    connections: [
+      { slug: "como-cargar-un-producto-con-talles-y-colores", text: "Los talles y colores se cargan en **Productos**." },
+      { slug: "como-ajustar-el-stock-de-un-producto", text: "El stock es de cada variante, y se corrige por separado." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -179,6 +203,10 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["combo", "combos", "kit", "pack", "promo", "buscar combos", "alt c"],
     related: ["como-crear-un-combo-o-kit", "como-hacer-una-venta"],
+    connections: [
+      { slug: "como-crear-un-combo-o-kit", text: "Los combos se arman en **Productos**." },
+      { slug: "como-ver-los-movimientos-de-stock", text: "Al vender un combo, el stock baja en cada producto que lleva." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -199,6 +227,10 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["ticket", "imprimir", "reimprimir", "comprobante", "recibo", "impresora", "comprobante x"],
     related: ["como-ver-el-historial-de-ventas"],
+    connections: [
+      { slug: "como-personalizar-el-ticket", text: "Qué muestra el ticket se elige en **Ajustes**." },
+      { slug: "como-conectar-una-impresora-termica", text: "Con impresora térmica el ticket puede salir solo al cobrar." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -222,6 +254,11 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["anular", "cancelar venta", "borrar venta", "devolucion", "devolver", "error", "equivoque", "deshacer venta", "nota de credito"],
     related: ["como-ver-el-historial-de-ventas"],
+    connections: [
+      { slug: "como-ver-los-movimientos-de-stock", text: "El stock vuelve y queda como **Anulación de venta** en **Movimientos**." },
+      { slug: "como-ver-lo-que-hizo-cada-persona-del-equipo", text: "Las anulaciones quedan registradas con quién las hizo (Plan Pro)." },
+      { slug: "como-cobrar-la-deuda-de-un-cliente", text: "Si era fiado, se descuenta de la deuda del cliente." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -240,6 +277,9 @@ export const venderDocs: DocArticle[] = [
     ],
     keywords: ["historial", "ventas", "listado de ventas", "buscar venta", "filtrar ventas", "exportar", "csv", "reporte de ventas"],
     related: ["como-anular-una-venta", "como-imprimir-el-ticket-de-una-venta"],
+    connections: [
+      { slug: "como-anular-una-venta", text: "Desde el detalle de una venta se puede anular." },
+    ],
     updatedAt: UPDATED,
   },
   {

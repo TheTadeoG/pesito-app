@@ -27,6 +27,10 @@ export const empezarDocs: DocArticle[] = [
     ],
     keywords: ["equipo", "empleado", "invitar", "usuario", "rol", "administrador", "vendedor", "cajero", "permisos", "mi equipo"],
     related: ["como-ver-lo-que-hizo-cada-persona-del-equipo", "como-elegir-o-cambiar-de-plan"],
+    connections: [
+      { slug: "como-usar-mas-de-una-caja", text: "Cada persona puede tener su caja abierta." },
+      { slug: "como-ver-las-ventas-de-cada-vendedor", text: "Después ves lo que vendió cada uno en **Reportes**." },
+    ],
     updatedAt: UPDATED,
   },
   {

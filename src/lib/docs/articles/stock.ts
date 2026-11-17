@@ -27,6 +27,10 @@ export const stockDocs: DocArticle[] = [
     ],
     keywords: ["ajustar stock", "corregir stock", "stock", "sumar stock", "restar stock", "rotura", "merma", "conteo", "diferencia de stock"],
     related: ["como-ver-los-movimientos-de-stock", "como-hacer-un-inventario-fisico"],
+    connections: [
+      { slug: "como-ver-los-movimientos-de-stock", text: "Cada ajuste queda registrado, con quién lo hizo." },
+      { slug: "como-ver-lo-que-hizo-cada-persona-del-equipo", text: "Los ajustes de stock se ven por persona (Plan Pro)." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -68,6 +72,10 @@ export const stockDocs: DocArticle[] = [
     ],
     keywords: ["stock bajo", "sin stock", "por agotarse", "reponer", "minimo", "alertas", "faltantes", "que comprar"],
     related: ["como-ajustar-el-stock-de-un-producto", "como-registrar-una-compra"],
+    connections: [
+      { slug: "como-saber-que-productos-comprar", text: "**Qué comprar** (Plan Max) arma el pedido de lo que falta." },
+      { slug: "como-registrar-una-compra", text: "Al registrar la compra, el stock sube." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -95,6 +103,9 @@ export const stockDocs: DocArticle[] = [
     ],
     keywords: ["inventario", "inventario fisico", "contar stock", "conteo", "recuento", "diferencias", "escanear", "balance de stock"],
     related: ["como-ajustar-el-stock-de-un-producto", "como-ver-los-movimientos-de-stock"],
+    connections: [
+      { slug: "como-ver-los-movimientos-de-stock", text: "Los ajustes del inventario quedan en **Movimientos**." },
+    ],
     updatedAt: UPDATED,
   },
   {
@@ -118,6 +129,9 @@ export const stockDocs: DocArticle[] = [
     ],
     keywords: ["transferir", "transferencia", "sucursal", "pasar mercaderia", "mover stock", "otro local", "deposito"],
     related: ["como-crear-una-sucursal", "como-ver-los-movimientos-de-stock"],
+    connections: [
+      { slug: "como-crear-una-sucursal", text: "Hace falta tener la segunda sucursal creada." },
+    ],
     updatedAt: UPDATED,
   },
 ];
