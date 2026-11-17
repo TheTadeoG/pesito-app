@@ -7,7 +7,6 @@ import {
   Banknote,
   Check,
   ChevronsUpDown,
-  Gift,
   CircleDollarSign,
   CreditCard,
   ImageIcon,
@@ -1094,6 +1093,7 @@ export function PosClient({
       <div data-tour="pos-search" className="min-w-0 rounded-card border border-border bg-card p-5 xl:col-span-2">
         <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">
+                <div className="relative">
                 <button
                   type="button"
                   onClick={() => {
@@ -1129,6 +1129,37 @@ export function PosClient({
                   >
                     <X className="h-4 w-4" />
                   </button>
+                )}
+                </div>
+
+                {comboList.length > 0 && (
+                  <div role="group" aria-label="Qué mostrar" className="mt-2 flex flex-wrap gap-1.5">
+                    {([
+                      [false, "Todos"],
+                      [true, `Combos · ${comboList.length}`],
+                    ] as const).map(([onlyCombos, label]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        aria-pressed={comboOnly === onlyCombos}
+                        title={onlyCombos ? "Ver sólo los combos y kits (Alt + C)" : "Ver todos los productos"}
+                        onClick={() => {
+                          setComboOnly(onlyCombos);
+                          setQuery("");
+                          setHighlightedIndex(-1);
+                          searchRef.current?.focus();
+                        }}
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+                          comboOnly === onlyCombos
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-foreground hover:border-primary/50"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 )}
 
                 {showResults && (
@@ -1225,27 +1256,7 @@ export function PosClient({
                 )}
               </div>
 
-              <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                {comboList.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setComboOnly((v) => !v);
-                      setQuery("");
-                      setHighlightedIndex(-1);
-                      searchRef.current?.focus();
-                    }}
-                    aria-pressed={comboOnly}
-                    title="Ver sólo los combos y kits (Alt + C)"
-                    className={cn(
-                      "flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors",
-                      comboOnly ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" : "text-foreground hover:bg-card"
-                    )}
-                  >
-                    <Gift className="h-4 w-4" />
-                    {`Combos · ${comboList.length}`}
-                  </button>
-                )}
+              <div className="flex gap-1 self-start rounded-xl border border-border bg-muted/40 p-1">
                 <button
                   type="button"
                   onClick={() => setShowManualAmount((v) => !v)}
