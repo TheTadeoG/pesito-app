@@ -212,4 +212,226 @@ export const rubroPages: RubroPage[] = [
     dayInLife:
       "Una clienta pregunta si te queda el mismo buzo en talle M en gris — mirás en Pesito si te queda sin tener que ir al perchero a contar. Se prueba dos prendas, se lleva una y te pide dejarte la otra separada: queda anotada a su nombre, lista para cuando vuelva.",
   },
+  {
+    slug: "ferreteria",
+    name: "ferretería",
+    title: "Pesito para tu ferretería",
+    intro:
+      "Miles de productos chicos, decenas de proveedores y precios que cambian cada semana: en una ferretería lo difícil no es cobrar, es saber qué tenés, a cuánto lo tenés que vender hoy y qué te falta pedir antes de que un cliente se vaya con las manos vacías.",
+    painPoints: [
+      {
+        title: "Los precios que quedan viejos",
+        description:
+          "Cuando sube un proveedor y no actualizás a tiempo, vendés a un precio que ya no te deja margen. Cambiar producto por producto lleva horas.",
+      },
+      {
+        title: "Tanta variedad que no sabés qué te queda",
+        description:
+          "Tornillos, mechas, cables, pinturas: con miles de artículos, contar a ojo no alcanza y el faltante aparece cuando el cliente ya está en el mostrador.",
+      },
+      {
+        title: "El cliente que \"te paga a fin de mes\"",
+        description:
+          "Plomeros, electricistas y constructores suelen comprar a cuenta. Sin un registro claro, la deuda se mezcla y se pierde el rastro de quién debe cuánto.",
+      },
+    ],
+    examples: [
+      "Tornillería y bulonería",
+      "Herramientas manuales y eléctricas",
+      "Materiales eléctricos y de plomería",
+      "Pinturas y accesorios",
+      "Artículos de seguridad y de jardín",
+    ],
+    features: [
+      {
+        title: "Carga masiva con Excel",
+        description:
+          "Subís tu lista de productos desde una planilla, con costo y porcentaje de ganancia para que el precio se calcule solo. Desde el Plan Básico, hasta 4.000 productos activos.",
+      },
+      {
+        title: "Aumentos de precios por proveedor o marca",
+        description:
+          "Con el Plan Pro subís o bajás de una vez todos los precios o costos de un proveedor o de una marca, por porcentaje o monto fijo, y lo podés deshacer.",
+      },
+      {
+        title: "Códigos de barras propios y etiquetas",
+        description:
+          "Para lo que no trae código de fábrica, generás uno propio e imprimís la etiqueta, así escaneás todo al cobrar (Plan Básico).",
+      },
+      {
+        title: "Cuenta corriente de clientes y de proveedores",
+        description:
+          "Cada venta a cuenta queda a nombre del cliente, y lo que le debés a cada proveedor se ve compra por compra, con su vencimiento (Plan Básico).",
+      },
+      {
+        title: "Avisos de stock bajo",
+        description: "Cargás un stock mínimo por producto y Pesito te avisa lo que se está por agotar, antes de que falte.",
+      },
+    ],
+    dayInLife:
+      "Un electricista llega a las ocho con una lista: cinta aisladora, fichas, un rollo de cable. Escaneás lo que tiene código, buscás por nombre lo que no, y se lo anotás a su cuenta con dos toques porque paga a fin de mes. A media mañana sube un proveedor: entrás a Pesito, elegís su nombre, subís el 12% a todos sus productos y los precios quedan actualizados en el mismo momento. Antes de cerrar mirás qué productos están por agotarse y armás el pedido.",
+  },
+  {
+    slug: "petshop",
+    name: "petshop",
+    title: "Pesito para tu petshop",
+    intro:
+      "Alimento balanceado, accesorios, higiene y clientes que vuelven todos los meses por la misma marca: en un petshop la clave es no quedarte sin el alimento que tu cliente siempre lleva, y acordarte de qué le fiaste a cada uno.",
+    painPoints: [
+      {
+        title: "Quedarte sin el alimento que todos piden",
+        description:
+          "Si tu cliente de siempre llega y no está su marca, probablemente la compre en otro lado esa misma tarde y no vuelva por ella.",
+      },
+      {
+        title: "Clientes de confianza que pagan después",
+        description:
+          "Es común anotar a clientes fijos. En un cuaderno es fácil perder el hilo de cuánto debe cada uno y desde cuándo.",
+      },
+      {
+        title: "Productos que se compran en bultos",
+        description:
+          "Comprás por fardo o por bolsa grande y vendés por unidad: sin un control claro, el stock real y el que figura se van despegando.",
+      },
+    ],
+    examples: [
+      "Alimento balanceado para perros y gatos",
+      "Snacks y huesos",
+      "Accesorios, collares y camas",
+      "Higiene, piedras sanitarias y shampoos",
+      "Productos de acuario y aves",
+    ],
+    features: [
+      {
+        title: "Stock mínimo y avisos de reposición",
+        description:
+          "Cargás el mínimo de cada alimento y Pesito te avisa cuando está por agotarse. Con el Plan Max, además, arma el pedido por proveedor para enviarlo por WhatsApp.",
+      },
+      {
+        title: "Presentación y unidades por bulto",
+        description:
+          "Cargás cómo viene cada producto (por ejemplo, un fardo de 12) para que los pedidos que sugiere Pesito se calculen en bultos enteros.",
+      },
+      {
+        title: "Fiado con cuenta corriente y recordatorio por WhatsApp",
+        description:
+          "Cada deuda queda a nombre del cliente, y desde la lista de clientes le podés recordar lo que debe por WhatsApp.",
+      },
+      {
+        title: "Kits y combos",
+        description:
+          "Armás un kit (por ejemplo, alimento más snack) con su propio precio: al venderlo, Pesito descuenta el stock de cada producto que lleva (Plan Básico).",
+      },
+    ],
+    dayInLife:
+      "Entra una clienta de siempre por la bolsa de alimento de su perro. La escaneás, cobrás en efectivo y el vuelto sale calculado. Otro cliente se lleva un kit de cepillo y shampoo que armaste como combo, y te pide anotarlo hasta el viernes. Al final del día mirás los productos por agotarse: la marca que más rota está en el mínimo, así que la sumás al pedido del proveedor.",
+  },
+  {
+    slug: "belleza",
+    name: "negocio de artículos de belleza",
+    title: "Pesito para tu negocio de artículos de belleza",
+    intro:
+      "Cosmética, maquillaje, accesorios para el pelo, perfumería: muchos productos chicos, muchos tonos y marcas, y una caja que se mueve con ventas de poco valor. Lo difícil es saber qué tono se terminó, qué marca deja más margen y qué lleva meses sin venderse.",
+    painPoints: [
+      {
+        title: "Un mismo producto en muchos tonos",
+        description:
+          "Un labial o una base vienen en una docena de colores. Contarlos uno por uno, y saber cuál se vende más, es un trabajo que se hace a mano y se desactualiza enseguida.",
+      },
+      {
+        title: "Margen distinto según la marca",
+        description:
+          "No todas las marcas dejan lo mismo. Sin cargar el costo de cada producto, no sabés cuáles te convienen empujar.",
+      },
+      {
+        title: "Mercadería que se queda en la vitrina",
+        description:
+          "Lo que no rota ocupa lugar y plata. Detectarlo a tiempo permite liquidarlo antes de que pierda valor.",
+      },
+    ],
+    examples: [
+      "Maquillaje y cosmética",
+      "Perfumería y fragancias",
+      "Cuidado del pelo y de la piel",
+      "Esmaltes y accesorios de uñas",
+      "Accesorios para el pelo",
+    ],
+    features: [
+      {
+        title: "Colores y tonos como variantes",
+        description:
+          "Cargás el producto una sola vez y elegís sus colores: cada tono queda con su SKU, su stock y su precio, y en el Punto de Venta se elige desde una grilla (Plan Básico).",
+      },
+      {
+        title: "Costo y ganancia por producto",
+        description:
+          "Si cargás el costo, el sistema te muestra cuánto ganás con cada producto y cuáles se venden a pérdida. Los reportes de ganancia son del Plan Pro.",
+      },
+      {
+        title: "Kits y combos",
+        description:
+          "Armás sets de regalo con su precio propio: al vender el combo se descuenta el stock de cada producto que lleva (Plan Básico).",
+      },
+      {
+        title: "Detección de baja rotación",
+        description: "Con el Plan Max ves qué productos hace meses no se venden y cuánta plata tenés parada en ellos.",
+      },
+    ],
+    dayInLife:
+      "Una clienta busca su base en un tono puntual. Buscás el producto, abrís la grilla de colores y ves cuántas unidades quedan de ese tono. Se lleva también un set de regalo que armaste como combo. Al cerrar el día revisás qué tonos quedaron en cero y los agregás al pedido al proveedor, que cargás cuando llega la mercadería para que el stock suba solo.",
+  },
+  {
+    slug: "accesorios",
+    name: "negocio de accesorios",
+    title: "Pesito para tu negocio de accesorios",
+    intro:
+      "Bijouterie, carteras, gorros, fundas, relojes: miles de artículos parecidos, de bajo valor y de mucha rotación por temporada. Lo difícil es controlar el stock de cada modelo y color, y no inmovilizar plata en lo que no se vende.",
+    painPoints: [
+      {
+        title: "Muchos modelos, muchos colores",
+        description:
+          "Cada artículo viene en varias versiones. Si todo se carga como un producto distinto, la lista se vuelve imposible de manejar.",
+      },
+      {
+        title: "Rotación por temporada",
+        description:
+          "Lo que se vendió muy bien en verano puede quedar parado en invierno. Sin datos, es difícil decidir qué reponer y qué liquidar.",
+      },
+      {
+        title: "Ventas chicas y muchas",
+        description:
+          "Con tickets de bajo valor y mucho movimiento, cualquier error de vuelto o de precio se acumula a fin de mes.",
+      },
+    ],
+    examples: [
+      "Bijouterie y joyería de fantasía",
+      "Carteras, mochilas y billeteras",
+      "Gorros, bufandas y guantes",
+      "Fundas y accesorios de celular",
+      "Relojes y anteojos",
+    ],
+    features: [
+      {
+        title: "Modelos con colores y talles",
+        description:
+          "Cargás cada modelo una vez y elegís sus colores o talles: cada combinación queda con su stock y su precio, y cuenta como un solo producto para el máximo de tu plan (Plan Básico).",
+      },
+      {
+        title: "Vuelto calculado y ventas rápidas",
+        description: "Escaneás o buscás por nombre, ingresás con cuánto te pagan y Pesito calcula el vuelto exacto.",
+      },
+      {
+        title: "Productos más vendidos y baja rotación",
+        description:
+          "Los reportes te muestran qué se vende más; con el Plan Max, además, qué lleva meses parado y cuánta plata tenés en eso.",
+      },
+      {
+        title: "Aumentos masivos de precios",
+        description:
+          "Con el Plan Pro ajustás los precios de una marca o proveedor de una sola vez, y podés deshacerlo si te equivocaste.",
+      },
+    ],
+    dayInLife:
+      "Un cliente quiere una cartera en negro. La buscás, ves en la grilla qué colores quedan y la cobrás en dos toques. Más tarde, otra se lleva tres accesorios chicos y paga con transferencia. A fin de mes mirás los productos más vendidos y los que no rotan, y con eso decidís qué reponer para la próxima temporada.",
+  },
 ];

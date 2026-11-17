@@ -11,6 +11,9 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 - POS: una venta pasó de 42 consultas / ~710 KB a 6 consultas / ~1,5 KB. La sesión se valida con `getClaims`.
 - Errores de hidratación #418 arreglados: formato de fechas, cronómetro de caja y `<html>`.
 
+## Hecho: páginas por rubro nuevas (17/11/2026)
+- `/pesito-para/` suma ferretería, petshop, negocio de artículos de belleza y negocio de accesorios (datos en `src/lib/pesito-para-data.ts`; entran solas al sitemap, a `llms.txt` y al hub). Sólo cuentan funciones que existen, con su plan. Faltan rubros con página: gastronomía, servicios, farmacia, electrónica.
+
 ## Hecho: ayuda con buscador `/ayuda` (17/11/2026)
 - Guías paso a paso públicas (84 hoy, con introducción y dudas frecuentes en las de Punto de Venta, Caja y Productos; arrancamos por Punto de Venta y seguimos módulo por módulo), sin capturas, con buscador en el navegador (sin acentos, sinónimos, prefijos; sin IA ni servidor). Datos en `src/lib/docs/` (`articles/*.ts` por categoría), páginas `src/app/ayuda/`, buscador `src/components/docs/docs-search.tsx`. Cada guía tiene HowTo + BreadcrumbList JSON-LD, entra al sitemap y a `llms.txt`. Accesos: footer, `/soporte` y menú de ayuda del panel.
 - Cada guía puede traer `connections` (módulos conectados, con link a la otra guía; se ve como "Cómo se conecta con otras partes de Pesito").
