@@ -12,9 +12,9 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 - Errores de hidratación #418 arreglados: formato de fechas, cronómetro de caja y `<html>`.
 
 ## Hecho: ayuda con buscador `/ayuda` (17/11/2026)
-- Guías paso a paso públicas (68 hoy; 51 en la primera tanda), sin capturas, con buscador en el navegador (sin acentos, sinónimos, prefijos; sin IA ni servidor). Datos en `src/lib/docs/` (`articles/*.ts` por categoría), páginas `src/app/ayuda/`, buscador `src/components/docs/docs-search.tsx`. Cada guía tiene HowTo + BreadcrumbList JSON-LD, entra al sitemap y a `llms.txt`. Accesos: footer, `/soporte` y menú de ayuda del panel.
+- Guías paso a paso públicas (68 hoy; arrancamos por Punto de Venta y seguimos módulo por módulo), sin capturas, con buscador en el navegador (sin acentos, sinónimos, prefijos; sin IA ni servidor). Datos en `src/lib/docs/` (`articles/*.ts` por categoría), páginas `src/app/ayuda/`, buscador `src/components/docs/docs-search.tsx`. Cada guía tiene HowTo + BreadcrumbList JSON-LD, entra al sitemap y a `llms.txt`. Accesos: footer, `/soporte` y menú de ayuda del panel.
 - Prueba: `bash src/lib/docs/run-test.sh` (datos y búsquedas esperadas).
-- Mantenimiento: ver la regla en CLAUDE.md. Las guías podrían alimentar el futuro bot de soporte (etapa 1: coincidencia por texto).
+- Mantenimiento: ver la regla en CLAUDE.md. Control de guías viejas: `bash src/lib/docs/run-stale.sh` (usa `src/lib/docs/watch.ts` y la fecha de git de las pantallas contra el `updatedAt` de cada guía). Las guías podrían alimentar el futuro bot de soporte (etapa 1: coincidencia por texto).
 - Pendiente: revisar a ojo `/ayuda` en el navegador; guías de facturación (ARCA todavía no emite) y de promociones/balanzas cuando existan.
 
 ## Hecho: Caja y cierre de caja
