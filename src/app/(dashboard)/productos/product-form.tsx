@@ -887,7 +887,10 @@ export function ProductForm({
 
         {!isEdit && (variantsConfig || bundleConfig) && (
           <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3.5">
-            <p className="text-sm font-medium text-foreground">¿Qué tipo de producto es?</p>
+            <p className="text-sm font-medium text-foreground">
+              ¿Qué tipo de producto es?
+              <span className="ml-0.5 text-danger" aria-hidden="true">*</span>
+            </p>
             <div role="radiogroup" aria-label="Tipo de producto" className="grid gap-2 sm:grid-cols-3">
               {([
                 { id: "simple", title: "Simple", help: "Un solo producto, con su SKU, stock y precio.", locked: false },
