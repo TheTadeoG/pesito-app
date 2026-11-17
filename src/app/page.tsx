@@ -9,6 +9,7 @@ import { Comparison } from "@/components/marketing/comparison";
 import { Pricing } from "@/components/marketing/pricing";
 import { Testimonials } from "@/components/marketing/testimonials";
 import { Support } from "@/components/marketing/support";
+import { Resources } from "@/components/marketing/resources";
 import { Faq } from "@/components/marketing/faq";
 import { Cta } from "@/components/marketing/cta";
 import { Footer } from "@/components/marketing/footer";
@@ -31,6 +32,7 @@ export default function LandingPage() {
         <Pricing />
         <Testimonials />
         <Support />
+        <Resources />
         <Faq />
         <Cta />
       </main>
