@@ -307,6 +307,14 @@ export function PosClient({
     [products, bundles]
   );
 
+  // Qué lleva cada combo, en una línea ("2 × Gaseosa · 1 × Papas").
+  const nameById = useMemo(() => new Map(liveProducts.map((p) => [p.id, p.name])), [liveProducts]);
+  function bundleText(id: string): string {
+    return (bundles[id] ?? [])
+      .map((i) => `${i.quantity.toLocaleString("es-AR", { maximumFractionDigits: 3 })} × ${nameById.get(i.componentId) ?? "producto"}`)
+      .join(" · ");
+  }
+
   // Alt + C: ver sólo los combos (no con una ventana abierta).
   useEffect(() => {
     if (comboList.length === 0) return;
@@ -1204,6 +1212,11 @@ export function PosClient({
                               {product.unit}
                             </span>
                           </span>
+                          {bundles[product.id] && (
+                            <span className="block truncate text-xs text-muted-foreground" title={bundleText(product.id)}>
+                              {`Incluye: ${bundleText(product.id)}`}
+                            </span>
+                          )}
                         </span>
                       </button>
                       );
@@ -1361,6 +1374,11 @@ export function PosClient({
                             </span>
                           )}
                         </div>
+                        {item.kind === "product" && bundles[item.product.id] && (
+                          <p className="mt-0.5 max-w-xs text-xs leading-snug text-muted-foreground" title={bundleText(item.product.id)}>
+                            {`Incluye: ${bundleText(item.product.id)}`}
+                          </p>
+                        )}
                       </div>
                     </div>
 

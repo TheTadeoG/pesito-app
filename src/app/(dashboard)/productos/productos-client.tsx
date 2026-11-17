@@ -2,7 +2,7 @@
 
 import { markCatalogDirty } from "@/lib/pos-catalog-store";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronDown,
@@ -250,6 +250,16 @@ export function ProductosClient({
   const [brandFilter, setBrandFilter] = useState(initialBrand ?? "");
   const [supplierFilter, setSupplierFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  // Combos desplegados en la lista (para ver qué lleva cada uno).
+  const [openBundles, setOpenBundles] = useState<Set<string>>(new Set());
+  function toggleBundle(id: string) {
+    setOpenBundles((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [noBarcodeOnly, setNoBarcodeOnly] = useState(false);
   // Estado del stock (chips): sin stock, por agotarse, sin ventas, sin costo, sin mínimo, negativo.
@@ -409,6 +419,7 @@ export function ProductosClient({
   );
   // Mismo número que la insignia del menú y la campana: avisos del módulo, no productos.
 
+  const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   // Cuántos hay de cada tipo (para el filtro "Tipo de producto"; las variantes cuentan como un producto por grupo).
   const kindCounts = useMemo(() => {
     const groups = new Set<string>();
@@ -1184,9 +1195,11 @@ export function ProductosClient({
                     // server — ver handleToggleActive.
                     const isActive =
                       activeOverrides[product.id] ?? product.active;
+                    const comboItems = product.is_bundle ? bundleItems[product.id] ?? [] : [];
+                    const comboOpen = openBundles.has(product.id);
                     return (
+                      <Fragment key={product.id}>
                       <tr
-                        key={product.id}
                         className="align-middle hover:bg-muted/30"
                       >
                         <td
@@ -1215,7 +1228,16 @@ export function ProductosClient({
                                 </p>
                                 {!isActive && <Badge>Inactivo</Badge>}
                                 {product.is_bundle && (
-                                  <Badge tone="accent">{`Combo · ${(bundleItems[product.id] ?? []).length} producto${(bundleItems[product.id] ?? []).length === 1 ? "" : "s"}`}</Badge>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleBundle(product.id)}
+                                    aria-expanded={comboOpen}
+                                    title="Ver qué lleva el combo"
+                                    className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground hover:brightness-95"
+                                  >
+                                    {`Combo · ${comboItems.length} producto${comboItems.length === 1 ? "" : "s"}`}
+                                    <ChevronDown className={cn("h-3 w-3 transition-transform", comboOpen && "rotate-180")} />
+                                  </button>
                                 )}
                               </div>
                             </div>
@@ -1409,6 +1431,34 @@ export function ProductosClient({
                           </div>
                         </td>
                       </tr>
+                      {comboOpen &&
+                        comboItems.map((it) => {
+                          const comp = productById.get(it.componentId);
+                          return (
+                            <tr key={`${product.id}-${it.componentId}`} className="bg-muted/50 align-middle">
+                              <td className="border-l-[3px] border-l-primary/60 py-2 pl-[3.75rem] pr-4 text-sm">
+                                <span className="font-semibold text-foreground">{`${it.quantity.toLocaleString("es-AR", { maximumFractionDigits: 3 })} ×`}</span>{" "}
+                                <span className="text-foreground">{comp?.name ?? "Producto que ya no existe"}</span>
+                              </td>
+                              {showColumn("brand") && <td className="px-3 py-2 text-muted-foreground">{comp?.brand || "—"}</td>}
+                              {showColumn("supplier") && <td />}
+                              {showColumn("sku") && <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{comp?.sku || "—"}</td>}
+                              {showColumn("barcode") && <td className="px-3 py-2 text-muted-foreground">{comp?.barcode || "—"}</td>}
+                              {showColumn("cost") && (
+                                <td className="px-3 py-2 text-right text-muted-foreground">{comp?.cost ? formatCurrency(comp.cost * it.quantity) : "—"}</td>
+                              )}
+                              {showColumn("price") && (
+                                <td className="px-3 py-2 text-right text-muted-foreground">{comp ? formatCurrency(comp.price * it.quantity) : "—"}</td>
+                              )}
+                              {showColumn("stock") && (
+                                <td className="px-3 py-2 text-right text-muted-foreground">{comp ? `${comp.stock}${comp.unit}` : "—"}</td>
+                              )}
+                              {showColumn("minStock") && <td />}
+                              <td />
+                            </tr>
+                          );
+                        })}
+                      </Fragment>
                     );
                   })}
                 </tbody>
