@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { cn, formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/compress-image";
+import { PlainVariantsTab } from "@/app/(dashboard)/productos/plain-variants-tab";
 import { GroupVariantsTab, type RowEdits } from "@/app/(dashboard)/productos/group-variants-tab";
 import { baseNameOf } from "@/app/(dashboard)/productos/variant-group-rows";
 import { EMPTY_VARIANTS, VariantsSection, resolveVariantRows, toVariantInputs, type VariantsState } from "@/app/(dashboard)/productos/variants-section";
@@ -271,7 +272,12 @@ export function ProductForm({
 }: ProductFormProps) {
   const isEdit = Boolean(product);
   const groupMode = Boolean(product?.variant_group_id) && (groupMembers?.length ?? 0) > 0;
+  // Al editar cualquier producto: solapas "Producto" y "Variantes".
+  const tabbed = isEdit && Boolean(variantsConfig);
   const [tab, setTab] = useState<"datos" | "variantes">(initialTab ?? "datos");
+  const onVariantsTab = tabbed && tab === "variantes";
+  const [ownSize, setOwnSize] = useState("");
+  const [ownColor, setOwnColor] = useState("");
   const [rowEdits, setRowEdits] = useState<RowEdits>({});
   const [newVariants, setNewVariants] = useState<VariantsState>({ ...EMPTY_VARIANTS, enabled: true });
   const [costTouched, setCostTouched] = useState(false);
@@ -556,6 +562,18 @@ export function ProductForm({
       }
     }
 
+    // Producto sin variantes al que se le suman talles y colores desde la solapa "Variantes".
+    const plainRows =
+      isEdit && !isVariant && product && variantsConfig && !variantsConfig.locked
+        ? resolveVariantRows(newVariants, sku, price, [`${ownSize.trim().toLowerCase()}|${ownColor.trim().toLowerCase()}`])
+        : [];
+    if (plainRows.length > 0 && !ownSize.trim() && !ownColor.trim()) {
+      setPending(false);
+      setTab("variantes");
+      setError("En la solapa Variantes, decinos qué talle o color es este producto.");
+      return;
+    }
+
     const enteredStock = Number(stock) || 0;
     const input: ProductFormInput = {
       id: product?.id,
@@ -586,6 +604,18 @@ export function ProductForm({
       return;
     }
 
+    if (plainRows.length > 0 && product) {
+      setPending(true);
+      const add = await addVariantsToProduct(product.id, { size: ownSize, color: ownColor }, toVariantInputs(plainRows));
+      markCatalogDirty();
+      setPending(false);
+      if (add.error) {
+        setTab("variantes");
+        setError(`Guardamos los cambios del producto, pero las variantes fallaron: ${add.error}`);
+        if (!add.created) return;
+      }
+    }
+
     if (result.product) onSaved?.(result.product, enteredStock);
     resetAndClose();
   }
@@ -599,11 +629,11 @@ export function ProductForm({
       size="lg"
     >
       <form data-tour="product-form" onSubmit={handleSubmit} className="space-y-4">
-        {groupMode && (
+        {tabbed && (
           <div role="tablist" aria-label="Secciones del producto" className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
             {([
-              ["datos", "Datos"],
-              ["variantes", `Talles y colores · ${groupMembers?.length ?? 0}`],
+              ["datos", "Producto"],
+              ["variantes", groupMode ? `Variantes · ${groupMembers?.length ?? 0}` : "Variantes"],
             ] as const).map(([id, label]) => (
               <button
                 key={id}
@@ -621,7 +651,7 @@ export function ProductForm({
             ))}
           </div>
         )}
-        {groupMode && tab === "variantes" && groupMembers && (
+        {onVariantsTab && groupMode && groupMembers && (
           <GroupVariantsTab
             members={groupMembers}
             edits={rowEdits}
@@ -640,7 +670,25 @@ export function ProductForm({
             colorSuggestions={variantsConfig?.colorSuggestions ?? []}
           />
         )}
-        <div className={cn("space-y-4", groupMode && tab === "variantes" && "hidden")}>
+        {onVariantsTab && !groupMode && variantsConfig && (
+          <PlainVariantsTab
+            name={name}
+            sku={sku}
+            price={price}
+            ownSize={ownSize}
+            ownColor={ownColor}
+            onOwnChange={(sz, co) => {
+              setOwnSize(sz);
+              setOwnColor(co);
+            }}
+            state={newVariants}
+            onChange={setNewVariants}
+            locked={variantsConfig.locked}
+            sizeSuggestions={variantsConfig.sizeSuggestions}
+            colorSuggestions={variantsConfig.colorSuggestions}
+          />
+        )}
+        <div className={cn("space-y-4", onVariantsTab && "hidden")}>
         <div className="flex items-start gap-3">
           <input
             ref={fileInputRef}
@@ -854,7 +902,7 @@ export function ProductForm({
         </div>
         {groupMode && (
           <p className="-mt-2 text-xs text-muted-foreground">
-            El SKU, el código de barras y el precio de cada variante se editan en la solapa “Talles y colores”. El costo se aplica a todas sólo si lo cambiás.
+            El SKU, el código de barras y el precio de cada variante se editan en la solapa “Variantes”. El costo se aplica a todas sólo si lo cambiás.
           </p>
         )}
         {!groupMode && <PriceFromCost

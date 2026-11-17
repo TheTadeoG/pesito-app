@@ -88,7 +88,7 @@ export function GroupVariantsTab({
       <div className="space-y-2">
         <p className="text-sm font-medium text-foreground">{`${members.length} variante${members.length === 1 ? "" : "s"}`}</p>
         <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full min-w-[680px] text-left text-xs">
+          <table className="w-full min-w-[600px] text-left text-xs">
             <thead className="bg-muted text-muted-foreground">
               <tr>
                 <th className="px-2.5 py-2">Talle</th>
@@ -106,16 +106,16 @@ export function GroupVariantsTab({
                 return (
                   <tr key={m.id} className="border-t border-border align-middle">
                     <td className="px-2.5 py-1.5">
-                      <Input value={e.size ?? m.variant_size ?? ""} onChange={(ev) => onEdit(m.id, "size", ev.target.value)} maxLength={40} aria-label={`Talle de ${label}`} className="h-8 min-w-[4.5rem]" placeholder="—" />
+                      <Input value={e.size ?? m.variant_size ?? ""} onChange={(ev) => onEdit(m.id, "size", ev.target.value)} maxLength={40} aria-label={`Talle de ${label}`} className="h-8 min-w-[3.5rem] w-16" placeholder="—" />
                     </td>
                     <td className="px-2.5 py-1.5">
-                      <Input value={e.color ?? m.variant_color ?? ""} onChange={(ev) => onEdit(m.id, "color", ev.target.value)} maxLength={40} aria-label={`Color de ${label}`} className="h-8 min-w-[5.5rem]" placeholder="—" />
+                      <Input value={e.color ?? m.variant_color ?? ""} onChange={(ev) => onEdit(m.id, "color", ev.target.value)} maxLength={40} aria-label={`Color de ${label}`} className="h-8 min-w-[4.5rem] w-24" placeholder="—" />
                     </td>
                     <td className="px-2.5 py-1.5">
-                      <Input value={e.sku ?? m.sku} onChange={(ev) => onEdit(m.id, "sku", ev.target.value)} maxLength={60} aria-label={`SKU de ${label}`} className="h-8 min-w-[9rem]" />
+                      <Input value={e.sku ?? m.sku} onChange={(ev) => onEdit(m.id, "sku", ev.target.value)} maxLength={60} aria-label={`SKU de ${label}`} className="h-8 min-w-[8rem]" />
                     </td>
                     <td className="px-2.5 py-1.5">
-                      <Input value={e.barcode ?? m.barcode ?? ""} onChange={(ev) => onEdit(m.id, "barcode", ev.target.value)} aria-label={`Código de barras de ${label}`} className="h-8 min-w-[7rem]" placeholder="Opcional" />
+                      <Input value={e.barcode ?? m.barcode ?? ""} onChange={(ev) => onEdit(m.id, "barcode", ev.target.value)} aria-label={`Código de barras de ${label}`} className="h-8 min-w-[6rem]" placeholder="Opcional" />
                     </td>
                     <td className="px-2.5 py-1.5">
                       <Input type="number" min={0} step="0.01" value={e.price ?? String(m.price)} onChange={(ev) => onEdit(m.id, "price", ev.target.value)} aria-label={`Precio de ${label}`} className="h-8 w-24" />
