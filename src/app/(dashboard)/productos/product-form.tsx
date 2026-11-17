@@ -11,7 +11,9 @@ import { Select } from "@/components/ui/select";
 import { cn, formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/compress-image";
+import { BundleSection, type BundleComponentOption, type BundleItemState, type BundlePriceMode } from "@/app/(dashboard)/productos/bundle-section";
 import { PlainVariantsTab } from "@/app/(dashboard)/productos/plain-variants-tab";
+import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { GroupVariantsTab, type RowEdits } from "@/app/(dashboard)/productos/group-variants-tab";
 import { baseNameOf } from "@/app/(dashboard)/productos/variant-group-rows";
 import { EMPTY_VARIANTS, VariantsSection, resolveVariantRows, toVariantInputs, type VariantsState } from "@/app/(dashboard)/productos/variants-section";
@@ -19,6 +21,7 @@ import {
   saveProduct,
   saveProductWithVariants,
   saveVariantGroup,
+  saveBundle,
   addVariantsToProduct,
   createBrandQuick,
   suggestSku,
@@ -250,6 +253,8 @@ interface ProductFormProps {
   variantsConfig?: { locked: boolean; sizeSuggestions: string[]; colorSuggestions: string[] };
   /** Al editar un producto con variantes: todas las de su grupo. El formulario pasa a tener las solapas "Datos" y "Talles y colores". */
   groupMembers?: Product[];
+  /** Combos y kits: sólo al crear o editar en Productos. `locked` si el plan no los incluye. */
+  bundleConfig?: { locked: boolean; catalog: BundleComponentOption[]; itemsByBundle: Record<string, { componentId: string; quantity: number }[]> };
   /** Solapa con la que abre el formulario de un producto con variantes. */
   initialTab?: "datos" | "variantes";
 }
@@ -269,11 +274,21 @@ export function ProductForm({
   variantsConfig,
   groupMembers,
   initialTab,
+  bundleConfig,
 }: ProductFormProps) {
   const isEdit = Boolean(product);
   const groupMode = Boolean(product?.variant_group_id) && (groupMembers?.length ?? 0) > 0;
   // Al editar cualquier producto: solapas "Producto" y "Variantes".
-  const tabbed = isEdit && Boolean(variantsConfig);
+  // Combos y kits: un producto armado con otros productos (sin stock propio).
+  const isBundleProduct = Boolean(product?.is_bundle);
+  const [bundleChecked, setBundleChecked] = useState(false);
+  const bundleOn = Boolean(bundleConfig) && !bundleConfig?.locked && (isBundleProduct || (!isEdit && bundleChecked));
+  const [bundleItems, setBundleItems] = useState<BundleItemState[]>(() =>
+    (product && bundleConfig?.itemsByBundle[product.id] ? bundleConfig.itemsByBundle[product.id] : []).map((i) => ({ componentId: i.componentId, quantity: String(i.quantity) })),
+  );
+  const [bundleMode, setBundleMode] = useState<BundlePriceMode>(product?.bundle_price_mode ?? "fixed");
+  const [bundleDiscount, setBundleDiscount] = useState(product?.bundle_discount_pct ? String(product.bundle_discount_pct) : "");
+  const tabbed = isEdit && Boolean(variantsConfig) && !isBundleProduct;
   const [tab, setTab] = useState<"datos" | "variantes">(initialTab ?? "datos");
   const onVariantsTab = tabbed && tab === "variantes";
   const [ownSize, setOwnSize] = useState("");
@@ -306,7 +321,7 @@ export function ProductForm({
   const isVariant = Boolean(product?.variant_group_id);
   const [variantSize, setVariantSize] = useState(product?.variant_size ?? "");
   const [variantColor, setVariantColor] = useState(product?.variant_color ?? "");
-  const variantsOn = !isEdit && Boolean(variantsConfig) && !variantsConfig?.locked && variants.enabled;
+  const variantsOn = !isEdit && Boolean(variantsConfig) && !variantsConfig?.locked && variants.enabled && !bundleChecked;
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(
     product?.brand ?? null
   );
@@ -473,6 +488,30 @@ export function ProductForm({
     setPending(true);
     setError(null);
 
+    if (bundleOn) {
+      const res = await saveBundle({
+        id: product?.id,
+        name,
+        brand: selectedBrandName ?? "",
+        barcode,
+        sku,
+        priceMode: bundleMode,
+        price: Number(price) || 0,
+        discountPct: Number(bundleDiscount.replace(",", ".")) || 0,
+        active: product?.active ?? true,
+        imageUrl,
+        items: bundleItems.map((i) => ({ componentId: i.componentId, quantity: Number(i.quantity.replace(",", ".")) || 0 })),
+      });
+      markCatalogDirty();
+      setPending(false);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      resetAndClose();
+      return;
+    }
+
     if (groupMode && product?.variant_group_id && groupMembers) {
       const groupId = product.variant_group_id;
       const rowsToSave = groupMembers.map((m) => {
@@ -520,6 +559,11 @@ export function ProductForm({
 
     if (variantsOn) {
       const rows = resolveVariantRows(variants, sku, price);
+      if (rows.some((r) => r.price.trim() === "" || !Number.isFinite(Number(r.price)))) {
+        setPending(false);
+        setError("Poné el precio de venta de las variantes (en “2 · Precio y stock”).");
+        return;
+      }
       if (rows.length === 0) {
         setPending(false);
         setError("Escribí al menos un talle o un color para armar las variantes.");
@@ -839,6 +883,45 @@ export function ProductForm({
           </div>
         </div>
 
+        {!isEdit && bundleConfig && (
+          <div className="rounded-xl border border-border bg-muted/30 p-3.5">
+            <label className={cn("flex items-start gap-2.5 text-sm", bundleConfig.locked ? "cursor-not-allowed opacity-70" : "cursor-pointer")}>
+              <input
+                type="checkbox"
+                checked={bundleChecked && !bundleConfig.locked}
+                disabled={bundleConfig.locked}
+                onChange={(e) => {
+                  setBundleChecked(e.target.checked);
+                  if (e.target.checked) setVariants((v) => ({ ...v, enabled: false }));
+                }}
+                className="mt-0.5 h-4 w-4 accent-primary"
+              />
+              <span>
+                <span className="font-medium text-foreground">Es un combo o kit</span>
+                <span className="block text-xs text-muted-foreground">Se arma con otros productos tuyos (ej: pack de 2 gaseosas + papas). Al venderlo se descuenta el stock de cada uno.</span>
+              </span>
+            </label>
+            {bundleConfig.locked && (
+              <PlanLockNote plan="basico" className="mt-3">
+                Los combos y kits están desde el Plan Básico.
+              </PlanLockNote>
+            )}
+          </div>
+        )}
+        {bundleOn && bundleConfig && (
+          <BundleSection
+            catalog={bundleConfig.catalog}
+            items={bundleItems}
+            onItemsChange={setBundleItems}
+            mode={bundleMode}
+            onModeChange={setBundleMode}
+            price={price}
+            onPriceChange={setPrice}
+            discountPct={bundleDiscount}
+            onDiscountChange={setBundleDiscount}
+            excludeId={product?.id}
+          />
+        )}
         {!groupMode && (
         <div className="grid grid-cols-2 gap-3">
           {!variantsOn && (
@@ -875,7 +958,8 @@ export function ProductForm({
           </div>
         </div>
         )}
-        {!groupMode && <MarketHintNote barcode={barcode} price={price} cost={cost} onUse={(v) => {
+        {!bundleOn && (<>
+        {!groupMode && !variantsOn && <MarketHintNote barcode={barcode} price={price} cost={cost} onUse={(v) => {
           setPrice(v);
           setPriceKey((k) => k + 1); // rearma «Sin IVA» con el precio nuevo
         }}
@@ -888,7 +972,7 @@ export function ProductForm({
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          {!groupMode && (
+          {!groupMode && !variantsOn && (
           <PriceWithIvaField
             key={priceKey}
             id="p-price"
@@ -905,7 +989,7 @@ export function ProductForm({
             El SKU, el código de barras y el precio de cada variante se editan en la solapa “Variantes”. El costo se aplica a todas sólo si lo cambiás.
           </p>
         )}
-        {!groupMode && <PriceFromCost
+        {!groupMode && !variantsOn && <PriceFromCost
           cost={cost}
           price={price}
           onUse={(v) => {
@@ -913,13 +997,20 @@ export function ProductForm({
             setPriceKey((k) => k + 1); // rearma «Sin IVA» con el precio nuevo
           }}
         />}
-        {priceBelowCost && !groupMode && (
+        {variantsOn && (
+          <PriceFromCost
+            cost={cost}
+            price={variants.samePrice ?? ""}
+            onUse={(v) => setVariants((cur) => ({ ...cur, samePrice: v, priceMode: "same" }))}
+          />
+        )}
+        {priceBelowCost && !groupMode && !variantsOn && (
           <p className="-mt-2 rounded-xl bg-danger-bg px-3 py-2 text-xs font-medium text-danger">
             El precio de venta es menor al costo: estarías vendiendo a pérdida.
           </p>
         )}
 
-        {!isEdit && variantsConfig && (
+        {!isEdit && variantsConfig && !bundleChecked && (
           <VariantsSection
             state={variants}
             onChange={setVariants}
@@ -1057,6 +1148,7 @@ export function ProductForm({
           </div>
         </div>
 
+        </>)}
         </div>
 
         {isEdit && (

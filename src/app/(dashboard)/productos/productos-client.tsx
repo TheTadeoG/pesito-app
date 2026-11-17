@@ -71,6 +71,7 @@ import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { InlineNumber } from "@/components/dashboard/inline-number";
 import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/pagination-bar";
 import { VariantGroupRows } from "./variant-group-rows";
+import { bundleCapacityOf } from "@/lib/bundles";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { ExcelExportDialog, type ExportScope } from "@/app/(dashboard)/productos/excel-export-dialog";
 import { toStockRow, type StockFilterState } from "@/lib/stock-rows";
@@ -159,7 +160,7 @@ function SortHeader({
 }
 
 // Mismo criterio que el contador de la campana (sólo productos activos).
-const isLowStock = (p: Product) => p.active && p.stock <= p.min_stock;
+const isLowStock = (p: Product) => p.active && !p.is_bundle && p.stock <= p.min_stock;
 
 // Mismo criterio que el aviso "estarías vendiendo a pérdida" del alta/edición.
 const isSellingAtLoss = (p: Product) =>
@@ -185,6 +186,8 @@ export function ProductosClient({
   bulkLocked,
   inventoryLocked,
   variantsLocked,
+  bundlesLocked,
+  bundleItems,
   revertLocked,
   productUsage,
   stockAlertsLocked,
@@ -209,6 +212,10 @@ export function ProductosClient({
   inventoryLocked: boolean;
   /** El plan no incluye talles y colores (Plan Esencial). */
   variantsLocked: boolean;
+  /** El plan no incluye combos y kits (Plan Básico). */
+  bundlesLocked: boolean;
+  /** Productos de cada combo ({ idDelCombo: [{ componentId, quantity }] }). */
+  bundleItems: Record<string, { componentId: string; quantity: number }[]>;
   /** Volver a un precio o costo anterior (Plan Pro). */
   revertLocked: boolean;
   /** Productos activos contra el límite del plan (y el plan que da más). */
@@ -254,8 +261,15 @@ export function ProductosClient({
   const [edits, setEdits] = useState<Record<string, { cost?: number; min_stock?: number; price?: number }>>({});
   const [exportOpen, setExportOpen] = useState(false);
   const products = useMemo(
-    () => productsProp.map((p) => (edits[p.id] ? { ...p, ...edits[p.id] } : p)),
-    [productsProp, edits],
+    () => {
+      // Los combos no tienen stock propio: cuántos se pueden armar sale del stock de sus productos.
+      const stockById = new Map(productsProp.map((p) => [p.id, Number(p.stock)]));
+      return productsProp.map((p) => {
+        const base = p.is_bundle ? { ...p, stock: bundleCapacityOf(bundleItems[p.id] ?? [], (id) => stockById.get(id)) } : p;
+        return edits[p.id] ? { ...base, ...edits[p.id] } : base;
+      });
+    },
+    [productsProp, edits, bundleItems],
   );
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -404,8 +418,8 @@ export function ProductosClient({
       if (stockState === "out" && p.stock > 0) return false;
       if (stockState === "low" && !(p.stock > 0 && p.stock <= p.min_stock)) return false;
       if (stockState === "negative" && p.stock >= 0) return false;
-      if (noCostOnly && (!p.active || (p.cost !== null && p.cost > 0))) return false;
-      if (stockState === "nomin" && p.min_stock > 0) return false;
+      if (noCostOnly && (!p.active || p.is_bundle || (p.cost !== null && p.cost > 0))) return false;
+      if (stockState === "nomin" && (p.is_bundle || p.min_stock > 0)) return false;
       if (stockState === "idle" && !idleIds?.has(p.id)) return false;
       if (!q) return true;
       return (
@@ -669,8 +683,8 @@ export function ProductosClient({
       if (p.stock <= 0) c.out += 1;
       else if (p.stock <= p.min_stock) c.low += 1;
       if (p.stock < 0) c.negative += 1;
-      if (p.cost === null || p.cost <= 0) c.nocost += 1;
-      if (p.min_stock <= 0) c.nomin += 1;
+      if (!p.is_bundle && (p.cost === null || p.cost <= 0)) c.nocost += 1;
+      if (!p.is_bundle && p.min_stock <= 0) c.nomin += 1;
     }
     return c;
   }, [products]);
@@ -1129,6 +1143,9 @@ export function ProductosClient({
                                   {product.name}
                                 </p>
                                 {!isActive && <Badge>Inactivo</Badge>}
+                                {product.is_bundle && (
+                                  <Badge tone="accent">{`Combo · ${(bundleItems[product.id] ?? []).length} producto${(bundleItems[product.id] ?? []).length === 1 ? "" : "s"}`}</Badge>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1184,14 +1201,18 @@ export function ProductosClient({
                               !isActive && "opacity-60",
                             )}
                           >
-                            <InlineNumber
-                              value={product.cost}
-                              display={product.cost ? formatCurrency(product.cost) : "—"}
-                              placeholder="Costo"
-                              label={`costo de ${product.name}`}
-                              open={noCostOnly && (product.cost === null || product.cost <= 0)}
-                              onSave={(v) => quickSave(product.id, "cost", v)}
-                            />
+                            {product.is_bundle ? (
+                              <span title="La suma de los costos de sus productos">{product.cost ? formatCurrency(product.cost) : "—"}</span>
+                            ) : (
+                              <InlineNumber
+                                value={product.cost}
+                                display={product.cost ? formatCurrency(product.cost) : "—"}
+                                placeholder="Costo"
+                                label={`costo de ${product.name}`}
+                                open={noCostOnly && (product.cost === null || product.cost <= 0)}
+                                onSave={(v) => quickSave(product.id, "cost", v)}
+                              />
+                            )}
                           </td>
                         )}
                         {showColumn("price") && (
@@ -1231,14 +1252,18 @@ export function ProductosClient({
                               !isActive && "opacity-60",
                             )}
                           >
-                            <InlineNumber
-                              value={product.min_stock}
-                              display={`${product.min_stock}${product.unit}`}
-                              placeholder="Mínimo"
-                              label={`stock mínimo de ${product.name}`}
-                              open={stockState === "nomin" && product.min_stock <= 0}
-                              onSave={(v) => quickSave(product.id, "min_stock", v)}
-                            />
+                            {product.is_bundle ? (
+                              "—"
+                            ) : (
+                              <InlineNumber
+                                value={product.min_stock}
+                                display={`${product.min_stock}${product.unit}`}
+                                placeholder="Mínimo"
+                                label={`stock mínimo de ${product.name}`}
+                                open={stockState === "nomin" && product.min_stock <= 0}
+                                onSave={(v) => quickSave(product.id, "min_stock", v)}
+                              />
+                            )}
                           </td>
                         )}
                         <td className="px-4 py-2.5">
@@ -1264,12 +1289,14 @@ export function ProductosClient({
                                 </Button>
                               }
                             >
-                              <DropdownMenuItem
-                                onClick={() => setAdjusting(product)}
-                              >
-                                <SlidersHorizontal className="h-4 w-4" />
-                                Ajustar stock
-                              </DropdownMenuItem>
+                              {!product.is_bundle && (
+                                <DropdownMenuItem
+                                  onClick={() => setAdjusting(product)}
+                                >
+                                  <SlidersHorizontal className="h-4 w-4" />
+                                  Ajustar stock
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={() =>
                                   router.push(
@@ -1280,11 +1307,13 @@ export function ProductosClient({
                                 <History className="h-4 w-4" />
                                 Ver movimientos
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setVariantsFor(product)}>
-                                <Plus className="h-4 w-4" />
-                                Agregar talles o colores
-                                {variantsLocked && <Badge tone="accent">Básico</Badge>}
-                              </DropdownMenuItem>
+                              {!product.is_bundle && (
+                                <DropdownMenuItem onClick={() => setVariantsFor(product)}>
+                                  <Plus className="h-4 w-4" />
+                                  Agregar talles o colores
+                                  {variantsLocked && <Badge tone="accent">Básico</Badge>}
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={() => setPriceHistoryProduct(product)}
                               >
@@ -1339,6 +1368,13 @@ export function ProductosClient({
         brands={localBrands}
         suppliers={localSuppliers}
         barcodeGenerate={{ locked: labelsLocked }}
+        bundleConfig={{
+          locked: bundlesLocked,
+          catalog: products
+            .filter((p) => p.active && !p.is_bundle)
+            .map((p) => ({ id: p.id, name: p.name, sku: p.sku, barcode: p.barcode, price: Number(p.price), cost: p.cost === null ? null : Number(p.cost), stock: Number(p.stock), unit: p.unit })),
+          itemsByBundle: bundleItems,
+        }}
         variantsConfig={{
           locked: variantsLocked,
           sizeSuggestions: Array.from(new Set(products.map((p) => p.variant_size).filter((v): v is string => Boolean(v)))).sort((a, b) => a.localeCompare(b, "es", { numeric: true })),

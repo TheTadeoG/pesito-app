@@ -5,6 +5,7 @@ import { getBranchContext, withBranchStock } from "@/lib/branches";
 import { isOrgAdmin } from "@/lib/roles";
 import { getMemberLabelsById } from "@/lib/member-labels";
 import { getSubscription } from "@/lib/subscription";
+import { fetchBundleItems } from "@/lib/bundles";
 import { canUse, featureMinPlan, limitsFor, planForLimit } from "@/lib/plan-access";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { parseStockFilterState } from "@/lib/stock-rows";
@@ -148,6 +149,7 @@ export default async function ProductosPage({
     } else if (estado === "precio-viejo" && canUse(subscription, "costRiseAlert")) {
       idFilter = { label: "Costo subió y el precio no", ids: await costRiseIds(supabase, organization.id, activeProducts) };
     }
+    const bundleItems = await fetchBundleItems(supabase, organization.id);
     content = (
       <ProductosClient
         idFilter={idFilter}
@@ -163,6 +165,8 @@ export default async function ProductosPage({
         bulkLocked={!canUse(subscription, "bulkPriceChanges")}
         inventoryLocked={!canUse(subscription, "physicalInventory")}
         variantsLocked={!canUse(subscription, "productVariants")}
+        bundlesLocked={!canUse(subscription, "productBundles")}
+        bundleItems={bundleItems}
         revertLocked={!canUse(subscription, "priceRevert")}
         productUsage={{
           used: activeProducts.length,

@@ -90,6 +90,42 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
         Relationships: [];
       };
+      product_bundle_items: {
+        Row: {
+          id: string;
+          org_id: string;
+          bundle_id: string;
+          component_id: string;
+          quantity: number;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          bundle_id: string;
+          component_id: string;
+          quantity: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["product_bundle_items"]["Insert"]>;
+        Relationships: [];
+      };
+      sale_item_components: {
+        Row: {
+          id: string;
+          org_id: string;
+          sale_item_id: string;
+          product_id: string;
+          quantity: number;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          sale_item_id: string;
+          product_id: string;
+          quantity: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["sale_item_components"]["Insert"]>;
+        Relationships: [];
+      };
       product_variant_groups: {
         Row: {
           id: string;
@@ -130,6 +166,10 @@ export interface Database {
           variant_group_id?: string | null;
           variant_size?: string | null;
           variant_color_hex?: string | null;
+          /** Combos y kits (0100). undefined si falta la migración. */
+          is_bundle?: boolean;
+          bundle_price_mode?: "fixed" | "discount";
+          bundle_discount_pct?: number;
           variant_color?: string | null;
           created_at: string;
           updated_at: string;
@@ -152,6 +192,10 @@ export interface Database {
           variant_group_id?: string | null;
           variant_size?: string | null;
           variant_color_hex?: string | null;
+          /** Combos y kits (0100). undefined si falta la migración. */
+          is_bundle?: boolean;
+          bundle_price_mode?: "fixed" | "discount";
+          bundle_discount_pct?: number;
           variant_color?: string | null;
           package_label?: string | null;
           pack_size?: number | null;

@@ -306,7 +306,7 @@ async function findUsedSku(supabase: Db, orgId: string, variants: VariantInput[]
   const existing = await fetchAll((from, to) => supabase.from("products").select("id, sku").eq("org_id", orgId).order("id").range(from, to));
   const used = new Set(existing.filter((p) => !ignoreIds.includes(p.id)).map((p) => p.sku.trim().toLowerCase()));
   const clash = variants.find((v) => used.has(v.sku.trim().toLowerCase()));
-  return clash ? `Ya hay un producto con el SKU “${clash.sku.trim()}”. Cambialo para seguir.` : null;
+  return clash ? `Ya hay un producto con el SKU “${clash.sku.trim()}”. Cambialo para seguir (si viene del SKU base, tocá “Generar” para tomar el próximo libre).` : null;
 }
 
 /** Con sucursales, el stock inicial de cada variante se carga como un ajuste en la sucursal actual. Devuelve cuántos fallaron. */
@@ -593,6 +593,121 @@ export async function saveVariantGroup(groupId: string, shared: VariantGroupShar
   revalidatePath("/productos");
   revalidatePath("/pos");
   if (failed > 0) return { error: `No pudimos guardar ${failed} de ${members.length} variantes. Revisá los SKU y probá de nuevo.` };
+  return {};
+}
+
+export interface BundleInput {
+  id?: string;
+  name: string;
+  brand: string;
+  barcode: string;
+  sku: string;
+  /** "fixed": precio que pone el negocio; "discount": suma de los componentes menos un porcentaje. */
+  priceMode: "fixed" | "discount";
+  price: number;
+  discountPct: number;
+  active: boolean;
+  imageUrl: string | null;
+  items: { componentId: string; quantity: number }[];
+}
+
+/**
+ * Crea o edita un combo o kit: un producto armado con otros productos. No tiene stock propio (vender uno descuenta cada
+ * componente). El costo siempre es la suma de los costos de los componentes y, en modo "discount", el precio también se
+ * recalcula solo cuando cambia el precio de un componente (triggers de la migración 0100). Plan Básico.
+ */
+export async function saveBundle(input: BundleInput): Promise<ActionState> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const subscription = await getSubscription(supabase, organization.id);
+  if (!canUse(subscription, "productBundles")) return { error: featureLockedMessage("productBundles") };
+
+  const name = input.name.trim();
+  if (!name) return { error: "El combo necesita un nombre." };
+  const sku = input.sku.trim();
+  if (!sku) return { error: "El combo necesita un SKU (su código propio, único). Podés generar uno con el botón “Generar”." };
+  if (sku.length > 60) return { error: "El SKU es demasiado largo (máximo 60 caracteres)." };
+  {
+    const { data: clash } = await supabase.from("products").select("id, name").eq("org_id", organization.id).ilike("sku", sku.replace(/[\\%_]/g, "\\$&")).limit(2);
+    const other = (clash ?? []).find((p) => p.id !== input.id);
+    if (other) return { error: `Ya hay un producto con el SKU “${sku}”: ${other.name}. Cada producto necesita un SKU distinto.` };
+  }
+
+  if (input.items.length === 0) return { error: "Un combo necesita al menos un producto." };
+  if (input.items.length > 30) return { error: "Un combo puede llevar hasta 30 productos distintos." };
+  const seen = new Set<string>();
+  for (const it of input.items) {
+    if (!Number.isFinite(it.quantity) || it.quantity <= 0 || it.quantity > 100000) return { error: "Las cantidades de cada producto tienen que ser mayores a cero." };
+    if (seen.has(it.componentId)) return { error: "Hay un producto repetido en el combo. Sumá las cantidades en una sola fila." };
+    seen.add(it.componentId);
+    if (it.componentId === input.id) return { error: "Un combo no puede llevarse a sí mismo." };
+  }
+  if (input.priceMode === "fixed" && (!Number.isFinite(input.price) || input.price < 0 || input.price > 1_000_000_000)) {
+    return { error: "El precio tiene que ser un número de cero o más." };
+  }
+  if (input.priceMode === "discount" && (!Number.isFinite(input.discountPct) || input.discountPct < 0 || input.discountPct >= 100)) {
+    return { error: "El descuento tiene que estar entre 0 y 99,99%." };
+  }
+
+  const { data: comps } = await supabase
+    .from("products")
+    .select("id, price, cost, is_bundle")
+    .eq("org_id", organization.id)
+    .in("id", input.items.map((i) => i.componentId));
+  if (!comps || comps.length !== input.items.length) return { error: "Alguno de los productos del combo ya no existe. Recargá la página." };
+  if (comps.some((c) => c.is_bundle)) return { error: "Un combo no puede llevar otro combo adentro." };
+  const qtyById = new Map(input.items.map((i) => [i.componentId, i.quantity]));
+  const sumPrice = comps.reduce((sum, c) => sum + Number(c.price) * (qtyById.get(c.id) ?? 0), 0);
+  const sumCost = comps.reduce((sum, c) => sum + Number(c.cost ?? 0) * (qtyById.get(c.id) ?? 0), 0);
+  const price = input.priceMode === "discount" ? Math.round(sumPrice * (1 - input.discountPct / 100) * 100) / 100 : input.price;
+
+  const payload = {
+    org_id: organization.id,
+    name,
+    brand: input.brand.trim() || null,
+    barcode: input.barcode.trim() || null,
+    sku,
+    price,
+    cost: sumCost,
+    min_stock: 0,
+    unit: "u",
+    active: input.active,
+    image_url: input.imageUrl,
+    is_bundle: true,
+    bundle_price_mode: input.priceMode,
+    bundle_discount_pct: input.priceMode === "discount" ? input.discountPct : 0,
+  };
+
+  let bundleId = input.id;
+  if (bundleId) {
+    const { error } = await supabase.from("products").update(payload).eq("id", bundleId).eq("org_id", organization.id);
+    if (error) return { error: error.code === "23505" ? `Ya hay un producto con el SKU “${sku}”.` : "No pudimos guardar los cambios." };
+  } else {
+    if (input.active) {
+      const limitError = await checkProductLimit(supabase, organization.id);
+      if (limitError) return { error: limitError };
+    }
+    const { data, error } = await supabase.from("products").insert({ ...payload, stock: 0 }).select("id").single();
+    if (error?.code === "23505") return { error: `Ya hay un producto con el SKU “${sku}”.` };
+    if (error || !data) return { error: "No pudimos crear el combo. ¿Está aplicada la migración de combos y tu plan los incluye?" };
+    bundleId = data.id;
+  }
+
+  // Componentes: se sacan los que ya no están y se guardan (o actualizan) los demás.
+  const keep = input.items.map((i) => i.componentId);
+  const { error: delError } = await supabase.from("product_bundle_items").delete().eq("bundle_id", bundleId).not("component_id", "in", `(${keep.join(",")})`);
+  if (delError) return { error: "Guardamos el combo, pero no pudimos actualizar sus productos. Probá de nuevo." };
+  const { error: itemsError } = await supabase
+    .from("product_bundle_items")
+    .upsert(input.items.map((i) => ({ org_id: organization.id, bundle_id: bundleId!, component_id: i.componentId, quantity: i.quantity })), { onConflict: "bundle_id,component_id" });
+  if (itemsError) {
+    if (!input.id) await supabase.from("products").delete().eq("id", bundleId).eq("org_id", organization.id);
+    return { error: itemsError.message?.startsWith("Necesitás el Plan") || itemsError.message?.startsWith("Un combo") ? itemsError.message : "No pudimos guardar los productos del combo." };
+  }
+
+  revalidatePath("/productos");
+  revalidatePath("/pos");
   return {};
 }
 
@@ -1222,7 +1337,8 @@ export async function suggestSku(): Promise<string> {
   );
   let max = 0;
   for (const r of rows) {
-    const m = /^P-(\d{1,9})$/i.exec(r.sku.trim());
+    // También cuentan los SKU de variantes (P-00010-M-NEGRO): su base (P-00010) ya está usada.
+    const m = /^P-(\d{1,9})(?:-.*)?$/i.exec(r.sku.trim());
     if (m) max = Math.max(max, Number(m[1]));
   }
   return `P-${String(max + 1).padStart(5, "0")}`;
