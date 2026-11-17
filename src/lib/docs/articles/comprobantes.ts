@@ -18,10 +18,10 @@ export const comprobantesDocs: DocArticle[] = [
       "Con una impresora térmica de tickets conectada, el ticket sale solo al terminar cada venta, sin diálogo de impresión. Es una función en prueba.",
     ],
     steps: [
-      { text: "Entrá a **Ajustes** y buscá **Conectá tu impresora**." },
-      { text: "Elegí cómo se conecta: **Por cable USB**, **Por puerto serie o Bluetooth emparejado** o **Por Bluetooth (BLE)**." },
+      { text: "Entrá a **Ajustes** y buscá **Conectá tu impresora**.", images: [{ name: "impresora-conectar", alt: "Ajustes de impresora con las opciones de conexión: por cable USB o por puerto serie o Bluetooth emparejado" }] },
+      { text: "Elegí cómo se conecta: **Por cable USB** o **Por puerto serie o Bluetooth emparejado**. Si tu navegador lo permite, también aparece **Por Bluetooth (BLE)**, para impresoras chicas de 58 mm que se usan con el celular." },
       { text: "Elegí tu impresora en la ventana que se abre." },
-      { text: "Elegí el **Ancho del papel** (58 u 80 mm)." },
+      { text: "Elegí el **Ancho del papel** (58 u 80 mm).", images: [{ name: "impresora-ancho", alt: "Ajustes de impresora con el ancho del papel resaltado, y los interruptores de imprimir al cobrar, cortar el papel y abrir el cajón" }] },
       { text: "Tocá **Imprimir una prueba** y fijate que se vean bien los acentos y que corte el papel." },
       { text: "Activá **Imprimir al cobrar** para que el ticket salga solo al terminar cada venta." },
     ],

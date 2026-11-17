@@ -229,6 +229,19 @@ shots.push(
   { name: "reportes-periodo", page: "reportes", hot: [byRole("link", /Este mes/)], clip: "#shot" }
 );
 
+// Impresora térmica, movimientos de stock e inventario físico.
+shots.push(
+  { name: "impresora-conectar", page: "impresora", hot: [(p) => p.getByText("Conectá tu impresora").first().locator("xpath=ancestor::*[self::div or self::button][1]")], clip: "#shot" },
+  { name: "impresora-ancho", page: "impresora", hot: [(p) => p.getByText("Ancho del papel").first()], clip: "#shot" },
+  { name: "movimientos-lista", page: "movimientos", hot: [], clip: "#shot" },
+  { name: "movimientos-buscar", page: "movimientos", hot: [(p) => p.getByPlaceholder(/Buscar por producto, SKU/)], clip: "#shot" },
+  { name: "movimientos-manual", page: "movimientos", hot: [(p) => p.getByRole("button", { name: /Nuevo movimiento/ })], clip: "#shot" },
+  { name: "inventario-inicio", page: "inventario-inicio", hot: [(p) => p.getByRole("button", { name: /Empezar a contar/ })], clip: "#shot" },
+  { name: "inventario-alcance", page: "inventario-inicio", hot: [(p) => p.getByText("Qué querés contar").first()], clip: "#shot" },
+  { name: "inventario-conteo", page: "inventario-conteo", hot: [(p) => p.getByPlaceholder(/Buscar producto, SKU o código/)], clip: "#shot" },
+  { name: "inventario-aplicar", page: "inventario-conteo", hot: [(p) => p.getByRole("button", { name: /Aplicar ajustes/ })], clip: "#shot" }
+);
+
 async function highlight(loc, inset = false) {
   await loc.evaluate(
     (el, [color, inset]) => {

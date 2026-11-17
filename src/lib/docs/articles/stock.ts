@@ -33,7 +33,7 @@ export const stockDocs: DocArticle[] = [
       { q: "¿Por qué me dice que ese ya es el stock actual?", a: "Porque pusiste en **Ajustar a** el mismo número que ya figura. Poné el número real contado." },
       { q: "¿Para qué sirve el motivo?", a: "Para dejar anotado por qué ajustaste (rotura, conteo físico, etc.). Aparece después en **Movimientos**." },
       { q: "¿Se puede deshacer un ajuste?", a: "No se borra, pero podés hacer otro ajuste en sentido contrario. Cada uno queda registrado con quién lo hizo." },
-      { q: "¿Dónde hago el ajuste?", a: "En los tres puntitos de la fila del producto (**Ajustar stock**). También desde **Movimientos** con **Nuevo movimiento manual**." },
+      { q: "¿Dónde hago el ajuste?", a: "En los tres puntitos de la fila del producto (**Ajustar stock**). También desde **Movimientos** con **Nuevo movimiento**." },
     ],
     glossary: ["stock"],
     keywords: ["ajustar stock", "corregir stock", "stock", "sumar stock", "restar stock", "rotura", "merma", "conteo", "diferencia de stock"],
@@ -55,14 +55,14 @@ export const stockDocs: DocArticle[] = [
       "Cada vez que el stock de un producto sube o baja, Pesito lo anota: una venta, una compra, un ajuste, una transferencia. Acá ves ese historial para entender por qué un producto tiene el stock que tiene.",
     ],
     steps: [
-      { text: "Entrá a **Productos** y abrí la solapa **Movimientos**." },
-      { text: "Buscá un producto por nombre, SKU o código de barras (**Buscar por producto, SKU o código de barras…**)." },
+      { text: "Entrá a **Productos** y abrí la solapa **Movimientos**.", images: [{ name: "movimientos-lista", alt: "Pestaña Movimientos de Productos con los filtros por período y tipo, los totales y la lista de movimientos de stock" }] },
+      { text: "Buscá un producto por nombre, SKU o código de barras (**Buscar por producto, SKU o código de barras…**).", images: [{ name: "movimientos-buscar", alt: "Pestaña Movimientos con el buscador por producto, SKU o código de barras resaltado" }] },
       { text: "Filtrá por período (por ejemplo **Este mes**) o por persona con **Filtrar por persona**." },
       { text: "Mirá el tipo de cada movimiento: **Venta**, **Compra**, **Ajuste**, **Transferencia**, **Anulación de venta** o **Stock inicial**, con la cantidad que entró o salió." },
     ],
     tips: [
       "Arriba ves los totales: unidades que entraron, unidades que salieron y productos distintos.",
-      "Con **Nuevo movimiento manual** podés sumar, restar o ajustar el stock de un producto desde acá.",
+      "Con **Nuevo movimiento** podés sumar, restar o ajustar el stock de un producto desde acá.",
     ],
     faq: [
       { q: "¿Qué tipos de movimiento hay?", a: "**Venta** (salió por una venta), **Compra** (entró por una compra), **Ajuste** (ajuste manual o inventario), **Transferencia** (pasó entre sucursales), **Anulación de venta** y **Stock inicial**." },
@@ -119,14 +119,14 @@ export const stockDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Entrá a **Inventario físico**." },
-      { text: "En **Qué querés contar** elegí **Todos los productos activos**, **Una marca** o **Los de un proveedor**. Si querés, ponele un **Nombre (opcional)**." },
-      { text: "Tocá **Empezar a contar**." },
+      { text: "En **Qué querés contar** elegí **Todos los productos activos**, **Una marca** o **Los de un proveedor**. Si querés, ponele un **Nombre (opcional)**.", images: [{ name: "inventario-alcance", alt: "Inventario físico con la opción Qué querés contar resaltada: todos los productos, una marca o un proveedor" }] },
+      { text: "Tocá **Empezar a contar**.", images: [{ name: "inventario-inicio", alt: "Inventario físico con el botón Empezar a contar resaltado y los inventarios anteriores" }] },
       {
-        text: "Buscá cada producto (o escaneá su código de barras) y escribí cuántas unidades contaste.",
+        text: "Buscá cada producto (o escaneá su código de barras) y escribí cuántas unidades contaste.", images: [{ name: "inventario-conteo", alt: "Pantalla de conteo del inventario físico con el buscador de producto resaltado y el estado de cada producto" }],
         note: "Escanear un código suma 1 al contado.",
       },
       { text: "Mirá las pestañas **Todos**, **Contados**, **Sin contar** y **Con diferencia** para revisar lo que falta." },
-      { text: "Cuando termines, tocá **Aplicar ajustes**. El stock queda igual a lo que contaste." },
+      { text: "Cuando termines, tocá **Aplicar ajustes**. El stock queda igual a lo que contaste.", images: [{ name: "inventario-aplicar", alt: "Pantalla de conteo del inventario físico con el botón Aplicar ajustes resaltado" }] },
     ],
     tips: [
       "Antes de aplicar, la columna **Sistema** te muestra cuánto debería haber y **Diferencia** cuánto falta o sobra.",

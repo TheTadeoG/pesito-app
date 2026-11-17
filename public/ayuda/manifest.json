@@ -246,5 +246,41 @@
   "usuarios-quitar": {
     "w": 896,
     "h": 810
+  },
+  "impresora-conectar": {
+    "w": 672,
+    "h": 478
+  },
+  "impresora-ancho": {
+    "w": 672,
+    "h": 478
+  },
+  "movimientos-lista": {
+    "w": 990,
+    "h": 741
+  },
+  "movimientos-buscar": {
+    "w": 990,
+    "h": 741
+  },
+  "inventario-inicio": {
+    "w": 768,
+    "h": 536
+  },
+  "inventario-alcance": {
+    "w": 768,
+    "h": 536
+  },
+  "inventario-conteo": {
+    "w": 666,
+    "h": 640
+  },
+  "inventario-aplicar": {
+    "w": 666,
+    "h": 640
+  },
+  "movimientos-manual": {
+    "w": 990,
+    "h": 741
   }
 }
