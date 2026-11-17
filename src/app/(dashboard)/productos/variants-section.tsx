@@ -19,6 +19,10 @@ export interface VariantsState {
   edits: Record<string, Partial<Record<"sku" | "barcode" | "stock" | "price", string>>>;
   /** Combinaciones que ese talle no tiene ("talle|color" en minúsculas), para elegir los colores de cada talle. */
   excluded: string[];
+  /** "same": un solo precio para todas las variantes (por defecto); "each": un precio por talle y color. */
+  priceMode?: "same" | "each";
+  /** Precio único para todas (vacío: el precio del producto de arriba). */
+  samePrice?: string;
 }
 
 export const EMPTY_VARIANTS: VariantsState = { enabled: false, sizesText: "", colorsText: "", edits: {}, excluded: [] };
@@ -37,7 +41,7 @@ export function resolveVariantRows(state: VariantsState, baseSku: string, basePr
       sku: edit.sku ?? variantSku(baseSku, size, color),
       barcode: edit.barcode ?? "",
       stock: edit.stock ?? "0",
-      price: edit.price ?? basePrice,
+      price: state.priceMode === "each" ? (edit.price ?? state.samePrice ?? basePrice) : (state.samePrice ?? basePrice),
     };
   });
 }
@@ -79,6 +83,8 @@ export function VariantsSection({
   const rows = useMemo(() => resolveVariantRows(state, baseSku, basePrice, reserved), [state, baseSku, basePrice, reserved]);
   const sizes = parseList(state.sizesText);
   const colors = parseList(state.colorsText);
+  const priceMode = state.priceMode ?? "same";
+  const [applyAll, setApplyAll] = useState("");
   const pg = usePagination(rows.length, `${state.sizesText}|${state.colorsText}`, "pesito-variantes-pagesize");
 
   function edit(key: string, field: "sku" | "barcode" | "stock" | "price", value: string) {
@@ -168,6 +174,65 @@ export function VariantsSection({
           {rows.length > 0 && (
             <div className="space-y-2">
               <p className="text-sm font-medium text-foreground">{`${rows.length} variante${rows.length === 1 ? "" : "s"}`}</p>
+              <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+                <p className="text-sm font-medium text-foreground">Precio de venta</p>
+                <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Cómo se pone el precio">
+                  {([
+                    ["same", "El mismo para todas"],
+                    ["each", "Uno por talle y color"],
+                  ] as const).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="radio"
+                      aria-checked={priceMode === mode}
+                      onClick={() => onChange({ ...state, priceMode: mode })}
+                      className={cn(chipBase, priceMode === mode ? "border-primary bg-accent text-foreground" : "border-border bg-card text-muted-foreground hover:bg-muted")}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {priceMode === "same" ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={state.samePrice ?? basePrice}
+                      onChange={(e) => onChange({ ...state, samePrice: e.target.value })}
+                      aria-label="Precio para todas las variantes"
+                      className="h-9 w-32"
+                    />
+                    <span className="text-xs text-muted-foreground">{`Se aplica a las ${rows.length} variantes.`}</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Cambiá el precio de cada una en la tabla. O poné uno para todas:</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={applyAll}
+                      onChange={(e) => setApplyAll(e.target.value)}
+                      aria-label="Precio a aplicar a todas"
+                      className="h-8 w-28"
+                    />
+                    <button
+                      type="button"
+                      disabled={applyAll.trim() === ""}
+                      onClick={() => {
+                        const edits = { ...state.edits };
+                        for (const r of rows) edits[r.key] = { ...edits[r.key], price: applyAll };
+                        onChange({ ...state, edits });
+                      }}
+                      className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+                    >
+                      Aplicar a todas
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="overflow-x-auto rounded-xl border border-border bg-card">
                 <table className="w-full min-w-[640px] text-left text-xs">
                   <thead className="bg-muted text-muted-foreground">
@@ -197,7 +262,11 @@ export function VariantsSection({
                           </td>
                         )}
                         <td className="px-2.5 py-1.5">
-                          <Input type="number" min={0} step="0.01" value={r.price} onChange={(e) => edit(r.key, "price", e.target.value)} aria-label={`Precio de ${r.size} ${r.color}`} className="h-8 w-24" />
+                          {priceMode === "each" ? (
+                            <Input type="number" min={0} step="0.01" value={r.price} onChange={(e) => edit(r.key, "price", e.target.value)} aria-label={`Precio de ${r.size} ${r.color}`} className="h-8 w-24" />
+                          ) : (
+                            <span className="text-foreground">{r.price}</span>
+                          )}
                         </td>
                       </tr>
                     ))}
