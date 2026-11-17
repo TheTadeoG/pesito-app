@@ -335,19 +335,25 @@ export function PosClient({
     return localCustomers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 50);
   }, [localCustomers, customerQuery, browseCustomers]);
 
-  const subtotal = cart.reduce((acc, item) => {
-    if (item.kind === "product") return acc + item.product.price * item.quantity;
-    return acc + item.amount;
-  }, 0);
-  const discount =
+  // Plata siempre con 2 decimales: sin esto, sumas como 42825,65 salen como 42825.649999999994 en el cobro.
+  const cents = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+  const subtotal = cents(
+    cart.reduce((acc, item) => {
+      if (item.kind === "product") return acc + item.product.price * item.quantity;
+      return acc + item.amount;
+    }, 0)
+  );
+  const discount = cents(
     discountMode === "percent"
       ? (subtotal * (Number(discountInput) || 0)) / 100
-      : Number(discountInput) || 0;
-  const surcharge =
+      : Number(discountInput) || 0
+  );
+  const surcharge = cents(
     surchargeMode === "percent"
       ? (subtotal * (Number(surchargeInput) || 0)) / 100
-      : Number(surchargeInput) || 0;
-  const total = Math.max(0, subtotal - discount + surcharge);
+      : Number(surchargeInput) || 0
+  );
+  const total = Math.max(0, cents(subtotal - discount + surcharge));
   const itemCount = cart.reduce(
     (acc, item) => acc + (item.kind === "product" ? item.quantity : 1),
     0
