@@ -28,7 +28,7 @@ export function StructuredData() {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "Pesito",
-      alternateName: ["Pesito app", "Pesito POS"],
+      alternateName: ["Pesito POS"],
       url: siteUrl,
       logo: `${siteUrl}/icon.png`,
       description:
@@ -42,7 +42,6 @@ export function StructuredData() {
       "@context": "https://schema.org",
       "@type": "WebSite",
       name: "Pesito",
-      alternateName: ["Pesito app"],
       url: siteUrl,
       inLanguage: "es-AR",
     },
