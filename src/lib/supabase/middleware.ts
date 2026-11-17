@@ -48,6 +48,8 @@ const PUBLIC_PATHS = [
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;
+  // Archivo de clave de IndexNow (aviso de páginas nuevas a Bing): lo lee el buscador sin sesión.
+  if (/^\/indexnow-[a-f0-9]{32}\.txt$/.test(pathname)) return true;
   return PUBLIC_PATHS.some(
     (path) => path !== "/" && pathname.startsWith(`${path}/`)
   );
