@@ -108,6 +108,8 @@ const DEFAULT_PAGE_SIZE = 50;
 type SortKey = "name" | ColumnId;
 type SortDir = "asc" | "desc";
 type ActiveFilter = "all" | "active" | "inactive";
+/** Tipo de producto: simple, con talles y colores (variantes) o combo/kit. */
+type KindFilter = "all" | "simple" | "variants" | "bundle";
 
 function SortHeader({
   label,
@@ -246,6 +248,7 @@ export function ProductosClient({
   const [brandFilter, setBrandFilter] = useState(initialBrand ?? "");
   const [supplierFilter, setSupplierFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [noBarcodeOnly, setNoBarcodeOnly] = useState(false);
   // Estado del stock (chips): sin stock, por agotarse, sin ventas, sin costo, sin mínimo, negativo.
   const [stockState, setStockState] = useState<StockSelectState | null>(
@@ -404,6 +407,17 @@ export function ProductosClient({
   );
   // Mismo número que la insignia del menú y la campana: avisos del módulo, no productos.
 
+  // Cuántos hay de cada tipo (para el filtro "Tipo de producto"; las variantes cuentan como un producto por grupo).
+  const kindCounts = useMemo(() => {
+    const groups = new Set<string>();
+    let bundle = 0;
+    for (const p of products) {
+      if (p.is_bundle) bundle += 1;
+      else if (p.variant_group_id) groups.add(p.variant_group_id);
+    }
+    return { bundle, variants: groups.size };
+  }, [products]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
@@ -413,6 +427,9 @@ export function ProductosClient({
         return false;
       if (activeFilter === "active" && !p.active) return false;
       if (activeFilter === "inactive" && p.active) return false;
+      if (kindFilter === "bundle" && !p.is_bundle) return false;
+      if (kindFilter === "variants" && !p.variant_group_id) return false;
+      if (kindFilter === "simple" && (p.is_bundle || p.variant_group_id)) return false;
       if (noBarcodeOnly && p.barcode) return false;
       if (stockState && !p.active) return false;
       if (stockState === "out" && p.stock > 0) return false;
@@ -436,6 +453,7 @@ export function ProductosClient({
     brandFilter,
     supplierFilter,
     activeFilter,
+    kindFilter,
     noBarcodeOnly,
     noCostOnly,
     stockState,
@@ -445,6 +463,7 @@ export function ProductosClient({
   const extraFilterCount =
     (supplierFilter ? 1 : 0) +
     (activeFilter !== "all" ? 1 : 0) +
+    (kindFilter !== "all" ? 1 : 0) +
     (noBarcodeOnly ? 1 : 0) +
     (noCostOnly ? 1 : 0) +
     (stockState ? 1 : 0);
@@ -495,6 +514,7 @@ export function ProductosClient({
     brandFilter,
     supplierFilter,
     activeFilter,
+    kindFilter,
     noBarcodeOnly,
     noCostOnly,
     stockState,
@@ -801,6 +821,7 @@ export function ProductosClient({
                     onClick={() => {
                       setSupplierFilter("");
                       setActiveFilter("all");
+                      setKindFilter("all");
                       setNoBarcodeOnly(false);
                       setNoCostOnly(false);
                       setStockState(null);
@@ -869,6 +890,16 @@ export function ProductosClient({
                   <option value="all">Todos</option>
                   <option value="active">Sólo activos</option>
                   <option value="inactive">Sólo inactivos</option>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="pf-kind">Tipo de producto</Label>
+                <Select id="pf-kind" value={kindFilter} onChange={(e) => setKindFilter(e.target.value as KindFilter)}>
+                  <option value="all">Todos</option>
+                  <option value="simple">Simples</option>
+                  <option value="variants">{`Con talles y colores${kindCounts.variants > 0 ? ` (${kindCounts.variants})` : ""}`}</option>
+                  <option value="bundle">{`Combos y kits${kindCounts.bundle > 0 ? ` (${kindCounts.bundle})` : ""}`}</option>
                 </Select>
               </div>
 
@@ -992,6 +1023,7 @@ export function ProductosClient({
                       !brandFilter &&
                       !supplierFilter &&
                       activeFilter === "all" &&
+                      kindFilter === "all" &&
                       !noBarcodeOnly
                     ? "Ningún producto en esta lista. Todo en orden."
                     : "No encontramos productos con esos filtros."}
