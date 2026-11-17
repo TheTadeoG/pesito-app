@@ -196,9 +196,14 @@ export function VariantsSection({
             <div className="space-y-4 border-t border-border pt-4">
               <p className="text-sm font-semibold text-foreground">{`2 · Precio${showStock ? " y stock" : ""} · ${rows.length} variante${rows.length === 1 ? "" : "s"}`}</p>
 
+              <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <span className="rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-bold text-accent-foreground">$</span>
+                Precio de venta
+              </p>
               {priceMode === "same" ? (
                 <div className="space-y-1.5">
-                  <Label htmlFor="v-price">{`Precio de venta, el mismo para todos los ${sizes.length > 0 && colors.length > 0 ? "talles y colores" : colors.length > 0 ? "colores" : "talles"}`}</Label>
+                  <Label htmlFor="v-price">{`El mismo precio para todos los ${sizes.length > 0 && colors.length > 0 ? "talles y colores" : colors.length > 0 ? "colores" : "talles"}`}</Label>
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="w-40">
                       <Input id="v-price" type="number" min={0} step="0.01" value={samePriceValue} onChange={(e) => onChange({ ...state, samePrice: e.target.value })} placeholder="Ej: 8900" />
@@ -211,7 +216,7 @@ export function VariantsSection({
               ) : (
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground">Precio de venta de cada una</p>
+                    <p className="text-sm text-muted-foreground">Un precio para cada talle y color</p>
                     <button type="button" onClick={() => onChange({ ...state, priceMode: "same" })} className="text-xs font-semibold text-accent-foreground hover:underline">
                       Volver a un solo precio
                     </button>
@@ -236,10 +241,15 @@ export function VariantsSection({
                   <VariantMatrix rowKeys={rowKeys} colKeys={colKeys} colors={state.colorHex} cellOf={cellOf} field="price" onEdit={edit} />
                 </div>
               )}
+              </div>
 
               {showStock && (
-                <div className="space-y-1.5">
-                  <p className="text-sm font-medium text-foreground">Stock: cuántas unidades tenés de cada una</p>
+                <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-bold text-muted-foreground">u</span>
+                    Stock
+                    <span className="text-xs font-normal text-muted-foreground">cuántas unidades tenés de cada una</span>
+                  </p>
                   <VariantMatrix rowKeys={rowKeys} colKeys={colKeys} colors={state.colorHex} cellOf={cellOf} field="stock" onEdit={edit} />
                 </div>
               )}
@@ -251,7 +261,7 @@ export function VariantsSection({
                   aria-expanded={advanced}
                   className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs text-muted-foreground"
                 >
-                  <span>SKU y códigos de barras (se arman solos)</span>
+                  <span><b className="font-semibold text-foreground">SKU y códigos de barras</b>{" · opcional, se arman solos"}</span>
                   <span className="flex items-center gap-1 font-semibold text-accent-foreground">
                     Personalizar
                     <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", advanced && "rotate-180")} />
@@ -349,7 +359,8 @@ function VariantMatrix({
                 if (!cell) return <td key={c || "-"} className="text-center text-muted-foreground">—</td>;
                 return (
                   <td key={c || "-"}>
-                    <div className="w-24">
+                    <div className="relative w-28">
+                      {field === "price" && <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">$</span>}
                       <Input
                         type="number"
                         min={0}
@@ -357,8 +368,9 @@ function VariantMatrix({
                         value={cell[field]}
                         onChange={(e) => onEdit(cell.key, field, e.target.value)}
                         aria-label={`${field === "stock" ? "Stock" : "Precio"} de ${[s, c].filter(Boolean).join(" ")}`}
-                        className="h-8 text-center"
+                        className={cn("h-8", field === "price" ? "pl-6 pr-2 text-right" : "pl-2 pr-7 text-right")}
                       />
+                      {field === "stock" && <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">u</span>}
                     </div>
                   </td>
                 );
