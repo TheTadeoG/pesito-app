@@ -7,6 +7,7 @@ import { getDocBySlug } from "@/lib/docs";
 // Enlaces de la home a lo que más sirve para aprender y para que los buscadores lleguen: notas del blog, Pesito por rubro y
 // guías paso a paso. Se arma con las mismas fuentes de datos que esas páginas (una nota o guía nueva no hay que cargarla acá).
 const FEATURED_POSTS = [
+  "software-de-gestion-para-negocio-que-elegir",
   "mejores-sistemas-punto-de-venta-kioscos-argentina",
   "como-controlar-el-fiado",
   "como-controlar-el-stock",

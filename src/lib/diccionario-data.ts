@@ -34,7 +34,7 @@ export const glossaryCategories: GlossaryCategory[] = [
         slug: "consumidor-final",
         term: "Consumidor Final",
         definition:
-          "La condición de IVA de la mayoría de la gente que compra en un comercio de barrio: no está inscripta como responsable de IVA ni como monotributista frente a esa compra puntual. Es el comprobante por defecto cuando no hace falta discriminar impuestos.",
+          "La condición de IVA de la mayoría de la gente que compra en un negocio: no está inscripta como responsable de IVA ni como monotributista frente a esa compra puntual. Es el comprobante por defecto cuando no hace falta discriminar impuestos.",
       },
       {
         slug: "factura-a",
@@ -148,7 +148,7 @@ export const glossaryCategories: GlossaryCategory[] = [
         slug: "fiado",
         term: "Fiado / cuenta corriente",
         definition:
-          "Una venta que el cliente no paga en el momento, quedando registrada como una deuda a su nombre para cobrarla después. Es una práctica muy arraigada en el comercio de barrio, y perderle el rastro a mano (en un cuaderno) es una de las causas más comunes de plata que se pierde sin que nadie note cómo.",
+          "Una venta que el cliente no paga en el momento, quedando registrada como una deuda a su nombre para cobrarla después. Es una práctica muy arraigada en los negocios de Argentina, y perderle el rastro a mano (en un cuaderno) es una de las causas más comunes de plata que se pierde sin que nadie note cómo.",
         pesito: "Pesito lleva la cuenta corriente de cada cliente y te avisa cuánto te debe cada uno.",
       },
       {
@@ -167,13 +167,15 @@ export const glossaryCategories: GlossaryCategory[] = [
         slug: "erp",
         term: "ERP (Enterprise Resource Planning)",
         definition:
-          "Un sistema de gestión integral pensado para empresas medianas o grandes: junta finanzas, producción, recursos humanos, logística y más en una sola plataforma, normalmente con un costo e implementación grandes. Para un comercio de barrio, es mucho más de lo que hace falta — un POS enfocado cubre lo que un ERP resolvería, sin la complejidad.",
+          "Un ERP es un sistema de gestión integral pensado para empresas medianas o grandes: junta finanzas, producción, recursos humanos, compras, ventas y logística en una sola plataforma, normalmente con un costo y una implementación importantes. La diferencia con un POS es de alcance: el POS resuelve cobrar y controlar el stock, la caja y las compras de un negocio que vende al público; el ERP además planifica la producción, liquida sueldos y lleva la contabilidad. Para un kiosco, un almacén, una verdulería o un local de ropa, un ERP es mucho más de lo que hace falta: un sistema de punto de venta y gestión cubre lo que ese negocio usa todos los días, sin la complejidad ni el costo.",
+        pesito:
+          "Pesito no es un ERP: es un sistema de punto de venta y gestión para negocios, con ventas, stock, caja, clientes con fiado, compras a proveedores y reportes. No incluye producción, sueldos ni contabilidad completa.",
       },
       {
         slug: "crm",
         term: "CRM (Customer Relationship Management)",
         definition:
-          "Un sistema pensado para gestionar relaciones comerciales complejas: seguimiento de leads, equipos de venta, embudos de conversión. Un comercio de barrio no necesita un CRM — necesita saber quién le debe y qué le compra seguido, que es justamente lo que hace un buen módulo de clientes dentro de un POS.",
+          "Un sistema pensado para gestionar relaciones comerciales complejas: seguimiento de leads, equipos de venta, embudos de conversión. Un negocio chico no necesita un CRM — necesita saber quién le debe y qué le compra seguido, que es justamente lo que hace un buen módulo de clientes dentro de un POS.",
       },
       {
         slug: "catalogo-online",

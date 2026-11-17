@@ -28,6 +28,7 @@ export function StructuredData() {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "Pesito",
+      alternateName: ["Pesito app", "Pesito POS"],
       url: siteUrl,
       logo: `${siteUrl}/icon.png`,
       description:
@@ -36,6 +37,14 @@ export function StructuredData() {
       knowledgeAbout: ["punto de venta", "control de stock", "caja", "fiado y cuenta corriente", "factura electrónica ARCA"],
       contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "soporte@pesito.com.ar", availableLanguage: "es-AR" },
       // sameAs: sumar acá los perfiles oficiales (LinkedIn, Instagram, YouTube, Google Business Profile) cuando existan.
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Pesito",
+      alternateName: ["Pesito app"],
+      url: siteUrl,
+      inLanguage: "es-AR",
     },
     {
       "@context": "https://schema.org",

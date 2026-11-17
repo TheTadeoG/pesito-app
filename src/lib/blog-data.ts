@@ -47,6 +47,75 @@ export interface BlogPost {
 
 const basePostsRaw: BlogPost[] = [
   {
+    slug: "software-de-gestion-para-negocio-que-elegir",
+    seoTitle: "Software de gestión para negocios: qué elegir",
+    title: "Software de gestión para tu negocio: qué mirar antes de elegir (y cuándo alcanza con un POS)",
+    excerpt:
+      "Qué es un software de gestión para un negocio chico, en qué se diferencia de un ERP y de un punto de venta, y las 8 cosas que conviene revisar antes de elegir uno.",
+    publishedAt: "2026-11-17",
+    readingMinutes: 7,
+    quickAnswer:
+      "Para un negocio chico o mediano (kiosco, almacén, verdulería, ropa), un programa de gestión alcanza si resuelve ocho cosas: cobrar rápido con lector de códigos, controlar el stock, cuadrar la caja, llevar el fiado, registrar las compras a proveedores, mostrarte cuánto ganás de verdad, facturar con ARCA si lo necesitás y funcionar desde la nube. Un ERP, pensado para empresas con producción y recursos humanos, casi nunca hace falta.",
+    sections: [
+      {
+        paragraphs: [
+          "Cuando alguien busca \"programa para mi negocio\" o \"software de gestión\", en realidad quiere resolver tres cosas: saber qué tiene en stock, saber cuánta plata hay en la caja y saber cuánto ganó. El resto es accesorio. Esta nota te ayuda a distinguir lo que importa de lo que no, antes de pagar nada.",
+        ],
+      },
+      {
+        heading: "Software de gestión, punto de venta y ERP: qué es cada uno",
+        paragraphs: [
+          "Un punto de venta (POS) es la pantalla donde cobrás: escanea el producto, calcula el total, registra el medio de pago y descuenta el stock. Un sistema de gestión suma lo que pasa alrededor: compras, proveedores, clientes, caja, reportes. Hoy los buenos sistemas para negocios chicos traen las dos cosas juntas.",
+          "Un ERP es otra categoría: integra finanzas, producción, recursos humanos y logística para empresas medianas o grandes, con implementaciones largas y costosas. Si tu negocio vende productos al público, probablemente no lo necesites.",
+        ],
+      },
+      {
+        heading: "Las 8 cosas que conviene revisar antes de elegir",
+        paragraphs: ["Usá esta lista como filtro. Si un sistema falla en alguna de las primeras cinco, probablemente te genere más trabajo que el que te ahorra."],
+        list: [
+          "Ventas rápidas: que puedas cobrar con lector de códigos de barras y sin tocar el mouse.",
+          "Stock real: que baje solo con cada venta, que suba con cada compra y que te avise lo que se está por agotar.",
+          "Caja y arqueo: que cada empleado tenga su caja y puedas ver al cierre si el efectivo coincide.",
+          "Fiado: que puedas vender a cuenta corriente y saber cuánto te debe cada cliente.",
+          "Compras y proveedores: que cargues lo que comprás, lo que debés a cada proveedor y cuándo vence.",
+          "Ganancia real: que calcule cuánto ganás, no sólo cuánto vendés. Para eso necesita el costo de cada producto.",
+          "Facturación: si necesitás factura electrónica, que se conecte con ARCA con tu propio CUIT.",
+          "Nube y soporte: que funcione desde cualquier dispositivo con internet y que haya alguien que responda cuando algo falla.",
+        ],
+      },
+      {
+        heading: "¿Cuándo alcanza con un POS y cuándo hace falta algo más?",
+        paragraphs: [
+          "Alcanza con un sistema de punto de venta y gestión si vendés productos al público, tenés hasta algunas sucursales y querés controlar ventas, stock, caja, fiado y compras. Hace falta algo más sólo si fabricás lo que vendés, liquidás sueldos desde el sistema o necesitás contabilidad integrada: ahí aparecen los ERP y los sistemas contables.",
+        ],
+      },
+      {
+        heading: "Cómo probar un sistema en una semana, sin riesgo",
+        paragraphs: ["Antes de pagar, hacé esta prueba con cualquier sistema (incluido Pesito):"],
+        list: [
+          "Cargá 20 de tus productos más vendidos con su costo y su stock.",
+          "Hacé 10 ventas de prueba, una con descuento, una fiada y una con pago mixto.",
+          "Cerrá la caja y mirá si el sistema explica la diferencia.",
+          "Registrá una compra a un proveedor y mirá cómo cambia el stock.",
+          "Mirá el reporte de ganancia: ¿coincide con lo que vos esperás?",
+        ],
+      },
+      {
+        heading: "Cómo lo resuelve Pesito",
+        paragraphs: [
+          "Pesito es un sistema de punto de venta y gestión en la nube para negocios de Argentina. Tiene un Plan Gratis que no vence ni pide tarjeta, con punto de venta, stock, caja, fiado, compras y reportes básicos. Los planes pagos suman, entre otras cosas, factura electrónica con ARCA (Factura C), ajustes de precios masivos, control por usuario y varias sucursales. Podés ver paso a paso cada función en las guías de ayuda.",
+        ],
+      },
+    ],
+    faqs: [
+      { question: "¿Qué es un software de gestión para un negocio?", answer: "Es un programa que junta en un solo lugar las tareas del día a día de un negocio: cobrar, controlar el stock, llevar la caja, registrar compras y clientes con fiado, y ver reportes. Para negocios chicos suele incluir el punto de venta." },
+      { question: "¿Un negocio chico necesita un ERP?", answer: "Casi nunca. Un ERP integra finanzas, producción y recursos humanos y está pensado para empresas medianas o grandes. Un kiosco, un almacén o una verdulería resuelven lo que necesitan con un sistema de punto de venta y gestión." },
+      { question: "¿Qué diferencia hay entre un POS y un sistema de gestión?", answer: "El POS es la parte de cobrar (carrito, medios de pago, ticket). El sistema de gestión suma stock, compras, proveedores, clientes, caja y reportes. Los sistemas actuales para negocios chicos traen las dos juntas." },
+      { question: "¿Hay software de gestión gratis para negocios en Argentina?", answer: "Sí. Pesito tiene un Plan Gratis que no vence ni pide tarjeta, con ventas, stock, caja, fiado, compras y reportes básicos, con un tope mensual de ventas. Conviene comparar los límites de cada opción gratuita antes de elegir." },
+      { question: "¿Cómo sé si un sistema me va a servir antes de pagar?", answer: "Probalo una semana con tus productos reales: cargá los más vendidos, hacé ventas de prueba, cerrá la caja y registrá una compra. Si el sistema te explica el stock y la caja sin que tengas que hacer cuentas aparte, te sirve." },
+    ],
+  },
+  {
     slug: "como-armar-lista-de-precios",
     seoTitle: "Cómo armar una lista de precios",
     title: "Cómo armar una lista de precios sin perder plata en el camino",
