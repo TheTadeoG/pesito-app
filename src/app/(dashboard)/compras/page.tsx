@@ -1,3 +1,4 @@
+import { fetchBundleIds } from "@/lib/bundles";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
@@ -73,7 +74,9 @@ export default async function ComprasPage({
   // Stock de la sucursal en la que está trabajando (donde va a entrar la
   // mercadería).
   const { current: branch } = await getBranchContext();
-  const products = await withBranchStock(supabase, branch, allProducts);
+  // Un combo no se compra (no tiene stock propio): se compran sus productos.
+  const bundleIds = await fetchBundleIds(supabase, organization.id);
+  const products = await withBranchStock(supabase, branch, allProducts.filter((p) => !bundleIds.has(p.id)));
 
   const purchases = (purchasesRaw ?? []).map((p) => ({
     ...p,

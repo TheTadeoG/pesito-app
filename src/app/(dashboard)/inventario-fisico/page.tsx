@@ -1,3 +1,4 @@
+import { fetchBundleIds } from "@/lib/bundles";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/supabase/fetch-all";
@@ -102,8 +103,9 @@ export default async function InventarioFisicoPage() {
     ),
   ]);
 
+  const bundleIds = await fetchBundleIds(supabase, orgId);
   const inScope = allProducts.filter(
-    (p) => (!open.scope_brand || p.brand === open.scope_brand) && (!open.scope_supplier_id || p.default_supplier_id === open.scope_supplier_id)
+    (p) => !bundleIds.has(p.id) && (!open.scope_brand || p.brand === open.scope_brand) && (!open.scope_supplier_id || p.default_supplier_id === open.scope_supplier_id)
   );
   const withStock = await withBranchStock(supabase, branch, inScope);
   const products: CountProduct[] = withStock.map((p) => ({

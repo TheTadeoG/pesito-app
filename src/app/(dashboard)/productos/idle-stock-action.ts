@@ -1,5 +1,6 @@
 "use server";
 
+import { fetchBundleIds } from "@/lib/bundles";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { getBranchContext, withBranchStock } from "@/lib/branches";
@@ -22,7 +23,7 @@ export async function loadIdleStock(days: number): Promise<{ rows?: IdleStockRow
   }
   const { current: branch } = await getBranchContext();
 
-  const [rawProducts, stats] = await Promise.all([
+  const [rawAll, stats, bundleIds] = await Promise.all([
     fetchAll((from, to) =>
       supabase
         .from("products")
@@ -33,7 +34,10 @@ export async function loadIdleStock(days: number): Promise<{ rows?: IdleStockRow
         .range(from, to)
     ),
     supabase.rpc("product_sales_stats", { p_org_id: organization.id, p_days: days, p_branch_id: branch?.id ?? null }),
+    fetchBundleIds(supabase, organization.id),
   ]);
+  // Los combos no tienen stock propio: no entran en "sin ventas".
+  const rawProducts = rawAll.filter((p) => !bundleIds.has(p.id));
   if (stats.error) return { error: "No pudimos analizar las ventas. Probá de nuevo." };
 
   const withStock = await withBranchStock(supabase, branch, rawProducts);

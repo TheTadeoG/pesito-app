@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { PosCatalog } from "@/app/(dashboard)/pos/pos-catalog";
 import { fetchCatalogForPos } from "@/lib/pos-catalog-server";
+import { fetchBundleItems } from "@/lib/bundles";
 import { POS_CACHE_COOKIE, posCacheCookieValue } from "@/lib/pos-cache-cookie";
 import { OpenCajaPrompt } from "@/app/(dashboard)/pos/open-caja-prompt";
 import { getRecentSaleRows } from "@/app/(dashboard)/pos/recent-sales";
@@ -35,7 +36,7 @@ export default async function PosPage() {
   const cookieStore = await cookies();
   const hasLocalCopy =
     cookieStore.get(POS_CACHE_COOKIE)?.value === posCacheCookieValue(organization.id, openRegister.branch_id ?? null);
-  const [customers, recentSales, { data: customPaymentMethods }, initialProducts, invoicing, variantRows, colorRows] = await Promise.all([
+  const [customers, recentSales, { data: customPaymentMethods }, initialProducts, invoicing, variantRows, colorRows, bundleInfo] = await Promise.all([
     fetchAll((from, to) =>
       supabase
         .from("customers")
@@ -74,6 +75,8 @@ export default async function PosPage() {
         .order("id")
         .range(from, to)
     ).catch(() => []),
+    // Combos y kits: qué productos lleva cada uno (si falta la migración 0100, queda vacío).
+    fetchBundleItems(supabase, organization.id),
   ]);
   const hexById = new Map(colorRows.map((r) => [r.id, r.variant_color_hex as string | null]));
   const variantInfo: Record<string, { g: string; s: string | null; c: string | null; h?: string | null }> = {};
@@ -97,6 +100,7 @@ export default async function PosPage() {
       invoicing={invoicing}
       customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
       variantInfo={variantInfo}
+      bundleInfo={bundleInfo}
       recentSales={recentSales}
     />
   );

@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import { PosVariantGroup, groupResults, type VariantInfo } from "@/app/(dashboard)/pos/pos-variant-group";
+import { bundleCapacityOf, type BundleItem } from "@/lib/bundles";
 import { resolveInvoiceType } from "@/lib/invoice-labels";
 import { suggestBilletes } from "@/lib/billetes";
 import { useToast } from "@/components/toast/toast-provider";
@@ -121,6 +122,8 @@ interface PosClientProps {
   customPaymentMethods: string[];
   /** Talle y color de los productos que son variantes (para agruparlos en la búsqueda). */
   variantInfo?: VariantInfo;
+  /** Combos y kits: qué productos lleva cada uno ({ idDelCombo: [{ componentId, quantity }] }). */
+  bundleInfo?: Record<string, BundleItem[]>;
   onSaleCompleted: (recentSales: SaleRow[]) => void;
   /** Una venta recién cobrada quedó facturada: la lista de ventas recientes lo muestra al toque. */
   onSaleInvoiced?: (saleId: string, badge: string) => void;
@@ -137,6 +140,7 @@ export function PosClient({
   ticketShowNumber,
   customPaymentMethods,
   variantInfo,
+  bundleInfo,
   onSaleCompleted,
   onSaleInvoiced,
 }: PosClientProps) {
@@ -152,11 +156,18 @@ export function PosClient({
     stock: Record<string, number>;
     balance: Record<string, number>;
   }>({ baseProducts: serverProducts, baseCustomers: serverCustomers, stock: {}, balance: {} });
-  const products = useMemo(() => {
+  const liveProducts = useMemo(() => {
     const stock = liveUpdates.baseProducts === serverProducts ? liveUpdates.stock : {};
     if (Object.keys(stock).length === 0) return serverProducts;
     return serverProducts.map((p) => (p.id in stock ? { ...p, stock: stock[p.id] } : p));
   }, [serverProducts, liveUpdates]);
+  // Combos y kits: no tienen stock propio; cuántos se pueden armar sale del stock de sus productos.
+  const bundles = useMemo(() => bundleInfo ?? {}, [bundleInfo]);
+  const liveStockById = useMemo(() => new Map(liveProducts.map((p) => [p.id, p.stock])), [liveProducts]);
+  const products = useMemo(() => {
+    if (Object.keys(bundles).length === 0) return liveProducts;
+    return liveProducts.map((p) => (bundles[p.id] ? { ...p, stock: bundleCapacityOf(bundles[p.id], (id) => liveStockById.get(id)) } : p));
+  }, [liveProducts, bundles, liveStockById]);
   const customers = useMemo(() => {
     const balance = liveUpdates.baseCustomers === serverCustomers ? liveUpdates.balance : {};
     if (Object.keys(balance).length === 0) return serverCustomers;
@@ -360,6 +371,44 @@ export function PosClient({
     );
   }
 
+  // Cuánto de un componente ya reservan los productos del carrito (sueltos y dentro de combos), salvo el combo `exceptBundleId`.
+  function cartUsage(cartItems: CartItem[], componentId: string, exceptBundleId?: string): number {
+    let used = 0;
+    for (const line of cartItems) {
+      if (line.kind !== "product") continue;
+      const lineBundle = bundles[line.product.id];
+      if (lineBundle) {
+        if (line.product.id === exceptBundleId) continue;
+        const it = lineBundle.find((i) => i.componentId === componentId);
+        if (it) used += it.quantity * line.quantity;
+      } else if (line.product.id === componentId) {
+        used += line.quantity;
+      }
+    }
+    return used;
+  }
+
+  // Máximo que puede haber de este producto en el carrito, contando lo que ya reservan los demás (combos y sueltos).
+  function limitFor(product: ProductLite, cartItems: CartItem[]): number {
+    const items = bundles[product.id];
+    if (items) {
+      let best = Infinity;
+      for (const it of items) {
+        const stock = liveStockById.get(it.componentId) ?? 0;
+        best = Math.min(best, Math.floor((stock - cartUsage(cartItems, it.componentId, product.id) + 1e-9) / it.quantity));
+      }
+      return Number.isFinite(best) ? Math.max(0, best) : 0;
+    }
+    let reserved = 0;
+    for (const line of cartItems) {
+      if (line.kind !== "product") continue;
+      const lineBundle = bundles[line.product.id];
+      const it = lineBundle?.find((i) => i.componentId === product.id);
+      if (it) reserved += it.quantity * line.quantity;
+    }
+    return product.stock - reserved;
+  }
+
   function addProduct(product: ProductLite) {
     setError(null);
     let blocked: "no-stock" | "all-in-cart" | null = null;
@@ -368,7 +417,7 @@ export function PosClient({
         (item) => item.kind === "product" && item.product.id === product.id
       );
       if (existing && existing.kind === "product") {
-        if (existing.quantity + 1 > product.stock) {
+        if (existing.quantity + 1 > limitFor(product, current)) {
           blocked = "all-in-cart";
           return current;
         }
@@ -378,7 +427,7 @@ export function PosClient({
             : item
         );
       }
-      if (product.stock < 1) {
+      if (limitFor(product, current) < 1) {
         blocked = "no-stock";
         return current;
       }
@@ -405,7 +454,7 @@ export function PosClient({
         .map((item, i) => {
           if (i !== index || item.kind !== "product") return item;
           const nextQuantity = item.quantity + delta;
-          if (delta > 0 && nextQuantity > item.product.stock) {
+          if (delta > 0 && nextQuantity > limitFor(item.product, current)) {
             blocked = item.product;
             return item;
           }
@@ -522,13 +571,22 @@ export function PosClient({
       return;
     }
 
+    // El servidor devuelve el stock de lo que se vendió; el de los productos que van dentro de un combo se descuenta acá.
+    const comboStock: Record<string, number> = {};
+    for (const line of cart) {
+      if (line.kind !== "product") continue;
+      for (const it of bundles[line.product.id] ?? []) {
+        const base = comboStock[it.componentId] ?? liveStockById.get(it.componentId);
+        if (base !== undefined) comboStock[it.componentId] = Math.max(0, base - it.quantity * line.quantity);
+      }
+    }
     setLiveUpdates((current) => {
       const fresh =
         current.baseProducts === serverProducts && current.baseCustomers === serverCustomers;
       return {
         baseProducts: serverProducts,
         baseCustomers: serverCustomers,
-        stock: { ...(fresh ? current.stock : {}), ...result.stockByProduct },
+        stock: { ...(fresh ? current.stock : {}), ...comboStock, ...result.stockByProduct },
         balance: {
           ...(fresh ? current.balance : {}),
           ...(result.customerBalance
@@ -1080,11 +1138,16 @@ export function PosClient({
                           )}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium text-foreground">
-                            {product.name}
+                          <span className="flex items-center gap-2">
+                            <span className="truncate font-medium text-foreground">{product.name}</span>
+                            {bundles[product.id] && (
+                              <span className="shrink-0 rounded-full border border-accent bg-accent px-2 py-0.5 text-[11px] font-semibold text-accent-foreground">
+                                {`Combo · ${bundles[product.id].length} producto${bundles[product.id].length === 1 ? "" : "s"}`}
+                              </span>
+                            )}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {formatCurrency(product.price)} · Stock actual:{" "}
+                            {formatCurrency(product.price)} · {bundles[product.id] ? "Podés armar:" : "Stock actual:"}{" "}
                             <span
                               className={cn(
                                 "font-medium",
@@ -1208,6 +1271,9 @@ export function PosClient({
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-foreground">
                           {item.kind === "product" ? item.product.name : item.label}
+                          {item.kind === "product" && bundles[item.product.id] && (
+                            <span className="ml-2 rounded-full border border-accent bg-accent px-2 py-0.5 text-[11px] font-semibold text-accent-foreground">Combo</span>
+                          )}
                         </p>
                         <div className="mt-0.5 flex items-center gap-1.5">
                           <span className="text-xs text-muted-foreground">
@@ -1225,7 +1291,8 @@ export function PosClient({
                                   : "text-muted-foreground"
                               )}
                             >
-                              · Stock: {item.product.stock}
+                              {bundles[item.product.id] ? "· Se pueden armar: " : "· Stock: "}
+                              {item.product.stock}
                               {item.product.unit}
                             </span>
                           )}

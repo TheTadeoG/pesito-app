@@ -1,3 +1,4 @@
+import { fetchBundleIds } from "@/lib/bundles";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { fetchAll } from "@/lib/supabase/fetch-all";
@@ -70,7 +71,7 @@ export async function loadInsightsBase(
   branch: Branch | null,
   days: number
 ): Promise<InsightsBase> {
-  const [rawProducts, statsResult, { data: suppliers }] = await Promise.all([
+  const [rawAll, statsResult, { data: suppliers }, bundleIds] = await Promise.all([
     fetchAll((from, to) =>
       supabase
         .from("products")
@@ -88,7 +89,10 @@ export async function loadInsightsBase(
     }),
     // "*": el plazo de entrega (0052) puede no existir todavía en la base.
     supabase.from("suppliers").select("*").eq("org_id", orgId),
+    fetchBundleIds(supabase, orgId),
   ]);
+  // Los combos no tienen stock propio: no se reponen ni entran en "sin ventas".
+  const rawProducts = rawAll.filter((p) => !bundleIds.has(p.id));
   if (statsResult.error) throw new Error("No pudimos analizar las ventas por producto.");
 
   // Unidades por bulto (0052): consulta aparte para que, sin la migración, el

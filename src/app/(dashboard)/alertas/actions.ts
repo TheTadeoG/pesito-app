@@ -1,5 +1,6 @@
 "use server";
 
+import { fetchBundleIds } from "@/lib/bundles";
 import { loadMarketPrices, statsFor } from "@/lib/market-data";
 import { diffPct, normalizeEan } from "@/lib/market-prices";
 import { revalidatePath } from "next/cache";
@@ -58,7 +59,7 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < CACHE_MS) return hit.value;
 
-    const [products, debtors] = await Promise.all([
+    const [allProducts, debtors, bundleIds] = await Promise.all([
       fetchAll((from, to) =>
         supabase
           .from("products")
@@ -77,7 +78,10 @@ export async function getBusinessAlerts(): Promise<BusinessAlertCounts | null> {
           .order("id")
           .range(from, to)
       ),
+      fetchBundleIds(supabase, organization.id),
     ]);
+    // Los combos no tienen stock propio: no cuentan para stock bajo, reposición ni costos.
+    const products = allProducts.filter((p) => !bundleIds.has(p.id));
 
     const withStock = (await withBranchStock(supabase, branchContext.current, products)).map((p) => ({
       ...p,
