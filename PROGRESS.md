@@ -226,7 +226,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - También "Agregar un proveedor" (formulario completo) en el mismo menú.
 - Pendiente: botón de carga desde Excel también en la pantalla de Proveedores; actualizar proveedores existentes desde la planilla.
 
-## Hecho: el SKU identifica a cada producto — obligatorio y único (16/11/2026) — migración 0094 (**falta aplicar en producción**)
+## Hecho: el SKU identifica a cada producto — obligatorio y único (16/11/2026) — migración 0094 (aplicada en producción, verificada el 17/11/2026)
 - Regla: cada producto tiene un SKU obligatorio, único por negocio (sin importar mayúsculas ni espacios al borde). Formulario de producto: SKU obligatorio con botón "Generar" (próximo "P-00001"); `saveProduct` rechaza SKU vacío o repetido con el nombre del producto que ya lo usa.
 - Carga de Excel: la columna SKU es obligatoria (en rojo en la planilla modelo); los productos se reconocen sólo por SKU (ya no por código de barras ni nombre); SKU repetidos en la planilla: gana el primero y se reportan; el SKU ya no es un dato "actualizable". La descarga de Excel trae siempre Producto y SKU, para poder editarla y volver a subirla.
 - Migración 0094: asigna "P-00001…" a los productos sin SKU (por negocio, por antigüedad), renombra los SKU repetidos (el más viejo se queda con el suyo, los demás pasan a "SKU-2", "SKU-3"…), y agrega NOT NULL, CHECK no vacío e índice único `(org_id, lower(btrim(sku)))`. **Cambia datos de los clientes existentes.**
@@ -240,7 +240,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Productos → Acciones → Proveedores/Marcas "A mano": el Cancelar y la X no cerraban porque el formulario de proveedor y el de marca tenían el mismo `key` (React dejaba la ventana colgada). Ahora tienen claves distintas (verificado en un navegador). Regla: dos elementos hermanos nunca comparten `key`.
 - Marcas: "Descargar Excel" (Nombre y cantidad de productos; se puede volver a subir) en la pestaña Marcas y en el pop up de Acciones → Marcas.
 - Panel de admin: "Pagan" ahora cuenta también los pagos únicos (la base los guarda como "cancelado" sin débito, pero el plan sigue pago hasta `current_period_end`): `isPaying` en `lib/admin-shared.ts`. Un débito cancelado con el período vencido no cuenta.
-- Admin → Negocios → ficha: casilla "Es una cuenta propia o de prueba" (tabla `admin_internal_orgs`, migración 0095, **falta aplicar en producción**): saca el negocio de "Pagan", del embudo y de remarketing. Sin variables de entorno.
+- Admin → Negocios → ficha: casilla "Es una cuenta propia o de prueba" (tabla `admin_internal_orgs`, migración 0095, aplicada en producción): saca el negocio de "Pagan", del embudo y de remarketing. Sin variables de entorno.
 - Admin → Negocios: la forma de pago se lee de entrada: "débito automático mensual · se renueva solo", "pago único de 1 mes · no se renueva solo · vence 16/12/26", "débito cancelado · vence …" o "asignado a mano (no pagó)", en la lista y en la ficha ("Forma de pago"); segmento nuevo "Pago por vencer (7 días)" para contactar antes del vencimiento.
 
 ## Hecho: ingresos del admin con descuentos (16/11/2026)
@@ -250,7 +250,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 ## Hecho: descargar proveedores a Excel (16/11/2026)
 - Pantalla Proveedores ("Descargar proveedores") y pop up de Productos → Acciones → Proveedores → "Descargar Excel". Columnas: Nombre, Teléfono, Email, Notas, Plazo de entrega (las de la planilla de carga) + plazo de pago, pedido mínimo y días de entrega. Al volver a subirla los que ya existen por nombre se omiten (no se actualizan desde la planilla).
 
-## Hecho: código interno de proveedores y clientes — migración 0096 (**falta aplicar en producción**)
+## Hecho: código interno de proveedores y clientes — migración 0096 (aplicada en producción)
 - Cada proveedor (PRV-0001) y cliente (CLI-0001) tiene un código automático por negocio: lo asigna la base al crear (trigger + contador por negocio, seguro con altas simultáneas), no se puede cambiar ni repetir; los que ya existen lo reciben por orden de alta. `lib/codes.ts` arma el texto; sin la migración, simplemente no se muestra.
 - Se ve en las listas (junto al contacto) y en la ficha, se puede buscar por código, y viene en las planillas descargadas (proveedores: primera columna; clientes: columna de sólo lectura). La carga no lo usa para reconocer registros (proveedores se reconocen por nombre; clientes por el ID de su planilla).
 - Pendiente: mostrar el código en las cuentas corrientes impresas y en los comprobantes de pago.
@@ -273,7 +273,7 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 ## Probado y descartado: bloquear celdas de las planillas (17/11/2026)
 - Se probó proteger las hojas (títulos, SKU, saldos y calculados bloqueados, sin contraseña) retocando el .xlsx; funcionaba, pero al usuario no le gustó y se revirtió. Las planillas quedan sin bloqueos (sólo los obligatorios en rojo con *). Si se retoma: commit e3ec0ce.
 
-## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (**falta aplicar en producción**)
+## Hecho: Inventario físico — Plan Pro (16/11/2026) — migración 0093 (aplicada en producción, verificada el 17/11/2026)
 - Pantalla `/inventario-fisico` (menú ⋮ de Productos → "Inventario físico", sólo dueño/admin, `canUse(sub, "physicalInventory")` con `ProLockedCard`). Un conteo abierto por sucursal; se puede cortar y seguir otro día. Alcance: todo, una marca o un proveedor.
 - Se cuenta a mano o escaneando (suma 1 por escaneo, con lector de códigos); cada producto guarda cuánto decía el sistema al contarlo. Al "Aplicar" se ajusta con la diferencia (contado − sistema de ese momento) sumada al stock actual, así no se pisan las ventas que entraron mientras se contaba; no deja stock negativo. Los no contados no se tocan. Historial de inventarios aplicados.
 - Base: tablas `inventory_counts` / `inventory_count_items` (sólo lectura por RLS) y funciones `inventory_start`, `inventory_set_count`, `inventory_apply`, `inventory_cancel` (security definer, `require_plan('pro')`, ajustes como `stock_movements` tipo `ajuste` con "Inventario: <nombre>").
