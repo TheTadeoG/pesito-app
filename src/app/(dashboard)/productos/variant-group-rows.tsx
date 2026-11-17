@@ -82,7 +82,8 @@ export function VariantGroupRows({
   const sameCost = members.every((m) => (m.cost ?? 0) === (first.cost ?? 0));
   const minStocks = members.map((m) => m.min_stock);
   const sameMin = minStocks.every((v) => v === minStocks[0]);
-  const low = members.filter((m) => m.active && m.stock <= m.min_stock).length;
+  const outCount = members.filter((m) => m.active && m.stock <= 0).length;
+  const lowCount = members.filter((m) => m.active && m.stock > 0 && m.stock <= m.min_stock).length;
   const unit = first.unit ?? "";
   const image = members.find((m) => m.image_url)?.image_url ?? null;
   const dim = allInactive && "opacity-60";
@@ -124,7 +125,12 @@ export function VariantGroupRows({
         {show("price") && <td className={cn("whitespace-nowrap px-3 py-2.5 text-right font-semibold text-foreground", dim)}>{priceText}</td>}
         {show("stock") && (
           <td className={cn("px-3 py-2.5 text-right", dim)}>
-            <span className={cn("font-medium", low > 0 ? "text-danger" : "text-foreground")}>{`${total}${unit}`}</span>
+            <span className="font-medium text-foreground">{`${total}${unit}`}</span>
+            {(outCount > 0 || lowCount > 0) && (
+              <span className="block whitespace-nowrap text-[11px] font-medium leading-tight text-danger">
+                {[outCount > 0 && `${outCount} sin stock`, lowCount > 0 && `${lowCount} con stock bajo`].filter(Boolean).join(" · ")}
+              </span>
+            )}
           </td>
         )}
         {show("minStock") && (
@@ -135,16 +141,6 @@ export function VariantGroupRows({
             <Button variant="outline" size="icon" onClick={() => onEditGroup("datos")} aria-label="Editar" title="Editar">
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setOpen((v) => !v)}
-              aria-expanded={open}
-              aria-label={open ? "Ocultar variantes" : "Ver variantes"}
-              title={open ? "Ocultar variantes" : "Ver variantes"}
-            >
-              <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
-            </Button>
           </div>
         </td>
       </tr>
@@ -153,8 +149,8 @@ export function VariantGroupRows({
           const lowStock = m.active && m.stock <= m.min_stock;
           const faded = !m.active && "opacity-60";
           return (
-            <tr key={m.id} className="align-middle bg-muted/30 hover:bg-muted/50">
-              <td className={cn("py-2 pl-[4.25rem] pr-4", faded)}>
+            <tr key={m.id} className="align-middle bg-muted/50 hover:bg-muted/70">
+              <td className={cn("border-l-[3px] border-l-primary/60 py-2 pl-[3.75rem] pr-4", faded)}>
                 <div className="flex items-center gap-2 text-sm">
                   {m.variant_color && <ColorDot name={m.variant_color} chosen={m.variant_color_hex} />}
                   <span className="font-medium text-foreground">{[m.variant_size, m.variant_color].filter(Boolean).join(" · ") || m.name}</span>
@@ -189,8 +185,8 @@ export function VariantGroupRows({
           );
         })}
       {open && sorted.length > INITIAL_VISIBLE && (
-        <tr className="bg-muted/30">
-          <td colSpan={20} className="py-2 pl-[4.25rem] pr-4">
+        <tr className="bg-muted/50">
+          <td colSpan={20} className="border-l-[3px] border-l-primary/60 py-2 pl-[3.75rem] pr-4">
             <button type="button" onClick={() => setAll((v) => !v)} className="text-xs font-semibold text-accent-foreground hover:underline">
               {all ? "Ver menos" : `Ver las ${sorted.length} variantes`}
             </button>

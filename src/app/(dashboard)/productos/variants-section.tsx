@@ -414,7 +414,7 @@ export function ColorDot({ name, chosen, className }: { name: string; chosen?: s
   return (
     <span
       aria-hidden
-      className={cn("inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-border", !hex && "bg-muted", className)}
+      className={cn("inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-foreground/30", !hex && "bg-muted", className)}
       style={hex ? { backgroundColor: hex } : undefined}
     />
   );
@@ -425,7 +425,7 @@ export function ColorPickerDot({ name, chosen, onPick }: { name: string; chosen?
   const hex = colorHexFor(name, chosen) ?? "#9ca3af";
   return (
     <label className="relative inline-flex h-4 w-4 shrink-0 cursor-pointer" title={`Color de referencia de ${name}`}>
-      <span className="absolute inset-0 rounded-full border border-border" style={{ backgroundColor: hex }} />
+      <span className="absolute inset-0 rounded-full border border-foreground/30" style={{ backgroundColor: hex }} />
       <input type="color" value={hex} onChange={(e) => onPick(e.target.value)} aria-label={`Color de referencia de ${name}`} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
     </label>
   );
