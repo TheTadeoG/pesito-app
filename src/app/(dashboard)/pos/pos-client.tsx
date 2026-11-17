@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
+import { PosVariantGroup, groupResults, type VariantInfo } from "@/app/(dashboard)/pos/pos-variant-group";
 import { resolveInvoiceType } from "@/lib/invoice-labels";
 import { suggestBilletes } from "@/lib/billetes";
 import { useToast } from "@/components/toast/toast-provider";
@@ -118,6 +119,8 @@ interface PosClientProps {
   /** El ticket interno X lleva su número correlativo. */
   ticketShowNumber: boolean;
   customPaymentMethods: string[];
+  /** Talle y color de los productos que son variantes (para agruparlos en la búsqueda). */
+  variantInfo?: VariantInfo;
   onSaleCompleted: (recentSales: SaleRow[]) => void;
   /** Una venta recién cobrada quedó facturada: la lista de ventas recientes lo muestra al toque. */
   onSaleInvoiced?: (saleId: string, badge: string) => void;
@@ -133,6 +136,7 @@ export function PosClient({
   invoicing,
   ticketShowNumber,
   customPaymentMethods,
+  variantInfo,
   onSaleCompleted,
   onSaleInvoiced,
 }: PosClientProps) {
@@ -292,6 +296,22 @@ export function PosClient({
       )
       .slice(0, 50);
   }, [products, query, browseProducts]);
+
+  // Las variantes de un mismo producto salen en un solo resultado con la etiqueta "Tiene talles".
+  const resultItems = useMemo(() => groupResults(results, variantInfo), [results, variantInfo]);
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  function cartQtyOf(id: string): number {
+    const item = cart.find((i) => i.kind === "product" && i.product.id === id);
+    return item && item.kind === "product" ? item.quantity : 0;
+  }
+  function toggleGroup(id: string) {
+    setOpenGroups((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const selectedCustomer = useMemo(
     () => localCustomers.find((c) => c.id === customerId) ?? null,
@@ -917,16 +937,16 @@ export function PosClient({
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
-      if (results.length === 0) return;
+      if (resultItems.length === 0) return;
       e.preventDefault();
-      setHighlightedIndex((i) => (i + 1 >= results.length ? 0 : i + 1));
+      setHighlightedIndex((i) => (i + 1 >= resultItems.length ? 0 : i + 1));
       return;
     }
 
     if (e.key === "ArrowUp") {
-      if (results.length === 0) return;
+      if (resultItems.length === 0) return;
       e.preventDefault();
-      setHighlightedIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
+      setHighlightedIndex((i) => (i <= 0 ? resultItems.length - 1 : i - 1));
       return;
     }
 
@@ -934,19 +954,22 @@ export function PosClient({
     e.preventDefault();
 
     if (query.trim()) {
-      if (highlightedIndex >= 0 && highlightedIndex < results.length) {
-        addProduct(results[highlightedIndex]);
+      // Un código o SKU exacto (por ejemplo, el de una variante) se agrega directo.
+      const q = query.trim().toLowerCase();
+      const exact = products.find((p) => (p.barcode && p.barcode.toLowerCase() === q) || (p.sku && p.sku.toLowerCase() === q));
+      if (exact) {
+        addProduct(exact);
         return;
       }
-      const exactBarcode = products.find(
-        (p) => p.barcode && p.barcode.toLowerCase() === query.trim().toLowerCase()
-      );
-      if (exactBarcode) {
-        addProduct(exactBarcode);
-        return;
-      }
-      if (results.length === 1) {
-        addProduct(results[0]);
+      const target =
+        highlightedIndex >= 0 && highlightedIndex < resultItems.length
+          ? resultItems[highlightedIndex]
+          : resultItems.length === 1
+            ? resultItems[0]
+            : null;
+      if (target) {
+        if (target.kind === "group") toggleGroup(target.id);
+        else addProduct(target.product);
       }
       return;
     }
@@ -1007,7 +1030,24 @@ export function PosClient({
                           : "Aún no hay productos cargados."}
                       </p>
                     )}
-                    {results.map((product, index) => (
+                    {resultItems.map((item, index) => {
+                      if (item.kind === "group") {
+                        return (
+                          <PosVariantGroup
+                            key={`group-${item.id}`}
+                            members={item.members}
+                            info={variantInfo ?? {}}
+                            open={openGroups.has(item.id)}
+                            highlighted={index === highlightedIndex}
+                            onToggle={() => toggleGroup(item.id)}
+                            onHover={() => setHighlightedIndex(index)}
+                            onAdd={addProduct}
+                            qtyInCart={(id) => cartQtyOf(id)}
+                          />
+                        );
+                      }
+                      const product = item.product;
+                      return (
                       <button
                         key={product.id}
                         type="button"
@@ -1059,7 +1099,8 @@ export function PosClient({
                           </span>
                         </span>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

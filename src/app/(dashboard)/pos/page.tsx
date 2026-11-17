@@ -35,7 +35,7 @@ export default async function PosPage() {
   const cookieStore = await cookies();
   const hasLocalCopy =
     cookieStore.get(POS_CACHE_COOKIE)?.value === posCacheCookieValue(organization.id, openRegister.branch_id ?? null);
-  const [customers, recentSales, { data: customPaymentMethods }, initialProducts, invoicing] = await Promise.all([
+  const [customers, recentSales, { data: customPaymentMethods }, initialProducts, invoicing, variantRows] = await Promise.all([
     fetchAll((from, to) =>
       supabase
         .from("customers")
@@ -52,7 +52,22 @@ export default async function PosPage() {
       : fetchCatalogForPos(supabase, organization.id, openRegister.branch_id ?? null).catch(() => null),
     // Si la facturación está lista y con qué medios factura sola (dos consultas chicas; sin secretos).
     getInvoicingConfig(organization.id).catch(() => ({ enabled: false, autoMethods: [] as string[] })),
+    // Talle y color de las variantes, para agruparlas en la búsqueda (si falta la migración 0097, queda vacío).
+    fetchAll((from, to) =>
+      supabase
+        .from("products")
+        .select("id, variant_group_id, variant_size, variant_color")
+        .eq("org_id", organization.id)
+        .eq("active", true)
+        .not("variant_group_id", "is", null)
+        .order("id")
+        .range(from, to)
+    ).catch(() => []),
   ]);
+  const variantInfo: Record<string, { g: string; s: string | null; c: string | null }> = {};
+  for (const r of variantRows) {
+    if (r.variant_group_id) variantInfo[r.id] = { g: r.variant_group_id, s: r.variant_size ?? null, c: r.variant_color ?? null };
+  }
 
   return (
     <PosCatalog
@@ -69,6 +84,7 @@ export default async function PosPage() {
       autoInvoiceByPayment={false}
       invoicing={invoicing}
       customPaymentMethods={(customPaymentMethods ?? []).map((m) => m.name)}
+      variantInfo={variantInfo}
       recentSales={recentSales}
     />
   );

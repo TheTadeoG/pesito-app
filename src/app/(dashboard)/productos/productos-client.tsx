@@ -69,6 +69,7 @@ import { featureMinPlan } from "@/lib/plan-access";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { InlineNumber } from "@/components/dashboard/inline-number";
 import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/pagination-bar";
+import { VariantGroupRows } from "./variant-group-rows";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { ExcelExportDialog, type ExportScope } from "@/app/(dashboard)/productos/excel-export-dialog";
 import { toStockRow, type StockFilterState } from "@/lib/stock-rows";
@@ -490,8 +491,31 @@ export function ProductosClient({
     setPageListKey(listKey);
     setPage(0);
   }
-  const { safePage, start, end } = pageBounds(sorted.length, page, pageSize);
-  const visibleRows = sorted.slice(start, end);
+  // Los productos con variantes ocupan una sola fila (con la etiqueta "Tiene talles"):
+  // el grupo aparece donde está su primera variante y arrastra a las demás.
+  const items = useMemo(() => {
+    const byGroup = new Map<string, Product[]>();
+    for (const p of sorted) {
+      if (p.variant_group_id) {
+        const list = byGroup.get(p.variant_group_id);
+        if (list) list.push(p);
+        else byGroup.set(p.variant_group_id, [p]);
+      }
+    }
+    const out: ({ kind: "product"; product: Product } | { kind: "group"; id: string; members: Product[] })[] = [];
+    const seen = new Set<string>();
+    for (const p of sorted) {
+      if (!p.variant_group_id) {
+        out.push({ kind: "product", product: p });
+      } else if (!seen.has(p.variant_group_id)) {
+        seen.add(p.variant_group_id);
+        out.push({ kind: "group", id: p.variant_group_id, members: byGroup.get(p.variant_group_id)! });
+      }
+    }
+    return out;
+  }, [sorted]);
+  const { safePage, start, end } = pageBounds(items.length, page, pageSize);
+  const visibleItems = items.slice(start, end);
   const tableTopRef = useRef<HTMLDivElement>(null);
   function goToPage(next: number) {
     setPage(next);
@@ -1029,7 +1053,20 @@ export function ProductosClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {visibleRows.map((product) => {
+                  {visibleItems.map((item) => {
+                    if (item.kind === "group") {
+                      return (
+                        <VariantGroupRows
+                          key={`group-${item.id}`}
+                          members={item.members}
+                          colSpan={2 + COLUMNS.filter((c) => showColumn(c.id)).length}
+                          onEdit={openEdit}
+                          onAdjust={setAdjusting}
+                          onAddVariants={setVariantsFor}
+                        />
+                      );
+                    }
+                    const product = item.product;
                     // El override optimista hace que el estado se vea al
                     // toque al activar/desactivar, sin esperar el viaje al
                     // server — ver handleToggleActive.
@@ -1252,7 +1289,7 @@ export function ProductosClient({
             </div>
           )}
           <PaginationBar
-            total={sorted.length}
+            total={items.length}
             page={safePage}
             pageSize={pageSize}
             onPageChange={goToPage}
