@@ -8,11 +8,11 @@ import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { cn, formatCurrency } from "@/lib/utils";
 import { baseSkuOf, sortSizes } from "@/lib/variants";
-import { VariantsSection, type VariantsState } from "@/app/(dashboard)/productos/variants-section";
+import { ColorPickerDot, VariantsSection, type VariantsState } from "@/app/(dashboard)/productos/variants-section";
 import { baseNameOf } from "@/app/(dashboard)/productos/variant-group-rows";
 import type { Product } from "@/lib/types";
 
-export type RowEdits = Record<string, { size?: string; color?: string; sku?: string; barcode?: string; price?: string }>;
+export type RowEdits = Record<string, { size?: string; color?: string; colorHex?: string; sku?: string; barcode?: string; price?: string }>;
 
 /** Solapa "Talles y colores" del producto: edita SKU, código y precio de cada variante, y suma talles o colores nuevos. */
 export function GroupVariantsTab({
@@ -28,7 +28,7 @@ export function GroupVariantsTab({
 }: {
   members: Product[];
   edits: RowEdits;
-  onEdit: (id: string, field: "size" | "color" | "sku" | "barcode" | "price", value: string) => void;
+  onEdit: (id: string, field: "size" | "color" | "colorHex" | "sku" | "barcode" | "price", value: string) => void;
   onEditMany: (field: "price", value: string) => void;
   newVariants: VariantsState;
   onNewVariantsChange: (next: VariantsState) => void;
@@ -88,7 +88,7 @@ export function GroupVariantsTab({
       <div className="space-y-2">
         <p className="text-sm font-medium text-foreground">{`${members.length} variante${members.length === 1 ? "" : "s"}`}</p>
         <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full min-w-[600px] text-left text-xs">
+          <table className="w-full min-w-[780px] text-left text-sm">
             <thead className="bg-muted text-muted-foreground">
               <tr>
                 <th className="px-2.5 py-2">Talle</th>
@@ -106,19 +106,32 @@ export function GroupVariantsTab({
                 return (
                   <tr key={m.id} className="border-t border-border align-middle">
                     <td className="px-2.5 py-1.5">
-                      <Input value={e.size ?? m.variant_size ?? ""} onChange={(ev) => onEdit(m.id, "size", ev.target.value)} maxLength={40} aria-label={`Talle de ${label}`} className="h-8 min-w-[3.5rem] w-16" placeholder="—" />
+                      <Input value={e.size ?? m.variant_size ?? ""} onChange={(ev) => onEdit(m.id, "size", ev.target.value)} maxLength={40} aria-label={`Talle de ${label}`} className="h-9 min-w-[4.5rem]" placeholder="—" />
                     </td>
                     <td className="px-2.5 py-1.5">
-                      <Input value={e.color ?? m.variant_color ?? ""} onChange={(ev) => onEdit(m.id, "color", ev.target.value)} maxLength={40} aria-label={`Color de ${label}`} className="h-8 min-w-[4.5rem] w-24" placeholder="—" />
+                      <div className="flex items-center gap-2">
+                        <ColorPickerDot
+                          name={e.color ?? m.variant_color ?? ""}
+                          chosen={e.colorHex ?? m.variant_color_hex}
+                          onPick={(hex) => {
+                            // El color de referencia es de ese color: lo comparten todas las variantes que lo tienen.
+                            const name = (e.color ?? m.variant_color ?? "").trim().toLowerCase();
+                            for (const o of members) {
+                              if ((edits[o.id]?.color ?? o.variant_color ?? "").trim().toLowerCase() === name) onEdit(o.id, "colorHex", hex);
+                            }
+                          }}
+                        />
+                        <Input value={e.color ?? m.variant_color ?? ""} onChange={(ev) => onEdit(m.id, "color", ev.target.value)} maxLength={40} aria-label={`Color de ${label}`} className="h-9 min-w-[7rem]" placeholder="—" />
+                      </div>
                     </td>
                     <td className="px-2.5 py-1.5">
-                      <Input value={e.sku ?? m.sku} onChange={(ev) => onEdit(m.id, "sku", ev.target.value)} maxLength={60} aria-label={`SKU de ${label}`} className="h-8 min-w-[8rem]" />
+                      <Input value={e.sku ?? m.sku} onChange={(ev) => onEdit(m.id, "sku", ev.target.value)} maxLength={60} aria-label={`SKU de ${label}`} className="h-9 min-w-[12rem]" />
                     </td>
                     <td className="px-2.5 py-1.5">
-                      <Input value={e.barcode ?? m.barcode ?? ""} onChange={(ev) => onEdit(m.id, "barcode", ev.target.value)} aria-label={`Código de barras de ${label}`} className="h-8 min-w-[6rem]" placeholder="Opcional" />
+                      <Input value={e.barcode ?? m.barcode ?? ""} onChange={(ev) => onEdit(m.id, "barcode", ev.target.value)} aria-label={`Código de barras de ${label}`} className="h-9 min-w-[9rem]" placeholder="Opcional" />
                     </td>
                     <td className="px-2.5 py-1.5">
-                      <Input type="number" min={0} step="0.01" value={e.price ?? String(m.price)} onChange={(ev) => onEdit(m.id, "price", ev.target.value)} aria-label={`Precio de ${label}`} className="h-8 w-24" />
+                      <Input type="number" min={0} step="0.01" value={e.price ?? String(m.price)} onChange={(ev) => onEdit(m.id, "price", ev.target.value)} aria-label={`Precio de ${label}`} className="h-9 min-w-[6.5rem]" />
                     </td>
                     <td className={cn("px-2.5 py-1.5 text-right font-medium", m.stock <= m.min_stock ? "text-danger" : "text-foreground")}>
                       {`${m.stock}${m.unit}`}

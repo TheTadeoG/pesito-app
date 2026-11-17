@@ -3,9 +3,10 @@
 import { ChevronDown, ImageIcon } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { sortSizes } from "@/lib/variants";
+import { ColorDot } from "@/app/(dashboard)/productos/variants-section";
 
 /** Talle y color de cada producto que es una variante (los demás no están). */
-export type VariantInfo = Record<string, { g: string; s: string | null; c: string | null }>;
+export type VariantInfo = Record<string, { g: string; s: string | null; c: string | null; h?: string | null }>;
 
 interface PosProduct {
   id: string;
@@ -137,7 +138,10 @@ export function PosVariantGroup<P extends PosProduct>({
                 <th />
                 {colKeys.map((c) => (
                   <th key={c ?? "-"} className="px-1 text-center text-xs font-semibold text-foreground">
-                    {c ?? ""}
+                    <span className="inline-flex items-center gap-1.5">
+                      {c && <ColorDot name={c} chosen={members.map((m) => info[m.id]).find((i) => (i?.c ?? "").toLowerCase() === c.toLowerCase())?.h} />}
+                      {c ?? ""}
+                    </span>
                   </th>
                 ))}
               </tr>

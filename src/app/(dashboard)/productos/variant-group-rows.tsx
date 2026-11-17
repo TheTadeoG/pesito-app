@@ -5,6 +5,7 @@ import { Fragment, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { sortSizes } from "@/lib/variants";
+import { ColorDot } from "@/app/(dashboard)/productos/variants-section";
 import type { Product } from "@/lib/types";
 
 /** Nombre del producto sin el " · talle · color" que lleva cada variante. */
@@ -141,7 +142,10 @@ export function VariantGroupRows({
                     <th />
                     {colKeys.map((c) => (
                       <th key={c ?? "-"} className="px-2 text-center text-xs font-semibold text-foreground">
-                        {c ?? ""}
+                        <span className="inline-flex items-center gap-1.5">
+                          {c && <ColorDot name={c} chosen={members.find((m) => (m.variant_color ?? "").toLowerCase() === c.toLowerCase())?.variant_color_hex} />}
+                          {c ?? ""}
+                        </span>
                       </th>
                     ))}
                   </tr>

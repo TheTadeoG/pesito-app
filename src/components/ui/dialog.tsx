@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type DialogSize = "md" | "lg";
+type DialogSize = "md" | "lg" | "xl";
 
 // Ventanas abiertas, en orden: con Esc se cierra sólo la de arriba.
 const openDialogs: symbol[] = [];
@@ -13,6 +13,7 @@ const openDialogs: symbol[] = [];
 const sizeClasses: Record<DialogSize, string> = {
   md: "max-w-lg",
   lg: "max-w-2xl",
+  xl: "max-w-4xl",
 };
 
 interface DialogProps {

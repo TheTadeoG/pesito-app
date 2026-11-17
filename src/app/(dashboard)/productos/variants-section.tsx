@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
-import { combinations, parseList, variantName, variantSku } from "@/lib/variants";
+import { colorHexFor, combinations, parseList, variantName, variantSku } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import type { VariantInput } from "@/app/(dashboard)/productos/actions";
 
@@ -19,6 +19,8 @@ export interface VariantsState {
   edits: Record<string, Partial<Record<"sku" | "barcode" | "stock" | "price", string>>>;
   /** Combinaciones que ese talle no tiene ("talle|color" en minúsculas), para elegir los colores de cada talle. */
   excluded: string[];
+  /** Color de referencia elegido a mano por color ("nombre" en minúsculas -> #rrggbb). */
+  colorHex?: Record<string, string>;
   /** "same": un solo precio para todas las variantes (por defecto); "each": un precio por talle y color. */
   priceMode?: "same" | "each";
   /** Precio único para todas (vacío: el precio del producto de arriba). */
@@ -38,6 +40,7 @@ export function resolveVariantRows(state: VariantsState, baseSku: string, basePr
       key: keyOf(size, color),
       size,
       color,
+      colorHex: state.colorHex?.[color.toLowerCase()],
       sku: edit.sku ?? variantSku(baseSku, size, color),
       barcode: edit.barcode ?? "",
       stock: edit.stock ?? "0",
@@ -48,7 +51,7 @@ export function resolveVariantRows(state: VariantsState, baseSku: string, basePr
 
 /** Las filas como las espera el servidor. */
 export function toVariantInputs(rows: ReturnType<typeof resolveVariantRows>): VariantInput[] {
-  return rows.map((r) => ({ size: r.size, color: r.color, sku: r.sku, barcode: r.barcode, stock: Number(r.stock) || 0, price: Number(r.price) || 0 }));
+  return rows.map((r) => ({ size: r.size, color: r.color, ...(r.colorHex ? { colorHex: r.colorHex } : {}), sku: r.sku, barcode: r.barcode, stock: Number(r.stock) || 0, price: Number(r.price) || 0 }));
 }
 
 export function VariantsSection({
@@ -137,6 +140,10 @@ export function VariantsSection({
               quickGroups={[{ title: "Comunes", options: ["Negro", "Blanco", "Gris", "Azul", "Rojo", "Verde", "Amarillo", "Rosa", "Beige", "Marrón"] }]}
               previous={colorSuggestions}
               placeholder="Otro color (ej: Azul marino)"
+              swatches={{
+                chosen: state.colorHex ?? {},
+                onPick: (name, hex) => onChange({ ...state, colorHex: { ...state.colorHex, [name.toLowerCase()]: hex } }),
+              }}
             />
           </div>
           {sizes.length > 0 && colors.length > 0 && (
@@ -301,6 +308,7 @@ function ChipPicker({
   quickGroups,
   previous,
   placeholder,
+  swatches,
 }: {
   id: string;
   label: string;
@@ -310,6 +318,8 @@ function ChipPicker({
   /** Los que ya usó el negocio en otros productos. */
   previous: string[];
   placeholder: string;
+  /** Sólo en colores: punto con el color de referencia (tocarlo en un color elegido deja cambiarlo). */
+  swatches?: { chosen: Record<string, string>; onPick: (name: string, hex: string) => void };
 }) {
   const [draft, setDraft] = useState("");
   const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -335,6 +345,7 @@ function ChipPicker({
       aria-pressed={has(v)}
       className={cn(chipBase, has(v) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-primary/50")}
     >
+      {swatches && <ColorDot name={v} chosen={swatches.chosen[v.toLowerCase()]} />}
       {v}
     </button>
   );
@@ -346,6 +357,7 @@ function ChipPicker({
         <div className="flex flex-wrap gap-1.5">
           {values.map((v) => (
             <span key={v} className={cn(chipBase, "border-primary bg-accent text-foreground")}>
+              {swatches && <ColorPickerDot name={v} chosen={swatches.chosen[v.toLowerCase()]} onPick={(hex) => swatches.onPick(v, hex)} />}
               {v}
               <button type="button" onClick={() => toggle(v)} aria-label={`Quitar ${v}`} className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground">
                 <X className="h-3 w-3" />
@@ -354,6 +366,7 @@ function ChipPicker({
           ))}
         </div>
       )}
+      {swatches && values.length > 0 && <p className="text-xs text-muted-foreground">Tocá el puntito de un color elegido para cambiar su color de referencia.</p>}
       {quickGroups.map((g) => (
         <div key={g.title} className="flex flex-wrap items-center gap-1.5">
           <span className="w-16 shrink-0 text-xs text-muted-foreground">{g.title}</span>
@@ -392,5 +405,28 @@ function ChipPicker({
         </button>
       </div>
     </div>
+  );
+}
+
+/** Punto con el color de referencia (el elegido o el que corresponde al nombre; gris claro si no se conoce). */
+export function ColorDot({ name, chosen, className }: { name: string; chosen?: string | null; className?: string }) {
+  const hex = colorHexFor(name, chosen);
+  return (
+    <span
+      aria-hidden
+      className={cn("inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-border", !hex && "bg-muted", className)}
+      style={hex ? { backgroundColor: hex } : undefined}
+    />
+  );
+}
+
+/** El mismo punto, pero tocándolo se elige el color de referencia con el selector del navegador. */
+export function ColorPickerDot({ name, chosen, onPick }: { name: string; chosen?: string | null; onPick: (hex: string) => void }) {
+  const hex = colorHexFor(name, chosen) ?? "#9ca3af";
+  return (
+    <label className="relative inline-flex h-4 w-4 shrink-0 cursor-pointer" title={`Color de referencia de ${name}`}>
+      <span className="absolute inset-0 rounded-full border border-border" style={{ backgroundColor: hex }} />
+      <input type="color" value={hex} onChange={(e) => onPick(e.target.value)} aria-label={`Color de referencia de ${name}`} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+    </label>
   );
 }

@@ -175,6 +175,8 @@ export async function saveProduct(input: ProductFormInput): Promise<SaveProductR
 export interface VariantInput {
   size: string;
   color: string;
+  /** Color de referencia elegido a mano (#rrggbb); sin elegir, no se guarda y se usa el del nombre. */
+  colorHex?: string;
   sku: string;
   barcode: string;
   stock: number;
@@ -250,6 +252,7 @@ export async function saveProductWithVariants(
     variant_group_id: group.id,
     variant_size: v.size.trim() || null,
     variant_color: v.color.trim() || null,
+    ...(v.colorHex && /^#[0-9a-fA-F]{6}$/.test(v.colorHex) ? { variant_color_hex: v.colorHex } : {}),
     stock: branch ? 0 : v.stock,
   }));
 
@@ -414,6 +417,7 @@ export async function addVariantsToProduct(
     variant_group_id: groupId,
     variant_size: v.size.trim() || null,
     variant_color: v.color.trim() || null,
+    ...(v.colorHex && /^#[0-9a-fA-F]{6}$/.test(v.colorHex) ? { variant_color_hex: v.colorHex } : {}),
     stock: branch ? 0 : v.stock,
   }));
   const { data: created, error } = await supabase.from("products").insert(rows).select("id, sku");
@@ -488,6 +492,8 @@ export interface VariantRowEdit {
   id: string;
   size: string;
   color: string;
+  /** Color de referencia (#rrggbb) si se cambió; sin cambios, undefined. */
+  colorHex?: string;
   sku: string;
   barcode: string;
   price: number;
@@ -573,6 +579,7 @@ export async function saveVariantGroup(groupId: string, shared: VariantGroupShar
             name: variantName(baseName, size, color).slice(0, 200),
             variant_size: size || null,
             variant_color: color || null,
+            ...(r?.colorHex && /^#[0-9a-fA-F]{6}$/.test(r.colorHex) ? { variant_color_hex: r.colorHex } : {}),
             ...(r ? { sku: r.sku.trim(), barcode: r.barcode.trim() || null, price: r.price } : {}),
           })
           .eq("id", m.id)

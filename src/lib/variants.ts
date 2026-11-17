@@ -70,3 +70,22 @@ export function sortSizes(sizes: string[]): string[] {
     .sort((a, b) => a.r[0] - b.r[0] || a.r[1] - b.r[1] || a.idx - b.idx)
     .map((x) => x.t);
 }
+
+/** Colores de referencia por defecto, según el nombre (sin tildes ni mayúsculas). */
+const COLOR_PRESETS: Record<string, string> = {
+  negro: "#111827", blanco: "#ffffff", gris: "#9ca3af", azul: "#2563eb", celeste: "#38bdf8", rojo: "#dc2626",
+  verde: "#16a34a", amarillo: "#facc15", naranja: "#f97316", rosa: "#f472b6", violeta: "#8b5cf6", lila: "#c4b5fd",
+  beige: "#e7d3b0", marron: "#7c4a21", bordo: "#7f1d1d", turquesa: "#14b8a6", dorado: "#d4a017", plateado: "#cbd5e1",
+  crema: "#f5ecd7", fucsia: "#d946ef", mostaza: "#ca8a04", camel: "#c19a6b", habano: "#a0703c", "azul marino": "#1e3a8a",
+  "verde militar": "#4d5d3a", "gris oscuro": "#4b5563", "gris claro": "#d1d5db",
+};
+
+const normColor = (name: string) => name.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+
+export const isHexColor = (v: string | null | undefined): v is string => Boolean(v && /^#[0-9a-fA-F]{6}$/.test(v));
+
+/** Color de referencia de un color: el elegido a mano, o el que corresponde a su nombre (null si no se conoce). */
+export function colorHexFor(name: string, chosen?: string | null): string | null {
+  if (isHexColor(chosen)) return chosen;
+  return COLOR_PRESETS[normColor(name)] ?? null;
+}

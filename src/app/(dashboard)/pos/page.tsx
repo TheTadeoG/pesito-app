@@ -35,7 +35,7 @@ export default async function PosPage() {
   const cookieStore = await cookies();
   const hasLocalCopy =
     cookieStore.get(POS_CACHE_COOKIE)?.value === posCacheCookieValue(organization.id, openRegister.branch_id ?? null);
-  const [customers, recentSales, { data: customPaymentMethods }, initialProducts, invoicing, variantRows] = await Promise.all([
+  const [customers, recentSales, { data: customPaymentMethods }, initialProducts, invoicing, variantRows, colorRows] = await Promise.all([
     fetchAll((from, to) =>
       supabase
         .from("customers")
@@ -63,10 +63,22 @@ export default async function PosPage() {
         .order("id")
         .range(from, to)
     ).catch(() => []),
+    // Color de referencia elegido a mano (migración 0099): aparte, para que si falta no se pierda el agrupado.
+    fetchAll((from, to) =>
+      supabase
+        .from("products")
+        .select("id, variant_color_hex")
+        .eq("org_id", organization.id)
+        .eq("active", true)
+        .not("variant_color_hex", "is", null)
+        .order("id")
+        .range(from, to)
+    ).catch(() => []),
   ]);
-  const variantInfo: Record<string, { g: string; s: string | null; c: string | null }> = {};
+  const hexById = new Map(colorRows.map((r) => [r.id, r.variant_color_hex as string | null]));
+  const variantInfo: Record<string, { g: string; s: string | null; c: string | null; h?: string | null }> = {};
   for (const r of variantRows) {
-    if (r.variant_group_id) variantInfo[r.id] = { g: r.variant_group_id, s: r.variant_size ?? null, c: r.variant_color ?? null };
+    if (r.variant_group_id) variantInfo[r.id] = { g: r.variant_group_id, s: r.variant_size ?? null, c: r.variant_color ?? null, h: hexById.get(r.id) ?? null };
   }
 
   return (

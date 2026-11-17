@@ -477,7 +477,7 @@ export function ProductForm({
       const groupId = product.variant_group_id;
       const rowsToSave = groupMembers.map((m) => {
         const e = rowEdits[m.id] ?? {};
-        return { id: m.id, size: e.size ?? m.variant_size ?? "", color: e.color ?? m.variant_color ?? "", sku: e.sku ?? m.sku, barcode: e.barcode ?? m.barcode ?? "", price: Number(e.price ?? m.price) || 0 };
+        return { id: m.id, size: e.size ?? m.variant_size ?? "", color: e.color ?? m.variant_color ?? "", ...(e.colorHex ? { colorHex: e.colorHex } : {}), sku: e.sku ?? m.sku, barcode: e.barcode ?? m.barcode ?? "", price: Number(e.price ?? m.price) || 0 };
       });
       const res = await saveVariantGroup(
         groupId,
@@ -626,7 +626,7 @@ export function ProductForm({
       onClose={resetAndClose}
       title={isEdit ? "Editar producto" : "Nuevo producto"}
       description={isEdit ? (groupMode && product ? baseNameOf(product) : product?.name) : "Sumá un producto a tu catálogo."}
-      size="lg"
+      size={groupMode ? "xl" : "lg"}
     >
       <form data-tour="product-form" onSubmit={handleSubmit} className="space-y-4">
         {tabbed && (

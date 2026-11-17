@@ -129,6 +129,7 @@ export interface Database {
           /** Talles y colores (0097): grupo de variantes, talle y color. undefined si falta la migración. */
           variant_group_id?: string | null;
           variant_size?: string | null;
+          variant_color_hex?: string | null;
           variant_color?: string | null;
           created_at: string;
           updated_at: string;
@@ -150,6 +151,7 @@ export interface Database {
           default_supplier_id?: string | null;
           variant_group_id?: string | null;
           variant_size?: string | null;
+          variant_color_hex?: string | null;
           variant_color?: string | null;
           package_label?: string | null;
           pack_size?: number | null;
