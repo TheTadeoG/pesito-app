@@ -26,6 +26,28 @@ function planChip(org: AdminOrg, now: number): { label: string; tone: string } {
   return { label: "Gratis", tone: "bg-muted text-muted-foreground" };
 }
 
+const money = (n: number) => `$${Math.round(n).toLocaleString("es-AR")}`;
+
+/** Lista de datos chicos (productos, marcas, proveedores) como etiquetas; se desenfocan con "Ocultar datos". */
+function Chips({ title, items, empty }: { title: string; items: string[]; empty: string }) {
+  return (
+    <div>
+      <p className="mb-1 text-xs font-semibold text-muted-foreground">{title}</p>
+      {items.length === 0 ? (
+        <p className="text-xs text-muted-foreground">{empty}</p>
+      ) : (
+        <div className="admin-sensitive flex flex-wrap gap-1.5">
+          {items.map((item) => (
+            <span key={item} className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-xs text-foreground">
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function planNote(org: AdminOrg, now: number): string {
   if (org.internal && org.plan !== "gratis") return "cuenta propia (no cuenta como cliente)";
   if (org.plan === "gratis" && org.trialEndsAt) {
@@ -339,6 +361,34 @@ function Ficha({ org, now, onChange }: { org: AdminOrg; now: number; onChange: (
             </span>
           </label>
           {message && <p className={cn("rounded-lg px-3 py-2 text-sm", message.tone === "ok" ? "bg-success-bg text-success" : "bg-danger-bg text-danger")}>{message.text}</p>}
+        </section>
+
+        <section className="space-y-2.5 border-t border-border pt-4">
+          <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">A qué se dedica</h3>
+          <p className="text-sm text-foreground">
+            <b>{org.type}</b>
+            {detail && detail.profile.branches > 1 ? ` · ${detail.profile.branches} sucursales` : ""}
+            {detail && detail.profile.debtors > 0 ? ` · fía a ${detail.profile.debtors} ${detail.profile.debtors === 1 ? "cliente" : "clientes"}` : ""}
+          </p>
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : detail ? (
+            <div className="space-y-2.5">
+              <Chips
+                title={detail.profile.topProducts.length > 0 ? "Lo que más vende" : "Algunos productos cargados"}
+                items={detail.profile.topProducts.length > 0 ? detail.profile.topProducts.map((p) => `${p.name} (${p.units.toLocaleString("es-AR")})`) : detail.profile.recentProducts}
+                empty="Todavía no cargó productos."
+              />
+              <Chips title="Marcas con más productos" items={detail.profile.topBrands.map((b) => `${b.name} (${b.count})`)} empty="Sin marcas cargadas." />
+              <Chips title="Proveedores" items={detail.profile.suppliers} empty="Sin proveedores cargados." />
+              {detail.profile.salesSampled > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {`En sus últimas ${detail.profile.salesSampled} ventas: ticket promedio ${money(detail.profile.avgTicket ?? 0)}`}
+                  {detail.profile.paymentMix.length > 0 ? ` · cobra ${detail.profile.paymentMix.map((m) => `${m.label.toLowerCase()} ${m.pct}%`).join(", ")}` : ""}
+                </p>
+              )}
+            </div>
+          ) : null}
         </section>
 
         <section className="space-y-2 border-t border-border pt-4">

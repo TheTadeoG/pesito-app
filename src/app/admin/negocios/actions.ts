@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { planLabels, type Plan } from "@/lib/subscription";
+import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
+import { paymentLabels } from "@/lib/payment-labels";
 
 export interface OrgNote {
   id: string;
@@ -16,15 +18,71 @@ export interface TimelineEvent {
   what: string;
 }
 
+export interface OrgProfile {
+  /** Lo más vendido en sus últimas ventas (producto y unidades). */
+  topProducts: { name: string; units: number }[];
+  /** Algunos productos cargados (se usa cuando todavía no vendió). */
+  recentProducts: string[];
+  topBrands: { name: string; count: number }[];
+  suppliers: string[];
+  paymentMix: { label: string; pct: number }[];
+  avgTicket: number | null;
+  /** Cuántas ventas se miraron para el ticket promedio y los medios de pago. */
+  salesSampled: number;
+  branches: number;
+  debtors: number;
+}
+
 export interface OrgDetail {
   usage: { label: string; value: string }[];
   timeline: TimelineEvent[];
   notes: OrgNote[];
+  /** A qué se dedica: qué vende, con qué marcas y proveedores trabaja, cómo le pagan. */
+  profile: OrgProfile;
   /** Las notas no se pueden leer ni guardar hasta aplicar la migración 0091. */
   notesAvailable: boolean;
 }
 
 const money = (n: number) => `$${Math.round(n).toLocaleString("es-AR")}`;
+
+async function loadProfile(orgId: string): Promise<OrgProfile> {
+  const admin = createAdminClient();
+  const [recentSales, brandsRaw, suppliersRes, recentProducts, branchesRes, debtorsRes] = await Promise.all([
+    admin.from("sales").select("id, total, payment_method").eq("org_id", orgId).eq("status", "completada").order("created_at", { ascending: false }).limit(150),
+    fetchAll((from, to) => admin.from("products").select("id, brand").eq("org_id", orgId).not("brand", "is", null).order("id").range(from, to)),
+    admin.from("suppliers").select("name").eq("org_id", orgId).order("created_at").limit(8),
+    admin.from("products").select("name").eq("org_id", orgId).order("created_at", { ascending: false }).limit(12),
+    admin.from("branches").select("id", { count: "exact", head: true }).eq("org_id", orgId),
+    admin.from("customers").select("id", { count: "exact", head: true }).eq("org_id", orgId).gt("balance", 0),
+  ]);
+
+  const sales = recentSales.data ?? [];
+  // Lo más vendido: las unidades de cada producto en esas últimas ventas.
+  const items = await fetchAllIn(
+    sales.map((x) => x.id),
+    (ids, from, to) => admin.from("sale_items").select("id, product_name, quantity").in("sale_id", ids).order("id").range(from, to)
+  );
+  const units = new Map<string, number>();
+  for (const it of items) units.set(it.product_name, (units.get(it.product_name) ?? 0) + Number(it.quantity));
+
+  const brandCount = new Map<string, number>();
+  for (const b of brandsRaw) if (b.brand) brandCount.set(b.brand, (brandCount.get(b.brand) ?? 0) + 1);
+
+  const mix = new Map<string, number>();
+  for (const x of sales) mix.set(x.payment_method, (mix.get(x.payment_method) ?? 0) + 1);
+
+  return {
+    topProducts: [...units.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([name, u]) => ({ name, units: Math.round(u * 100) / 100 })),
+    recentProducts: (recentProducts.data ?? []).map((p) => p.name),
+    topBrands: [...brandCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, count]) => ({ name, count })),
+    suppliers: (suppliersRes.data ?? []).map((x) => x.name),
+    paymentMix: [...mix.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([method, n]) => ({ label: paymentLabels[method] ?? method, pct: Math.round((n / sales.length) * 100) })),
+    avgTicket: sales.length > 0 ? sales.reduce((sum, x) => sum + Number(x.total), 0) / sales.length : null,
+    salesSampled: sales.length,
+    branches: branchesRes.count ?? 0,
+    debtors: debtorsRes.count ?? 0,
+  };
+}
 
 /** Ficha de un negocio: qué usa, qué hizo últimamente y las notas del equipo. Se pide al elegirlo en la lista. */
 export async function getOrgDetail(orgId: string): Promise<OrgDetail> {
@@ -48,6 +106,7 @@ export async function getOrgDetail(orgId: string): Promise<OrgDetail> {
     { data: emails },
     { data: org },
     notesRes,
+    profile,
   ] = await Promise.all([
     admin.from("products").select("id", head).eq("org_id", orgId),
     admin.from("sales").select("id", head).eq("org_id", orgId).eq("status", "completada"),
@@ -64,6 +123,7 @@ export async function getOrgDetail(orgId: string): Promise<OrgDetail> {
     admin.from("lifecycle_emails").select("kind, sent_at").eq("org_id", orgId).order("sent_at", { ascending: false }).limit(5),
     admin.from("organizations").select("created_at").eq("id", orgId).maybeSingle(),
     admin.from("admin_org_notes").select("id, body, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(30),
+    loadProfile(orgId),
   ]);
 
   const timeline: TimelineEvent[] = [];
@@ -94,6 +154,7 @@ export async function getOrgDetail(orgId: string): Promise<OrgDetail> {
       { label: "facturas", value: String(invoices ?? 0) },
     ],
     timeline: timeline.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 10),
+    profile,
     notes: (notesRes.data ?? []).map((n) => ({ id: n.id, body: n.body, createdAt: n.created_at })),
     notesAvailable: !notesRes.error,
   };

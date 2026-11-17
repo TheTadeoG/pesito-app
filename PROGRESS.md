@@ -267,6 +267,9 @@ Motivo: el resumen por producto y por día casi no comprime (en un día se vende
 - Helper `lib/excel-headers.ts` (`requiredHeader`, `optionalHeader`, `columnHeader`). Marcan lo obligatorio: planillas modelo de productos, proveedores, marcas y clientes (esta última con hoja "Cómo completarla"), y las planillas descargadas que se pueden volver a subir (productos: Producto y SKU; proveedores: Nombre; marcas: Nombre; clientes: Nombre). Los importadores ignoran el asterisco. Los reportes de sólo lectura (deuda, movimientos, estado de cuenta, inventario, por usuario) no llevan marcas.
 - Regla: una planilla nueva que se pueda volver a subir usa `columnHeader` para sus títulos.
 
+## Hecho: ficha del admin con "A qué se dedica" (17/11/2026)
+- Admin → Negocios → ficha: sección nueva con el tipo de negocio, lo que más vende (de sus últimas 150 ventas, con unidades; si no vendió, algunos productos cargados), marcas con más productos, proveedores, ticket promedio y medios de pago de esas ventas, sucursales y clientes a los que les fía. Los nombres se desenfocan con "Ocultar datos". `loadProfile` en `admin/negocios/actions.ts`.
+
 ## Probado y descartado: bloquear celdas de las planillas (17/11/2026)
 - Se probó proteger las hojas (títulos, SKU, saldos y calculados bloqueados, sin contraseña) retocando el .xlsx; funcionaba, pero al usuario no le gustó y se revirtió. Las planillas quedan sin bloqueos (sólo los obligatorios en rojo con *). Si se retoma: commit e3ec0ce.
 
