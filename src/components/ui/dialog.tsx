@@ -75,7 +75,7 @@ export function Dialog({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div
         className={cn(
-          "relative max-h-[90vh] w-full overflow-y-auto rounded-card border border-border bg-card p-6 shadow-2xl",
+          "relative max-h-[90vh] w-full overflow-y-auto rounded-card border border-border bg-card p-6 shadow-2xl transition-[max-width] duration-200 ease-out",
           sizeClasses[size],
           className
         )}

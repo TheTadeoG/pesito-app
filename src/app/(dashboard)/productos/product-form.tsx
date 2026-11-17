@@ -672,7 +672,8 @@ export function ProductForm({
       onClose={resetAndClose}
       title={isEdit ? "Editar producto" : "Nuevo producto"}
       description={isEdit ? (groupMode && product ? baseNameOf(product) : product?.name) : "Sumá un producto a tu catálogo."}
-      size={groupMode || variantsOn ? "xl" : "lg"}
+      // Al crear (con el selector de tipo) siempre ancha: así no cambia de tamaño al pasar de Simple a Talles o Combo.
+      size={groupMode || variantsOn || (!isEdit && Boolean(variantsConfig || bundleConfig)) ? "xl" : "lg"}
     >
       <form data-tour="product-form" onSubmit={handleSubmit} className="space-y-4">
         {tabbed && (
