@@ -29,6 +29,13 @@ export function StructuredData() {
       "@type": "Organization",
       name: "Pesito",
       url: siteUrl,
+      logo: `${siteUrl}/icon.png`,
+      description:
+        "Pesito es un sistema de punto de venta en la nube para negocios de Argentina: ventas, stock, caja, clientes con fiado, compras y reportes.",
+      areaServed: "AR",
+      knowledgeAbout: ["punto de venta", "control de stock", "caja", "fiado y cuenta corriente", "factura electrónica ARCA"],
+      contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "soporte@pesito.com.ar", availableLanguage: "es-AR" },
+      // sameAs: sumar acá los perfiles oficiales (LinkedIn, Instagram, YouTube, Google Business Profile) cuando existan.
     },
     {
       "@context": "https://schema.org",
