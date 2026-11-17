@@ -131,4 +131,30 @@ export const comprasDocs: DocArticle[] = [
     related: ["como-ver-lo-que-le-debes-a-un-proveedor"],
     updatedAt: UPDATED,
   },
+  {
+    slug: "como-ver-la-ficha-de-un-proveedor",
+    title: "Cómo ver la ficha de un proveedor y anular un pago",
+    category: "compras",
+    summary: "Mirá lo que le debés compra por compra, sus pagos y su historial, y deshacé un pago cargado por error.",
+    plan: "basico",
+    where: "**Proveedores → tocá el proveedor**",
+    steps: [
+      { text: "Entrá a **Proveedores** y tocá al proveedor (**Ver ficha del proveedor**)." },
+      { text: "Arriba ves **Le debés** (o **A tu favor**) y su **Saldo actual**." },
+      { text: "En **Lo que le debés, compra por compra** ves cada compra pendiente. Con **Pagar esta** pagás esa compra, y con **Asignar fecha** o **Cambiar fecha** le ponés vencimiento." },
+      { text: "En **Cuenta corriente** ves las compras y los pagos. Si un pago fue un error, tocá **Anular** en esa fila." },
+    ],
+    tips: [
+      "Al anular un pago, la deuda vuelve al proveedor y, si fue en efectivo, el dinero vuelve a tu caja. No se puede deshacer.",
+      "Un pago no se puede anular si la caja donde se registró ya está cerrada.",
+      "**Saldo sin compra asociada** es plata que pagaste sin elegir una compra específica.",
+    ],
+    keywords: ["ficha del proveedor", "cuenta corriente proveedor", "anular pago", "pago a proveedor", "deuda por compra", "historial del proveedor", "saldo a favor"],
+    connections: [
+      { slug: "como-ver-lo-que-le-debes-a-un-proveedor", text: "Desde la lista de **Proveedores** también registrás pagos." },
+      { slug: "como-cerrar-la-caja", text: "Un pago en efectivo no se puede anular con la caja ya cerrada." },
+    ],
+    related: ["como-cargar-proveedores", "como-usar-el-calendario-de-pagos-a-proveedores"],
+    updatedAt: UPDATED,
+  },
 ];
