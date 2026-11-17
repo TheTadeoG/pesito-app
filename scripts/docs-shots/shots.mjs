@@ -8,7 +8,8 @@ import { execSync } from "node:child_process";
 
 const require = createRequire(import.meta.url);
 const root = new URL("../../", import.meta.url).pathname;
-const out = `${root}public/ayuda`;
+const out = process.env.SHOTS_OUT ?? `${root}public/ayuda`;
+const CLEAN = process.env.SHOTS_CLEAN === "1"; // sin resaltado (para fichas de directorios, etc.)
 const PORT = 3190;
 const base = process.env.SHOTS_URL ?? `http://localhost:${PORT}`;
 const GREEN = "#059669";
@@ -304,7 +305,7 @@ async function run() {
       await page.goto(`${base}/blog/zz-shots/${s.page}`, { waitUntil: "networkidle" });
       await page.waitForTimeout(600);
       if (s.setup) await s.setup(page);
-      for (const h of s.hot ?? []) {
+      for (const h of CLEAN ? [] : (s.hot ?? [])) {
         if (Array.isArray(h)) await highlight(h[0](page), h[1] === "inset");
         else await highlight(h(page));
       }
