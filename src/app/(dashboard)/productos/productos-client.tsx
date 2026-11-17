@@ -1085,7 +1085,7 @@ export function ProductosClient({
                           key={`group-${item.id}`}
                           members={item.members}
                           colSpan={2 + COLUMNS.filter((c) => showColumn(c.id)).length}
-                          onEdit={openEdit}
+                          onEdit={() => openGroupEdit(item.id, "variantes")}
                           onAdjust={setAdjusting}
                           onEditGroup={(tab) => openGroupEdit(item.id, tab)}
                         />

@@ -486,6 +486,8 @@ export interface VariantGroupShared {
 
 export interface VariantRowEdit {
   id: string;
+  size: string;
+  color: string;
   sku: string;
   barcode: string;
   price: number;
@@ -520,8 +522,16 @@ export async function saveVariantGroup(groupId: string, shared: VariantGroupShar
   const memberById = new Map(members.map((m) => [m.id, m]));
 
   const seen = new Set<string>();
+  const combos = new Set<string>();
   for (const r of rows) {
     if (!memberById.has(r.id)) return { error: "Una de las variantes ya no existe. Recargá la página." };
+    const size = r.size.trim();
+    const color = r.color.trim();
+    if (!size && !color) return { error: "Cada variante necesita un talle o un color." };
+    if (size.length > 40 || color.length > 40) return { error: "El talle y el color pueden tener hasta 40 caracteres." };
+    const combo = `${size.toLowerCase()}|${color.toLowerCase()}`;
+    if (combos.has(combo)) return { error: `Hay dos variantes con el mismo talle y color (${[size, color].filter(Boolean).join(" · ")}).` };
+    combos.add(combo);
     const sku = r.sku.trim();
     if (!sku) return { error: "Cada variante necesita un SKU." };
     if (sku.length > 60) return { error: "El SKU es demasiado largo (máximo 60 caracteres)." };
@@ -554,11 +564,15 @@ export async function saveVariantGroup(groupId: string, shared: VariantGroupShar
     await Promise.all(
       members.slice(i, i + 10).map(async (m) => {
         const r = rowById.get(m.id);
+        const size = (r ? r.size : m.variant_size ?? "").trim();
+        const color = (r ? r.color : m.variant_color ?? "").trim();
         const { error } = await supabase
           .from("products")
           .update({
             ...common,
-            name: variantName(baseName, m.variant_size ?? "", m.variant_color ?? "").slice(0, 200),
+            name: variantName(baseName, size, color).slice(0, 200),
+            variant_size: size || null,
+            variant_color: color || null,
             ...(r ? { sku: r.sku.trim(), barcode: r.barcode.trim() || null, price: r.price } : {}),
           })
           .eq("id", m.id)
