@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { markCatalogDirty } from "@/lib/pos-catalog-store";
 import { baseSkuOf } from "@/lib/variants";
+import { formatCurrency } from "@/lib/utils";
 import { addVariantsToProduct } from "@/app/(dashboard)/productos/actions";
 import { EMPTY_VARIANTS, VariantsSection, resolveVariantRows, toVariantInputs, type VariantsState } from "@/app/(dashboard)/productos/variants-section";
 import type { Product } from "@/lib/types";
@@ -20,6 +21,7 @@ export function AddVariantsDialog({
   locked,
   sizeSuggestions,
   colorSuggestions,
+  onSetGroupPrice,
   onClose,
 }: {
   product: Product | null;
@@ -28,6 +30,8 @@ export function AddVariantsDialog({
   locked: boolean;
   sizeSuggestions: string[];
   colorSuggestions: string[];
+  /** Mismo precio de venta para todas las variantes del producto; devuelve el error, si hubo. */
+  onSetGroupPrice: (price: number) => Promise<string | null>;
   onClose: () => void;
 }) {
   const [state, setState] = useState<VariantsState>(EMPTY_VARIANTS);
@@ -35,6 +39,9 @@ export function AddVariantsDialog({
   const [ownColor, setOwnColor] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const isVariant = Boolean(product?.variant_group_id);
   const group = useMemo(
@@ -59,6 +66,22 @@ export function AddVariantsDialog({
     onClose();
   }
 
+  async function applyBulkPrice() {
+    const value = Number(bulkPrice.replace(",", "."));
+    if (bulkPrice.trim() === "" || !Number.isFinite(value) || value < 0) {
+      setBulkMsg({ ok: false, text: "Poné un precio de cero o más." });
+      return;
+    }
+    setBulkBusy(true);
+    const err = await onSetGroupPrice(value);
+    setBulkBusy(false);
+    if (err) setBulkMsg({ ok: false, text: err });
+    else {
+      setBulkMsg({ ok: true, text: `Listo: las ${group.length} variantes quedaron a ${formatCurrency(value)}.` });
+      setBulkPrice("");
+    }
+  }
+
   async function submit() {
     if (!product) return;
     if (!isVariant && !ownSize.trim() && !ownColor.trim()) return setError("Decinos qué talle o color es este producto.");
@@ -73,7 +96,7 @@ export function AddVariantsDialog({
   }
 
   return (
-    <Dialog open onClose={close} size="lg" title="Agregar talles o colores" description={product.name}>
+    <Dialog open onClose={close} size="lg" title={isVariant ? "Talles y colores" : "Agregar talles o colores"} description={product.name}>
       {locked ? (
         <PlanLockNote plan="basico">Los talles y colores están desde el Plan Básico.</PlanLockNote>
       ) : (
@@ -89,7 +112,30 @@ export function AddVariantsDialog({
                 ))}
               </p>
             </div>
-          ) : (
+          ) : null}
+          {isVariant && (
+            <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3.5">
+              <Label htmlFor="av-bulk-price">Precio de venta de todas las variantes</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  id="av-bulk-price"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={bulkPrice}
+                  onChange={(e) => setBulkPrice(e.target.value)}
+                  placeholder="Ej: 4800"
+                  className="w-40"
+                />
+                <Button type="button" variant="outline" disabled={bulkBusy || bulkPrice.trim() === ""} onClick={() => void applyBulkPrice()}>
+                  {bulkBusy ? "Guardando…" : `Aplicar a las ${group.length}`}
+                </Button>
+              </div>
+              {bulkMsg && <p className={bulkMsg.ok ? "text-xs font-medium text-success" : "text-xs font-medium text-danger"}>{bulkMsg.text}</p>}
+              <p className="text-xs text-muted-foreground">Para ponerle un precio distinto a cada una, tocá su celda en la lista y editala.</p>
+            </div>
+          )}
+          {!isVariant && (
             <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3.5">
               <p className="text-sm text-foreground">
                 Este producto todavía no tiene variantes: pasa a ser <b>una de ellas</b>. ¿Qué talle y color es?

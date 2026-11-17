@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ImageIcon, Plus, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ImageIcon, Pencil, Plus, SlidersHorizontal } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -45,35 +45,14 @@ export function VariantGroupRows({
   onEdit,
   onAdjust,
   onAddVariants,
-  onSetPrice,
 }: {
   members: Product[];
   colSpan: number;
   onEdit: (p: Product) => void;
   onAdjust: (p: Product) => void;
   onAddVariants: (p: Product) => void;
-  /** Mismo precio de venta para todas las variantes; devuelve el error, si hubo. */
-  onSetPrice: (price: number) => Promise<string | null>;
 }) {
   const [open, setOpen] = useState(false);
-  const [bulkPrice, setBulkPrice] = useState("");
-  const [bulkBusy, setBulkBusy] = useState(false);
-  const [bulkMsg, setBulkMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  async function applyBulkPrice() {
-    const value = Number(bulkPrice.replace(",", "."));
-    if (bulkPrice.trim() === "" || !Number.isFinite(value) || value < 0) {
-      setBulkMsg({ ok: false, text: "Poné un precio de cero o más." });
-      return;
-    }
-    setBulkBusy(true);
-    const error = await onSetPrice(value);
-    setBulkBusy(false);
-    if (error) setBulkMsg({ ok: false, text: error });
-    else {
-      setBulkMsg({ ok: true, text: `Listo: las ${members.length} variantes quedaron a ${formatCurrency(value)}.` });
-      setBulkPrice("");
-    }
-  }
   const first = members[0];
   const total = members.reduce((sum, m) => sum + m.stock, 0);
   const prices = members.map((m) => m.price);
@@ -131,10 +110,21 @@ export function VariantGroupRows({
             <span className="ml-2 font-medium text-danger">{`${low} ${low === 1 ? "variante con stock bajo" : "variantes con stock bajo"}`}</span>
           )}
         </td>
-        <td className="px-4 py-2.5 text-right">
-          <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
-            {open ? "Cerrar" : "Ver variantes"}
-          </Button>
+        <td className="px-4 py-2.5">
+          <div className="flex items-center justify-end gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
+              {open ? "Cerrar" : "Ver variantes"}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onAddVariants(first)}
+              aria-label="Editar talles y colores"
+              title="Editar talles y colores"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </div>
         </td>
       </tr>
       {open && (
@@ -210,22 +200,6 @@ export function VariantGroupRows({
                 <Plus className="h-4 w-4" />
                 Agregar talles o colores
               </Button>
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={bulkPrice}
-                  onChange={(e) => setBulkPrice(e.target.value)}
-                  placeholder="Precio para todas"
-                  aria-label="Precio de venta para todas las variantes"
-                  className="h-8 w-36 rounded-lg border border-border bg-card px-2.5 text-sm"
-                />
-                <Button size="sm" variant="outline" disabled={bulkBusy} onClick={applyBulkPrice}>
-                  {bulkBusy ? "Guardando…" : "Cambiar precio de todas"}
-                </Button>
-              </div>
-              {bulkMsg && <p className={cn("text-xs font-medium", bulkMsg.ok ? "text-success" : "text-danger")}>{bulkMsg.text}</p>}
               <p className="text-xs text-muted-foreground">
                 Tocá una celda para editar esa variante, o &quot;Ajustar&quot; para corregir su stock.
               </p>

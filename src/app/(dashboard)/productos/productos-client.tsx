@@ -1076,7 +1076,6 @@ export function ProductosClient({
                           onEdit={openEdit}
                           onAdjust={setAdjusting}
                           onAddVariants={setVariantsFor}
-                          onSetPrice={(price) => setGroupPrice(item.id, item.members.map((m) => m.id), price)}
                         />
                       );
                     }
@@ -1554,6 +1553,15 @@ export function ProductosClient({
         locked={variantsLocked}
         sizeSuggestions={Array.from(new Set(products.map((p) => p.variant_size).filter((v): v is string => Boolean(v)))).sort((a, b) => a.localeCompare(b, "es", { numeric: true }))}
         colorSuggestions={Array.from(new Set(products.map((p) => p.variant_color).filter((v): v is string => Boolean(v)))).sort((a, b) => a.localeCompare(b, "es"))}
+        onSetGroupPrice={(price) =>
+          variantsFor?.variant_group_id
+            ? setGroupPrice(
+                variantsFor.variant_group_id,
+                products.filter((p) => p.variant_group_id === variantsFor.variant_group_id).map((p) => p.id),
+                price,
+              )
+            : Promise.resolve("Este producto no tiene variantes.")
+        }
         onClose={() => setVariantsFor(null)}
       />
       <SupplierForm
