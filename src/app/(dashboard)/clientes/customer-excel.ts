@@ -1,3 +1,4 @@
+import { LOCKED_SHEET, allColumnsEditable, saveProtectedXlsx } from "@/lib/excel-protect";
 import { customerCode } from "@/lib/codes";
 import { columnHeader, optionalHeader } from "@/lib/excel-headers";
 import { dayKey } from "@/lib/supplier-debt";
@@ -34,7 +35,6 @@ type Cell = { value: string | number; fontWeight?: "bold"; backgroundColor?: str
  * fechas. Esas columnas NO se importan: el fiado sólo cambia con ventas y cobros.
  */
 export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayKey: string, onlyDebt = false) {
-  const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const list = onlyDebt ? rows.filter((r) => r.balance > 0) : rows;
 
   const readOnly = ["Código", "Saldo", "Debe desde", "Último pago", "Última compra"];
@@ -66,8 +66,10 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
     { value: fullDate(c.lastSaleAt), backgroundColor: "#f3f4f6" },
   ]);
 
-  await writeXlsxFile([header, ...body], {
-    columns: [
+  // Se editan los datos del cliente (columnas de la planilla modelo); el ID, el código, el saldo y las fechas quedan
+  // bloqueados: el saldo sólo cambia con ventas y cobros.
+  await saveProtectedXlsx(
+    [{ data: [header, ...body], columns: [
       { width: 38 },
       { width: 28 },
       { width: 24 },
@@ -86,15 +88,17 @@ export async function downloadCustomersExcel(rows: readonly ClienteRow[], todayK
       { width: 14 },
       { width: 14 },
       { width: 14 },
-    ],
-  }).toFile(`pesito-${onlyDebt ? "deudas-de-clientes" : "clientes"}-${todayKey}.xlsx`);
+    ], }],
+    `pesito-${onlyDebt ? "deudas-de-clientes" : "clientes"}-${todayKey}.xlsx`,
+    [{ editable: CUSTOMER_TEMPLATE_COLUMNS.map((_, i) => i + 1) }]
+  );
 }
 
 export async function downloadCustomerTemplate() {
-  const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const header = CUSTOMER_TEMPLATE_COLUMNS.map((c) => columnHeader(c.title, c.required));
   const example = CUSTOMER_TEMPLATE_COLUMNS.map((c) => c.example);
-  await writeXlsxFile([
+  await saveProtectedXlsx(
+    [
     { data: [header, example], sheet: "Clientes", columns: CUSTOMER_TEMPLATE_COLUMNS.map((c) => ({ width: Math.max(16, c.title.length + 6) })), stickyRowsCount: 1 },
     {
       data: [
@@ -106,5 +110,8 @@ export async function downloadCustomerTemplate() {
       sheet: "Cómo completarla",
       columns: [{ width: 100 }],
     },
-  ]).toFile("pesito-clientes.xlsx");
+    ],
+    "pesito-clientes.xlsx",
+    [allColumnsEditable(CUSTOMER_TEMPLATE_COLUMNS.length), LOCKED_SHEET]
+  );
 }

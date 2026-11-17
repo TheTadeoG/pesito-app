@@ -1,4 +1,5 @@
 import { requiredHeader } from "@/lib/excel-headers";
+import { saveProtectedXlsx } from "@/lib/excel-protect";
 import { dayKey } from "@/lib/supplier-debt";
 import type { StockRow, StockStatus } from "@/lib/stock-rows";
 
@@ -31,17 +32,19 @@ export interface ExcelColumn {
   width: number;
   /** Sólo con el Plan Max (necesita las ventas por producto). */
   max?: boolean;
+  /** Se puede editar en la planilla y volver a subir (el resto es sólo para mirar y queda bloqueado). */
+  editable?: boolean;
   cell: (r: StockRow) => Cell;
 }
 
 /** Columnas que se pueden elegir. "Producto" va siempre primero y no se elige. */
 export const EXCEL_COLUMNS: ExcelColumn[] = [
-  { id: "barcode", label: "Código de barras", width: 20, cell: (r) => ({ value: r.barcode ?? "" }) },
-  { id: "brand", label: "Marca", width: 18, cell: (r) => ({ value: r.brand ?? "" }) },
-  { id: "supplier", label: "Proveedor", width: 24, cell: (r) => ({ value: r.supplier ?? "" }) },
+  { id: "barcode", editable: true, label: "Código de barras", width: 20, cell: (r) => ({ value: r.barcode ?? "" }) },
+  { id: "brand", editable: true, label: "Marca", width: 18, cell: (r) => ({ value: r.brand ?? "" }) },
+  { id: "supplier", editable: true, label: "Proveedor", width: 24, cell: (r) => ({ value: r.supplier ?? "" }) },
   { id: "stock", label: "Stock", width: 12, cell: (r) => num(r.stock) },
-  { id: "unit", label: "Unidad", width: 10, cell: (r) => ({ value: r.unit }) },
-  { id: "minStock", label: "Mínimo", width: 12, cell: (r) => num(r.minStock) },
+  { id: "unit", editable: true, label: "Unidad", width: 10, cell: (r) => ({ value: r.unit }) },
+  { id: "minStock", editable: true, label: "Mínimo", width: 12, cell: (r) => num(r.minStock) },
   { id: "missing", label: "Falta para el mínimo", width: 20, cell: (r) => num(Math.max(0, r.minStock - r.stock)) },
   {
     id: "days",
@@ -52,11 +55,12 @@ export const EXCEL_COLUMNS: ExcelColumn[] = [
     cell: (r) => num(r.daysLeft === null || r.daysLeft === undefined ? null : Math.floor(r.daysLeft)),
   },
   { id: "status", label: "Estado", width: 14, cell: (r) => ({ value: STATUS_LABEL[r.status] }) },
-  { id: "cost", label: "Costo", width: 14, cell: (r) => num(r.cost) },
+  { id: "cost", editable: true, label: "Costo", width: 14, cell: (r) => num(r.cost) },
   { id: "value", label: "Valor al costo", width: 16, cell: (r) => num(r.value) },
-  { id: "price", label: "Precio de venta", width: 16, cell: (r) => num(r.price) },
+  { id: "price", editable: true, label: "Precio de venta", width: 16, cell: (r) => num(r.price) },
   {
     id: "markup",
+    editable: true,
     label: "Ganancia sobre el costo (%)",
     width: 26,
     cell: (r) => num(r.cost !== null && r.cost > 0 ? Math.round((r.price / r.cost - 1) * 1000) / 10 : null, 1),
@@ -69,7 +73,6 @@ export const EXCEL_COLUMNS: ExcelColumn[] = [
  * puede editar y volver a subir desde "Cargar desde Excel".
  */
 export async function downloadStockExcel(rows: readonly StockRow[], withCover: boolean, columnIds?: readonly string[]) {
-  const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const columns = EXCEL_COLUMNS.filter((c) => (withCover || !c.max) && (!columnIds || columnIds.includes(c.id)));
   const header: Cell[] = [
     requiredHeader("Producto"),
@@ -78,8 +81,12 @@ export async function downloadStockExcel(rows: readonly StockRow[], withCover: b
   ];
   const body: Cell[][] = rows.map((r) => [{ value: r.name }, { value: r.sku ?? "" }, ...columns.map((c) => c.cell(r))]);
 
-  await writeXlsxFile([header, ...body], {
-    columns: [{ width: 38 }, { width: 16 }, ...columns.map((c) => ({ width: c.width }))],
-    stickyRowsCount: 1,
-  }).toFile(`pesito-stock-${todayStamp()}.xlsx`);
+  // Se edita el nombre y lo que se puede volver a subir; el SKU (lo que identifica al producto) queda bloqueado en los
+  // productos que ya están (en filas nuevas se completa) y lo calculado (stock, estado, valor...) queda bloqueado.
+  const editable = [0, ...columns.flatMap((c, i) => (c.editable ? [i + 2] : []))];
+  await saveProtectedXlsx(
+    [{ data: [header, ...body], columns: [{ width: 38 }, { width: 16 }, ...columns.map((c) => ({ width: c.width }))], stickyRowsCount: 1 }],
+    `pesito-stock-${todayStamp()}.xlsx`,
+    [{ editable, keys: [1] }]
+  );
 }
