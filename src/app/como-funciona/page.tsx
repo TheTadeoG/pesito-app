@@ -25,7 +25,7 @@ const steps = [
     icon: Package,
     title: "Cargás tu catálogo",
     description:
-      "Sumás tus productos a mano o escaneando el código de barras. Podés cargarlos por unidad o por peso, con marca, costo y precio (los talles y colores como variantes están desde el Plan Básico, cada una con su SKU y su stock) — lo mínimo obligatorio es nombre, SKU y precio, el resto lo completás cuando puedas.",
+      "Sumás tus productos a mano o escaneando el código de barras. Podés cargarlos por unidad o por peso, con marca, costo y precio (los talles y colores como variantes y los combos y kits, armados con otros de tus productos, están desde el Plan Básico) — lo mínimo obligatorio es nombre, SKU y precio, el resto lo completás cuando puedas.",
   },
   {
     icon: ShoppingCart,
