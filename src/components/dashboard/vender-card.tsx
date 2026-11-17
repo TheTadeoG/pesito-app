@@ -199,14 +199,14 @@ export function VenderCard({ cashRegister, closeTime = null }: VenderCardProps) 
         <Link
           href="/caja"
           data-tour="nav-/caja"
-          className="flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-white/20 px-1.5 py-2 text-xs font-bold transition-colors hover:bg-white/30"
+          className="flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-white/20 px-2.5 py-2 text-xs font-bold transition-colors hover:bg-white/30"
         >
           {!(showHints && !closing) && <Wallet className="h-4 w-4 shrink-0" />}
-          {closing ? "Cerrar caja" : "Caja"}
+          <span className="min-w-0 truncate">{closing ? "Cerrar caja" : "Caja"}</span>
           {/* Sobre el verde/ámbar el fondo de aviso se pierde: píldora blanca. */}
           <ModuleBadge
             module="caja"
-            className="!bg-white px-1.5 text-[10px] leading-none shadow-sm ring-1 ring-black/10 !text-red-600"
+            className="inline-flex h-5 shrink-0 items-center justify-center !bg-white !px-1.5 !py-0 text-[10px] leading-none shadow-sm ring-1 ring-black/10 !text-red-600"
           />
           {!closing && <AltHint href="/caja" className="border-white/40 bg-transparent text-white opacity-80" />}
         </Link>
