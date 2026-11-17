@@ -26,7 +26,7 @@ export const clientesDocs: DocArticle[] = [
     ],
     faq: [
       { q: "¿Qué datos son obligatorios?", a: "Sólo el nombre. Teléfono, email, domicilio y notas son opcionales. Con el teléfono podés recordarle la deuda por WhatsApp." },
-      { q: "¿Qué es el comprobante que necesita?", a: "Es el tipo de comprobante que le corresponde a ese cliente. Hoy el ticket que da Pesito es interno (**Sin factura (Comprobante X)**); si cargás su condición frente al IVA y su documento, queda listo para cuando se emitan facturas." },
+      { q: "¿Qué es el comprobante que necesita?", a: "Es el tipo de comprobante que le corresponde a ese cliente: **Sin factura (Comprobante X)**, el ticket interno de siempre, o una factura. Si le cargás su documento y su condición frente al IVA, Pesito los usa al facturar con ARCA (función del Plan Básico)." },
       { q: "¿Puedo cargar el cliente al vender?", a: "Sí: en el Punto de Venta, **Cargar cliente nuevo** lo crea con el nombre y después completás el resto en **Clientes**." },
       { q: "¿Cómo busco a un cliente?", a: "En el buscador de **Clientes** por nombre, teléfono o documento." },
     ],

@@ -32,6 +32,7 @@ const PUBLIC_PATHS = [
   "/sitemap.xml",
   "/robots.txt",
   "/llms.txt",
+  "/llms-full.txt",
   // Tarea diaria de correos (la llama Vercel Cron con su propio secreto) y baja de esos correos
   // (link firmado de cada mail): se abren sin sesión.
   "/api/cron",

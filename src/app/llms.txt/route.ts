@@ -62,6 +62,7 @@ ${link("Crear una cuenta gratis", "/registro")}
 ## Ayuda: guías paso a paso
 
 ${link("Todas las guías de ayuda (con buscador)", "/ayuda")}
+${link("Texto completo de todas las guías (pasos, consejos y dudas frecuentes)", "/llms-full.txt")}
 ${docCategories
     .map((c) => `### ${c.title}\n\n${docsInCategory(c.id).map((a) => link(a.title, `/ayuda/${a.slug}`, a.summary)).join("\n")}`)
     .join("\n\n")}

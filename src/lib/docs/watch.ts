@@ -35,7 +35,13 @@ export const watchByCategory: Record<string, string[]> = {
     "src/app/(dashboard)/baja-rotacion",
     "src/app/(dashboard)/ventas",
   ],
-  comprobantes: ["src/app/(dashboard)/configuracion/printer-settings.tsx", "src/app/(dashboard)/pos/sale-done-dialog.tsx"],
+  comprobantes: [
+    "src/app/(dashboard)/configuracion/printer-settings.tsx",
+    "src/app/(dashboard)/configuracion/facturacion",
+    "src/app/(dashboard)/pos/sale-done-dialog.tsx",
+    "src/app/(dashboard)/ventas/ventas-historial.tsx",
+    "src/lib/arca",
+  ],
   cuenta: ["src/app/(dashboard)/configuracion", "src/app/(dashboard)/usuarios"],
 };
 

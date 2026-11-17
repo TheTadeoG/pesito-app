@@ -7,6 +7,7 @@ import shotSizes from "../../../../public/ayuda/manifest.json";
 import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 import { docArticles, docCategories, getDocBySlug } from "@/lib/docs";
+import { docImagesOf } from "@/lib/docs/images";
 import { inlineParts, plainText } from "@/lib/docs/format";
 import { planDefinitions } from "@/lib/plan-features";
 import { pageMetadata } from "@/lib/seo";
@@ -20,7 +21,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const article = getDocBySlug(slug);
   if (!article) return {};
-  return pageMetadata({ title: article.title, description: article.summary, path: `/ayuda/${article.slug}` });
+  const first = docImagesOf(article)[0];
+  return pageMetadata({
+    title: article.title,
+    description: article.summary,
+    path: `/ayuda/${article.slug}`,
+    article: { modifiedTime: article.updatedAt },
+    image: first ? { url: first.url, width: first.width, height: first.height, alt: first.alt } : undefined,
+  });
 }
 
 function Inline({ text }: { text: string }) {
@@ -51,6 +59,7 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
   const related = (article.related ?? []).map((s) => getDocBySlug(s)).filter((a): a is NonNullable<typeof a> => Boolean(a));
   const [y, m, d] = article.updatedAt.split("-");
   const url = `${siteUrl}/ayuda/${article.slug}`;
+  const images = docImagesOf(article);
 
   const structuredData = [
     {
@@ -61,11 +70,20 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
       inLanguage: "es-AR",
       url,
       dateModified: article.updatedAt,
-      step: article.steps.map((s, i) => ({
-        "@type": "HowToStep",
-        position: i + 1,
-        text: plainText(s.note ? `${s.text} ${s.note}` : s.text),
-      })),
+      ...(images[0] ? { image: images.map((i) => ({ "@type": "ImageObject", url: i.url, width: i.width, height: i.height, caption: i.alt })) } : {}),
+      publisher: { "@type": "Organization", name: "Pesito", url: siteUrl },
+      isPartOf: { "@type": "CollectionPage", name: "Ayuda de Pesito", url: `${siteUrl}/ayuda` },
+      step: article.steps.map((s, i) => {
+        const stepImage = (s.images ?? []).map((im) => images.find((x) => x.name === im.name)).find(Boolean);
+        return {
+          "@type": "HowToStep",
+          position: i + 1,
+          name: plainText(s.text).split(/(?<=[.:])\s/)[0].slice(0, 110),
+          text: plainText(s.note ? `${s.text} ${s.note}` : s.text),
+          url: `${url}#paso-${i + 1}`,
+          ...(stepImage ? { image: { "@type": "ImageObject", url: stepImage.url, width: stepImage.width, height: stepImage.height, caption: stepImage.alt } } : {}),
+        };
+      }),
     },
     ...(article.faq && article.faq.length > 0
       ? [
@@ -160,7 +178,7 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
             <h2 className="text-xl font-bold text-foreground">Paso a paso</h2>
             <ol className="mt-5 space-y-5">
               {article.steps.map((s, i) => (
-                <li key={i} className="flex gap-4">
+                <li key={i} id={`paso-${i + 1}`} className="flex scroll-mt-24 gap-4">
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                     {i + 1}
                   </span>

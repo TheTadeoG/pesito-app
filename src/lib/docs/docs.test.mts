@@ -42,6 +42,18 @@ for (const a of docArticles)
       assert.ok(/^[a-z0-9-]+$/.test(img.name) && img.alt.length >= 15, `${a.slug}: imagen inválida (${img.name})`);
       assert.ok(existsSync(`${process.env.DOCS_PUBLIC}/${img.name}.webp`) && (manifest as Record<string, unknown>)[img.name] !== undefined, `${a.slug}: falta public/ayuda/${img.name}.webp (o no está en manifest.json)`);
     }
+{
+  const titles = new Set<string>();
+  const summaries = new Set<string>();
+  for (const a of docArticles) {
+    assert.ok(!titles.has(a.title.toLowerCase()), `título repetido: ${a.title}`);
+    assert.ok(!summaries.has(a.summary.toLowerCase()), `resumen repetido: ${a.slug}`);
+    titles.add(a.title.toLowerCase());
+    summaries.add(a.summary.toLowerCase());
+    assert.ok((a.related?.length ?? 0) + (a.connections?.length ?? 0) > 0, `${a.slug}: sin enlaces a otras guías`);
+    assert.ok((a.faq?.length ?? 0) > 0 || (a.intro?.length ?? 0) > 0, `${a.slug}: sin introducción ni dudas frecuentes`);
+  }
+}
 for (const a of docArticles) for (const r of a.related ?? []) assert.ok(slugs.has(r), `${a.slug}: la guía relacionada "${r}" no existe`);
 
 // --- Formato ---

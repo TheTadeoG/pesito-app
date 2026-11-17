@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { docImagesOf } from "@/lib/docs/images";
 import { siteUrl } from "@/lib/utils";
 import { rubroPages } from "@/lib/pesito-para-data";
 import { blogPosts } from "@/lib/blog-data";
@@ -44,6 +45,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(a.updatedAt),
       changeFrequency: "monthly" as const,
       priority: 0.6,
+      images: docImagesOf(a).map((i) => i.url),
     })),
     { url: `${siteUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     ...blogPosts.map((p) => ({

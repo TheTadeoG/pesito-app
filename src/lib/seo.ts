@@ -11,10 +11,16 @@ export function pageMetadata({
   title,
   description,
   path,
+  article,
+  image,
 }: {
   title: string;
   description: string;
   path: string;
+  /** Página de contenido con fecha de revisión (guías de ayuda): Open Graph "article". */
+  article?: { modifiedTime: string };
+  /** Imagen propia de la página para la vista previa (si no, se usa la general del sitio). */
+  image?: { url: string; width: number; height: number; alt: string };
 }): Metadata {
   const fullTitle = `${title} | Pesito`;
   const url = `${siteUrl}${path}`;
@@ -28,7 +34,9 @@ export function pageMetadata({
     // página que use este helper. Se repite acá para que quede en todas.
     alternates: { canonical: path, languages: { "es-AR": url } },
     openGraph: {
-      type: "website",
+      type: article ? "article" : "website",
+      ...(article ? { modifiedTime: article.modifiedTime } : {}),
+      ...(image ? { images: [image] } : {}),
       locale: "es_AR",
       url,
       siteName: "Pesito",
@@ -39,6 +47,7 @@ export function pageMetadata({
       card: "summary_large_image",
       title: fullTitle,
       description,
+      ...(image ? { images: [{ url: image.url, alt: image.alt }] } : {}),
     },
   };
 }

@@ -289,7 +289,7 @@ export const venderDocs: DocArticle[] = [
     plan: null,
     where: "**Punto de Venta → ¡Venta cobrada!** o **Reportes → Ventas**",
     intro: [
-      "El ticket es un comprobante interno de la venta, para darle al cliente. No es una factura: dice que no es válido como factura.",
+      "El ticket es un comprobante interno de la venta, para darle al cliente. No es una factura: dice que no es válido como factura. Si tu negocio factura con ARCA, la factura electrónica es otro comprobante, que se emite aparte desde la misma venta.",
     ],
     steps: [
       { text: "Al cobrar, aparece **¡Venta cobrada!**. Tocá **Imprimir ticket (no fiscal)** (o apretá **P**)." },
@@ -301,13 +301,13 @@ export const venderDocs: DocArticle[] = [
       "Si conectaste una impresora térmica, el ticket sale directo, sin diálogo.",
     ],
     faq: [
-      { q: "¿El ticket es una factura?", a: "No. Es un comprobante interno no fiscal. Pesito todavía no emite factura electrónica al cobrar." },
+      { q: "¿El ticket es una factura?", a: "No. El ticket de **Imprimir ticket (no fiscal)** es un comprobante interno. Desde el Plan Básico, Pesito también puede emitir factura electrónica de ARCA (Factura C, para monotributistas y exentos): mirá la guía para facturar una venta." },
       { q: "¿Puedo reimprimir un ticket más tarde?", a: "Sí. Buscá la venta en **Reportes → Ventas**, abrila con **Ver detalle** y tocá **Reimprimir ticket (no fiscal)**. Sale marcado como copia." },
       { q: "¿Qué datos muestra el ticket y cómo lo cambio?", a: "Muestra el nombre del negocio (si lo dejás activado), el número de comprobante, los productos, el subtotal, el descuento o recargo y el total. Lo configurás en **Ajustes → Negocio**." },
       { q: "¿Puedo imprimir sin impresora térmica?", a: "Sí: se abre el diálogo de impresión del navegador y elegís cualquier impresora. Con una impresora térmica conectada (función en prueba), el ticket sale directo." },
     ],
     keywords: ["ticket", "imprimir", "reimprimir", "comprobante", "recibo", "impresora", "comprobante x"],
-    related: ["como-ver-el-historial-de-ventas"],
+    related: ["como-ver-el-historial-de-ventas", "como-facturar-una-venta"],
     connections: [
       { slug: "como-personalizar-el-ticket", text: "Qué muestra el ticket se elige en **Ajustes**." },
       { slug: "como-conectar-una-impresora-termica", text: "Con impresora térmica el ticket puede salir solo al cobrar." },
@@ -342,6 +342,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿Qué pasa con la plata?", a: "Pesito corrige sus registros, pero no mueve dinero físico: la devolución al cliente la hacés vos. Si la venta era fiada, el importe se descuenta de la deuda del cliente." },
       { q: "¿Por qué me pide un motivo?", a: "Para dejar constancia de por qué se anuló. En el control por usuario (Plan Pro) se ven las anulaciones de cada persona." },
       { q: "¿Puedo anular una venta de días anteriores?", a: "Sí, desde **Reportes → Ventas**, buscándola por fecha, cliente o importe." },
+      { q: "¿Cómo anulo una venta que tiene factura electrónica?", a: "Se anula con una nota de crédito: en **Ver detalle** de la venta, tocá **Anular con nota de crédito**. La factura original queda registrada y la nota de crédito la compensa." },
     ],
     keywords: ["anular", "cancelar venta", "borrar venta", "devolucion", "devolver", "error", "equivoque", "deshacer venta", "nota de credito"],
     related: ["como-ver-el-historial-de-ventas"],
