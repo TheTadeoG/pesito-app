@@ -87,6 +87,8 @@ export function VariantsSection({
   const sizes = parseList(state.sizesText);
   const colors = parseList(state.colorsText);
   const priceMode = state.priceMode ?? "same";
+  const what = sizes.length > 0 && colors.length > 0 ? "talles/colores" : colors.length > 0 ? "colores" : "talles";
+  const whatOne = sizes.length > 0 && colors.length > 0 ? "talle y color" : colors.length > 0 ? "color" : "talle";
   const [applyAll, setApplyAll] = useState("");
   const pg = usePagination(rows.length, `${state.sizesText}|${state.colorsText}`, "pesito-variantes-pagesize");
 
@@ -185,8 +187,8 @@ export function VariantsSection({
                 <p className="text-sm font-medium text-foreground">Precio de venta</p>
                 <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Cómo se pone el precio">
                   {([
-                    ["same", "El mismo para todas"],
-                    ["each", "Uno por talle y color"],
+                    ["same", `Mismo precio para todos los ${what}`],
+                    ["each", `Uno por ${whatOne}`],
                   ] as const).map(([mode, label]) => (
                     <button
                       key={mode}
@@ -202,29 +204,32 @@ export function VariantsSection({
                 </div>
                 {priceMode === "same" ? (
                   <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={state.samePrice ?? basePrice}
-                      onChange={(e) => onChange({ ...state, samePrice: e.target.value })}
-                      aria-label="Precio para todas las variantes"
-                      className="h-9 w-32"
-                    />
+                    <div className="w-36">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={state.samePrice ?? basePrice}
+                        onChange={(e) => onChange({ ...state, samePrice: e.target.value })}
+                        aria-label="Precio para todas las variantes"
+                      />
+                    </div>
                     <span className="text-xs text-muted-foreground">{`Se aplica a las ${rows.length} variantes.`}</span>
                   </div>
                 ) : (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs text-muted-foreground">Cambiá el precio de cada una en la tabla. O poné uno para todas:</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={applyAll}
-                      onChange={(e) => setApplyAll(e.target.value)}
-                      aria-label="Precio a aplicar a todas"
-                      className="h-8 w-28"
-                    />
+                    <div className="w-32">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={applyAll}
+                        onChange={(e) => setApplyAll(e.target.value)}
+                        aria-label="Precio a aplicar a todas"
+                        className="h-8"
+                      />
+                    </div>
                     <button
                       type="button"
                       disabled={applyAll.trim() === ""}
@@ -241,36 +246,36 @@ export function VariantsSection({
                 )}
               </div>
               <div className="overflow-x-auto rounded-xl border border-border bg-card">
-                <table className="w-full min-w-[640px] text-left text-xs">
+                <table className="w-full table-fixed text-left text-xs">
                   <thead className="bg-muted text-muted-foreground">
                     <tr>
-                      <th className="px-2.5 py-2">Variante</th>
-                      <th className="px-2.5 py-2">SKU</th>
-                      <th className="px-2.5 py-2">Código de barras</th>
-                      {showStock && <th className="px-2.5 py-2">Stock</th>}
-                      <th className="px-2.5 py-2">Precio</th>
+                      <th className="w-[15%] px-2 py-2">Variante</th>
+                      <th className="px-2 py-2">SKU</th>
+                      <th className="w-[20%] px-2 py-2">Código de barras</th>
+                      {showStock && <th className="w-[11%] px-2 py-2">Stock</th>}
+                      <th className="w-[15%] px-2 py-2">Precio</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.slice(pg.start, pg.end).map((r) => (
                       <tr key={r.key} className="border-t border-border align-middle">
-                        <td className="max-w-[10rem] truncate px-2.5 py-1.5 font-medium text-foreground" title={variantName(baseName || "Producto", r.size, r.color)}>
+                        <td className="truncate px-2 py-1.5 font-medium text-foreground" title={variantName(baseName || "Producto", r.size, r.color)}>
                           {[r.size, r.color].filter(Boolean).join(" · ")}
                         </td>
-                        <td className="px-2.5 py-1.5">
-                          <Input value={r.sku} onChange={(e) => edit(r.key, "sku", e.target.value)} maxLength={60} aria-label={`SKU de ${r.size} ${r.color}`} className="h-8 min-w-[12rem]" />
+                        <td className="px-2 py-1.5">
+                          <Input value={r.sku} onChange={(e) => edit(r.key, "sku", e.target.value)} maxLength={60} aria-label={`SKU de ${r.size} ${r.color}`} className="h-8" />
                         </td>
-                        <td className="px-2.5 py-1.5">
-                          <Input value={r.barcode} onChange={(e) => edit(r.key, "barcode", e.target.value)} aria-label={`Código de barras de ${r.size} ${r.color}`} className="h-8 min-w-[8rem]" placeholder="Opcional" />
+                        <td className="px-2 py-1.5">
+                          <Input value={r.barcode} onChange={(e) => edit(r.key, "barcode", e.target.value)} aria-label={`Código de barras de ${r.size} ${r.color}`} className="h-8" placeholder="Opcional" />
                         </td>
                         {showStock && (
-                          <td className="px-2.5 py-1.5">
-                            <Input type="number" min={0} step="0.01" value={r.stock} onChange={(e) => edit(r.key, "stock", e.target.value)} aria-label={`Stock de ${r.size} ${r.color}`} className="h-8 w-20" />
+                          <td className="px-2 py-1.5">
+                            <Input type="number" min={0} step="0.01" value={r.stock} onChange={(e) => edit(r.key, "stock", e.target.value)} aria-label={`Stock de ${r.size} ${r.color}`} className="h-8" />
                           </td>
                         )}
-                        <td className="px-2.5 py-1.5">
+                        <td className="px-2 py-1.5">
                           {priceMode === "each" ? (
-                            <Input type="number" min={0} step="0.01" value={r.price} onChange={(e) => edit(r.key, "price", e.target.value)} aria-label={`Precio de ${r.size} ${r.color}`} className="h-8 w-24" />
+                            <Input type="number" min={0} step="0.01" value={r.price} onChange={(e) => edit(r.key, "price", e.target.value)} aria-label={`Precio de ${r.size} ${r.color}`} className="h-8" />
                           ) : (
                             <span className="text-foreground">{r.price}</span>
                           )}

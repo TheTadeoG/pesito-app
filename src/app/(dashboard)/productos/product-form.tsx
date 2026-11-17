@@ -626,7 +626,7 @@ export function ProductForm({
       onClose={resetAndClose}
       title={isEdit ? "Editar producto" : "Nuevo producto"}
       description={isEdit ? (groupMode && product ? baseNameOf(product) : product?.name) : "Sumá un producto a tu catálogo."}
-      size={groupMode ? "xl" : "lg"}
+      size={groupMode || variantsOn ? "xl" : "lg"}
     >
       <form data-tour="product-form" onSubmit={handleSubmit} className="space-y-4">
         {tabbed && (
