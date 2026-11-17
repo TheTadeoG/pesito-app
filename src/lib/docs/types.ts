@@ -26,26 +26,15 @@ export interface DocCategory {
   description: string;
 }
 
-/** Un elemento de una ilustración esquemática. `hot` lo resalta (es lo que hay que tocar o mirar en ese paso). */
-export type DocMockEl =
-  | { t: "btn"; text: string; hot?: boolean; tone?: "primary" | "outline" | "danger" }
-  | { t: "input"; text: string; hot?: boolean }
-  | { t: "text"; text: string; strong?: boolean; muted?: boolean; hot?: boolean }
-  | { t: "chip"; text: string; hot?: boolean }
-  | { t: "item"; text: string; detail?: string; price?: string; hot?: boolean }
-  | { t: "total"; text: string; price: string; hot?: boolean }
-  | { t: "tabs"; items: string[]; active?: number; hot?: number };
-
 /**
- * Ilustración esquemática de una pantalla (no es una captura: se dibuja con la web, se ve en modo claro y oscuro y no se
- * desactualiza por una foto vieja). Cada fila es una línea de elementos; los `hot` marcan dónde tocar.
+ * Captura de la pantalla real (con datos de ejemplo) con lo que hay que tocar resaltado en verde. Las imágenes viven en
+ * public/ayuda/<name>.webp y se generan con `node scripts/docs-shots/shots.mjs` (ver scripts/docs-shots/README.md).
  */
-export interface DocMock {
-  /** Nombre de la pantalla o ventana ("Punto de Venta"). */
-  title: string;
-  rows: DocMockEl[][];
-  /** Texto alternativo: qué muestra la ilustración (para lectores de pantalla). */
-  caption: string;
+export interface DocImage {
+  /** Nombre del archivo, sin extensión (debe figurar en public/ayuda/manifest.json). */
+  name: string;
+  /** Texto alternativo: qué muestra la imagen y qué está resaltado. */
+  alt: string;
 }
 
 /** Un paso. Los nombres de botones y pantallas van entre **dobles asteriscos** (se muestran en negrita). */
@@ -53,8 +42,8 @@ export interface DocStep {
   text: string;
   /** Aclaración corta debajo del paso. */
   note?: string;
-  /** Ilustración esquemática de la pantalla en este paso (opcional). */
-  mock?: DocMock;
+  /** Capturas de la pantalla en este paso (opcional). */
+  images?: DocImage[];
 }
 
 /** Un efecto en otro módulo ("Al vender, el stock baja solo"), con la guía donde se explica. */

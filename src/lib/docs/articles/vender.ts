@@ -18,41 +18,16 @@ export const venderDocs: DocArticle[] = [
     steps: [
       { text: "Entrá a **Punto de Venta**. Si no tenés la caja abierta, tocá **Abrir caja** y poné el monto inicial." },
       {
-        text: "Escaneá el código de barras o escribí el nombre en el buscador. Los productos se suman al carrito.", mock: {
-          title: "Punto de Venta",
-          caption: "el buscador arriba, con los productos agregados abajo y el total",
-          rows: [
-            [{ t: "input", text: "Escaneá el código de barras o buscá por nombre…", hot: true }, { t: "chip", text: "Combos" }],
-            [{ t: "item", text: "Gaseosa 500 ml", detail: "x1", price: "$1.800" }],
-            [{ t: "item", text: "Alfajor triple", detail: "x2", price: "$2.400" }],
-            [{ t: "total", text: "Total", price: "$4.200" }],
-          ],
-        },
+        text: "Escaneá el código de barras o escribí el nombre en el buscador. Los productos se suman al carrito.", images: [{ name: "pos-buscador", alt: "Punto de Venta con el buscador resaltado, arriba del carrito" }],
         note: "Con las flechas ↑ y ↓ elegís un resultado y con **Enter** lo agregás. La lupa de la izquierda muestra todo el catálogo.",
       },
       { text: "Si hace falta, cambiá la cantidad de cada producto con los botones **−** y **+**, o sacalo del carrito." },
       {
-        text: "Si la venta es para un cliente, elegilo en el carrito. Si no elegís a nadie, queda como **Consumidor Final**.",
+        text: "Si la venta es para un cliente, elegilo en el carrito. Si no elegís a nadie, queda como **Consumidor Final**.", images: [{ name: "pos-cliente", alt: "Panel del cliente con Consumidor Final resaltado, arriba del total" }],
         note: "Para vender fiado el cliente es obligatorio.",
       },
-      { text: "Tocá **Cobrar** (o apretá **Enter** dos veces) y elegí el medio de pago: **Efectivo**, **Tarjeta**, **Transferencia**, **QR**, **Mixto** o **Fiado**.", mock: {
-          title: "Punto de Venta",
-          caption: "el botón Cobrar debajo del total y, al tocarlo, los medios de pago",
-          rows: [
-            [{ t: "total", text: "Total", price: "$4.200" }],
-            [{ t: "btn", text: "Cobrar (Doble Enter)", hot: true }],
-            [{ t: "chip", text: "Efectivo" }, { t: "chip", text: "Tarjeta" }, { t: "chip", text: "Transferencia" }, { t: "chip", text: "QR" }, { t: "chip", text: "Mixto" }, { t: "chip", text: "Fiado" }],
-          ],
-        } },
-      { text: "Confirmá con **Confirmar venta** (o **Enter**). Aparece **¡Venta cobrada!** con el total y el vuelto.", mock: {
-          title: "¡Venta cobrada!",
-          caption: "la ventana de venta cobrada, con el botón Nueva venta",
-          rows: [
-            [{ t: "text", text: "¡Venta cobrada!", strong: true }],
-            [{ t: "total", text: "Total", price: "$4.200" }],
-            [{ t: "btn", text: "Imprimir ticket (no fiscal)", tone: "outline" }, { t: "btn", text: "Nueva venta" }],
-          ],
-        } },
+      { text: "Tocá **Cobrar** (o apretá **Enter** dos veces) y elegí el medio de pago: **Efectivo**, **Tarjeta**, **Transferencia**, **QR**, **Mixto** o **Fiado**.", images: [{ name: "pos-cobrar", alt: "Punto de Venta con el botón Cobrar resaltado, debajo del total" }, { name: "pos-medios", alt: "Ventana ¿Cómo paga? con los medios de pago: Efectivo, Tarjeta, Transferencia, QR, Mixto y Fiado" }] },
+      { text: "Confirmá con **Confirmar venta** (o **Enter**). Aparece **¡Venta cobrada!** con el total y el vuelto." },
       { text: "Tocá **Nueva venta** (o **Enter**) para seguir con el próximo cliente." },
     ],
     tips: [
@@ -90,8 +65,8 @@ export const venderDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Armá el carrito y tocá **Cobrar**." },
-      { text: "Elegí **Efectivo**. Se abre **Pago en efectivo** con el total a cobrar." },
-      { text: "En **¿Con cuánto paga?** escribí el billete con el que paga el cliente. Si dejás el campo vacío, se toma que paga justo." },
+      { text: "Elegí **Efectivo**. Se abre **Pago en efectivo** con el total a cobrar.", images: [{ name: "pos-medios", alt: "Ventana ¿Cómo paga? con los medios de pago: Efectivo, Tarjeta, Transferencia, QR, Mixto y Fiado" }] },
+      { text: "En **¿Con cuánto paga?** escribí el billete con el que paga el cliente. Si dejás el campo vacío, se toma que paga justo.", images: [{ name: "pos-efectivo", alt: "Ventana Pago en efectivo con el campo ¿Con cuánto paga? resaltado y el vuelto calculado" }] },
       { text: "Mirá el **Vuelto** que te muestra el sistema, con los billetes sugeridos para dárselo." },
       { text: "Tocá **Confirmar venta** (o **Enter**)." },
     ],
@@ -125,8 +100,8 @@ export const venderDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Armá el carrito y tocá **Cobrar**." },
-      { text: "Elegí **Mixto**. Se abre **Combinar medios de pago**." },
-      { text: "Asigná cuánto paga con cada medio (por ejemplo, una parte en **Efectivo** y otra en **Tarjeta**)." },
+      { text: "Elegí **Mixto**. Se abre **Combinar medios de pago**.", images: [{ name: "pos-medios", alt: "Ventana ¿Cómo paga? con los medios de pago: Efectivo, Tarjeta, Transferencia, QR, Mixto y Fiado" }] },
+      { text: "Asigná cuánto paga con cada medio (por ejemplo, una parte en **Efectivo** y otra en **Tarjeta**).", images: [{ name: "pos-mixto", alt: "Ventana Combinar medios de pago para repartir el total entre varios medios" }] },
       { text: "Mirá el indicador **Asignado / Total**: tiene que llegar al total de la venta. Si falta, dice **Falta asignar**; si te pasás, dice **Te pasaste**." },
       { text: "Cuando coincida, tocá **Confirmar venta**." },
     ],
@@ -158,8 +133,8 @@ export const venderDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Armá el carrito en **Punto de Venta**." },
-      { text: "Elegí al cliente. Para fiar es obligatorio." },
-      { text: "Tocá **Cobrar** y elegí **Fiado**." },
+      { text: "Elegí al cliente. Para fiar es obligatorio.", images: [{ name: "pos-cliente", alt: "Panel del cliente con Consumidor Final resaltado, arriba del total" }] },
+      { text: "Tocá **Cobrar** y elegí **Fiado**.", images: [{ name: "pos-medios", alt: "Ventana ¿Cómo paga? con los medios de pago: Efectivo, Tarjeta, Transferencia, QR, Mixto y Fiado" }] },
       { text: "Confirmá con **Confirmar venta**. La venta suma a lo que el cliente te debe." },
     ],
     tips: [
@@ -193,8 +168,8 @@ export const venderDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Armá el carrito en **Punto de Venta**." },
-      { text: "Tocá **Agregar descuento o recargo**." },
-      { text: "En **Descuento** o **Recargo** elegí si es en pesos (**$**) o porcentaje (**%**) y escribí el valor." },
+      { text: "Tocá **Agregar descuento o recargo**.", images: [{ name: "pos-descuento", alt: "Punto de Venta con el botón Agregar descuento o recargo resaltado" }] },
+      { text: "En **Descuento** o **Recargo** elegí si es en pesos (**$**) o porcentaje (**%**) y escribí el valor.", images: [{ name: "pos-descuento-campos", alt: "Campos Descuento y Recargo abiertos debajo del botón Cobrar" }] },
       { text: "El total se actualiza. Cobrá como siempre." },
     ],
     tips: [
@@ -226,7 +201,7 @@ export const venderDocs: DocArticle[] = [
       "El monto libre sirve para cobrar algo que no tenés cargado como producto: un servicio, un producto suelto o un precio que no querés crear. Suma al total como cualquier otro ítem, pero no tiene stock ni costo.",
     ],
     steps: [
-      { text: "En **Punto de Venta**, tocá el botón **+** que está al lado del buscador (**Agregar monto manual**)." },
+      { text: "En **Punto de Venta**, tocá el botón **+** que está al lado del buscador (**Agregar monto manual**).", images: [{ name: "pos-manual", alt: "Punto de Venta con el botón + de monto manual resaltado, al lado del buscador" }] },
       { text: "Escribí una **Descripción** (opcional) y el **Monto**." },
       { text: "Confirmá. El importe se suma al carrito como **Monto libre**." },
       { text: "Cobrá como siempre." },
@@ -283,7 +258,7 @@ export const venderDocs: DocArticle[] = [
       "Un combo se vende como un solo producto con un solo precio, pero al cobrarlo Pesito descuenta del stock cada uno de los productos que lleva. Cuántos combos podés armar depende del producto que se te acaba primero.",
     ],
     steps: [
-      { text: "En **Punto de Venta**, tocá el chip **Combos** debajo del buscador (o apretá **Alt + C**). Aparecen solo los combos." },
+      { text: "En **Punto de Venta**, tocá el chip **Combos** debajo del buscador (o apretá **Alt + C**). Aparecen solo los combos.", images: [{ name: "pos-combos", alt: "Punto de Venta con el chip Combos resaltado debajo del buscador" }] },
       { text: "También podés escribir **combo** o **kit** en el buscador para listarlos." },
       { text: "Cada combo muestra su precio, qué lleva (**Incluye:**) y cuántos podés armar (**Podés armar:**)." },
       { text: "Elegí el combo para agregarlo al carrito y cobrá como siempre." },
@@ -440,7 +415,7 @@ export const venderDocs: DocArticle[] = [
     where: "**Punto de Venta**",
     steps: [
       { text: "Entrá a **Punto de Venta**. El cursor ya está en el buscador." },
-      { text: "Con lector de códigos, escaneá el producto: se suma solo al carrito." },
+      { text: "Con lector de códigos, escaneá el producto: se suma solo al carrito.", images: [{ name: "pos-buscador", alt: "Punto de Venta con el buscador resaltado, arriba del carrito" }] },
       {
         text: "Sin lector, escribí parte del nombre o el SKU. Con las flechas ↑ y ↓ elegís un resultado y con **Enter** lo agregás.",
         note: "Si escribís “combo” o “kit”, ves sólo los combos.",
@@ -493,7 +468,7 @@ export const venderDocs: DocArticle[] = [
     plan: null,
     where: "**Punto de Venta → panel del cliente**",
     steps: [
-      { text: "En el panel de la derecha, tocá **Cambiar** (por defecto figura **Consumidor Final**)." },
+      { text: "En el panel de la derecha, tocá **Cambiar** (por defecto figura **Consumidor Final**).", images: [{ name: "pos-cliente", alt: "Panel del cliente con Consumidor Final resaltado, arriba del total" }] },
       { text: "Escribí el nombre, teléfono o documento en **Buscar cliente…** y elegí con ↑ ↓ y **Enter**. Con **Ver todos los clientes** ves la lista completa." },
       {
         text: "Si no existe, tocá **Cargar cliente nuevo**, escribí **Nombre y apellido** y confirmá con **Crear y seleccionar**.",

@@ -12,7 +12,7 @@ export const stockDocs: DocArticle[] = [
     where: "**Productos → tres puntitos del producto → Ajustar stock**",
     steps: [
       { text: "En **Productos**, buscá el producto y tocá los tres puntitos de su fila." },
-      { text: "Elegí **Ajustar stock**." },
+      { text: "Elegí **Ajustar stock**.", images: [{ name: "productos-ajustar-stock", alt: "Menú de tres puntitos de un producto con Ajustar stock resaltado" }] },
       {
         text: "Elegí cómo ajustar: **Sumar**, **Restar** o **Ajustar a** (dejás el stock en el número real que contaste).",
         note: "Con **Ajustar a** escribís la **Nueva cantidad en stock**; con Sumar o Restar, la **Cantidad**.",
@@ -62,7 +62,7 @@ export const stockDocs: DocArticle[] = [
     plan: "basico",
     where: "**Productos → Filtros → Estado del stock**",
     steps: [
-      { text: "Entrá a **Productos** y tocá **Filtros**." },
+      { text: "Entrá a **Productos** y tocá **Filtros**.", images: [{ name: "productos-filtros", alt: "Lista de Productos con el panel de filtros abierto" }] },
       { text: "En **Estado del stock** elegí **Sin stock** o **Por agotarse** (los que están en el mínimo o por debajo)." },
       { text: "Para que un producto avise a tiempo, abrilo con el lápiz y cargá su **Stock mínimo**." },
     ],

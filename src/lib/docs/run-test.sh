@@ -7,4 +7,4 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 cp -r src/lib/docs "$tmp/docs"
 sed -i -E 's#"@/lib/docs/(articles/[a-z]+|categories|types)"#"./\1.ts"#' "$tmp/docs/index.ts"
-node --experimental-strip-types --no-warnings "$tmp/docs/docs.test.mts"
+DOCS_PUBLIC="$(pwd)/public/ayuda" node --experimental-strip-types --no-warnings "$tmp/docs/docs.test.mts"

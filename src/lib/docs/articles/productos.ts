@@ -15,27 +15,18 @@ export const productosDocs: DocArticle[] = [
       "Cada cosa que vendés tiene que estar cargada como producto: es lo que aparece en el Punto de Venta, lo que se controla en el stock y lo que alimenta los reportes de ganancia. Cargarlo bien una vez te ahorra errores después.",
     ],
     steps: [
-      { text: "Entrá a **Productos** y tocá **Nuevo producto**." },
+      { text: "Entrá a **Productos** y tocá **Nuevo producto**.", images: [{ name: "productos-nuevo", alt: "Formulario Nuevo producto completo" }] },
       { text: "En **¿Qué tipo de producto es?** dejá **Simple** (la opción de siempre) y completá el **Nombre**. Si querés, subí una imagen y elegí la **Marca**." },
       {
-        text: "Poné el **SKU**: es el código propio del producto y no se puede repetir. Tocá **Generar** si querés que el sistema te dé el próximo libre.", mock: {
-          title: "Nuevo producto",
-          caption: "los campos de SKU, precio de venta y el botón Generar",
-          rows: [
-            [{ t: "text", text: "Nombre", strong: true }, { t: "input", text: "Gaseosa 500 ml" }],
-            [{ t: "text", text: "SKU", strong: true }, { t: "input", text: "P-00001" }, { t: "btn", text: "Generar", tone: "outline", hot: true }],
-            [{ t: "text", text: "Precio de venta", strong: true }, { t: "input", text: "$ 1.800" }],
-            [{ t: "btn", text: "Crear producto" }],
-          ],
-        },
+        text: "Poné el **SKU**: es el código propio del producto y no se puede repetir. Tocá **Generar** si querés que el sistema te dé el próximo libre.", images: [{ name: "productos-nuevo-sku", alt: "Formulario Nuevo producto con el campo SKU resaltado" }],
         note: "Si tiene código de barras, podés escanearlo en el campo **Código de barras** (opcional).",
       },
       {
         text: "Escribí el **Precio de venta** (con IVA). Si querés, cargá también el **Costo**.",
-        note: "Con **Calcular con IVA** podés cargar el precio sin IVA y el sistema calcula el final.",
+        note: "Debajo del precio hay una calculadora de IVA: cargás el precio **Sin IVA** y el sistema calcula el **Final (con IVA)**.",
       },
-      { text: "En **Stock inicial** poné cuántas unidades tenés hoy y en **Stock mínimo** cuántas querés tener como mínimo (el sistema te avisa cuando baja de ahí)." },
-      { text: "En **Cómo lo vendés** elegí la unidad (unidad, kilo, litro, pack…). Completá **Presentación** o **Proveedor habitual** si te sirven." },
+      { text: "En **Stock inicial** poné cuántas unidades tenés hoy y en **Stock mínimo** cuántas querés tener como mínimo (el sistema te avisa cuando baja de ahí).", images: [{ name: "productos-nuevo-minimo", alt: "Formulario Nuevo producto con el campo Stock mínimo resaltado" }] },
+      { text: "En **Cómo lo vendés** elegí la unidad (unidad, kilo, litro, pack…). Completá **Presentación** o **Proveedor habitual** si te sirven.", images: [{ name: "productos-nuevo-unidad", alt: "Formulario Nuevo producto con el campo Cómo lo vendés resaltado" }] },
       { text: "Tocá **Crear producto**." },
     ],
     tips: [
@@ -72,7 +63,7 @@ export const productosDocs: DocArticle[] = [
       "La carga desde Excel te permite pasar todo tu catálogo de una vez: bajás la planilla modelo, la completás y Pesito te muestra una vista previa antes de guardar nada, para que puedas corregir errores.",
     ],
     steps: [
-      { text: "Entrá a **Productos**, tocá **Acciones** y elegí **Cargar desde Excel**." },
+      { text: "Entrá a **Productos**, tocá **Acciones** y elegí **Cargar desde Excel**.", images: [{ name: "productos-cargar-excel", alt: "Menú Acciones de Productos con Cargar desde Excel resaltado" }] },
       { text: "Tocá **Descargar planilla modelo** y completala con tus productos. Hay una hoja con instrucciones (**Cómo completarla**)." },
       {
         text: "En la hoja **Productos**, completá una fila por producto. Los títulos con asterisco rojo son obligatorios (nombre, SKU y precio).",
@@ -113,7 +104,7 @@ export const productosDocs: DocArticle[] = [
     plan: null,
     where: "**Productos → Acciones → Descargar Excel**",
     steps: [
-      { text: "Entrá a **Productos**, tocá **Acciones** y elegí **Descargar Excel**." },
+      { text: "Entrá a **Productos**, tocá **Acciones** y elegí **Descargar Excel**.", images: [{ name: "productos-descargar-excel", alt: "Menú Acciones de Productos con Descargar Excel resaltado" }] },
       {
         text: "Elegí qué productos querés: **Lo que estoy viendo** (con la búsqueda y los filtros de ahora), **Todos los productos activos** o **Todos, con los inactivos**.",
       },
@@ -137,7 +128,7 @@ export const productosDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Entrá a **Productos**, tocá **Nuevo producto** y completá el **Nombre**." },
-      { text: "En **¿Qué tipo de producto es?** elegí **Con talles o colores**." },
+      { text: "En **¿Qué tipo de producto es?** elegí **Con talles o colores**.", images: [{ name: "productos-nuevo-talles", alt: "Formulario Nuevo producto con la opción Con talles o colores resaltada" }] },
       { text: "Poné el **SKU base** (de ahí se arma el SKU de cada variante) y, si querés, el **Costo**." },
       {
         text: "En **1 · ¿Qué talles y colores tiene?** tocá los talles (solapas **Ropa** y **Calzado**) y los colores. Cualquier otro lo escribís y sumás con **Agregar**.",
@@ -175,7 +166,7 @@ export const productosDocs: DocArticle[] = [
     plan: "basico",
     where: "**Productos → lápiz del producto → solapa Variantes**",
     steps: [
-      { text: "En **Productos**, buscá el producto y tocá el lápiz (**Editar**)." },
+      { text: "En **Productos**, buscá el producto y abrí sus tres puntitos: elegí **Agregar talles o colores** (o tocá el lápiz y abrí la solapa **Variantes**).", images: [{ name: "productos-agregar-talles", alt: "Menú de tres puntitos de un producto con Agregar talles o colores resaltado" }] },
       { text: "Abrí la solapa **Variantes**." },
       {
         text: "Si el producto todavía no tenía variantes, el sistema te pregunta qué talle y color es el producto actual: pasa a ser una de ellas.",
@@ -208,7 +199,7 @@ export const productosDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Entrá a **Productos**, tocá **Nuevo producto** y completá el **Nombre** del combo." },
-      { text: "En **¿Qué tipo de producto es?** elegí **Combo o kit**." },
+      { text: "En **¿Qué tipo de producto es?** elegí **Combo o kit**.", images: [{ name: "productos-nuevo-combo", alt: "Formulario Nuevo producto con la opción Combo o kit resaltada" }] },
       { text: "En **Productos del combo** buscá cada producto y sumalo. Poné la **Cantidad** de cada uno." },
       {
         text: "Elegí el precio: **Precio fijo** (lo ponés vos) o **Suma con descuento** (la suma de los productos menos un porcentaje).",
@@ -248,7 +239,7 @@ export const productosDocs: DocArticle[] = [
     where: "**Productos → lápiz del producto**",
     steps: [
       { text: "En **Productos**, buscá el producto y tocá el lápiz (**Editar**)." },
-      { text: "Cambiá el **Precio de venta** (podés usar **Calcular con IVA** para cargarlo sin IVA)." },
+      { text: "Cambiá el **Precio de venta** (debajo tenés la calculadora de IVA si lo cargás sin IVA)." },
       { text: "Tocá **Guardar cambios**." },
     ],
     tips: [
@@ -305,7 +296,7 @@ export const productosDocs: DocArticle[] = [
       "Cuando sube un proveedor o hay inflación, actualizar producto por producto lleva horas. Con el ajuste masivo elegís un proveedor o una marca y subís (o bajás) todos sus precios o costos juntos.",
     ],
     steps: [
-      { text: "En **Productos**, tocá **Acciones** y elegí **Ajustar precios** (o **Ajustar costos** si cambió lo que te cobra el proveedor)." },
+      { text: "En **Productos**, tocá **Acciones** y elegí **Ajustar precios** (o **Ajustar costos** si cambió lo que te cobra el proveedor).", images: [{ name: "productos-ajustar-precios", alt: "Menú Acciones de Productos con Ajustar precios resaltado" }] },
       { text: "En **Agrupar por** elegí **Proveedor** o **Marca** y después cuál." },
       { text: "En **Tipo de ajuste** elegí **Porcentaje (%)** o **Monto fijo ($)** y escribí cuánto subir o bajar." },
       {
@@ -345,7 +336,7 @@ export const productosDocs: DocArticle[] = [
       "Si vendés productos sueltos o sin código de fábrica, podés generarles uno propio, imprimir la etiqueta y pegarla: así escaneás todo en el Punto de Venta en vez de buscar por nombre.",
     ],
     steps: [
-      { text: "En **Productos**, tocá **Acciones** y elegí **Etiquetas con código de barras**." },
+      { text: "En **Productos**, tocá **Acciones** y elegí **Etiquetas con código de barras**.", images: [{ name: "productos-etiquetas", alt: "Menú Acciones de Productos con Etiquetas con código de barras resaltado" }] },
       { text: "Buscá y elegí los productos. Podés filtrar por marca, por proveedor o por los que no tienen código (**Sin código**)." },
       { text: "Tocá para generar el código de los que no tienen (aparecen en **Códigos generados**)." },
       { text: "En **Imprimir en** elegí **Hoja A4 (varias por hoja)** o **Rollo de etiquetera (una por etiqueta)** y el **Tamaño de la etiqueta**." },
@@ -377,7 +368,7 @@ export const productosDocs: DocArticle[] = [
     plan: null,
     where: "**Productos → Acciones → Marcas**",
     steps: [
-      { text: "En **Productos**, tocá **Acciones** y elegí **Marcas**. Elegí si querés cargarlas a mano o desde Excel." },
+      { text: "En **Productos**, tocá **Acciones** y elegí **Marcas**. Elegí si querés cargarlas a mano o desde Excel.", images: [{ name: "productos-marcas", alt: "Menú Acciones de Productos con Marcas resaltado" }] },
       { text: "A mano: tocá **Nueva marca**, escribí el nombre y **Guardar**." },
       { text: "Desde Excel: descargá la planilla modelo, completala y subila." },
       { text: "En la lista de marcas ves cuántos productos tiene cada una y podés buscarlas. **Descargar Excel** te lleva la lista." },
@@ -402,7 +393,7 @@ export const productosDocs: DocArticle[] = [
     where: "**Productos → tres puntitos del producto**",
     steps: [
       { text: "En **Productos**, buscá el producto y tocá los tres puntitos (**Más acciones**)." },
-      { text: "Elegí **Desactivar** para que deje de aparecer en el Punto de Venta pero conserve su historial. Para volver a usarlo, tocá **Activar**." },
+      { text: "Elegí **Desactivar** para que deje de aparecer en el Punto de Venta pero conserve su historial. Para volver a usarlo, tocá **Activar**.", images: [{ name: "productos-desactivar", alt: "Menú de tres puntitos de un producto con Desactivar resaltado" }] },
       { text: "O elegí **Borrar** para eliminarlo del todo. El sistema te pide confirmar." },
     ],
     tips: [
@@ -431,10 +422,10 @@ export const productosDocs: DocArticle[] = [
     plan: null,
     where: "**Productos**",
     steps: [
-      { text: "En **Productos**, escribí en el buscador (**Buscar por nombre, marca, SKU o código…**)." },
+      { text: "En **Productos**, escribí en el buscador (**Buscar por nombre, marca, SKU o código…**).", images: [{ name: "productos-buscador", alt: "Lista de Productos con el buscador resaltado" }] },
       { text: "Para filtrar por marca, usá el selector **Todas las marcas**." },
       {
-        text: "Tocá **Filtros** para más opciones: **Proveedor**, **Estado del stock** (sin stock, por agotarse, sin mínimo), **Activos e inactivos**, **Tipo de producto** (simples, con talles y colores, combos y kits), **Sin código de barras** y **Sin costo cargado**.",
+        text: "Tocá **Filtros** para más opciones: **Proveedor**, **Estado del stock** (sin stock, por agotarse, sin mínimo), **Activos e inactivos**, **Tipo de producto** (simples, con talles y colores, combos y kits), **Sin código de barras** y **Sin costo cargado**.", images: [{ name: "productos-filtros", alt: "Lista de Productos con el panel de filtros abierto" }],
       },
       { text: "Tocá **Limpiar filtros** para volver a ver todo." },
       { text: "Con **Columnas** elegís qué columnas ver en la tabla (se guarda en este dispositivo)." },
@@ -453,7 +444,7 @@ export const productosDocs: DocArticle[] = [
     where: "**Productos → tres puntitos del producto → Historial de precios y costos**",
     steps: [
       { text: "En **Productos**, buscá el producto y tocá los tres puntitos de su fila." },
-      { text: "Elegí **Historial de precios y costos**." },
+      { text: "Elegí **Historial de precios y costos**.", images: [{ name: "productos-historial", alt: "Menú de tres puntitos de un producto con Historial de precios y costos resaltado" }] },
       { text: "Revisá la lista de cambios, del más nuevo al más viejo." },
     ],
     tips: ["Sirve para ver desde cuándo vendés a un precio, o cuánto subió el costo con el tiempo."],
@@ -470,7 +461,7 @@ export const productosDocs: DocArticle[] = [
     where: "**Productos → Nuevo producto o lápiz del producto**",
     steps: [
       { text: "Abrí el producto (**Nuevo producto** o el lápiz de uno existente)." },
-      { text: "Tocá **Subir imagen** y elegí un archivo de imagen de tu dispositivo." },
+      { text: "Tocá **Subir imagen** y elegí un archivo de imagen de tu dispositivo.", images: [{ name: "productos-nuevo-imagen", alt: "Formulario Nuevo producto con el botón Subir imagen resaltado" }] },
       { text: "Guardá el producto." },
     ],
     tips: [
@@ -490,10 +481,10 @@ export const productosDocs: DocArticle[] = [
     category: "productos",
     summary: "Si tu precio viene sin IVA, cargalo y elegí la alícuota: Pesito calcula el precio final que se cobra.",
     plan: null,
-    where: "**Productos → Nuevo producto o lápiz → Calcular con IVA**",
+    where: "**Productos → Nuevo producto o lápiz → Precio de venta**",
     steps: [
       { text: "Abrí el producto (**Nuevo producto** o el lápiz de uno existente)." },
-      { text: "Junto al **Precio de venta**, tocá **Calcular con IVA**." },
+      { text: "Debajo del **Precio de venta** está la calculadora de IVA (se puede ocultar con **Ocultar IVA** y volver a mostrar con **Calcular con IVA**).", images: [{ name: "productos-nuevo-iva", alt: "Formulario Nuevo producto con la calculadora de IVA del precio resaltada" }] },
       { text: "Elegí la alícuota (21%, 10,5%, 27% o **Exento / 0%**)." },
       { text: "Escribí el precio en **Sin IVA**: el **Final (con IVA)** se calcula solo y es el que queda cargado." },
       { text: "Guardá el producto." },
@@ -515,7 +506,7 @@ export const productosDocs: DocArticle[] = [
     where: "**Productos → Nuevo producto o lápiz → Cómo lo vendés**",
     steps: [
       { text: "Abrí el producto (**Nuevo producto** o el lápiz de uno existente)." },
-      { text: "En **Cómo lo vendés** elegí la unidad: **Unidad**, **Kilogramo**, **Gramo**, **Litro**, **Mililitro**, **Pack** o **Caja**." },
+      { text: "En **Cómo lo vendés** elegí la unidad: **Unidad**, **Kilogramo**, **Gramo**, **Litro**, **Mililitro**, **Pack** o **Caja**.", images: [{ name: "productos-nuevo-unidad", alt: "Formulario Nuevo producto con el campo Cómo lo vendés resaltado" }] },
       { text: "En **Presentación (opcional)** aclará cómo viene agrupado (por ejemplo, “Pack de 6”, “Fardo de 12”) para que se entienda al vender." },
       { text: "En **Unidades por bulto del proveedor (opcional)** poné cuántas unidades trae cada caja, fardo o pack que te vende el proveedor." },
       { text: "Guardá el producto." },

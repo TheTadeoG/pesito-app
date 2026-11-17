@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+
+const manifest = JSON.parse(readFileSync(`${process.env.DOCS_PUBLIC}/manifest.json`, "utf8"));
 import { docArticles } from "./index.ts";
 import { docCategories } from "./categories.ts";
 import { buildIndex, normalize, searchDocs, tokens } from "./search.ts";
@@ -35,7 +38,10 @@ for (const a of docArticles) {
 }
 for (const a of docArticles)
   for (const st of a.steps)
-    if (st.mock) assert.ok(st.mock.rows.length > 0 && st.mock.caption.length >= 15 && st.mock.title.length > 0, `${a.slug}: ilustración incompleta`);
+    for (const img of st.images ?? []) {
+      assert.ok(/^[a-z0-9-]+$/.test(img.name) && img.alt.length >= 15, `${a.slug}: imagen inválida (${img.name})`);
+      assert.ok(existsSync(`${process.env.DOCS_PUBLIC}/${img.name}.webp`) && (manifest as Record<string, unknown>)[img.name] !== undefined, `${a.slug}: falta public/ayuda/${img.name}.webp (o no está en manifest.json)`);
+    }
 for (const a of docArticles) for (const r of a.related ?? []) assert.ok(slugs.has(r), `${a.slug}: la guía relacionada "${r}" no existe`);
 
 // --- Formato ---

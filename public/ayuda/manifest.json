@@ -1,0 +1,118 @@
+{
+  "pos-buscador": {
+    "w": 856,
+    "h": 386
+  },
+  "pos-combos": {
+    "w": 856,
+    "h": 386
+  },
+  "pos-cobrar": {
+    "w": 856,
+    "h": 386
+  },
+  "pos-descuento": {
+    "w": 856,
+    "h": 386
+  },
+  "pos-descuento-campos": {
+    "w": 1152,
+    "h": 473
+  },
+  "pos-manual": {
+    "w": 856,
+    "h": 386
+  },
+  "pos-cliente": {
+    "w": 856,
+    "h": 386
+  },
+  "pos-medios": {
+    "w": 512,
+    "h": 428
+  },
+  "pos-efectivo": {
+    "w": 512,
+    "h": 346
+  },
+  "pos-mixto": {
+    "w": 512,
+    "h": 528
+  },
+  "productos-descargar-excel": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-cargar-excel": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-etiquetas": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-ajustar-precios": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-marcas": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-ajustar-stock": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-historial": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-desactivar": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-agregar-talles": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-nuevo": {
+    "w": 896,
+    "h": 900
+  },
+  "productos-filtros": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-buscador": {
+    "w": 1152,
+    "h": 473
+  },
+  "productos-nuevo-sku": {
+    "w": 896,
+    "h": 900
+  },
+  "productos-nuevo-talles": {
+    "w": 896,
+    "h": 900
+  },
+  "productos-nuevo-combo": {
+    "w": 896,
+    "h": 900
+  },
+  "productos-nuevo-iva": {
+    "w": 896,
+    "h": 900
+  },
+  "productos-nuevo-unidad": {
+    "w": 896,
+    "h": 900
+  },
+  "productos-nuevo-imagen": {
+    "w": 896,
+    "h": 900
+  },
+  "productos-nuevo-minimo": {
+    "w": 896,
+    "h": 900
+  }
+}

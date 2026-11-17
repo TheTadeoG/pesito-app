@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Lightbulb, Link2, MapPin } from "lucide-react";
 import { Navbar } from "@/components/marketing/navbar";
-import { DocMockView } from "@/components/docs/doc-mock";
+import Image from "next/image";
+import shotSizes from "../../../../public/ayuda/manifest.json";
 import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 import { docArticles, docCategories, getDocBySlug } from "@/lib/docs";
@@ -172,7 +173,23 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
                         <Inline text={s.note} />
                       </p>
                     )}
-                    {s.mock && <DocMockView mock={s.mock} />}
+                    {s.images?.map((img) => {
+                      const size = (shotSizes as Record<string, { w: number; h: number }>)[img.name];
+                      if (!size) return null;
+                      return (
+                        <figure key={img.name} className="mt-3">
+                          <Image
+                            src={`/ayuda/${img.name}.webp`}
+                            alt={img.alt}
+                            width={size.w}
+                            height={size.h}
+                            sizes="(min-width: 768px) 720px, 100vw"
+                            unoptimized
+                            className="h-auto w-full rounded-card border border-border"
+                          />
+                        </figure>
+                      );
+                    })}
                   </div>
                 </li>
               ))}
