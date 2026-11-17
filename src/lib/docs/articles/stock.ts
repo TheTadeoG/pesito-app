@@ -97,4 +97,27 @@ export const stockDocs: DocArticle[] = [
     related: ["como-ajustar-el-stock-de-un-producto", "como-ver-los-movimientos-de-stock"],
     updatedAt: UPDATED,
   },
+  {
+    slug: "como-transferir-mercaderia-entre-sucursales",
+    title: "Cómo transferir mercadería entre sucursales",
+    category: "stock",
+    summary: "Pasá productos de una sucursal a otra: el stock sale de una y entra en la otra, y queda registrado.",
+    plan: "max",
+    where: "**Productos → Movimientos → Transferir a otra sucursal**",
+    before: ["Tener la segunda sucursal creada (Plan Max, hasta 2 sucursales)."],
+    steps: [
+      { text: "Entrá a **Productos**, abrí la solapa **Movimientos** y tocá **Transferir a otra sucursal**." },
+      { text: "En **Hacia** elegí la sucursal de destino." },
+      { text: "En **Agregar producto** buscá cada producto y poné cuántas unidades pasás." },
+      { text: "Si querés, escribí una **Nota (opcional)**." },
+      { text: "Tocá **Transferir**." },
+    ],
+    tips: [
+      "Cada sucursal tiene su propio stock y sus cajas.",
+      "En **Movimientos** la transferencia aparece como **Pasó entre sucursales**.",
+    ],
+    keywords: ["transferir", "transferencia", "sucursal", "pasar mercaderia", "mover stock", "otro local", "deposito"],
+    related: ["como-crear-una-sucursal", "como-ver-los-movimientos-de-stock"],
+    updatedAt: UPDATED,
+  },
 ];

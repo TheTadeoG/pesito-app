@@ -327,4 +327,21 @@ export const productosDocs: DocArticle[] = [
     related: ["como-cargar-un-producto"],
     updatedAt: UPDATED,
   },
+  {
+    slug: "como-ver-el-historial-de-precios-y-costos",
+    title: "Cómo ver el historial de precios y costos de un producto",
+    category: "productos",
+    summary: "Mirá cuándo cambió el precio o el costo de un producto y quién lo cambió.",
+    plan: null,
+    where: "**Productos → tres puntitos del producto → Historial de precios y costos**",
+    steps: [
+      { text: "En **Productos**, buscá el producto y tocá los tres puntitos de su fila." },
+      { text: "Elegí **Historial de precios y costos**." },
+      { text: "Revisá la lista de cambios, del más nuevo al más viejo." },
+    ],
+    tips: ["Sirve para ver desde cuándo vendés a un precio, o cuánto subió el costo con el tiempo."],
+    keywords: ["historial de precios", "historial de costos", "cuando cambio el precio", "precio anterior", "cambios de precio", "auditoria"],
+    related: ["como-cambiar-el-precio-de-un-producto", "como-hacer-aumentos-masivos-de-precios"],
+    updatedAt: UPDATED,
+  },
 ];

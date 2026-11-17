@@ -96,4 +96,22 @@ export const comprasDocs: DocArticle[] = [
     related: ["como-registrar-una-compra", "como-cargar-proveedores"],
     updatedAt: UPDATED,
   },
+  {
+    slug: "como-usar-el-calendario-de-pagos-a-proveedores",
+    title: "Cómo usar el calendario de pagos a proveedores",
+    category: "compras",
+    summary: "Mirá en un calendario qué compras vencen cada día y asigná fecha de vencimiento a las que no la tienen.",
+    plan: "basico",
+    where: "**Proveedores → Calendario**",
+    steps: [
+      { text: "Entrá a **Proveedores** y tocá **Calendario**." },
+      { text: "En la vista **Mes** ves qué vence cada día y podés pasar al **Mes anterior** o al **Mes siguiente**." },
+      { text: "Con **Todas las deudas** ves la lista completa, con lo vencido y lo que vence este mes." },
+      { text: "Para las compras sin fecha, elegí una **Fecha de vencimiento** y guardala." },
+    ],
+    tips: ["Las compras a cuenta corriente sin fecha aparecen para que les asignes una."],
+    keywords: ["calendario", "vencimientos", "pagos", "deudas con proveedores", "fechas de pago", "agenda de pagos"],
+    related: ["como-ver-lo-que-le-debes-a-un-proveedor"],
+    updatedAt: UPDATED,
+  },
 ];
