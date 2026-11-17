@@ -33,6 +33,9 @@ for (const a of docArticles) {
     assert.ok(f.a.length >= 40 && (f.a.match(/\*\*/g) ?? []).length % 2 === 0, `${a.slug}: respuesta inválida: ${f.q}`);
   }
 }
+for (const a of docArticles)
+  for (const st of a.steps)
+    if (st.mock) assert.ok(st.mock.rows.length > 0 && st.mock.caption.length >= 15 && st.mock.title.length > 0, `${a.slug}: ilustración incompleta`);
 for (const a of docArticles) for (const r of a.related ?? []) assert.ok(slugs.has(r), `${a.slug}: la guía relacionada "${r}" no existe`);
 
 // --- Formato ---

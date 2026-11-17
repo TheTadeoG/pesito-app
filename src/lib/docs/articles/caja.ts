@@ -15,7 +15,15 @@ export const cajaDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Entrá a **Caja** (menú, o **Alt + 2**) o tocá **Abrir caja para vender** en el bloque de arriba del menú." },
-      { text: "En **Monto inicial (en efectivo)** escribí cuánta plata hay en el cajón al empezar. Si arrancás sin cambio, poné 0." },
+      { text: "En **Monto inicial (en efectivo)** escribí cuánta plata hay en el cajón al empezar. Si arrancás sin cambio, poné 0.", mock: {
+          title: "Caja",
+          caption: "el campo del monto inicial y el botón Abrir caja",
+          rows: [
+            [{ t: "text", text: "Monto inicial (en efectivo)", strong: true }],
+            [{ t: "input", text: "$ 0.00", hot: true }],
+            [{ t: "btn", text: "Abrir caja (Enter)" }],
+          ],
+        } },
       { text: "Tocá **Abrir caja** (o **Enter**). Aparece **¡Caja abierta!** con el monto inicial." },
       { text: "Ya podés vender desde **Punto de Venta**." },
     ],

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Lightbulb, Link2, MapPin } from "lucide-react";
 import { Navbar } from "@/components/marketing/navbar";
+import { DocMockView } from "@/components/docs/doc-mock";
 import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 import { docArticles, docCategories, getDocBySlug } from "@/lib/docs";
@@ -171,6 +172,7 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
                         <Inline text={s.note} />
                       </p>
                     )}
+                    {s.mock && <DocMockView mock={s.mock} />}
                   </div>
                 </li>
               ))}

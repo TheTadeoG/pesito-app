@@ -18,7 +18,16 @@ export const productosDocs: DocArticle[] = [
       { text: "Entrá a **Productos** y tocá **Nuevo producto**." },
       { text: "En **¿Qué tipo de producto es?** dejá **Simple** (la opción de siempre) y completá el **Nombre**. Si querés, subí una imagen y elegí la **Marca**." },
       {
-        text: "Poné el **SKU**: es el código propio del producto y no se puede repetir. Tocá **Generar** si querés que el sistema te dé el próximo libre.",
+        text: "Poné el **SKU**: es el código propio del producto y no se puede repetir. Tocá **Generar** si querés que el sistema te dé el próximo libre.", mock: {
+          title: "Nuevo producto",
+          caption: "los campos de SKU, precio de venta y el botón Generar",
+          rows: [
+            [{ t: "text", text: "Nombre", strong: true }, { t: "input", text: "Gaseosa 500 ml" }],
+            [{ t: "text", text: "SKU", strong: true }, { t: "input", text: "P-00001" }, { t: "btn", text: "Generar", tone: "outline", hot: true }],
+            [{ t: "text", text: "Precio de venta", strong: true }, { t: "input", text: "$ 1.800" }],
+            [{ t: "btn", text: "Crear producto" }],
+          ],
+        },
         note: "Si tiene código de barras, podés escanearlo en el campo **Código de barras** (opcional).",
       },
       {

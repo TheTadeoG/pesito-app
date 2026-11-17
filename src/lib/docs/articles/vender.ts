@@ -18,7 +18,16 @@ export const venderDocs: DocArticle[] = [
     steps: [
       { text: "Entrá a **Punto de Venta**. Si no tenés la caja abierta, tocá **Abrir caja** y poné el monto inicial." },
       {
-        text: "Escaneá el código de barras o escribí el nombre en el buscador. Los productos se suman al carrito.",
+        text: "Escaneá el código de barras o escribí el nombre en el buscador. Los productos se suman al carrito.", mock: {
+          title: "Punto de Venta",
+          caption: "el buscador arriba, con los productos agregados abajo y el total",
+          rows: [
+            [{ t: "input", text: "Escaneá el código de barras o buscá por nombre…", hot: true }, { t: "chip", text: "Combos" }],
+            [{ t: "item", text: "Gaseosa 500 ml", detail: "x1", price: "$1.800" }],
+            [{ t: "item", text: "Alfajor triple", detail: "x2", price: "$2.400" }],
+            [{ t: "total", text: "Total", price: "$4.200" }],
+          ],
+        },
         note: "Con las flechas ↑ y ↓ elegís un resultado y con **Enter** lo agregás. La lupa de la izquierda muestra todo el catálogo.",
       },
       { text: "Si hace falta, cambiá la cantidad de cada producto con los botones **−** y **+**, o sacalo del carrito." },
@@ -26,8 +35,24 @@ export const venderDocs: DocArticle[] = [
         text: "Si la venta es para un cliente, elegilo en el carrito. Si no elegís a nadie, queda como **Consumidor Final**.",
         note: "Para vender fiado el cliente es obligatorio.",
       },
-      { text: "Tocá **Cobrar** (o apretá **Enter** dos veces) y elegí el medio de pago: **Efectivo**, **Tarjeta**, **Transferencia**, **QR**, **Mixto** o **Fiado**." },
-      { text: "Confirmá con **Confirmar venta** (o **Enter**). Aparece **¡Venta cobrada!** con el total y el vuelto." },
+      { text: "Tocá **Cobrar** (o apretá **Enter** dos veces) y elegí el medio de pago: **Efectivo**, **Tarjeta**, **Transferencia**, **QR**, **Mixto** o **Fiado**.", mock: {
+          title: "Punto de Venta",
+          caption: "el botón Cobrar debajo del total y, al tocarlo, los medios de pago",
+          rows: [
+            [{ t: "total", text: "Total", price: "$4.200" }],
+            [{ t: "btn", text: "Cobrar (Doble Enter)", hot: true }],
+            [{ t: "chip", text: "Efectivo" }, { t: "chip", text: "Tarjeta" }, { t: "chip", text: "Transferencia" }, { t: "chip", text: "QR" }, { t: "chip", text: "Mixto" }, { t: "chip", text: "Fiado" }],
+          ],
+        } },
+      { text: "Confirmá con **Confirmar venta** (o **Enter**). Aparece **¡Venta cobrada!** con el total y el vuelto.", mock: {
+          title: "¡Venta cobrada!",
+          caption: "la ventana de venta cobrada, con el botón Nueva venta",
+          rows: [
+            [{ t: "text", text: "¡Venta cobrada!", strong: true }],
+            [{ t: "total", text: "Total", price: "$4.200" }],
+            [{ t: "btn", text: "Imprimir ticket (no fiscal)", tone: "outline" }, { t: "btn", text: "Nueva venta" }],
+          ],
+        } },
       { text: "Tocá **Nueva venta** (o **Enter**) para seguir con el próximo cliente." },
     ],
     tips: [
