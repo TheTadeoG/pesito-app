@@ -38,6 +38,7 @@ const columns: {
     title: "Soporte",
     links: [
       { label: "Contacto", href: "mailto:soporte@pesito.com.ar", external: true },
+      { label: "Instagram", href: "https://www.instagram.com/pesito.arg", external: true },
     ],
   },
   {
@@ -52,7 +53,11 @@ const columns: {
 function FooterLink({ label, href, external }: { label: string; href: string; external?: boolean }) {
   if (external) {
     return (
-      <a href={href} className="transition-colors hover:text-foreground">
+      <a
+        href={href}
+        className="transition-colors hover:text-foreground"
+        {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer me" } : {})}
+      >
         {label}
       </a>
     );
