@@ -51,6 +51,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // Dominio de respaldo (pesito.ar): cualquier dirección que llegue por ahí se redirige, de forma permanente (308) y
+  // a la misma página, al sitio principal. Así no se duplica contenido y los enlaces suman al dominio principal.
+  async redirects() {
+    return ["pesito.ar", "www.pesito.ar"].map((host) => ({
+      source: "/:path*",
+      has: [{ type: "host" as const, value: host }],
+      destination: "https://www.pesito.com.ar/:path*",
+      permanent: true,
+    }));
+  },
   experimental: {
     // Por default (desde Next 15) una página dinámica (todo el panel, por
     // las cookies de sesión) se considera "vieja" apenas se pinta, así que
