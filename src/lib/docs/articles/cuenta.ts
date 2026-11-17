@@ -56,8 +56,8 @@ export const cuentaDocs: DocArticle[] = [
     where: "**Ajustes → Negocio**",
     steps: [
       { text: "Entrá a **Ajustes** y abrí **Negocio**." },
-      { text: "En **Nombre del negocio** escribí o cambiá el nombre y tocá **Guardar**." },
-      { text: "En **Recordar el cierre de caja** elegí el horario y guardá." },
+      { text: "En **Nombre del negocio** escribí o cambiá el nombre y tocá **Guardar**.", images: [{ name: "ajustes-nombre", alt: "Ajustes con el campo Nombre del negocio resaltado" }] },
+      { text: "En **Recordar el cierre de caja** elegí el horario y guardá.", images: [{ name: "ajustes-cierre", alt: "Ajustes con el interruptor Recordar el cierre de caja resaltado" }] },
     ],
     tips: [
       "En **Ajustes → Avisos** (dueño y administradores) elegís qué alertas querés recibir.",
@@ -77,7 +77,7 @@ export const cuentaDocs: DocArticle[] = [
     before: ["Ser dueño o administrador."],
     steps: [
       { text: "Entrá a **Ajustes → Negocio** y buscá las sucursales." },
-      { text: "Escribí el **Nombre de la nueva sucursal** y tocá **Agregar**." },
+      { text: "Escribí el **Nombre de la nueva sucursal** y tocá **Agregar**.", images: [{ name: "ajustes-sucursales", alt: "Ajustes con el campo para agregar una sucursal resaltado" }] },
       { text: "En **Mi equipo**, asignale a cada vendedor su sucursal." },
     ],
     tips: [
@@ -101,7 +101,7 @@ export const cuentaDocs: DocArticle[] = [
     before: ["Ser dueño o administrador."],
     steps: [
       { text: "Entrá a **Ajustes → Negocio** y buscá los medios de pago." },
-      { text: "Escribí el nombre (por ejemplo, Mercado Pago) y tocá **Agregar**." },
+      { text: "Escribí el nombre (por ejemplo, Mercado Pago) y tocá **Agregar**.", images: [{ name: "ajustes-medios", alt: "Ajustes con el campo para agregar un medio de pago resaltado" }] },
       { text: "Para sacar uno, tocá el tachito al lado de su nombre." },
     ],
     tips: [
@@ -124,7 +124,7 @@ export const cuentaDocs: DocArticle[] = [
     where: "**Ajustes → Negocio → Ticket**",
     steps: [
       { text: "Entrá a **Ajustes → Negocio** y buscá las opciones del ticket." },
-      { text: "Activá o desactivá **Mostrar el nombre del negocio** (sale arriba del ticket)." },
+      { text: "Activá o desactivá **Mostrar el nombre del negocio** (sale arriba del ticket).", images: [{ name: "ajustes-ticket", alt: "Ajustes con los interruptores del ticket, con el nombre del negocio resaltado" }] },
       { text: "Activá o desactivá **Mostrar el número de comprobante**." },
     ],
     tips: [
@@ -190,9 +190,9 @@ export const cuentaDocs: DocArticle[] = [
     before: ["Ser dueño o administrador."],
     steps: [
       { text: "Entrá a **Mi equipo** y buscá a la persona." },
-      { text: "Para cambiarle el usuario o la contraseña, tocá **Editar usuario y contraseña**. Dejá la contraseña vacía para no cambiarla." },
-      { text: "Para sacarla del negocio, tocá **Quitar del equipo** y confirmá." },
-      { text: "Si invitaste a alguien que no entró, en **Invitaciones pendientes** tocá **Cancelar invitación**." },
+      { text: "Para cambiarle el usuario o la contraseña, tocá **Editar usuario y contraseña**. Dejá la contraseña vacía para no cambiarla.", images: [{ name: "usuarios-editar", alt: "Mi equipo con el lápiz de editar usuario y contraseña resaltado" }] },
+      { text: "Para sacarla del negocio, tocá **Quitar del equipo** y confirmá.", images: [{ name: "usuarios-quitar", alt: "Mi equipo con el menú de tres puntitos abierto y Quitar del equipo resaltado" }] },
+      { text: "Si invitaste a alguien que no entró, en **Invitaciones pendientes** tocá **Cancelar invitación**.", images: [{ name: "usuarios-cancelar-invitacion", alt: "Mi equipo con el botón para cancelar una invitación pendiente resaltado" }] },
     ],
     tips: [
       "Si tu plan incluye menos usuarios que los que tenés, los de más quedan **Pausados** hasta que subas de plan o quites a alguien.",

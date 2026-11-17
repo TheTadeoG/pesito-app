@@ -11,7 +11,7 @@ export const clientesDocs: DocArticle[] = [
     plan: null,
     where: "**Clientes → Nuevo cliente**",
     steps: [
-      { text: "Entrá a **Clientes** y tocá **Nuevo cliente**." },
+      { text: "Entrá a **Clientes** y tocá **Nuevo cliente**.", images: [{ name: "clientes-nuevo", alt: "Lista de Clientes con el botón Nuevo cliente resaltado" }] },
       { text: "Escribí el nombre. Si querés, sumá **Teléfono**, **Email**, **Domicilio** y **Notas** (por ejemplo, “Paga los viernes”)." },
       { text: "Si necesitás sus datos fiscales, cargá el **Documento** (DNI, CUIT o CUIL) y la **Condición frente al IVA**." },
       { text: "Tocá **Crear cliente**." },
@@ -36,9 +36,9 @@ export const clientesDocs: DocArticle[] = [
     plan: null,
     where: "**Clientes → cliente con deuda → Registrar pago**",
     steps: [
-      { text: "Entrá a **Clientes** y buscá al cliente. Podés filtrar con **Con deuda** o por antigüedad de la deuda." },
+      { text: "Entrá a **Clientes** y buscá al cliente. Podés filtrar con **Con deuda** o por antigüedad de la deuda.", images: [{ name: "clientes-recordar", alt: "Lista de Clientes con el botón de recordar la deuda por WhatsApp resaltado" }] },
       { text: "Tocá al cliente para abrir su ficha, donde ves la **Cuenta corriente** y el **Historial de compras**." },
-      { text: "Tocá **Registrar pago** y escribí cuánto te paga." },
+      { text: "Tocá **Registrar pago** y escribí cuánto te paga.", images: [{ name: "clientes-pago", alt: "Ventana Registrar pago de un cliente con el monto resaltado" }] },
       { text: "Elegí el medio (**Efectivo**, **Transferencia** o **Tarjeta**)." },
       {
         text: "Tocá **Registrar pago**.",
@@ -69,7 +69,7 @@ export const clientesDocs: DocArticle[] = [
     before: ["Ser dueño o administrador."],
     steps: [
       { text: "Entrá a **Clientes**." },
-      { text: "Tocá **Acciones** y elegí **Descargar Excel**. Elegí qué querés bajar." },
+      { text: "Tocá **Acciones** y elegí **Descargar Excel**. Elegí qué querés bajar.", images: [{ name: "clientes-descargar", alt: "Menú Acciones de Clientes con Descargar Excel resaltado" }] },
       { text: "Abrí el archivo descargado con Excel o con Google Sheets." },
     ],
     tips: ["La descarga está en todos los planes; la carga masiva de clientes desde planilla es del Plan Básico."],
@@ -86,7 +86,7 @@ export const clientesDocs: DocArticle[] = [
     where: "**Clientes → Acciones → Cargar desde Excel**",
     before: ["Ser dueño o administrador.", "Tener tus clientes en una planilla de Excel (.xlsx) o CSV."],
     steps: [
-      { text: "Entrá a **Clientes**, tocá **Acciones** y elegí **Cargar desde Excel**." },
+      { text: "Entrá a **Clientes**, tocá **Acciones** y elegí **Cargar desde Excel**.", images: [{ name: "clientes-excel", alt: "Menú Acciones de Clientes con Cargar desde Excel resaltado" }] },
       { text: "Descargá la **Planilla modelo (vacía)** y completala. Lo único obligatorio es el nombre; podés sumar razón social, teléfono, mail, documento, tipo de factura y notas." },
       { text: "Subí la planilla (o arrastrala) y revisá la vista previa: **Clientes nuevos**, **Ya existen** y **Con errores**." },
       { text: "Elegí qué hacer si un cliente ya existe (dejarlo como está o actualizar sus datos) y confirmá la carga." },

@@ -15,7 +15,7 @@ export const cajaDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Entrá a **Caja** (menú, o **Alt + 2**) o tocá **Abrir caja para vender** en el bloque de arriba del menú." },
-      { text: "En **Monto inicial (en efectivo)** escribí cuánta plata hay en el cajón al empezar. Si arrancás sin cambio, poné 0." },
+      { text: "En **Monto inicial (en efectivo)** escribí cuánta plata hay en el cajón al empezar. Si arrancás sin cambio, poné 0.", images: [{ name: "caja-abrir", alt: "Ventana Abrir caja con el monto inicial resaltado" }] },
       { text: "Tocá **Abrir caja** (o **Enter**). Aparece **¡Caja abierta!** con el monto inicial." },
       { text: "Ya podés vender desde **Punto de Venta**." },
     ],
@@ -49,9 +49,9 @@ export const cajaDocs: DocArticle[] = [
       "Usalo cuando entra o sale efectivo del cajón sin que sea una venta: ponés cambio, sacás plata para llevarte al banco, pagás un gasto chico. Así, lo que Pesito espera en el cajón coincide con lo que de verdad hay.",
     ],
     steps: [
-      { text: "Entrá a **Caja** y tocá **Ingresar / Retirar**." },
-      { text: "Elegí **Ingresar efectivo** (sumás plata al cajón, por ejemplo cambio) o **Retirar efectivo** (sacás plata, por ejemplo para pagarle a un proveedor)." },
-      { text: "Escribí el **Monto** y, si querés, el **Motivo (opcional)**." },
+      { text: "Entrá a **Caja** y tocá **Ingresar / Retirar**.", images: [{ name: "caja-botones", alt: "Pantalla de Caja con el botón Ingresar / Retirar resaltado" }] },
+      { text: "Elegí **Ingresar efectivo** (sumás plata al cajón, por ejemplo cambio) o **Retirar efectivo** (sacás plata, por ejemplo para pagarle a un proveedor).", images: [{ name: "caja-gestionar", alt: "Ventana Gestionar caja con Ingresar efectivo resaltado" }] },
+      { text: "Escribí el **Monto** y, si querés, el **Motivo (opcional)**.", images: [{ name: "caja-ingreso", alt: "Ventana Ingresar efectivo con el campo Monto resaltado" }] },
       { text: "Confirmá con **Confirmar** (o **Enter**). Aparece **Ingreso registrado** o **Retiro registrado**." },
     ],
     tips: [
@@ -83,12 +83,12 @@ export const cajaDocs: DocArticle[] = [
       "Cerrar la caja es contar el efectivo que hay en el cajón y compararlo con lo que Pesito esperaba. Si coincide, el turno queda cuadrado; si no, queda registrada la diferencia para que puedas revisarla.",
     ],
     steps: [
-      { text: "Entrá a **Caja** y tocá **Cerrar caja**." },
+      { text: "Entrá a **Caja** y tocá **Cerrar caja**.", images: [{ name: "caja-cerrar-boton", alt: "Pantalla de Caja con el botón Cerrar caja resaltado" }] },
       {
         text: "Mirá el **Monto esperado en caja**: es lo que tendría que haber en el cajón.",
         note: "Se calcula así: lo que abriste, más ventas en efectivo, cobros de fiado e ingresos, menos retiros, pagos a proveedores y compras pagadas en efectivo.",
       },
-      { text: "En **Monto real contado** escribí lo que contaste de verdad." },
+      { text: "En **Monto real contado** escribí lo que contaste de verdad.", images: [{ name: "caja-cerrar", alt: "Ventana Cerrar Caja con el monto real contado resaltado y la diferencia detectada" }] },
       { text: "Si no coincide, el sistema te muestra la **Diferencia detectada**: **Sobrante de efectivo** o **Faltante de efectivo**." },
       { text: "Tocá **Cerrar Caja** (o **Enter**) para terminar el turno." },
     ],
@@ -179,7 +179,7 @@ export const cajaDocs: DocArticle[] = [
     where: "**Caja**",
     steps: [
       { text: "Entrá a **Caja** con la caja abierta." },
-      { text: "Mirá el extracto de efectivo: arranca con la apertura, suma las ventas en efectivo y los ingresos, y resta los retiros, los pagos a proveedores y las compras pagadas en efectivo. El resultado es **En caja**." },
+      { text: "Mirá el extracto de efectivo: arranca con la apertura, suma las ventas en efectivo y los ingresos, y resta los retiros, los pagos a proveedores y las compras pagadas en efectivo. El resultado es **En caja**.", images: [{ name: "caja-resumen", alt: "Pantalla de Caja con el resumen del efectivo y el total En caja resaltado" }] },
       { text: "En **Vendido en este turno** ves todo lo cobrado desde que abriste, separado por medio de pago." },
       { text: "En **Movimientos del turno** ves cada venta, ingreso y retiro." },
     ],
@@ -206,7 +206,7 @@ export const cajaDocs: DocArticle[] = [
     where: "**Caja → Equipo**",
     before: ["Ser dueño o administrador."],
     steps: [
-      { text: "Entrá a **Caja** y mirá el bloque **Equipo**." },
+      { text: "Entrá a **Caja** y mirá el bloque **Equipo**.", images: [{ name: "caja-equipo", alt: "Resumen de Caja con las cajas abiertas del equipo y la etiqueta Abierta desde otro día resaltada" }] },
       { text: "Ahí aparecen las cajas abiertas de las otras personas, con cuánto hay en cada una." },
       { text: "Si una tiene la etiqueta **Abierta desde otro día** o **Pasó la hora de cierre**, avisale a esa persona que la cierre." },
       { text: "Si tenés sucursales, usá **Filtrar por sucursal** para ver sólo las de una." },

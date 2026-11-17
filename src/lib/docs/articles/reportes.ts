@@ -162,7 +162,7 @@ export const reportesDocs: DocArticle[] = [
     where: "**Reportes → selector de período**",
     steps: [
       { text: "Entrá a **Reportes**." },
-      { text: "Arriba tocá **Hoy**, **7 días**, **30 días** o **Este mes**." },
+      { text: "Arriba tocá **Hoy**, **7 días**, **30 días** o **Este mes**.", images: [{ name: "reportes-periodo", alt: "Selector de período de Reportes con Este mes resaltado, y las opciones Más períodos y Comparar con" }] },
       { text: "Para otros períodos, abrí el menú de más períodos: **Ayer**, **Mes pasado**, **Últimos 90 días** o **Este año**." },
       { text: "Para fechas a medida, elegí **Personalizado**, poné la fecha de inicio y la de fin y aplicá." },
     ],
@@ -181,10 +181,10 @@ export const reportesDocs: DocArticle[] = [
     category: "reportes",
     summary: "Compará tus ventas con el período anterior o con el mismo período del año pasado.",
     plan: "pro",
-    where: "**Reportes → Comparar**",
+    where: "**Reportes → Comparar con**",
     steps: [
       { text: "Entrá a **Reportes** y elegí el período que querés mirar." },
-      { text: "En la opción de comparar elegí **Período anterior** o **Mismo período del año pasado**." },
+      { text: "Al lado de los períodos, en **Comparar con**, elegí **Período anterior** o **Mismo período del año pasado**.", images: [{ name: "reportes-periodo", alt: "Selector de período de Reportes con Este mes resaltado, y las opciones Más períodos y Comparar con" }] },
       { text: "Mirá en cada indicador cuánto subió o bajó. Con **No comparar** volvés a la vista simple." },
     ],
     tips: ["La sección de comparación se puede mostrar u ocultar con **Personalizar Reportes**."],

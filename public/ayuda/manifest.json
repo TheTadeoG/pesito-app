@@ -114,5 +114,137 @@
   "productos-nuevo-minimo": {
     "w": 896,
     "h": 900
+  },
+  "caja-resumen": {
+    "w": 792,
+    "h": 890
+  },
+  "caja-botones": {
+    "w": 792,
+    "h": 890
+  },
+  "caja-cerrar-boton": {
+    "w": 792,
+    "h": 890
+  },
+  "caja-gestionar": {
+    "w": 512,
+    "h": 328
+  },
+  "caja-ingreso": {
+    "w": 512,
+    "h": 322
+  },
+  "caja-cerrar": {
+    "w": 512,
+    "h": 578
+  },
+  "caja-abrir": {
+    "w": 512,
+    "h": 302
+  },
+  "caja-equipo": {
+    "w": 768,
+    "h": 232
+  },
+  "compras-proveedor": {
+    "w": 1152,
+    "h": 640
+  },
+  "compras-producto": {
+    "w": 1152,
+    "h": 640
+  },
+  "compras-pago": {
+    "w": 1152,
+    "h": 640
+  },
+  "compras-registrar": {
+    "w": 1152,
+    "h": 640
+  },
+  "clientes-nuevo": {
+    "w": 1006,
+    "h": 520
+  },
+  "clientes-buscador": {
+    "w": 1006,
+    "h": 520
+  },
+  "clientes-descargar": {
+    "w": 1006,
+    "h": 520
+  },
+  "clientes-excel": {
+    "w": 1006,
+    "h": 520
+  },
+  "clientes-pago": {
+    "w": 512,
+    "h": 450
+  },
+  "proveedores-lista": {
+    "w": 898,
+    "h": 640
+  },
+  "proveedores-calendario": {
+    "w": 898,
+    "h": 640
+  },
+  "proveedores-pago": {
+    "w": 512,
+    "h": 508
+  },
+  "ajustes-nombre": {
+    "w": 640,
+    "h": 108
+  },
+  "ajustes-cierre": {
+    "w": 640,
+    "h": 148
+  },
+  "ajustes-sucursales": {
+    "w": 640,
+    "h": 261
+  },
+  "ajustes-medios": {
+    "w": 640,
+    "h": 174
+  },
+  "ajustes-ticket": {
+    "w": 640,
+    "h": 146
+  },
+  "reportes-periodo": {
+    "w": 950,
+    "h": 360
+  },
+  "clientes-recordar": {
+    "w": 1006,
+    "h": 520
+  },
+  "usuarios-invitar": {
+    "w": 896,
+    "h": 810
+  },
+  "usuarios-crear": {
+    "w": 896,
+    "h": 810
+  },
+  "usuarios-roles": {
+    "w": 896,
+    "h": 810
+  },
+  "usuarios-editar": {
+    "w": 896,
+    "h": 810
+  },
+  "usuarios-cancelar-invitacion": {
+    "w": 896,
+    "h": 810
+  },
+  "usuarios-quitar": {
+    "w": 896,
+    "h": 810
   }
 }

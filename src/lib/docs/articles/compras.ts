@@ -13,15 +13,15 @@ export const comprasDocs: DocArticle[] = [
     before: ["Tener cargado el proveedor (podés crearlo desde la misma pantalla)."],
     steps: [
       { text: "Entrá a **Compras**." },
-      { text: "Elegí el proveedor en **Buscar proveedor…**. Si no existe, tocá **Cargar proveedor nuevo**." },
-      { text: "Buscá cada producto por nombre o escaneando el código y agregalo. Si no existe, tocá **Crear producto nuevo**." },
+      { text: "Elegí el proveedor en **Buscar proveedor…** (es obligatorio). Si no existe, tocá el **+** de al lado para cargarlo en el momento.", images: [{ name: "compras-proveedor", alt: "Pantalla de Compras con el buscador de proveedor resaltado" }] },
+      { text: "Buscá cada producto por nombre o escaneando el código y agregalo. Si no existe, tocá **Producto nuevo**.", images: [{ name: "compras-producto", alt: "Pantalla de Compras con el buscador de productos resaltado" }] },
       { text: "Completá la cantidad y el **Costo unit.** de cada uno." },
       {
-        text: "Elegí cómo se paga: **Efectivo**, **Transferencia**, **Tarjeta**, **Dividir en varios medios** o **Cuenta corriente** (queda a deber).",
+        text: "Elegí cómo se paga: **Efectivo**, **Transferencia**, **Tarjeta**, **Dividir en varios medios** o **Cuenta corriente** (queda a deber).", images: [{ name: "compras-pago", alt: "Pantalla de Compras con los medios de pago de la compra resaltados" }],
         note: "Para pagar en efectivo tenés que tener la caja abierta. La cuenta corriente con proveedores es del Plan Básico.",
       },
       { text: "Si querés, anotá el número de remito o factura y, en cuenta corriente, la **Fecha de vencimiento**." },
-      { text: "Tocá **Registrar Compra** (también podés apretar Enter dos veces)." },
+      { text: "Tocá **Registrar Compra** (también podés apretar Enter dos veces).", images: [{ name: "compras-registrar", alt: "Pantalla de Compras con un producto cargado y el botón Registrar Compra resaltado" }] },
     ],
     tips: [
       "El stock de cada producto sube con lo que compraste y el costo se actualiza.",
@@ -93,10 +93,10 @@ export const comprasDocs: DocArticle[] = [
     plan: "basico",
     where: "**Proveedores**",
     steps: [
-      { text: "Entrá a **Proveedores**. Arriba ves **Le debés** en total y cuánto vence pronto." },
+      { text: "Entrá a **Proveedores**. Arriba ves **Le debés** en total y cuánto vence pronto.", images: [{ name: "proveedores-lista", alt: "Lista de Proveedores con lo que se debe a cada uno y el botón Registrar pago resaltado" }] },
       { text: "Filtrá con **Con deuda**, **Al día** o por día de vencimiento (**Vence hoy o ya venció**, **Mañana**…)." },
       { text: "Para pagar, tocá **Registrar pago** (o elegí el proveedor en **¿A quién le pagás?**)." },
-      { text: "Elegí **Un monto** o **Elegir qué facturas pago**, y tildá las compras que cubrís." },
+      { text: "Elegí **Un monto** o **Elegir qué facturas pago**, y tildá las compras que cubrís.", images: [{ name: "proveedores-pago", alt: "Ventana para registrar un pago a un proveedor, eligiendo qué facturas se pagan" }] },
       { text: "Elegí **Cómo pagar** (**Efectivo**, **Transferencia** o **Tarjeta**) y confirmá con **Registrar pago**." },
     ],
     tips: [
@@ -121,7 +121,7 @@ export const comprasDocs: DocArticle[] = [
     plan: "basico",
     where: "**Proveedores → Calendario**",
     steps: [
-      { text: "Entrá a **Proveedores** y tocá **Calendario**." },
+      { text: "Entrá a **Proveedores** y tocá **Calendario**.", images: [{ name: "proveedores-calendario", alt: "Lista de Proveedores con el botón Calendario resaltado" }] },
       { text: "En la vista **Mes** ves qué vence cada día y podés pasar al **Mes anterior** o al **Mes siguiente**." },
       { text: "Con **Todas las deudas** ves la lista completa, con lo vencido y lo que vence este mes." },
       { text: "Para las compras sin fecha, elegí una **Fecha de vencimiento** y guardala." },

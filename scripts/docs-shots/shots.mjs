@@ -153,6 +153,82 @@ shots.push(
   }
 );
 
+// Caja: resumen del turno, ingresos y retiros, cierre, apertura y equipo.
+const btn = (re) => (p) => p.getByRole("button", { name: re }).first();
+const cajaDialog = (name, setup, hot, title) => ({ name, page: "caja", setup, hot, clip: { dialog: title } });
+shots.push(
+  { name: "caja-resumen", page: "caja", hot: [(p) => p.getByText("= En caja").locator("xpath=ancestor::div[1]")], clip: "#shot" },
+  { name: "caja-botones", page: "caja", hot: [btn(/Ingresar \/ Retirar/)], clip: "#shot" },
+  { name: "caja-cerrar-boton", page: "caja", hot: [btn(/Cerrar caja/i)], clip: "#shot" },
+  cajaDialog("caja-gestionar", async (p) => btn(/Ingresar \/ Retirar/)(p).click(), [(p) => p.getByRole("button", { name: /Ingresar efectivo/ }).first()], "Revisá tu efectivo disponible"),
+  cajaDialog(
+    "caja-ingreso",
+    async (p) => {
+      await btn(/Ingresar \/ Retirar/)(p).click();
+      await p.getByRole("button", { name: /Ingresar efectivo/ }).first().click();
+    },
+    [(p) => p.locator("input").first()],
+    "Sumá efectivo a tu caja"
+  ),
+  cajaDialog(
+    "caja-cerrar",
+    async (p) => {
+      await btn(/Cerrar caja/i)(p).click();
+      await p.locator("input").first().fill("86900");
+    },
+    [(p) => p.locator("input").first()],
+    "Contá todo el efectivo en caja"
+  ),
+  { name: "caja-abrir", page: "caja-abrir", hot: [(p) => p.locator("input").first()], clip: { dialog: "Abrir caja" } },
+  { name: "caja-equipo", page: "caja-equipo", hot: [(p) => p.getByText("Abierta desde otro día").first()], clip: "#shot" }
+);
+
+// Compras, Clientes, Proveedores, Ajustes, Equipo y Reportes.
+const byRole = (role, re) => (p) => p.getByRole(role, { name: re }).first();
+const card = (id) => (p) => p.locator(id);
+shots.push(
+  { name: "compras-proveedor", page: "compras", hot: [(p) => p.getByPlaceholder(/Buscar proveedor/)], clip: "#shot" },
+  { name: "compras-producto", page: "compras", hot: [(p) => p.getByPlaceholder(/Buscar producto o escanear/)], clip: "#shot" },
+  { name: "compras-pago", page: "compras", hot: [(p) => p.getByText("¿Cómo se paga esta compra?").locator("xpath=ancestor::div[1]")], clip: "#shot" },
+  {
+    name: "compras-registrar",
+    page: "compras",
+    setup: async (p) => {
+      await p.getByPlaceholder(/Buscar producto o escanear/).fill("gaseosa");
+      await p.getByPlaceholder(/Buscar producto o escanear/).press("Enter");
+    },
+    hot: [byRole("button", /Registrar Compra/)],
+    clip: "#shot",
+  },
+  { name: "clientes-nuevo", page: "clientes", hot: [byRole("button", /Nuevo cliente/)], clip: "#shot" },
+  { name: "clientes-buscador", page: "clientes", hot: [(p) => p.getByPlaceholder(/Buscar por nombre, teléfono/)], clip: "#shot" },
+  { name: "clientes-descargar", page: "clientes", setup: (p) => p.getByRole("button", { name: /^Acciones/ }).first().click(), hot: [[(p) => p.locator("button, [role=menuitem]").filter({ hasText: /^\s*Descargar Excel\s*$/ }).first(), "inset"]], clip: "#shot" },
+  { name: "clientes-excel", page: "clientes", setup: (p) => p.getByRole("button", { name: /^Acciones/ }).first().click(), hot: [[(p) => p.locator("button, [role=menuitem]").filter({ hasText: /^\s*Cargar desde Excel/ }).first(), "inset"]], clip: "#shot" },
+  { name: "clientes-recordar", page: "clientes", hot: [(p) => p.locator("[aria-label*=Recordarle], [title*=Recordarle], a:has-text('Recordarle')").first()], clip: "#shot" },
+  { name: "clientes-pago", page: "clientes-pago", hot: [(p) => p.locator("input").first()], clip: { dialog: "Registrar pago" } },
+  { name: "proveedores-lista", page: "proveedores", hot: [(p) => p.getByRole("button", { name: /Registrar pago/ }).first()], clip: "#shot" },
+  { name: "proveedores-calendario", page: "proveedores", hot: [(p) => p.getByRole("button", { name: /Calendario/ })], clip: "#shot" },
+  { name: "proveedores-pago", page: "proveedores-pago", hot: [], clip: { dialog: "Elegir qué facturas pago" } },
+  { name: "ajustes-nombre", page: "ajustes", hot: [card("#s-nombre input")], clip: "#s-nombre" },
+  { name: "ajustes-cierre", page: "ajustes", hot: [card("#s-cierre [role=switch]")], clip: "#s-cierre" },
+  { name: "ajustes-sucursales", page: "ajustes", hot: [(p) => p.getByPlaceholder("Nombre de la nueva sucursal")], clip: "#s-sucursales" },
+  { name: "ajustes-medios", page: "ajustes", hot: [(p) => p.getByPlaceholder(/Mercado Pago, Talo/)], clip: "#s-medios" },
+  { name: "ajustes-ticket", page: "ajustes", hot: [(p) => p.getByRole("switch", { name: "Mostrar el nombre del negocio" })], clip: "#s-ticket" },
+  { name: "usuarios-invitar", page: "usuarios", hot: [byRole("button", /Invitar por link/)], clip: "#shot" },
+  { name: "usuarios-crear", page: "usuarios", hot: [byRole("button", /Crear usuario y contraseña/)], clip: "#shot" },
+  { name: "usuarios-roles", page: "usuarios", hot: [(p) => p.getByText("Rol: qué puede hacer cada uno").locator("xpath=ancestor::div[2]")], clip: "#shot" },
+  { name: "usuarios-editar", page: "usuarios", hot: [(p) => p.getByRole("button", { name: /Editar usuario/ }).first()], clip: "#shot" },
+  {
+    name: "usuarios-quitar",
+    page: "usuarios",
+    setup: (p) => p.getByRole("button", { name: "Más acciones" }).last().click(),
+    hot: [[(p) => p.locator("button, [role=menuitem]").filter({ hasText: /Quitar del equipo/ }).first(), "inset"]],
+    clip: "#shot",
+  },
+  { name: "usuarios-cancelar-invitacion", page: "usuarios", hot: [(p) => p.locator("button:has(svg.lucide-x)").last()], clip: "#shot" },
+  { name: "reportes-periodo", page: "reportes", hot: [byRole("link", /Este mes/)], clip: "#shot" }
+);
+
 async function highlight(loc, inset = false) {
   await loc.evaluate(
     (el, [color, inset]) => {
@@ -173,7 +249,7 @@ async function highlight(loc, inset = false) {
 
 // El diálogo no usa role=dialog: se busca por un texto y se sube hasta el panel que está dentro del fondo fijo.
 async function dialogBox(page, text) {
-  const h = await page.getByText(text).first().elementHandle();
+  const h = await page.getByText(text).last().elementHandle();
   const panel = await h.evaluateHandle((el) => {
     let cur = el;
     while (cur.parentElement && getComputedStyle(cur.parentElement).position !== "fixed") cur = cur.parentElement;
@@ -208,6 +284,7 @@ async function run() {
   const browser = await chromium.launch();
   try {
     for (const s of todo) {
+     try {
       const ctx = await browser.newContext({ viewport: { width: s.width ?? 1440, height: 1000 }, deviceScaleFactor: 2 });
       if (s.cart) await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), ["pesito-pos-cart-r1", s.cart]);
       const page = await ctx.newPage();
@@ -225,6 +302,9 @@ async function run() {
       manifest[s.name] = { w: Math.round(info.width / 2), h: Math.round(info.height / 2) };
       console.log("ok", s.name);
       await ctx.close();
+     } catch (e) {
+      console.log("FALLÓ", s.name, String(e.message).split("\n")[0]);
+     }
     }
   } finally {
     writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
