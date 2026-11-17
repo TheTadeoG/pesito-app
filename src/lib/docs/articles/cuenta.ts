@@ -11,6 +11,9 @@ export const cuentaDocs: DocArticle[] = [
     plan: null,
     where: "**Ajustes → Cuenta y seguridad**",
     before: ["Tener una app de códigos en el celular (Google Authenticator, Authy o similar)."],
+    intro: [
+      "La verificación en dos pasos agrega una segunda llave a tu cuenta: además de la contraseña, Pesito pide un código de seis dígitos que genera una app en tu celular. Así, aunque alguien se entere de tu contraseña, no puede entrar.",
+    ],
     steps: [
       { text: "Entrá a **Ajustes** y abrí **Cuenta y seguridad**." },
       { text: "En la tarjeta de verificación en dos pasos tocá **Activar**." },
@@ -20,6 +23,11 @@ export const cuentaDocs: DocArticle[] = [
     tips: [
       "Desde ese momento, al ingresar te pide la contraseña y el código de la app.",
       "Para desactivarla, salí y volvé a ingresar con el código de la app.",
+    ],
+    faq: [
+      { q: "¿Qué app necesito?", a: "Cualquier app de códigos de verificación (Google Authenticator, Authy, Microsoft Authenticator…). Escaneás el código QR y ya genera los códigos." },
+      { q: "¿Cómo la desactivo?", a: "Salí de tu cuenta y volvé a ingresar con el código de la app; ahí podés desactivarla y vas a entrar sólo con la contraseña." },
+      { q: "¿Qué pasa si pierdo el celular?", a: "Escribinos a soporte para ayudarte a recuperar el acceso: tené a mano los datos de tu cuenta para comprobar que sos vos." },
     ],
     keywords: ["dos pasos", "2fa", "seguridad", "autenticacion", "codigo", "proteger cuenta", "google authenticator", "verificacion"],
     related: ["como-recuperar-la-contrasena"],
@@ -32,6 +40,9 @@ export const cuentaDocs: DocArticle[] = [
     summary: "Si no te acordás de la contraseña, pedí un link por email para elegir una nueva.",
     plan: null,
     where: "**Pantalla de ingreso → Olvidé mi contraseña**",
+    intro: [
+      "Si no recordás tu contraseña, no hace falta que nadie te la diga: pedís un link por email y elegís una nueva.",
+    ],
     steps: [
       { text: "En la pantalla de ingreso tocá **Olvidé mi contraseña**." },
       { text: "Escribí el email con el que te registraste y pedí el link." },
@@ -42,6 +53,11 @@ export const cuentaDocs: DocArticle[] = [
       "El link vence: si pasó tiempo, pedí uno nuevo.",
       "Si te registraste con Google, ingresá con **Continuar con Google**: no tenés contraseña de Pesito.",
       "Si tu empleado ingresa con usuario y contraseña, el dueño se la cambia desde **Mi equipo**.",
+    ],
+    faq: [
+      { q: "¿Cuánto dura el link?", a: "Dura 1 hora y sirve una sola vez. Si venció, pedí uno nuevo desde **Olvidé mi contraseña**." },
+      { q: "¿Me llega el mail si el email no existe?", a: "Por seguridad, Pesito responde siempre lo mismo exista o no el email: si no te llega, revisá la carpeta de spam y que sea el mismo email con el que te registraste." },
+      { q: "¿Qué hago si mi empleado olvidó su contraseña?", a: "Si ingresa con usuario y contraseña, vos se la cambiás desde **Mi equipo** con **Editar usuario y contraseña**." },
     ],
     keywords: ["olvide mi contrasena", "recuperar contrasena", "restablecer", "no puedo entrar", "clave", "password", "ingresar"],
     related: ["como-activar-la-verificacion-en-dos-pasos", "como-invitar-a-tu-equipo"],
@@ -54,6 +70,9 @@ export const cuentaDocs: DocArticle[] = [
     summary: "Elegí a qué hora querés que Pesito te recuerde cerrar la caja, y cambiá el nombre de tu negocio.",
     plan: null,
     where: "**Ajustes → Negocio**",
+    intro: [
+      "En Ajustes definís los datos generales de tu negocio. Acá cambiás el nombre (que se usa en los tickets) y decidís si Pesito te recuerda cerrar la caja.",
+    ],
     steps: [
       { text: "Entrá a **Ajustes** y abrí **Negocio**." },
       { text: "En **Nombre del negocio** escribí o cambiá el nombre y tocá **Guardar**.", images: [{ name: "ajustes-nombre", alt: "Ajustes con el campo Nombre del negocio resaltado" }] },
@@ -62,6 +81,10 @@ export const cuentaDocs: DocArticle[] = [
     tips: [
       "En **Ajustes → Avisos** (dueño y administradores) elegís qué alertas querés recibir.",
       "El nombre del negocio aparece en los tickets si dejás activada la opción **Mostrar el nombre del negocio**.",
+    ],
+    faq: [
+      { q: "¿Cuándo me avisa del cierre de caja?", a: "A quien tenga la caja abierta le aparece un aviso 15 minutos antes y a la hora de cierre que elijas. Si una caja queda abierta de un día para otro, se avisa siempre." },
+      { q: "¿Dónde se ve el nombre del negocio?", a: "Arriba del ticket, si dejás activada la opción **Mostrar el nombre del negocio**." },
     ],
     keywords: ["ajustes", "nombre del negocio", "recordatorio", "cierre de caja", "avisos", "alertas", "configurar negocio", "horario"],
     related: ["como-cerrar-la-caja"],
@@ -75,6 +98,9 @@ export const cuentaDocs: DocArticle[] = [
     plan: "max",
     where: "**Ajustes → Negocio → Sucursales**",
     before: ["Ser dueño o administrador."],
+    intro: [
+      "Si tenés más de un local, las sucursales te permiten separar el stock y las cajas de cada uno. Cada persona del equipo trabaja en su sucursal.",
+    ],
     steps: [
       { text: "Entrá a **Ajustes → Negocio** y buscá las sucursales." },
       { text: "Escribí el **Nombre de la nueva sucursal** y tocá **Agregar**.", images: [{ name: "ajustes-sucursales", alt: "Ajustes con el campo para agregar una sucursal resaltado" }] },
@@ -83,6 +109,12 @@ export const cuentaDocs: DocArticle[] = [
     tips: [
       "Podés manejar hasta 2 sucursales con el Plan Max. Una es la **Principal**.",
       "Vos cambiás de sucursal desde el menú. Para cambiarle el nombre, tocá el lápiz.",
+    ],
+    faq: [
+      { q: "¿Cuántas sucursales puedo tener?", a: "Con el Plan Max, hasta 2. En los demás planes ves el aviso con el plan que lo habilita." },
+      { q: "¿Cada sucursal tiene su propio stock?", a: "Sí. Cada sucursal tiene su propio stock y sus cajas. Para pasar mercadería de una a otra se usa **Transferir a otra sucursal**." },
+      { q: "¿Cómo asigno a un vendedor a su sucursal?", a: "En **Mi equipo**, en la fila de la persona. Vos cambiás de sucursal desde el menú." },
+      { q: "¿Puedo cambiar el nombre?", a: "Sí, con el lápiz al lado de la sucursal. La sucursal **Principal** es la primera que se crea con tu negocio." },
     ],
     keywords: ["sucursal", "otro local", "segundo local", "nuevo local", "varias sucursales", "multisucursal"],
     related: ["como-transferir-mercaderia-entre-sucursales", "como-invitar-a-tu-equipo"],
@@ -99,6 +131,9 @@ export const cuentaDocs: DocArticle[] = [
     plan: null,
     where: "**Ajustes → Negocio → Medios de pago**",
     before: ["Ser dueño o administrador."],
+    intro: [
+      "Además de Efectivo, Tarjeta, Transferencia y QR, podés sumar los medios que usa tu negocio (Mercado Pago, Ualá, Talo…) para elegirlos al cobrar y al comprar.",
+    ],
     steps: [
       { text: "Entrá a **Ajustes → Negocio** y buscá los medios de pago." },
       { text: "Escribí el nombre (por ejemplo, Mercado Pago) y tocá **Agregar**.", images: [{ name: "ajustes-medios", alt: "Ajustes con el campo para agregar un medio de pago resaltado" }] },
@@ -107,6 +142,11 @@ export const cuentaDocs: DocArticle[] = [
     tips: [
       "Los que agregás aparecen junto a **Efectivo**, **Tarjeta** y **Transferencia** en el Punto de Venta y en Compras.",
       "Se tratan como tarjeta o transferencia: no entran en el arqueo de efectivo de la caja.",
+    ],
+    faq: [
+      { q: "¿Cómo los trata Pesito?", a: "Como tarjeta o transferencia: no entran en el arqueo de efectivo de la caja." },
+      { q: "¿Qué pasa si borro un medio de pago?", a: "Las ventas y compras que ya lo usaron lo siguen mostrando. Sólo deja de aparecer para nuevas ventas." },
+      { q: "¿Dónde aparecen?", a: "En el Punto de Venta, en el pago **Mixto** y en **Compras**." },
     ],
     keywords: ["medio de pago", "mercado pago", "uala", "talo", "qr", "billetera virtual", "forma de pago", "agregar medio"],
     related: ["como-cobrar-con-varios-medios-de-pago", "como-cerrar-la-caja"],
@@ -131,6 +171,10 @@ export const cuentaDocs: DocArticle[] = [
       "Si ocultás el número, el ticket dice sólo “Comprobante X”; el número igual queda guardado y se ve en el historial de ventas.",
       "El nombre del negocio se cambia en **Nombre del negocio**.",
     ],
+    faq: [
+      { q: "¿Se guarda solo?", a: "Sí, al activar o desactivar cada opción se guarda al instante." },
+      { q: "¿Qué pasa con el número si lo oculto?", a: "El ticket dice sólo «Comprobante X», pero el número igual queda guardado y se ve en el historial de ventas." },
+    ],
     keywords: ["ticket", "personalizar ticket", "nombre en el ticket", "comprobante", "recibo", "logo", "imprimir"],
     related: ["como-imprimir-el-ticket-de-una-venta", "como-conectar-una-impresora-termica"],
     updatedAt: UPDATED,
@@ -154,6 +198,10 @@ export const cuentaDocs: DocArticle[] = [
       "Un aviso apagado no se calcula ni se cuenta.",
       "Sin el Plan Básico, tenés los avisos básicos con valores estándar.",
     ],
+    faq: [
+      { q: "¿Qué pasa con un aviso que apago?", a: "No se calcula ni se cuenta: deja de aparecer en la campana, en el menú y en los módulos." },
+      { q: "¿Por qué no puedo configurarlos?", a: "La configuración de los avisos es del Plan Básico. En el Gratis tenés los avisos básicos con valores estándar." },
+    ],
     keywords: ["avisos", "alertas", "notificaciones", "campana", "margen", "configurar avisos", "recordatorios"],
     related: ["como-configurar-los-avisos-del-negocio"],
     connections: [
@@ -176,6 +224,10 @@ export const cuentaDocs: DocArticle[] = [
       { text: "Tocá descargar y abrí el archivo con Excel o Google Sheets." },
     ],
     tips: ["Los datos son tuyos: podés bajarlos cuando quieras, en cualquier plan."],
+    faq: [
+      { q: "¿En qué formato se descarga?", a: "En archivos CSV, que abren con Excel y Google Sheets." },
+      { q: "¿Quién puede descargarlos?", a: "El dueño y los administradores, desde **Ajustes → Tus datos**. Hay un límite de descargas por hora para cuidar el sistema." },
+    ],
     keywords: ["exportar datos", "descargar datos", "backup", "copia de seguridad", "csv", "excel", "mis datos", "llevarme los datos"],
     related: ["como-descargar-tus-productos-a-excel"],
     updatedAt: UPDATED,
@@ -197,6 +249,10 @@ export const cuentaDocs: DocArticle[] = [
     tips: [
       "Si tu plan incluye menos usuarios que los que tenés, los de más quedan **Pausados** hasta que subas de plan o quites a alguien.",
       "Lo que la persona hizo (ventas, cajas) queda registrado aunque la quites.",
+    ],
+    faq: [
+      { q: "¿Puedo cambiarle el rol a alguien?", a: "Sí, desde el selector de rol de su fila (**Administrador** o **Vendedor**). El Dueño es uno solo y no se puede cambiar ni quitar." },
+      { q: "¿Qué es un usuario pausado?", a: "Si tu plan incluye menos usuarios que los que tenés, los de más quedan pausados y no pueden entrar hasta que subas de plan o quites a alguien." },
     ],
     keywords: ["quitar usuario", "eliminar empleado", "cambiar contrasena empleado", "editar usuario", "cancelar invitacion", "usuario pausado", "sacar del equipo"],
     connections: [

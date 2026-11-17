@@ -188,6 +188,10 @@ export const cajaDocs: DocArticle[] = [
       "**En caja** es lo que tendría que haber en el cajón. Al cerrar, lo comparás con lo que contás.",
       "Sólo el efectivo entra en esta cuenta: tarjeta, transferencia y otros medios no.",
     ],
+    faq: [
+      { q: "¿Por qué lo vendido es más que el efectivo en caja?", a: "Porque **Vendido en este turno** suma todos los medios de pago (efectivo, tarjeta, transferencia, QR y lo fiado), mientras que **En caja** cuenta sólo el efectivo que tendría que haber en el cajón." },
+      { q: "¿Qué es Ver todos en Movimientos del turno?", a: "La lista muestra los últimos movimientos y, si hay más, un aviso como “Y 3 más en Ver todos”. Con **Ver todos** abrís el **Detalle de caja** completo del turno." },
+    ],
     keywords: ["resumen de caja", "cuanto hay en caja", "efectivo esperado", "extracto", "movimientos del turno", "cuanto vendi hoy", "caja actual", "en caja"],
     connections: [
       { slug: "como-cerrar-la-caja", text: "El monto **En caja** es el esperado que se compara al cerrar." },
@@ -215,6 +219,10 @@ export const cajaDocs: DocArticle[] = [
       "Si nadie más tiene caja abierta, dice **Solo vos tenés caja abierta** o **No hay ninguna caja abierta**.",
       "La hora de cierre se configura en **Ajustes → Negocio → Recordar el cierre de caja**.",
     ],
+    faq: [
+      { q: "¿Qué hago si una caja quedó abierta de un día para otro?", a: "Avisale a esa persona para que la cierre contando el efectivo. Pesito también se lo recuerda, y a vos te la marca como **Abierta desde otro día**." },
+      { q: "¿Veo cuánto efectivo tiene cada caja?", a: "Sí, en cada fila aparece **En caja** con el efectivo que debería haber en esa caja." },
+    ],
     keywords: ["cajas abiertas", "equipo", "quien tiene caja abierta", "caja olvidada", "hora de cierre", "caja abierta de otro dia", "supervisar"],
     connections: [
       { slug: "como-configurar-los-avisos-del-negocio", text: "La hora del recordatorio de cierre se elige en **Ajustes**." },
@@ -240,6 +248,10 @@ export const cajaDocs: DocArticle[] = [
       "El cierre queda guardado en el historial con la diferencia, y no se puede cambiar después.",
       "Si fue un error de carga en una venta, anulala y volvé a cargarla.",
       "En el Plan Pro, **Reportes** muestra las diferencias de caja de cada vendedor.",
+    ],
+    faq: [
+      { q: "¿Puedo cerrar la caja aunque haya diferencia?", a: "Sí. Pesito no lo impide: cerrás y la diferencia queda registrada como **Faltante de efectivo** o **Sobrante de efectivo**, para que el dueño la vea en el historial." },
+      { q: "¿Se puede corregir la diferencia después de cerrar?", a: "No. Una caja cerrada no se modifica. Por eso conviene revisar los movimientos del turno antes de confirmar el cierre." },
     ],
     keywords: ["faltante", "sobrante", "diferencia de caja", "arqueo", "me falta plata", "me sobra plata", "cuadrar la caja"],
     connections: [

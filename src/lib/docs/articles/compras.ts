@@ -11,6 +11,9 @@ export const comprasDocs: DocArticle[] = [
     plan: null,
     where: "**Compras**",
     before: ["Tener cargado el proveedor (podés crearlo desde la misma pantalla)."],
+    intro: [
+      "Registrar una compra le avisa a Pesito que llegó mercadería: el stock de cada producto sube, el costo se actualiza y la plata (o la deuda con el proveedor) queda anotada. Es la forma de mantener el stock al día sin tener que ajustarlo a mano.",
+    ],
     steps: [
       { text: "Entrá a **Compras**." },
       { text: "Elegí el proveedor en **Buscar proveedor…** (es obligatorio). Si no existe, tocá el **+** de al lado para cargarlo en el momento.", images: [{ name: "compras-proveedor", alt: "Pantalla de Compras con el buscador de proveedor resaltado" }] },
@@ -27,6 +30,15 @@ export const comprasDocs: DocArticle[] = [
       "El stock de cada producto sube con lo que compraste y el costo se actualiza.",
       "Si el costo cambió, podés marcar que el precio de venta suba en la misma proporción.",
       "Si te equivocás, podés anular la compra y el stock vuelve a como estaba.",
+    ],
+    faq: [
+      { q: "¿Tengo que elegir un proveedor?", a: "Sí, es obligatorio: sin proveedor el botón de registrar no se activa (te dice **Elegí un proveedor para poder registrar la compra**). Si todavía no lo cargaste, tocá el **+** al lado del buscador de proveedor y lo creás en el momento." },
+      { q: "¿Puedo cambiar el precio de venta al cargar la compra?", a: "Sí. Cada producto de la compra muestra su **Precio de venta** actual y un campo **Nuevo**: dejá **Sin cambio** o escribí el precio nuevo. También podés marcar que el precio de venta suba en la misma proporción que el costo." },
+      { q: "¿Cómo pago una compra?", a: "Con **Efectivo**, **Tarjeta**, **Transferencia**, **QR** o **Cuenta corriente** (queda como deuda con el proveedor). Con **Dividir en varios medios** repartís el total entre más de un medio, hasta cubrirlo completo." },
+      { q: "¿Por qué no me deja pagar en efectivo?", a: "Para pagar en efectivo tenés que tener la caja abierta: el dinero se descuenta de tu caja. Abrila desde **Caja** y volvé a la compra." },
+      { q: "¿Qué es la cuenta corriente y cuándo vence?", a: "Es dejar la compra a deber. Elegís cuándo vence: **A 7 días**, **A 15 días**, **A 30 días**, una fecha puntual con **Elegir fecha** o **Sin fecha**. La cuenta corriente con proveedores es del Plan Básico." },
+      { q: "¿Qué pasa si el producto que compré no está cargado?", a: "Tocá **Producto nuevo** y lo creás sin salir de la compra." },
+      { q: "¿Puedo corregir una compra ya registrada?", a: "No se edita: se anula y se vuelve a cargar. Al anularla, el stock que había sumado se revierte." },
     ],
     keywords: ["compra", "registrar compra", "cargar compra", "mercaderia", "factura de compra", "remito", "reponer", "proveedor"],
     related: ["como-anular-una-compra", "como-ver-lo-que-le-debes-a-un-proveedor"],
@@ -45,6 +57,9 @@ export const comprasDocs: DocArticle[] = [
     summary: "Deshacé una compra cargada por error: se revierte el stock que había sumado.",
     plan: null,
     where: "**Compras → Anular compra**",
+    intro: [
+      "Anulás una compra cuando la cargaste por error, con productos o cantidades equivocadas, o el proveedor no entregó. La compra no se borra: queda marcada como **Anulada**.",
+    ],
     steps: [
       { text: "Entrá a **Compras** y buscá la compra en la lista." },
       { text: "Tocá **Ver detalle** para revisar que sea la correcta." },
@@ -53,6 +68,11 @@ export const comprasDocs: DocArticle[] = [
     tips: [
       "Al anularla se revierte el stock que había sumado y la compra queda marcada como **Anulada**.",
       "Si la compra estaba a cuenta corriente, deja de contar como deuda con el proveedor.",
+    ],
+    faq: [
+      { q: "¿Qué pasa con el stock?", a: "Se revierte: Pesito resta el stock que había sumado esa compra." },
+      { q: "¿Y con lo que pagué?", a: "Si estaba en cuenta corriente, deja de contar como deuda con el proveedor." },
+      { q: "¿Puedo deshacer la anulación?", a: "No. Si te equivocaste al anular, cargá la compra de nuevo." },
     ],
     keywords: ["anular compra", "cancelar compra", "borrar compra", "error de carga", "me equivoque", "revertir compra"],
     related: ["como-registrar-una-compra"],
@@ -69,6 +89,9 @@ export const comprasDocs: DocArticle[] = [
     summary: "Creá un proveedor con sus datos de contacto y plazos, o cargá todos juntos desde una planilla de Excel.",
     plan: null,
     where: "**Proveedores**",
+    intro: [
+      "Los proveedores se usan al registrar compras y para llevar lo que les debés. Cargar sus datos y plazos te sirve además para armar pedidos y ver cuándo vence cada pago.",
+    ],
     steps: [
       { text: "Entrá a **Proveedores** y tocá **Nuevo proveedor**." },
       { text: "Escribí el nombre. Si querés, sumá **Teléfono**, **Email**, **Notas**, el **Plazo de pago**, los **Días de entrega** y el **Pedido mínimo en pesos**." },
@@ -77,6 +100,12 @@ export const comprasDocs: DocArticle[] = [
     tips: [
       "Para cargar muchos juntos, usá la carga desde Excel en **Proveedores** (**Cargar proveedores desde Excel**). Los que ya existen no se duplican.",
       "Con **Descargar Excel** te llevás la lista de proveedores o la deuda compra por compra.",
+    ],
+    faq: [
+      { q: "¿Qué datos son obligatorios?", a: "Sólo el nombre. El teléfono, el email, las notas, el plazo de pago, los días de entrega y el pedido mínimo son opcionales." },
+      { q: "¿Qué es el plazo de pago?", a: "Es en cuántos días le pagás a ese proveedor: **Contado**, **Sin plazo** o un plazo en días. Queda cargado como dato del proveedor." },
+      { q: "¿Puedo cargar muchos proveedores de una vez?", a: "Sí, desde Excel con **Cargar proveedores desde Excel**: bajás la planilla modelo, la completás y la subís. Los que ya existen no se duplican." },
+      { q: "¿Puedo llevarme la lista a Excel?", a: "Sí, con **Descargar Excel** bajás los proveedores o la deuda compra por compra, con su vencimiento y lo que falta pagar." },
     ],
     keywords: ["proveedor", "nuevo proveedor", "cargar proveedores", "excel proveedores", "alta de proveedor", "contacto"],
     related: ["como-registrar-una-compra", "como-ver-lo-que-le-debes-a-un-proveedor"],
@@ -92,6 +121,9 @@ export const comprasDocs: DocArticle[] = [
     summary: "Mirá la deuda con cada proveedor, sus vencimientos, y registrá un pago eligiendo qué facturas cubrís.",
     plan: "basico",
     where: "**Proveedores**",
+    intro: [
+      "Cuando comprás en cuenta corriente, lo que debés a cada proveedor se acumula acá. Podés ver cuánto debés en total, qué vence primero y registrar los pagos eligiendo qué facturas cubrís.",
+    ],
     steps: [
       { text: "Entrá a **Proveedores**. Arriba ves **Le debés** en total y cuánto vence pronto.", images: [{ name: "proveedores-lista", alt: "Lista de Proveedores con lo que se debe a cada uno y el botón Registrar pago resaltado" }] },
       { text: "Filtrá con **Con deuda**, **Al día** o por día de vencimiento (**Vence hoy o ya venció**, **Mañana**…)." },
@@ -104,6 +136,13 @@ export const comprasDocs: DocArticle[] = [
       "Con **Asignar fecha** o **Cambiar fecha** definís cuándo vence cada compra a cuenta corriente.",
       "Si el pago es en efectivo, tenés que tener la caja abierta.",
       "Desde la fila del proveedor podés **Escribirle por WhatsApp**.",
+    ],
+    faq: [
+      { q: "¿Puedo pagar sólo una parte?", a: "Sí. Podés pagar menos y el resto queda pendiente. Antes de confirmar, Pesito te muestra cómo queda la deuda **Después de este pago**." },
+      { q: "¿Cómo pago una factura puntual?", a: "Tocá **Pagar esta** en esa compra, o en la ventana de pago elegí **Elegir qué facturas pago** y tildá las que cubrís." },
+      { q: "¿Qué es el saldo sin compra asociada?", a: "Es plata que pagaste o debés sin que corresponda a una compra puntual (por ejemplo, un pago a cuenta). Se ve aparte, como **Saldo sin compra asociada**." },
+      { q: "¿Cómo sé cuáles están por vencer?", a: "La lista se ordena por urgencia y podés filtrar por **Vence hoy o ya venció**, **Mañana** y otros días. Si una compra no tiene fecha, usá **Asignar fecha** para ponérsela." },
+      { q: "¿Puedo avisarle al proveedor?", a: "Sí, desde la fila del proveedor con **Escribirle por WhatsApp**." },
     ],
     keywords: ["deuda proveedor", "cuenta corriente proveedor", "pagar proveedor", "vencimientos", "cuanto debo", "registrar pago", "calendario de pagos"],
     related: ["como-registrar-una-compra", "como-cargar-proveedores"],
@@ -120,6 +159,9 @@ export const comprasDocs: DocArticle[] = [
     summary: "Mirá en un calendario qué compras vencen cada día y asigná fecha de vencimiento a las que no la tienen.",
     plan: "basico",
     where: "**Proveedores → Calendario**",
+    intro: [
+      "El calendario muestra en qué día vence cada compra a cuenta corriente, para que ordenes los pagos de la semana y no se te pase ninguno.",
+    ],
     steps: [
       { text: "Entrá a **Proveedores** y tocá **Calendario**.", images: [{ name: "proveedores-calendario", alt: "Lista de Proveedores con el botón Calendario resaltado" }] },
       { text: "En la vista **Mes** ves qué vence cada día y podés pasar al **Mes anterior** o al **Mes siguiente**." },
@@ -127,6 +169,11 @@ export const comprasDocs: DocArticle[] = [
       { text: "Para las compras sin fecha, elegí una **Fecha de vencimiento** y guardala." },
     ],
     tips: ["Las compras a cuenta corriente sin fecha aparecen para que les asignes una."],
+    faq: [
+      { q: "¿Qué vistas tiene?", a: "**Mes**, con cada vencimiento en su día, y **Todas las deudas**, que lista todo lo pendiente (lo vencido y sin pagar, lo que vence este mes y lo demás)." },
+      { q: "¿Qué hago con las compras que no tienen fecha?", a: "Aparecen para que les asignes un vencimiento: elegí la **Fecha de vencimiento** y guardala. También podés ponerle la misma fecha a todas las que no tienen." },
+      { q: "¿Qué plan necesito?", a: "La cuenta corriente con proveedores y su calendario están desde el Plan Básico." },
+    ],
     keywords: ["calendario", "vencimientos", "pagos", "deudas con proveedores", "fechas de pago", "agenda de pagos"],
     related: ["como-ver-lo-que-le-debes-a-un-proveedor"],
     updatedAt: UPDATED,
@@ -148,6 +195,10 @@ export const comprasDocs: DocArticle[] = [
       "Al anular un pago, la deuda vuelve al proveedor y, si fue en efectivo, el dinero vuelve a tu caja. No se puede deshacer.",
       "Un pago no se puede anular si la caja donde se registró ya está cerrada.",
       "**Saldo sin compra asociada** es plata que pagaste sin elegir una compra específica.",
+    ],
+    faq: [
+      { q: "¿Cómo sé qué compras debo todavía?", a: "En **Lo que le debés, compra por compra** ves cada compra pendiente con su vencimiento y su saldo." },
+      { q: "¿Qué significa A tu favor?", a: "Que le pagaste de más a ese proveedor: tenés saldo a favor para futuras compras." },
     ],
     keywords: ["ficha del proveedor", "cuenta corriente proveedor", "anular pago", "pago a proveedor", "deuda por compra", "historial del proveedor", "saldo a favor"],
     connections: [

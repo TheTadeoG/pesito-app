@@ -10,6 +10,9 @@ export const reportesDocs: DocArticle[] = [
     summary: "Mirá tus ingresos, los productos que más venden y los que más ganancia dejan, por período.",
     plan: null,
     where: "**Reportes**",
+    intro: [
+      "Reportes junta tus ventas en indicadores y listas: cuánto entró, qué producto se vende más, quién te debe y cuánta plata tenés en mercadería. Lo ves por el período que elijas y podés ocultar las secciones que no usás.",
+    ],
     steps: [
       { text: "Entrá a **Reportes**." },
       { text: "Elegí el período arriba: **Hoy**, **7 días**, **30 días** o **Este mes** (en el menú de más períodos están **Ayer**, **Mes pasado**, **Últimos 90 días** y **Este año**)." },
@@ -21,6 +24,11 @@ export const reportesDocs: DocArticle[] = [
       "La **Ganancia est.**, **Productos que más ganancia dejan** y **Productos vendidos a pérdida** son del Plan Pro: se calculan con el costo cargado en cada producto.",
       "Con **Stock valorizado** ves cuánta plata tenés en mercadería, al costo o a precio de venta.",
       "La comparación con el período anterior es del Plan Pro.",
+    ],
+    faq: [
+      { q: "¿Por qué no veo la ganancia?", a: "La **Ganancia est.** y los reportes de ganancia por producto son del Plan Pro. Se calculan con el **Costo** que cargaste en cada producto: si un producto no tiene costo, su ganancia no se puede calcular." },
+      { q: "¿Qué son los productos vendidos a pérdida?", a: "Los que se vendieron por debajo de su costo. Es una sección del Plan Pro para detectar precios mal puestos." },
+      { q: "¿Puedo ocultar secciones?", a: "Sí, con **Personalizar Reportes** elegís cuáles ver. La elección se guarda en este dispositivo." },
     ],
     keywords: ["reportes", "ventas del mes", "ganancia", "ingresos", "mas vendidos", "estadisticas", "balance", "cuanto gane", "stock valorizado"],
     related: ["como-ver-las-ventas-de-cada-vendedor", "como-ver-el-historial-de-ventas"],
@@ -37,6 +45,9 @@ export const reportesDocs: DocArticle[] = [
     summary: "Filtrá Reportes por persona del equipo y mirá cuánto vendió y las diferencias de caja de cada una.",
     plan: "basico",
     where: "**Reportes → Todos los vendedores**",
+    intro: [
+      "Si varias personas venden, acá ves cuánto vendió cada una y quién cierra la caja con diferencias, para controlar el equipo sin estar encima.",
+    ],
     steps: [
       { text: "Entrá a **Reportes**." },
       { text: "En el selector **Todos los vendedores** elegí a la persona." },
@@ -44,6 +55,11 @@ export const reportesDocs: DocArticle[] = [
       { text: "En **Ventas por vendedor** ves cuánto vende cada uno, y en **Diferencias de caja por vendedor** los faltantes y sobrantes de sus cierres." },
     ],
     tips: ["Si una persona ya no está en el equipo, sus ventas aparecen como **Usuario eliminado**."],
+    faq: [
+      { q: "¿Cómo filtro todo por una persona?", a: "Con el selector **Todos los vendedores**: elegís a alguien y todo el reporte muestra sólo lo que vendió esa persona." },
+      { q: "¿Qué son las diferencias de caja por vendedor?", a: "Los faltantes y sobrantes de los cierres de cada persona: te sirven para ver si alguien cierra seguido con diferencia." },
+      { q: "¿Qué plan necesito?", a: "Es del Plan Básico en adelante. El control más detallado por usuario es del Plan Pro." },
+    ],
     keywords: ["vendedor", "empleado", "ventas por vendedor", "quien vendio", "diferencias de caja", "faltante", "comisiones"],
     related: ["como-ver-lo-que-hizo-cada-persona-del-equipo", "como-invitar-a-tu-equipo"],
     connections: [
@@ -58,6 +74,9 @@ export const reportesDocs: DocArticle[] = [
     summary: "Controlá ventas, anulaciones, ajustes de stock, retiros y cierres de caja de cada usuario.",
     plan: "pro",
     where: "**Reportes → Control por usuario**",
+    intro: [
+      "El control por usuario junta, por persona, lo que hizo en Pesito: ventas, anulaciones, ajustes de stock, ingresos y retiros de caja y cierres. Sirve para detectar movimientos raros y saber quién los hizo.",
+    ],
     steps: [
       { text: "Entrá a **Reportes** y abrí **Control por usuario**." },
       { text: "Elegí una persona en **Por persona** (“Tocá a alguien para ver sólo lo que hizo”) o dejá **Todas las personas**." },
@@ -65,6 +84,11 @@ export const reportesDocs: DocArticle[] = [
       { text: "Mirá cada movimiento con su fecha, su detalle y la diferencia de caja en los cierres." },
     ],
     tips: ["Sirve para detectar anulaciones o ajustes de stock raros y quién los hizo."],
+    faq: [
+      { q: "¿Quién puede verlo?", a: "Sólo el dueño y los administradores, y es una función del Plan Pro." },
+      { q: "¿Qué movimientos registra?", a: "Ventas, anulaciones, ajustes de stock, ingresos, retiros y cierres de caja, con la diferencia de caja de cada cierre." },
+      { q: "¿Qué pasa con alguien que ya no está en el equipo?", a: "Sus movimientos siguen registrados y aparecen a nombre de **Usuario eliminado**." },
+    ],
     keywords: ["control por usuario", "actividad", "auditoria", "quien hizo", "anulaciones", "retiros", "empleados", "seguridad"],
     related: ["como-ver-las-ventas-de-cada-vendedor"],
     updatedAt: UPDATED,
@@ -84,6 +108,10 @@ export const reportesDocs: DocArticle[] = [
       { text: "Tocá **Ver detalle** en la venta que buscás." },
     ],
     tips: ["Las ventas anuladas aparecen con la etiqueta **Anulada**."],
+    faq: [
+      { q: "¿Puedo buscar por el nombre del cliente?", a: "Sí: el buscador acepta cliente, número de comprobante e importe." },
+      { q: "¿Dónde veo las ventas de otra sucursal?", a: "Con el filtro **Sucursal**, si tu negocio tiene más de una." },
+    ],
     keywords: ["buscar venta", "historial de ventas", "encontrar venta", "comprobante", "filtrar ventas", "venta anterior"],
     related: ["como-ver-el-historial-de-ventas", "como-anular-una-venta"],
     updatedAt: UPDATED,
@@ -96,12 +124,19 @@ export const reportesDocs: DocArticle[] = [
     plan: "pro",
     where: "**En vivo**",
     before: ["Ser dueño o administrador."],
+    intro: [
+      "En vivo es el tablero para ver cómo viene el día desde el celular: cuánto se vendió, cuánto se ganó y qué cajas están abiertas, sin tener que estar en el negocio.",
+    ],
     steps: [
       { text: "Entrá a **En vivo** desde el menú." },
       { text: "Mirá **Vendido hoy**, **Ganado hoy**, **Ventas**, **Ticket promedio** y **Cajas abiertas**." },
       { text: "Más abajo ves cada vendedor con su caja, y cuál es la que más vende hoy." },
     ],
     tips: ["Se actualiza solo: dejala abierta en el celular para mirar cómo viene el día."],
+    faq: [
+      { q: "¿Quién puede verlo?", a: "Sólo el dueño y los administradores. Los vendedores no ven En vivo." },
+      { q: "¿Qué plan necesito?", a: "Es del Plan Pro. Con el Gratis o el Básico aparece el aviso con el plan que lo desbloquea." },
+    ],
     keywords: ["en vivo", "tiempo real", "celular", "como viene el dia", "ventas de hoy", "monitor", "remoto"],
     related: ["como-ver-cuanto-vendiste-y-cuanto-ganaste"],
     updatedAt: UPDATED,
@@ -113,6 +148,9 @@ export const reportesDocs: DocArticle[] = [
     summary: "Pesito te sugiere qué reponer, cuánto y a qué proveedor, y te arma el pedido para mandar por WhatsApp.",
     plan: "max",
     where: "**Qué comprar**",
+    intro: [
+      "Qué comprar mira lo que vendés por día y lo que tenés en stock, y te arma una lista de reposición por proveedor, con cantidades sugeridas y el pedido listo para enviar por WhatsApp.",
+    ],
     steps: [
       { text: "Entrá a **Qué comprar** y mirá las recomendaciones de reposición." },
       { text: "Tocá **Revisar y pedir**." },
@@ -124,6 +162,11 @@ export const reportesDocs: DocArticle[] = [
       "Si pedís por otro medio, usá **Lo pedí por otro medio: marcar como pedido**: queda en camino y no te lo vuelve a sugerir hasta que llegue.",
       "Los pedidos se cierran solos cuando cargás una compra a ese proveedor.",
       "En la misma pantalla está la **Sugerencia de precios**, que avisa qué precios actualizar cuando sube el costo.",
+    ],
+    faq: [
+      { q: "¿Cómo sabe cuánto sugerir?", a: "Según lo que vendés por día. Con **¿Por qué esta cantidad?** ves el cálculo de cada producto. Si el producto se vende hace poco, la cantidad puede no ser exacta." },
+      { q: "¿Qué pasa cuando hago el pedido?", a: "Si lo mandás por WhatsApp (o lo marcás como pedido) queda **en camino** y no te lo vuelve a sugerir hasta que llegue. Se cierra solo cuando cargás una compra a ese proveedor." },
+      { q: "¿Puedo sacar un producto del pedido?", a: "Sí, con **Sacar del pedido**. Y podés sumar otros con **Sumar al pedido**." },
     ],
     keywords: ["que comprar", "reposicion", "pedido", "reponer", "recomendaciones", "whatsapp", "proveedor", "faltantes", "sugerencia de precios"],
     related: ["como-ver-los-productos-con-stock-bajo", "como-registrar-una-compra"],
@@ -146,6 +189,10 @@ export const reportesDocs: DocArticle[] = [
       { text: "Revisá la lista de productos parados y cuánta plata tenés en cada uno." },
     ],
     tips: ["Sirve para decidir qué liquidar, bajar de precio o dejar de comprar."],
+    faq: [
+      { q: "¿Cómo se define que un producto no rota?", a: "Son productos con stock que hace tiempo no se venden o se venden muy de a poco, mirando los últimos 60, 90 o 180 días (lo elegís arriba). Se muestra cuánta plata tenés parada en cada uno." },
+      { q: "¿Y si no aparece ninguno?", a: "Significa que todo lo que tenés en stock se está vendiendo: la pantalla dice **No encontramos productos parados**." },
+    ],
     keywords: ["baja rotacion", "no se vende", "productos parados", "stock parado", "liquidar", "plata parada", "sin movimiento"],
     related: ["como-saber-que-productos-comprar"],
     connections: [
@@ -170,6 +217,10 @@ export const reportesDocs: DocArticle[] = [
       "Elegir fechas a medida es del Plan Básico.",
       "Todo el reporte (ingresos, productos, medios de pago) cambia con el período elegido.",
     ],
+    faq: [
+      { q: "¿Cómo comparo con otro período?", a: "Con **Comparar con** (Plan Pro) elegís **Período anterior** o **Mismo período del año pasado**." },
+      { q: "¿Por qué no me deja elegir fechas?", a: "Las fechas a medida (**Personalizado**) son del Plan Básico en adelante. En el Gratis podés usar los períodos de siempre: Hoy, 7 días, 30 días, Este mes y los de **Más períodos…**." },
+    ],
     keywords: ["periodo", "fechas", "rango de fechas", "ayer", "mes pasado", "este ano", "personalizado", "filtrar por fecha", "semana"],
     connections: [{ slug: "como-ver-cuanto-vendiste-y-cuanto-ganaste", text: "El período se aplica a todo lo que ves en **Reportes**." }],
     related: ["como-comparar-periodos-en-los-reportes"],
@@ -188,6 +239,9 @@ export const reportesDocs: DocArticle[] = [
       { text: "Mirá en cada indicador cuánto subió o bajó. Con **No comparar** volvés a la vista simple." },
     ],
     tips: ["La sección de comparación se puede mostrar u ocultar con **Personalizar Reportes**."],
+    faq: [
+      { q: "¿Cómo vuelvo a la vista simple?", a: "Elegí **No comparar** en **Comparar con**." },
+    ],
     keywords: ["comparar", "comparacion", "periodo anterior", "ano pasado", "crecimiento", "subio", "bajo", "tendencia"],
     connections: [{ slug: "como-elegir-el-periodo-de-los-reportes", text: "Primero elegís el período y después con qué compararlo." }],
     related: ["como-ver-cuanto-vendiste-y-cuanto-ganaste"],
@@ -208,6 +262,9 @@ export const reportesDocs: DocArticle[] = [
     tips: [
       "Si hay productos sin costo cargado, el valor al costo queda incompleto: completá los costos en **Productos**.",
       "Si un producto tiene el stock mal, el número también: corregilo con **Ajustar stock**.",
+    ],
+    faq: [
+      { q: "¿Qué diferencia hay entre al costo y a precio de venta?", a: "**Al costo** es lo que te costó la mercadería que tenés. **A precio de venta** es lo que cobrarías si la vendés toda a los precios actuales. La diferencia es tu ganancia potencial." },
     ],
     keywords: ["stock valorizado", "valor del stock", "mercaderia", "inventario valorizado", "cuanto vale mi stock", "plata parada", "capital"],
     connections: [

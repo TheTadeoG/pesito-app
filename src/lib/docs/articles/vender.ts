@@ -504,6 +504,9 @@ export const venderDocs: DocArticle[] = [
       "Si todavía no cobraste nada, dice **Todavía no cobraste ninguna venta en esta caja**.",
       "Para ventas de días anteriores, usá **Reportes → Historial de ventas**.",
     ],
+    faq: [
+      { q: "¿Se ven las ventas de otros días?", a: "No: esta lista es de la caja que tenés abierta. Para ventas de días anteriores usá **Reportes → Ventas**." },
+    ],
     keywords: ["ventas recientes", "ultimas ventas", "ventas de hoy", "revisar venta", "caja actual", "pos"],
     related: ["como-ver-el-historial-de-ventas", "como-anular-una-venta"],
     updatedAt: UPDATED,

@@ -112,6 +112,10 @@ export const productosDocs: DocArticle[] = [
       { text: "Tocá **Descargar Excel**." },
     ],
     tips: ["La planilla descargada tiene el mismo formato que la de carga masiva: la podés editar y volver a subir."],
+    faq: [
+      { q: "¿Puedo editar la planilla y volver a subirla?", a: "Sí. Tiene el mismo formato que la planilla de carga: la editás y la subís desde **Cargar desde Excel**, eligiendo qué datos actualizar." },
+      { q: "¿Se incluyen los productos desactivados?", a: "Sólo si elegís **Todos, con los inactivos**. Las otras opciones son **Lo que estoy viendo** (con tu búsqueda y filtros) y **Todos los productos activos**." },
+    ],
     keywords: ["descargar excel", "exportar productos", "planilla", "lista de precios", "catalogo a excel", "backup"],
     related: ["como-cargar-productos-desde-excel"],
     updatedAt: UPDATED,
@@ -280,6 +284,10 @@ export const productosDocs: DocArticle[] = [
       "En la planilla de Excel podés cargar **Costo** y **Ganancia sobre el costo (%)** en lugar del precio.",
       "Si el precio queda por debajo del costo, el sistema te avisa que vendés a pérdida.",
     ],
+    faq: [
+      { q: "¿Cómo calcula el precio?", a: "Toma el **Costo** y le suma el porcentaje que escribís en **Ganancia sobre el costo (%)**. Te muestra en cuánto queda el precio y cuánto ganás por unidad; recién se carga cuando tocás **Usar este precio**." },
+      { q: "¿Qué pasa si el precio queda por debajo del costo?", a: "El producto aparece en **Vendiendo a pérdida** en los avisos de Productos, para que lo revises." },
+    ],
     keywords: ["margen", "ganancia", "porcentaje", "markup", "precio segun costo", "calcular precio", "cuanto cobrar", "rentabilidad"],
     related: ["como-cambiar-el-precio-de-un-producto", "como-hacer-aumentos-masivos-de-precios"],
     updatedAt: UPDATED,
@@ -377,6 +385,10 @@ export const productosDocs: DocArticle[] = [
       "Al cargar un producto también podés crear una marca nueva con el botón **+** al lado de **Marca**.",
       "Podés filtrar la lista de productos por marca y ajustar precios de todos los productos de una marca (Plan Pro).",
     ],
+    faq: [
+      { q: "¿Para qué sirven las marcas?", a: "Para filtrar la lista de productos, para ajustar precios o costos de todos los productos de una marca (Plan Pro) y para hacer un inventario físico de una sola marca." },
+      { q: "¿Tengo que cargar la marca antes que el producto?", a: "No: al cargar un producto podés crear la marca en el momento con el **+** al lado del campo **Marca**." },
+    ],
     keywords: ["marcas", "nueva marca", "cargar marcas", "administrar marcas", "excel marcas"],
     related: ["como-cargar-un-producto", "como-hacer-aumentos-masivos-de-precios"],
     connections: [
@@ -431,6 +443,10 @@ export const productosDocs: DocArticle[] = [
       { text: "Con **Columnas** elegís qué columnas ver en la tabla (se guarda en este dispositivo)." },
     ],
     tips: ["Tocá el título de una columna (por ejemplo **Precio de venta**) para ordenar la lista."],
+    faq: [
+      { q: "¿Qué busca el buscador?", a: "Nombre, marca, SKU y código de barras, todo en el mismo campo." },
+      { q: "¿Se guardan las columnas que elijo?", a: "Sí, en este dispositivo: la próxima vez que entres vas a ver las mismas columnas." },
+    ],
     keywords: ["buscar producto", "filtrar", "filtros", "encontrar", "ordenar", "columnas", "lista de productos", "sin stock", "sin costo"],
     related: ["como-cargar-un-producto"],
     updatedAt: UPDATED,
@@ -448,6 +464,10 @@ export const productosDocs: DocArticle[] = [
       { text: "Revisá la lista de cambios, del más nuevo al más viejo." },
     ],
     tips: ["Sirve para ver desde cuándo vendés a un precio, o cuánto subió el costo con el tiempo."],
+    faq: [
+      { q: "¿Puedo volver a un precio anterior?", a: "Sí, es una función del Plan Pro: desde el historial podés volver a un precio o costo anterior." },
+      { q: "¿Qué registra el historial?", a: "Los cambios del **Precio de venta** y del **Costo** del producto, uno por uno, para que veas cuándo y cuánto se movieron." },
+    ],
     keywords: ["historial de precios", "historial de costos", "cuando cambio el precio", "precio anterior", "cambios de precio", "auditoria"],
     related: ["como-cambiar-el-precio-de-un-producto", "como-hacer-aumentos-masivos-de-precios"],
     updatedAt: UPDATED,
@@ -467,6 +487,10 @@ export const productosDocs: DocArticle[] = [
     tips: [
       "Para cambiarla, tocá **Cambiar imagen**; para sacarla, usá el link de quitar al lado.",
       "La imagen aparece en la lista de Productos y al buscar en el Punto de Venta.",
+    ],
+    faq: [
+      { q: "¿Qué imágenes acepta?", a: "Sólo archivos de imagen de hasta 5 MB. Si el archivo no es una imagen o es muy pesado, Pesito te avisa." },
+      { q: "¿Quién ve la imagen?", a: "Vos y tu equipo: aparece en la lista de Productos y al buscar en el Punto de Venta." },
     ],
     keywords: ["imagen", "foto", "fotografia", "subir imagen", "cambiar imagen", "producto con foto"],
     related: ["como-cargar-un-producto"],
@@ -493,6 +517,10 @@ export const productosDocs: DocArticle[] = [
       "Se guarda y se cobra siempre el precio final (con IVA). La alícuota sólo ayuda a calcular.",
       "Con **Ocultar IVA** volvés a ver sólo el precio de venta.",
     ],
+    faq: [
+      { q: "¿Qué precio se cobra: el que tiene IVA o el que no?", a: "Siempre el **Final (con IVA)**. La alícuota sólo ayuda a calcularlo: lo que queda guardado y se cobra es el precio final." },
+      { q: "¿Puedo calcular también el costo sin IVA?", a: "Sí, el campo **Costo** tiene su propia calculadora de IVA, igual que el precio de venta." },
+    ],
     keywords: ["iva", "precio sin iva", "precio final", "alicuota", "21", "10,5", "calcular iva", "neto", "impuesto"],
     related: ["como-cambiar-el-precio-de-un-producto", "como-poner-el-precio-con-un-porcentaje-sobre-el-costo"],
     updatedAt: UPDATED,
@@ -514,6 +542,10 @@ export const productosDocs: DocArticle[] = [
     tips: [
       "El stock y el stock mínimo se manejan en la unidad que elijas.",
       "Las recomendaciones de compra de **Qué comprar** piden bultos enteros: por eso conviene cargar las unidades por bulto.",
+    ],
+    faq: [
+      { q: "¿Qué cambia según la unidad que elija?", a: "El stock y el stock mínimo del producto se manejan en esa unidad (por ejemplo, kilos o litros), y se muestran con esa medida en las listas." },
+      { q: "¿Para qué sirve la presentación?", a: "Para aclarar cómo viene agrupado el producto (por ejemplo, “Pack de 6” o “Fardo de 12”) y que se entienda al vender." },
     ],
     keywords: ["unidad", "kilo", "litro", "pack", "caja", "bulto", "fardo", "docena", "presentacion", "unidades por bulto", "medida"],
     related: ["como-cargar-un-producto", "como-saber-que-productos-comprar"],
@@ -537,6 +569,10 @@ export const productosDocs: DocArticle[] = [
       "Para corregir el stock, usá **Ajustar stock** en los tres puntitos del producto.",
       "Para corregir un precio que da pérdida, editá el producto o usá el porcentaje sobre el costo.",
       "El detalle de stock bajo y sin mínimo es del Plan Básico: en el Gratis ves cuántos son.",
+    ],
+    faq: [
+      { q: "¿Qué es Vendiendo a pérdida?", a: "Son los productos cuyo precio de venta quedó por debajo de su costo. Revisalos: o el precio quedó viejo, o el costo subió." },
+      { q: "¿Qué son los Números para revisar?", a: "Productos con stock negativo, sin costo cargado o sin stock mínimo: datos que faltan o están mal y que impiden calcular bien las ganancias y los avisos." },
     ],
     keywords: ["avisos", "alertas", "stock bajo", "vendiendo a perdida", "stock negativo", "sin costo", "revisar", "perdida"],
     related: ["como-ver-los-productos-con-stock-bajo", "como-poner-el-precio-con-un-porcentaje-sobre-el-costo"],
