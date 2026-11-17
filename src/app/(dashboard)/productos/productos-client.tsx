@@ -55,6 +55,7 @@ import { AdjustDialog } from "@/components/dashboard/adjust-dialog";
 import { ProLockedCard } from "@/components/dashboard/pro-locked-card";
 import { BulkFieldIncreaseDialog } from "@/app/(dashboard)/productos/bulk-field-increase-dialog";
 import { PriceHistoryDialog } from "@/app/(dashboard)/productos/price-history-dialog";
+import { AddVariantsDialog } from "@/app/(dashboard)/productos/add-variants-dialog";
 import { AddChoiceDialog } from "@/app/(dashboard)/productos/add-choice-dialog";
 import { BrandFormDialog } from "@/app/(dashboard)/productos/brand-form-dialog";
 import { downloadSuppliersExcel } from "@/app/(dashboard)/proveedores/supplier-excel";
@@ -266,6 +267,7 @@ export function ProductosClient({
   const [bulkLockedOpen, setBulkLockedOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [supplierImportOpen, setSupplierImportOpen] = useState(false);
+  const [variantsFor, setVariantsFor] = useState<Product | null>(null);
   const [supplierFormOpen, setSupplierFormOpen] = useState(false);
   const [supplierChoiceOpen, setSupplierChoiceOpen] = useState(false);
   const [brandChoiceOpen, setBrandChoiceOpen] = useState(false);
@@ -1214,6 +1216,11 @@ export function ProductosClient({
                                 <History className="h-4 w-4" />
                                 Ver movimientos
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setVariantsFor(product)}>
+                                <Plus className="h-4 w-4" />
+                                Agregar talles o colores
+                                {variantsLocked && <Badge tone="accent">Básico</Badge>}
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => setPriceHistoryProduct(product)}
                               >
@@ -1489,6 +1496,15 @@ export function ProductosClient({
           description="Generá un código único para los productos que no tienen (no se repite nunca) e imprimí las etiquetas listas para pegar."
         />
       </Dialog>
+      <AddVariantsDialog
+        key={variantsFor?.id ?? "none"}
+        product={variantsFor}
+        products={products}
+        locked={variantsLocked}
+        sizeSuggestions={Array.from(new Set(products.map((p) => p.variant_size).filter((v): v is string => Boolean(v)))).sort((a, b) => a.localeCompare(b, "es", { numeric: true }))}
+        colorSuggestions={Array.from(new Set(products.map((p) => p.variant_color).filter((v): v is string => Boolean(v)))).sort((a, b) => a.localeCompare(b, "es"))}
+        onClose={() => setVariantsFor(null)}
+      />
       <SupplierForm
         key={`supplier-form-${supplierFormKey}`}
         open={supplierFormOpen}

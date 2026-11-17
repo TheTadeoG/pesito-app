@@ -26,8 +26,8 @@ export const EMPTY_VARIANTS: VariantsState = { enabled: false, sizesText: "", co
 const keyOf = (size: string, color: string) => `${size.toLowerCase()}|${color.toLowerCase()}`;
 
 /** Filas de variantes listas para mostrar y guardar: cada combinación con su SKU, código, stock y precio. */
-export function resolveVariantRows(state: VariantsState, baseSku: string, basePrice: string) {
-  const combos = combinations(parseList(state.sizesText), parseList(state.colorsText)).filter(({ size, color }) => !state.excluded.includes(keyOf(size, color)));
+export function resolveVariantRows(state: VariantsState, baseSku: string, basePrice: string, reserved: readonly string[] = []) {
+  const combos = combinations(parseList(state.sizesText), parseList(state.colorsText)).filter(({ size, color }) => !state.excluded.includes(keyOf(size, color)) && !reserved.includes(keyOf(size, color)));
   return combos.map(({ size, color }) => {
     const edit = state.edits[keyOf(size, color)] ?? {};
     return {
@@ -57,6 +57,8 @@ export function VariantsSection({
   sizeSuggestions,
   colorSuggestions,
   showStock,
+  embedded = false,
+  reserved = [],
 }: {
   state: VariantsState;
   onChange: (next: VariantsState) => void;
@@ -69,8 +71,12 @@ export function VariantsSection({
   colorSuggestions: string[];
   /** Con false (el stock entra por la compra) no se pide el stock inicial. */
   showStock: boolean;
+  /** Dentro de una ventana propia: sin la casilla "Tiene talles o colores" (siempre activo). */
+  embedded?: boolean;
+  /** Combinaciones que ya existen ("talle|color" en minúsculas): no se vuelven a crear. */
+  reserved?: string[];
 }) {
-  const rows = useMemo(() => resolveVariantRows(state, baseSku, basePrice), [state, baseSku, basePrice]);
+  const rows = useMemo(() => resolveVariantRows(state, baseSku, basePrice, reserved), [state, baseSku, basePrice, reserved]);
   const sizes = parseList(state.sizesText);
   const colors = parseList(state.colorsText);
   const pg = usePagination(rows.length, `${state.sizesText}|${state.colorsText}`, "pesito-variantes-pagesize");
@@ -81,6 +87,7 @@ export function VariantsSection({
 
   return (
     <div className="rounded-xl border border-border bg-muted/30 p-3.5">
+      {!embedded && (
       <label className={cn("flex items-start gap-2.5 text-sm", locked ? "cursor-not-allowed opacity-70" : "cursor-pointer")}>
         <input
           type="checkbox"
@@ -94,14 +101,15 @@ export function VariantsSection({
           <span className="block text-xs text-muted-foreground">Cargás una sola vez el producto y cada talle y color queda con su propio SKU, stock y precio.</span>
         </span>
       </label>
+      )}
       {locked && (
         <PlanLockNote plan="basico" className="mt-3">
           Los talles y colores están desde el Plan Básico.
         </PlanLockNote>
       )}
 
-      {state.enabled && !locked && (
-        <div className="mt-4 space-y-3">
+      {(state.enabled || embedded) && !locked && (
+        <div className={cn("space-y-3", !embedded && "mt-4")}>
           <div className="space-y-4">
             <ChipPicker
               id="v-sizes"
@@ -197,7 +205,11 @@ export function VariantsSection({
                 </table>
                 <PaginationBar total={rows.length} page={pg.page} pageSize={pg.pageSize} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} noun="variantes" />
               </div>
-              <p className="text-xs text-muted-foreground">El SKU de cada variante se arma con el SKU base de arriba: podés cambiarlo. El costo y los demás datos son los mismos para todas.</p>
+              <p className="text-xs text-muted-foreground">
+                {embedded
+                  ? "El SKU de cada variante se arma con el del producto: podés cambiarlo. Marca, costo, proveedor y los demás datos se copian del producto."
+                  : "El SKU de cada variante se arma con el SKU base de arriba: podés cambiarlo. El costo y los demás datos son los mismos para todas."}
+              </p>
             </div>
           )}
         </div>

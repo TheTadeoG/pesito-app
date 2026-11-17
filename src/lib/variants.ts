@@ -42,3 +42,13 @@ export function combinations(sizes: readonly string[], colors: readonly string[]
   if (colors.length === 0) return sizes.map((size) => ({ size, color: "" }));
   return sizes.flatMap((size) => colors.map((color) => ({ size, color })));
 }
+
+/**
+ * SKU base de un producto que ya es variante: "REM-001-M-AZUL" con talle M y color Azul -> "REM-001", así las variantes
+ * nuevas quedan "REM-001-L-NEGRO" y no "REM-001-M-AZUL-L-NEGRO".
+ */
+export function baseSkuOf(sku: string, size: string, color: string): string {
+  const suffix = [skuPart(size), skuPart(color)].filter(Boolean).join("-");
+  if (suffix && sku.toUpperCase().endsWith(`-${suffix}`)) return sku.slice(0, sku.length - suffix.length - 1);
+  return sku;
+}
