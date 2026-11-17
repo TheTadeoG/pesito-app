@@ -3,7 +3,7 @@
 // Sólo servidor.
 const FROM = "Pesito <no-responder@pesito.com.ar>";
 
-export async function sendEmail(input: { to: string; subject: string; text: string; replyTo?: string }): Promise<boolean> {
+export async function sendEmail(input: { to: string; subject: string; text: string; html?: string; replyTo?: string }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return false;
   try {
@@ -15,6 +15,7 @@ export async function sendEmail(input: { to: string; subject: string; text: stri
         to: [input.to],
         subject: input.subject,
         text: input.text,
+        ...(input.html ? { html: input.html } : {}),
         ...(input.replyTo ? { reply_to: input.replyTo } : {}),
       }),
       signal: AbortSignal.timeout(5000),

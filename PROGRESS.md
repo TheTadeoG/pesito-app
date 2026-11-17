@@ -831,6 +831,13 @@ Ideas de diseño guardadas: costados de la portada con nodos y avisos (hecho: F)
 - Cada WhatsApp o mail se anota en `admin_contacts` (último contacto por negocio y registro de los últimos); las pruebas regaladas (también desde la ficha) se anotan ahí con `kind = 'prueba'` y el panel mide cuántas terminaron pagando.
 - Muestra si los correos automáticos están prendidos o apagados y cuántos se mandaron de cada tipo (`lifecycle_emails`). Prenderlos sigue siendo `LIFECYCLE_EMAILS_ENABLED=true` en Vercel.
 
+## Hecho: correo entrante de soporte (soporte@pesito.com.ar)
+
+- Resend Receiving: el dominio recibe correo con el MX `@ -> receive-sae1.forge.rmta.net` (prioridad 10, en Vercel DNS) y Resend Forge para el envío (`mail` CNAME a `send.forge.rmta.net`). Todo lo que llega a cualquier `@pesito.com.ar` se ve en Resend → Emails → Receiving.
+- Reenvío a la casilla del dueño: `POST /api/inbound-email` (público en el middleware, verifica la firma Svix del webhook `email.received`, lee el mail con `GET /emails/receiving/{id}` y lo reenvía con `sendEmail`; sólo lo dirigido a soporte@; el Reply-To es quien escribió). Lógica pura y pruebas en `src/lib/inbound-email.ts` / `inbound-email.test.mts` (`node --experimental-strip-types`). Los adjuntos no se reenvían (se ven en Resend).
+- Variables de Vercel: `RESEND_WEBHOOK_SECRET` (Signing secret del webhook, `whsec_…`), `SUPPORT_FORWARD_TO` (la casilla de destino; NO va en el código) y opcional `SUPPORT_ADDRESS`. Webhook en Resend → Webhooks: URL `https://www.pesito.com.ar/api/inbound-email`, evento `email.received`. La `RESEND_API_KEY` tiene que poder leer correos recibidos (si es de "solo envío", crear una con acceso completo).
+- Pendiente: probarlo de punta a punta (todavía no se creó el webhook ni se cargaron las variables).
+
 ## Hecho: impresión directa en impresora térmica (beta, sin probar con una impresora real)
 
 - Desde Chrome o Edge, Pesito le manda el ticket directo a la térmica (ESC/POS de 58 u 80 mm) sin el diálogo de impresión. Se conecta una vez en **Configuración → Facturación → Impresora térmica** (por USB, puerto serie o Bluetooth BLE; USB y serie se reconectan solos); tiene página de prueba, ancho del papel, cortar, abrir el cajón, «Imprimir al cobrar», acentos y velocidad del puerto. Se guarda por computadora (localStorage `pesito-printer`). Todos los planes.
