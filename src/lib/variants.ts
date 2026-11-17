@@ -52,3 +52,21 @@ export function baseSkuOf(sku: string, size: string, color: string): string {
   if (suffix && sku.toUpperCase().endsWith(`-${suffix}`)) return sku.slice(0, sku.length - suffix.length - 1);
   return sku;
 }
+
+const SIZE_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "2XL", "3XL", "4XL"];
+
+/** Talles en orden natural: XS, S, M, L, XL… y los números de menor a mayor; el resto, como vinieron. */
+export function sortSizes(sizes: string[]): string[] {
+  const rank = (t: string): [number, number] => {
+    const up = t.trim().toUpperCase();
+    const i = SIZE_ORDER.indexOf(up);
+    if (i >= 0) return [0, i];
+    const n = Number(up.replace(",", "."));
+    if (up !== "" && Number.isFinite(n)) return [1, n];
+    return [2, 0];
+  };
+  return sizes
+    .map((t, idx) => ({ t, idx, r: rank(t) }))
+    .sort((a, b) => a.r[0] - b.r[0] || a.r[1] - b.r[1] || a.idx - b.idx)
+    .map((x) => x.t);
+}

@@ -453,6 +453,22 @@ export async function updateProductQuick(
   return {};
 }
 
+/** Cambia el precio de venta de todas las variantes de un producto de una vez. */
+export async function setVariantGroupPrice(groupId: string, price: number): Promise<ActionState> {
+  const { organization } = await requireOrgContext();
+  if (!Number.isFinite(price) || price < 0 || price > 1_000_000_000) {
+    return { error: "El precio tiene que ser un número de cero o más." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("products")
+    .update({ price })
+    .eq("variant_group_id", groupId)
+    .eq("org_id", organization.id);
+  if (error) return { error: "No pudimos cambiar el precio." };
+  return {};
+}
+
 export async function createBrandQuick(name: string): Promise<{ error?: string; id?: string }> {
   const trimmed = name.trim();
   if (!trimmed) {

@@ -2,6 +2,7 @@
 
 import { ChevronDown, ImageIcon } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
+import { sortSizes } from "@/lib/variants";
 
 /** Talle y color de cada producto que es una variante (los demás no están). */
 export type VariantInfo = Record<string, { g: string; s: string | null; c: string | null }>;
@@ -83,7 +84,7 @@ export function PosVariantGroup<P extends PosProduct>({
   const total = members.reduce((sum, m) => sum + m.stock, 0);
   const minPrice = Math.min(...members.map((m) => m.price));
   const maxPrice = Math.max(...members.map((m) => m.price));
-  const sizes = unique(members.map((m) => info[m.id]?.s));
+  const sizes = sortSizes(unique(members.map((m) => info[m.id]?.s)));
   const colors = unique(members.map((m) => info[m.id]?.c));
   const what = sizes.length && colors.length ? "talles y colores" : colors.length ? "colores" : "talles";
   const rowKeys: (string | null)[] = sizes.length ? sizes : [null];

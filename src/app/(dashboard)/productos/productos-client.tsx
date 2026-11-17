@@ -48,6 +48,7 @@ import type { Brand, Product, Supplier } from "@/lib/types";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 import {
   deleteProduct,
+  setVariantGroupPrice,
   toggleProductActive,
   updateProductQuick,
 } from "@/app/(dashboard)/productos/actions";
@@ -250,7 +251,7 @@ export function ProductosClient({
   const [idleLoading, setIdleLoading] = useState(false);
   const [idleError, setIdleError] = useState<string | null>(null);
   // Costo y mínimo corregidos desde la tabla (edición rápida, sin recargar la pantalla).
-  const [edits, setEdits] = useState<Record<string, { cost?: number; min_stock?: number }>>({});
+  const [edits, setEdits] = useState<Record<string, { cost?: number; min_stock?: number; price?: number }>>({});
   const [exportOpen, setExportOpen] = useState(false);
   const products = useMemo(
     () => productsProp.map((p) => (edits[p.id] ? { ...p, ...edits[p.id] } : p)),
@@ -576,6 +577,18 @@ export function ProductosClient({
     const res = await updateProductQuick(id, field, value);
     if (res.error) return res.error;
     setEdits((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
+    return null;
+  }
+
+  async function setGroupPrice(groupId: string, memberIds: string[], value: number): Promise<string | null> {
+    const res = await setVariantGroupPrice(groupId, value);
+    if (res.error) return res.error;
+    setEdits((current) => {
+      const next = { ...current };
+      for (const id of memberIds) next[id] = { ...next[id], price: value };
+      return next;
+    });
+    markCatalogDirty();
     return null;
   }
 
@@ -1063,6 +1076,7 @@ export function ProductosClient({
                           onEdit={openEdit}
                           onAdjust={setAdjusting}
                           onAddVariants={setVariantsFor}
+                          onSetPrice={(price) => setGroupPrice(item.id, item.members.map((m) => m.id), price)}
                         />
                       );
                     }
