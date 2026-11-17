@@ -117,16 +117,17 @@ export function AddVariantsDialog({
             <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3.5">
               <Label htmlFor="av-bulk-price">Precio de venta de todas las variantes</Label>
               <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  id="av-bulk-price"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={bulkPrice}
-                  onChange={(e) => setBulkPrice(e.target.value)}
-                  placeholder="Ej: 4800"
-                  className="w-40"
-                />
+                <div className="w-40">
+                  <Input
+                    id="av-bulk-price"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={bulkPrice}
+                    onChange={(e) => setBulkPrice(e.target.value)}
+                    placeholder="Ej: 4800"
+                  />
+                </div>
                 <Button type="button" variant="outline" disabled={bulkBusy || bulkPrice.trim() === ""} onClick={() => void applyBulkPrice()}>
                   {bulkBusy ? "Guardando…" : `Aplicar a las ${group.length}`}
                 </Button>

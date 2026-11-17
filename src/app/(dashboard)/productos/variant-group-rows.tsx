@@ -44,13 +44,14 @@ export function VariantGroupRows({
   colSpan,
   onEdit,
   onAdjust,
-  onAddVariants,
+  onEditGroup,
 }: {
   members: Product[];
   colSpan: number;
   onEdit: (p: Product) => void;
   onAdjust: (p: Product) => void;
-  onAddVariants: (p: Product) => void;
+  /** Abre la ventana del producto, en la solapa que se pida. */
+  onEditGroup: (tab: "datos" | "variantes") => void;
 }) {
   const [open, setOpen] = useState(false);
   const first = members[0];
@@ -118,9 +119,9 @@ export function VariantGroupRows({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onAddVariants(first)}
-              aria-label="Editar talles y colores"
-              title="Editar talles y colores"
+              onClick={() => onEditGroup("datos")}
+              aria-label="Editar producto"
+              title="Editar producto"
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -196,7 +197,7 @@ export function VariantGroupRows({
               </table>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Button size="sm" onClick={() => onAddVariants(first)}>
+              <Button size="sm" onClick={() => onEditGroup("variantes")}>
                 <Plus className="h-4 w-4" />
                 Agregar talles o colores
               </Button>

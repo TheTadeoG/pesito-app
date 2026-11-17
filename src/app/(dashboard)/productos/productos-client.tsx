@@ -261,6 +261,8 @@ export function ProductosClient({
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  // Editar un producto con variantes: la misma ventana con las solapas "Datos" y "Talles y colores".
+  const [groupEdit, setGroupEdit] = useState<{ groupId: string; tab: "datos" | "variantes" } | null>(null);
   const [adjusting, setAdjusting] = useState<Product | null>(null);
   const [priceHistoryProduct, setPriceHistoryProduct] =
     useState<Product | null>(null);
@@ -540,7 +542,17 @@ export function ProductosClient({
     setFormOpen(true);
   }
 
+  function openGroupEdit(groupId: string, tab: "datos" | "variantes") {
+    const members = products.filter((p) => p.variant_group_id === groupId);
+    if (members.length === 0) return;
+    setGroupEdit({ groupId, tab });
+    setEditing(members[0]);
+    setFormKey((k) => k + 1);
+    setFormOpen(true);
+  }
+
   function openEdit(product: Product) {
+    setGroupEdit(null);
     setEditing(product);
     setFormKey((k) => k + 1);
     setFormOpen(true);
@@ -1075,7 +1087,7 @@ export function ProductosClient({
                           colSpan={2 + COLUMNS.filter((c) => showColumn(c.id)).length}
                           onEdit={openEdit}
                           onAdjust={setAdjusting}
-                          onAddVariants={setVariantsFor}
+                          onEditGroup={(tab) => openGroupEdit(item.id, tab)}
                         />
                       );
                     }
@@ -1316,10 +1328,12 @@ export function ProductosClient({
 
       <ProductForm
         orgId={orgId}
-        key={editing?.id ?? `new-${formKey}`}
+        key={`${editing?.id ?? "new"}-${formKey}`}
         open={formOpen}
         onClose={() => setFormOpen(false)}
         product={editing}
+        groupMembers={groupEdit ? products.filter((p) => p.variant_group_id === groupEdit.groupId) : undefined}
+        initialTab={groupEdit?.tab}
         brands={localBrands}
         suppliers={localSuppliers}
         barcodeGenerate={{ locked: labelsLocked }}

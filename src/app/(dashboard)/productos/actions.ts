@@ -469,6 +469,112 @@ export async function setVariantGroupPrice(groupId: string, price: number): Prom
   return {};
 }
 
+export interface VariantGroupShared {
+  /** Nombre del producto sin el talle y color (cada variante lo lleva al final). */
+  name: string;
+  brand: string;
+  /** Sólo si se cambió: pisa el costo de todas las variantes. */
+  cost?: number | null;
+  minStock: number;
+  unit: string;
+  packageLabel: string;
+  packSize: string;
+  hadPackSize: boolean;
+  imageUrl: string | null;
+  defaultSupplierId: string | null;
+}
+
+export interface VariantRowEdit {
+  id: string;
+  sku: string;
+  barcode: string;
+  price: number;
+}
+
+/**
+ * Guarda el producto con variantes de una vez: los datos compartidos (nombre, marca, proveedor, mínimo, etc.) van a todas
+ * las variantes, y cada una conserva su propio SKU, código de barras y precio. El stock no se toca acá (se ajusta aparte).
+ */
+export async function saveVariantGroup(groupId: string, shared: VariantGroupShared, rows: VariantRowEdit[]): Promise<ActionState> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+
+  const baseName = shared.name.trim();
+  if (!baseName) return { error: "El producto necesita un nombre." };
+  if (shared.minStock < 0) return { error: "El stock mínimo no puede ser negativo." };
+  if (shared.cost !== undefined && shared.cost !== null && (!Number.isFinite(shared.cost) || shared.cost < 0)) {
+    return { error: "El costo tiene que ser un número de cero o más." };
+  }
+  const packRaw = shared.packSize.trim().replace(",", ".");
+  const packSize = packRaw === "" ? null : Number(packRaw);
+  if (packSize !== null && (!Number.isFinite(packSize) || packSize <= 0 || packSize > 100000)) {
+    return { error: "Las unidades por bulto tienen que ser un número mayor a cero." };
+  }
+
+  const { data: members } = await supabase
+    .from("products")
+    .select("id, variant_size, variant_color")
+    .eq("org_id", organization.id)
+    .eq("variant_group_id", groupId);
+  if (!members || members.length === 0) return { error: "No encontramos las variantes de este producto." };
+  const memberById = new Map(members.map((m) => [m.id, m]));
+
+  const seen = new Set<string>();
+  for (const r of rows) {
+    if (!memberById.has(r.id)) return { error: "Una de las variantes ya no existe. Recargá la página." };
+    const sku = r.sku.trim();
+    if (!sku) return { error: "Cada variante necesita un SKU." };
+    if (sku.length > 60) return { error: "El SKU es demasiado largo (máximo 60 caracteres)." };
+    if (seen.has(sku.toLowerCase())) return { error: `El SKU “${sku}” está repetido en dos variantes.` };
+    seen.add(sku.toLowerCase());
+    if (!Number.isFinite(r.price) || r.price < 0 || r.price > 1_000_000_000) return { error: "El precio tiene que ser un número de cero o más." };
+  }
+  const clash = await findUsedSku(
+    supabase,
+    organization.id,
+    rows.map((r) => ({ size: "", color: "", sku: r.sku, barcode: "", stock: 0, price: 0 })),
+    members.map((m) => m.id)
+  );
+  if (clash) return { error: clash };
+
+  const common = {
+    brand: shared.brand.trim() || null,
+    min_stock: shared.minStock,
+    unit: shared.unit,
+    package_label: shared.packageLabel.trim() || null,
+    ...(packSize !== null || shared.hadPackSize ? { pack_size: packSize } : {}),
+    image_url: shared.imageUrl,
+    default_supplier_id: shared.defaultSupplierId,
+    ...(shared.cost !== undefined ? { cost: shared.cost } : {}),
+  };
+
+  const rowById = new Map(rows.map((r) => [r.id, r]));
+  let failed = 0;
+  for (let i = 0; i < members.length; i += 10) {
+    await Promise.all(
+      members.slice(i, i + 10).map(async (m) => {
+        const r = rowById.get(m.id);
+        const { error } = await supabase
+          .from("products")
+          .update({
+            ...common,
+            name: variantName(baseName, m.variant_size ?? "", m.variant_color ?? "").slice(0, 200),
+            ...(r ? { sku: r.sku.trim(), barcode: r.barcode.trim() || null, price: r.price } : {}),
+          })
+          .eq("id", m.id)
+          .eq("org_id", organization.id);
+        if (error) failed++;
+      })
+    );
+  }
+  await supabase.from("product_variant_groups").update({ name: baseName.slice(0, 200) }).eq("id", groupId).eq("org_id", organization.id);
+
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  if (failed > 0) return { error: `No pudimos guardar ${failed} de ${members.length} variantes. Revisá los SKU y probá de nuevo.` };
+  return {};
+}
+
 export async function createBrandQuick(name: string): Promise<{ error?: string; id?: string }> {
   const trimmed = name.trim();
   if (!trimmed) {
