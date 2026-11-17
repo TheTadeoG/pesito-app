@@ -10,6 +10,9 @@ export const cajaDocs: DocArticle[] = [
     summary: "Abrí tu caja con el efectivo con el que empezás el día: sin caja abierta no se puede cobrar.",
     plan: null,
     where: "**Caja → Abrir caja** (o **Abrir caja para vender** en el menú; atajo Alt + 2)",
+    intro: [
+      "La caja es el turno de trabajo de cada persona: abrirla dice con cuánto efectivo empezás y, desde ese momento, todo lo que cobrás en efectivo se va sumando a ella. Al terminar la cerrás y Pesito te dice si el efectivo coincide.",
+    ],
     steps: [
       { text: "Entrá a **Caja** (menú, o **Alt + 2**) o tocá **Abrir caja para vender** en el bloque de arriba del menú." },
       { text: "En **Monto inicial (en efectivo)** escribí cuánta plata hay en el cajón al empezar. Si arrancás sin cambio, poné 0." },
@@ -19,6 +22,13 @@ export const cajaDocs: DocArticle[] = [
     tips: [
       "Cada persona tiene su propia caja, independiente de las demás. Lo que vende cada uno suma a su caja.",
       "Si tu negocio tiene varias sucursales, la caja se abre en la sucursal en la que estás trabajando.",
+    ],
+    faq: [
+      { q: "¿Qué monto inicial pongo si no tengo cambio?", a: "Poné 0. El monto inicial es sólo el efectivo que ya está en el cajón al empezar; después se le suman las ventas en efectivo." },
+      { q: "¿Puedo vender sin abrirla?", a: "No. El Punto de Venta pide abrir la caja antes de cobrar. Tampoco podés pagar en efectivo una compra o a un proveedor sin caja abierta." },
+      { q: "¿Cuántas cajas puedo tener abiertas a la vez?", a: "Depende del plan: Gratis 1, Básico 2, Pro 6 y Max 6. Si llegaste al máximo, tenés que cerrar una para abrir otra." },
+      { q: "¿Qué pasa si me olvido de cerrar la caja?", a: "Sigue abierta y el equipo la ve como **Abierta desde otro día** o **Pasó la hora de cierre**. Conviene cerrarla apenas termina el turno, para que el efectivo del día quede cuadrado en un solo cierre." },
+      { q: "¿Cada empleado abre su propia caja?", a: "Sí. Cada persona tiene su caja independiente: lo que vende cada uno suma a su caja." },
     ],
     keywords: ["abrir caja", "empezar el dia", "monto inicial", "apertura", "caja cerrada", "no puedo vender", "iniciar turno"],
     related: ["como-cerrar-la-caja", "como-hacer-una-venta", "como-usar-mas-de-una-caja"],
@@ -35,6 +45,9 @@ export const cajaDocs: DocArticle[] = [
     plan: null,
     where: "**Caja → Ingresar / Retirar**",
     before: ["Tener la caja abierta."],
+    intro: [
+      "Usalo cuando entra o sale efectivo del cajón sin que sea una venta: ponés cambio, sacás plata para llevarte al banco, pagás un gasto chico. Así, lo que Pesito espera en el cajón coincide con lo que de verdad hay.",
+    ],
     steps: [
       { text: "Entrá a **Caja** y tocá **Ingresar / Retirar**." },
       { text: "Elegí **Ingresar efectivo** (sumás plata al cajón, por ejemplo cambio) o **Retirar efectivo** (sacás plata, por ejemplo para pagarle a un proveedor)." },
@@ -44,6 +57,12 @@ export const cajaDocs: DocArticle[] = [
     tips: [
       "Todo lo que ingresás o retirás entra en la cuenta del **Monto esperado en caja** al cerrarla.",
       "Los movimientos del turno se ven en **Movimientos del turno**; tocá **Ver todos** para la lista completa.",
+    ],
+    faq: [
+      { q: "¿Tengo que registrar los pagos a proveedores como retiro?", a: "No, si el pago lo hacés desde Pesito. Los pagos a proveedores en efectivo y las compras pagadas en efectivo ya se descuentan de la caja solos; si además los cargás como retiro, se restarían dos veces." },
+      { q: "¿Para qué sirve el motivo?", a: "Para recordar después por qué entró o salió la plata. Es opcional, pero ayuda cuando revisás una diferencia al cerrar." },
+      { q: "¿Se puede registrar un ingreso o retiro con la caja cerrada?", a: "No. Sólo se puede con una caja abierta; una caja cerrada no se modifica." },
+      { q: "¿Dónde veo lo que ingresé o retiré?", a: "En **Caja**, en el resumen de efectivo y en **Movimientos del turno**." },
     ],
     keywords: ["ingresar efectivo", "retirar efectivo", "sacar plata", "poner plata", "cambio", "retiro", "ingreso", "movimiento de caja", "gastos"],
     related: ["como-cerrar-la-caja", "como-abrir-la-caja"],
@@ -60,6 +79,9 @@ export const cajaDocs: DocArticle[] = [
     plan: null,
     where: "**Caja → Cerrar caja**",
     before: ["Contar todo el efectivo que hay en el cajón."],
+    intro: [
+      "Cerrar la caja es contar el efectivo que hay en el cajón y compararlo con lo que Pesito esperaba. Si coincide, el turno queda cuadrado; si no, queda registrada la diferencia para que puedas revisarla.",
+    ],
     steps: [
       { text: "Entrá a **Caja** y tocá **Cerrar caja**." },
       {
@@ -74,6 +96,13 @@ export const cajaDocs: DocArticle[] = [
       "Lo vendido a fiado no entra al cajón: el sistema lo marca como pendiente de cobro.",
       "El dueño ve las diferencias de cada persona en el historial de caja.",
       "En **Ajustes** podés configurar la hora de cierre para que el sistema te avise cuando pasó.",
+    ],
+    faq: [
+      { q: "¿Qué es la diferencia?", a: "Es lo que contaste menos lo esperado. Si es positiva es un **Sobrante de efectivo**; si es negativa, un **Faltante de efectivo**; si es cero, **Sin diferencia**." },
+      { q: "¿Tarjeta y transferencias entran en el conteo?", a: "No. El conteo es sólo de efectivo. Lo cobrado con tarjeta, transferencia, QR u otros medios no está en el cajón, y lo vendido a fiado tampoco." },
+      { q: "¿Puedo modificar o reabrir una caja ya cerrada?", a: "No. Una caja cerrada no se modifica. Si olvidaste cargar algo, registralo antes de cerrar; después, abrí una caja nueva." },
+      { q: "¿Qué hago si me da diferencia?", a: "Primero volvé a contar, después revisá los movimientos del turno por si falta un ingreso o retiro. Mirá la guía de faltantes y sobrantes." },
+      { q: "¿Quién ve las diferencias?", a: "El dueño y los administradores las ven en el historial de caja, con el detalle de cada turno." },
     ],
     keywords: ["cerrar caja", "arqueo", "cierre", "faltante", "sobrante", "diferencia", "contar plata", "fin del dia", "cierre de turno"],
     related: ["como-ver-el-historial-de-cierres-de-caja", "como-ingresar-o-retirar-efectivo-de-la-caja"],
@@ -90,6 +119,9 @@ export const cajaDocs: DocArticle[] = [
     summary: "Revisá todos los cierres: quién cerró, cuánto se esperaba, cuánto se contó y la diferencia.",
     plan: null,
     where: "**Reportes → Caja → Historial de caja**",
+    intro: [
+      "El historial guarda cada cierre con lo esperado, lo contado y la diferencia. Sirve para ver cómo viene cada turno y detectar si alguien cierra con faltantes seguido.",
+    ],
     steps: [
       { text: "Entrá a **Reportes** y abrí la solapa **Caja**." },
       { text: "Bajá hasta **Historial de caja**: cada fila muestra fecha, quién, horario, **Esperado**, **Contado** y **Diferencia**." },
@@ -99,6 +131,9 @@ export const cajaDocs: DocArticle[] = [
       "Cuando todo coincide, la diferencia dice **Sin diferencia**.",
       "Con el Plan Básico ves las diferencias de cada empleado: quién cierra con faltantes seguido y cuánto suma.",
       "Con el Plan Pro tenés el historial completo de cierres.",
+    ],
+    faq: [
+      { q: "¿Puedo ver el detalle de un cierre?", a: "Sí. Tocá el cierre y se abre **Detalle de caja**, con las ventas, ingresos y retiros de ese turno." },
     ],
     keywords: ["historial de caja", "cierres", "diferencias", "quien cerro", "faltantes", "reporte de caja", "turnos"],
     related: ["como-cerrar-la-caja", "como-ver-lo-que-hizo-cada-persona-del-equipo"],
@@ -111,6 +146,9 @@ export const cajaDocs: DocArticle[] = [
     summary: "Cada persona abre su propia caja: cuántas pueden estar abiertas a la vez depende del plan.",
     plan: null,
     where: "**Caja**",
+    intro: [
+      "Si varias personas cobran a la vez, cada una abre su caja y cierra la suya. Así sabés cuánto vendió y cuánto efectivo manejó cada una, sin mezclar.",
+    ],
     steps: [
       { text: "Cada persona de tu equipo entra con su usuario y abre su caja desde **Caja → Abrir caja**." },
       { text: "Cada caja es independiente: lo que cobra cada uno suma a su propia caja y se cierra por separado." },
@@ -119,6 +157,10 @@ export const cajaDocs: DocArticle[] = [
     tips: [
       "Cajas abiertas a la vez: **Gratis** 1, **Básico** 2, **Pro** 6 y **Max** 6.",
       "Si llegaste al máximo, cerrá una caja o pasate a un plan más alto desde **Mi plan**.",
+    ],
+    faq: [
+      { q: "¿Dos personas pueden usar la misma caja?", a: "Cada caja pertenece a una persona: lo que cobra cada uno suma a su propia caja. Para trabajar en paralelo, cada una abre la suya." },
+      { q: "¿Cuántas cajas puedo tener abiertas?", a: "Gratis 1, Básico 2, Pro 6 y Max 6. Con sucursales (Plan Max), cada sucursal tiene sus propias cajas." },
     ],
     keywords: ["varias cajas", "dos cajas", "mas de una caja", "empleados caja", "cajas abiertas", "limite de cajas", "equipo"],
     related: ["como-invitar-a-tu-equipo", "como-elegir-o-cambiar-de-plan"],

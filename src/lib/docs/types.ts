@@ -41,6 +41,14 @@ export interface DocConnection {
   text: string;
 }
 
+/** Una duda común, con su respuesta completa. */
+export interface DocFaq {
+  /** La pregunta como la diría la persona ("¿Puedo vender sin tener la caja abierta?"). */
+  q: string;
+  /** Respuesta clara y autocontenida; nombres de botones en **negrita**. */
+  a: string;
+}
+
 export interface DocArticle {
   /** Va en la dirección (/ayuda/<slug>): minúsculas, sin tildes, con guiones. */
   slug: string;
@@ -55,8 +63,12 @@ export interface DocArticle {
   where: string;
   /** Qué conviene tener antes de empezar. */
   before?: string[];
+  /** Qué es y cuándo se usa (uno o dos párrafos cortos), antes de los pasos. */
+  intro?: string[];
   steps: DocStep[];
   tips?: string[];
+  /** Dudas frecuentes: lo que la gente pregunta después de leer los pasos. */
+  faq?: DocFaq[];
   /** Palabras y frases con las que la gente busca esto (sinónimos, formas de decirlo). */
   keywords: string[];
   /** Otras guías relacionadas (slugs). */

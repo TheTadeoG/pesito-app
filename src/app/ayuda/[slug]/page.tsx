@@ -65,6 +65,20 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
         text: plainText(s.note ? `${s.text} ${s.note}` : s.text),
       })),
     },
+    ...(article.faq && article.faq.length > 0
+      ? [
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            inLanguage: "es-AR",
+            mainEntity: article.faq.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: plainText(f.a) },
+            })),
+          },
+        ]
+      : []),
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -117,6 +131,16 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
             )}
           </div>
 
+          {article.intro && article.intro.length > 0 && (
+            <div className="mt-6 space-y-3 text-base leading-relaxed text-foreground">
+              {article.intro.map((p) => (
+                <p key={p}>
+                  <Inline text={p} />
+                </p>
+              ))}
+            </div>
+          )}
+
           {article.before && article.before.length > 0 && (
             <section className="mt-8 rounded-card border border-border bg-card p-5">
               <h2 className="text-base font-semibold text-foreground">Antes de empezar</h2>
@@ -166,6 +190,22 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {article.faq && article.faq.length > 0 && (
+            <section className="mt-12">
+              <h2 className="text-xl font-bold text-foreground">Dudas frecuentes</h2>
+              <div className="mt-4 divide-y divide-border rounded-card border border-border">
+                {article.faq.map((f) => (
+                  <div key={f.q} className="px-5 py-4">
+                    <h3 className="text-base font-semibold text-foreground">{f.q}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                      <Inline text={f.a} />
+                    </p>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 

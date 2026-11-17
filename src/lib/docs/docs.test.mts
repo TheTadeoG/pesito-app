@@ -26,6 +26,13 @@ for (const a of docArticles)
     assert.notEqual(c.slug, a.slug, `${a.slug}: se conecta consigo misma`);
     assert.ok(c.text.length >= 15 && (c.text.match(/\*\*/g) ?? []).length % 2 === 0, `${a.slug}: texto de conexión inválido`);
   }
+for (const a of docArticles) {
+  for (const p of a.intro ?? []) assert.ok(p.length >= 40 && (p.match(/\*\*/g) ?? []).length % 2 === 0, `${a.slug}: intro inválida`);
+  for (const f of a.faq ?? []) {
+    assert.ok(f.q.startsWith("¿") && f.q.endsWith("?"), `${a.slug}: la pregunta debe ir entre ¿ ?: ${f.q}`);
+    assert.ok(f.a.length >= 40 && (f.a.match(/\*\*/g) ?? []).length % 2 === 0, `${a.slug}: respuesta inválida: ${f.q}`);
+  }
+}
 for (const a of docArticles) for (const r of a.related ?? []) assert.ok(slugs.has(r), `${a.slug}: la guía relacionada "${r}" no existe`);
 
 // --- Formato ---

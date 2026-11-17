@@ -72,8 +72,10 @@ export function buildIndex(articles: DocArticle[]): Indexed[] {
     article,
     title: tokens(article.title),
     keywords: tokens(article.keywords.join(" ")),
-    summary: tokens(`${article.summary} ${article.where}`),
-    body: tokens(article.steps.map((s) => `${s.text} ${s.note ?? ""}`).join(" ")),
+    summary: tokens(`${article.summary} ${article.where} ${(article.faq ?? []).map((f) => f.q).join(" ")}`),
+    body: tokens(
+      `${(article.intro ?? []).join(" ")} ${article.steps.map((s) => `${s.text} ${s.note ?? ""}`).join(" ")} ${(article.faq ?? []).map((f) => f.a).join(" ")}`
+    ),
   }));
 }
 

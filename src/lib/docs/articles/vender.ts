@@ -11,6 +11,10 @@ export const venderDocs: DocArticle[] = [
     plan: null,
     where: "**Punto de Venta** (menú o botón **Vender**; atajo Alt + 1)",
     before: ["Tener la caja abierta (si no, el sistema te la pide antes de vender).", "Tener productos cargados."],
+    intro: [
+      "El Punto de Venta es la pantalla donde cobrás. Cada venta que confirmás baja el stock de lo vendido, suma a tu caja (si cobraste en efectivo) y queda registrada con la persona que la hizo, para verla después en los reportes.",
+      "Podés trabajar sólo con el teclado y un lector de códigos de barras: escaneás, cobrás y empezás la próxima venta sin tocar el mouse.",
+    ],
     steps: [
       { text: "Entrá a **Punto de Venta**. Si no tenés la caja abierta, tocá **Abrir caja** y poné el monto inicial." },
       {
@@ -30,6 +34,15 @@ export const venderDocs: DocArticle[] = [
       "Si un producto no tiene stock, el sistema no deja agregarlo.",
       "Podés agregar medios de pago propios en **Ajustes → Medios de pago**.",
     ],
+    faq: [
+      { q: "¿Puedo vender sin tener la caja abierta?", a: "No. Si la caja está cerrada, el Punto de Venta te muestra **Abrí tu caja para empezar a vender** y no deja cobrar hasta que la abras con **Abrir caja**. Así todo lo que cobrás queda dentro de un turno que después podés cerrar y controlar." },
+      { q: "¿Puedo vender un producto que no tiene stock?", a: "No. Si el producto no tiene unidades, aparece el aviso **Sin stock** y no se agrega; y si pedís más unidades de las que hay, no te deja pasar de lo disponible. Para poder venderlo, cargá la compra o corregí el número real con **Ajustar stock** en **Productos**." },
+      { q: "¿Tengo que elegir un cliente en cada venta?", a: "No. Si no elegís a nadie, la venta queda como **Consumidor Final**. Sólo es obligatorio elegir un cliente cuando vendés **Fiado** o cuando dejás una parte fiada en un pago mixto." },
+      { q: "¿Puedo cambiarle el precio a un producto en el momento de la venta?", a: "El precio sale del producto cargado en **Productos**. Si querés cobrar distinto sólo esta vez, usá **Agregar descuento o recargo**, o cargá el importe como **Monto libre**. Si el precio cambió para siempre, editalo en el producto." },
+      { q: "¿Qué pasa si cambio el precio de un producto después de vender?", a: "Las ventas que ya hiciste conservan el precio con el que se cobraron. El precio nuevo se usa desde la próxima venta." },
+      { q: "¿Puedo corregir una venta que ya cobré?", a: "Una venta cobrada no se edita: se anula y se carga de nuevo con los datos correctos. Al anularla, el stock vuelve y, si era fiado, se descuenta de la deuda del cliente." },
+      { q: "¿Necesito internet para vender?", a: "Sí. Pesito guarda cada venta en el momento de cobrar, así que necesita conexión. Si se cae el internet, la venta no se confirma hasta que vuelva: todavía no existe el modo sin conexión." },
+    ],
     keywords: ["vender", "cobrar", "carrito", "punto de venta", "pos", "caja registradora", "escanear", "lector", "mostrador", "nueva venta"],
     related: ["como-buscar-y-agregar-productos-al-carrito", "como-cobrar-en-efectivo-y-dar-vuelto", "como-cobrar-con-varios-medios-de-pago", "atajos-de-teclado-del-punto-de-venta"],
     connections: [
@@ -47,6 +60,9 @@ export const venderDocs: DocArticle[] = [
     summary: "Poné con cuánto paga el cliente y el sistema te dice cuánto vuelto darle.",
     plan: null,
     where: "**Punto de Venta → Cobrar → Efectivo**",
+    intro: [
+      "Cuando el cliente paga en efectivo, Pesito te calcula el vuelto y hasta te sugiere con qué billetes dárselo. Sólo el efectivo entra en lo que tiene que haber en el cajón cuando cerrás la caja.",
+    ],
     steps: [
       { text: "Armá el carrito y tocá **Cobrar**." },
       { text: "Elegí **Efectivo**. Se abre **Pago en efectivo** con el total a cobrar." },
@@ -57,6 +73,13 @@ export const venderDocs: DocArticle[] = [
     tips: [
       "Si el cliente paga con menos de lo que debe, el sistema te ofrece cargar la diferencia a fiado.",
       "El efectivo de la venta se suma a lo que tiene que haber en la caja al cerrarla.",
+    ],
+    faq: [
+      { q: "¿Qué pasa si dejo vacío el campo ¿Con cuánto paga??", a: "Se toma que el cliente paga justo el total y el vuelto es cero. Podés confirmar directo con **Confirmar venta**." },
+      { q: "¿Qué hago si el cliente me da menos plata que el total?", a: "Si te paga menos de lo que debe, el sistema te ofrece cargar la diferencia a fiado. Para eso necesitás elegir un cliente: el resto queda como deuda suya. Si no querés fiar, esperá a que complete el pago." },
+      { q: "¿Tengo que registrar el vuelto en algún lado?", a: "No. En la caja se suma el importe de la venta, no el billete que recibiste: el vuelto ya está descontado." },
+      { q: "¿Cómo sé cuánto efectivo debería tener en el cajón?", a: "En **Caja** ves **En caja**, que suma lo que abriste más las ventas en efectivo y los ingresos, y resta retiros, pagos a proveedores y compras pagadas en efectivo. Es el número con el que se compara lo que contás al cerrar." },
+      { q: "¿Y si el cliente paga una parte en efectivo y otra con tarjeta?", a: "Usá **Mixto** y asigná cuánto va a cada medio: sólo la parte en efectivo suma al cajón." },
     ],
     keywords: ["efectivo", "vuelto", "cambio", "billetes", "con cuanto paga", "plata", "cobrar efectivo"],
     related: ["como-hacer-una-venta", "como-cerrar-la-caja"],
@@ -72,6 +95,9 @@ export const venderDocs: DocArticle[] = [
     summary: "Dividí el total entre efectivo, tarjeta, transferencia u otros medios en la misma venta.",
     plan: null,
     where: "**Punto de Venta → Cobrar → Mixto**",
+    intro: [
+      "Cuando un cliente paga parte en efectivo, parte con tarjeta o transferencia (o deja algo fiado), usás el pago **Mixto**. Pesito reparte el total entre los medios y cada uno queda registrado por separado en la venta.",
+    ],
     steps: [
       { text: "Armá el carrito y tocá **Cobrar**." },
       { text: "Elegí **Mixto**. Se abre **Combinar medios de pago**." },
@@ -80,6 +106,12 @@ export const venderDocs: DocArticle[] = [
       { text: "Cuando coincida, tocá **Confirmar venta**." },
     ],
     tips: ["Una parte puede ir a **Fiado**: en ese caso elegí el cliente en **Cliente para la parte fiado**."],
+    faq: [
+      { q: "¿Cuántos medios puedo combinar?", a: "Todos los que tengas: **Efectivo**, **Tarjeta**, **Transferencia**, **QR**, **Fiado** y los medios propios que hayas agregado en **Ajustes**. Podés usar dos o más en la misma venta." },
+      { q: "¿Qué pasa si lo asignado no suma el total?", a: "No deja confirmar. El indicador **Asignado / Total** te dice **Falta asignar** o **Te pasaste** hasta que coincida exactamente con el total de la venta." },
+      { q: "¿Qué parte cuenta para el arqueo de la caja?", a: "Sólo la de **Efectivo**. Tarjeta, transferencia, QR y los medios propios no entran al cajón, así que no se esperan en el efectivo al cerrar." },
+      { q: "¿Puedo dejar una parte fiada en un pago mixto?", a: "Sí: asignale esa parte a **Fiado** y elegí el cliente en **Cliente para la parte fiado**. Esa parte suma a lo que el cliente te debe." },
+    ],
     keywords: ["mixto", "combinar", "dividir pago", "pago combinado", "parte efectivo parte tarjeta", "varios medios"],
     related: ["como-hacer-una-venta", "como-vender-fiado"],
     connections: [
@@ -96,6 +128,9 @@ export const venderDocs: DocArticle[] = [
     plan: null,
     where: "**Punto de Venta → Cobrar → Fiado**",
     before: ["Tener cargado al cliente (si no, podés crearlo desde la misma venta con **Cargar cliente nuevo**)."],
+    intro: [
+      "Vender fiado es entregar la mercadería y cobrarla después. La venta baja el stock como cualquier otra, pero el importe no entra a la caja: queda como deuda del cliente hasta que te pague.",
+    ],
     steps: [
       { text: "Armá el carrito en **Punto de Venta**." },
       { text: "Elegí al cliente. Para fiar es obligatorio." },
@@ -105,6 +140,13 @@ export const venderDocs: DocArticle[] = [
     tips: [
       "Podés fiar solo una parte: elegí **Mixto** y asigná una parte a **Fiado**.",
       "Después cobrás la deuda desde **Clientes**.",
+    ],
+    faq: [
+      { q: "¿Puedo fiar sin elegir un cliente?", a: "No. Si lo intentás, el Punto de Venta te avisa **Para cargar fiado primero elegí un cliente**. Podés elegir uno existente o crearlo en el momento con **Cargar cliente nuevo**." },
+      { q: "¿Cómo veo cuánto me debe cada cliente?", a: "En **Clientes** ves **Te debe** en cada fila, el total que te deben (**Te deben en total**) y, si querés, quiénes deben hace más tiempo. En la ficha de cada cliente está su cuenta corriente completa." },
+      { q: "¿Cómo registro que me pagó?", a: "Desde **Clientes**, con **Registrar pago**. Puede pagar todo o una parte: lo que falta sigue como deuda. Si te paga en efectivo, ese cobro entra en la caja (se muestra como **Cobros de fiado**)." },
+      { q: "¿Qué pasa si anulo una venta fiada?", a: "El stock vuelve y el importe se descuenta de la deuda del cliente." },
+      { q: "¿Cómo le recuerdo la deuda a un cliente?", a: "En la lista de **Clientes** tenés **Recordarle la deuda por WhatsApp**, que abre el mensaje listo para enviar si el cliente tiene teléfono cargado." },
     ],
     keywords: ["fiado", "fiar", "cuenta corriente", "deuda", "a cuenta", "debe", "libreta"],
     related: ["como-cobrar-la-deuda-de-un-cliente", "como-cobrar-con-varios-medios-de-pago"],
@@ -121,6 +163,9 @@ export const venderDocs: DocArticle[] = [
     summary: "Bajá o subí el total de la venta con un monto en pesos o un porcentaje.",
     plan: null,
     where: "**Punto de Venta → Agregar descuento o recargo**",
+    intro: [
+      "El descuento y el recargo se aplican sobre el total de la venta, no sobre un producto en particular. Sirven, por ejemplo, para premiar al cliente que compra mucho o para cobrar un recargo por pagar con tarjeta.",
+    ],
     steps: [
       { text: "Armá el carrito en **Punto de Venta**." },
       { text: "Tocá **Agregar descuento o recargo**." },
@@ -131,6 +176,12 @@ export const venderDocs: DocArticle[] = [
       "El porcentaje se calcula sobre el subtotal de la venta.",
       "Tocá **Ocultar descuento/recargo** para cerrar esa sección.",
       "Si querés ponerle un descuento fijo a un producto, cambiá su precio en **Productos**.",
+    ],
+    faq: [
+      { q: "¿Puedo poner el descuento en pesos o en porcentaje?", a: "Las dos. En **Descuento** o **Recargo** elegís **$** para un monto fijo o **%** para un porcentaje, que se calcula sobre el subtotal de la venta." },
+      { q: "¿Puedo descontar sólo un producto?", a: "El descuento va sobre toda la venta. Si querés que un producto quede más barato siempre, cambiale el precio en **Productos**; si sólo es esta vez, calculá el importe del descuento y cargalo." },
+      { q: "¿Cómo afecta el descuento a mis reportes?", a: "Baja el total cobrado y, por lo tanto, los ingresos y la ganancia estimada de esa venta. El ticket muestra el subtotal, el descuento o recargo y el total." },
+      { q: "¿Se puede poner descuento y recargo juntos?", a: "Sí, las dos secciones están disponibles y el total se calcula con las dos." },
     ],
     keywords: ["descuento", "recargo", "interes", "porcentaje", "rebaja", "promocion", "tarjeta recargo"],
     related: ["como-hacer-una-venta", "como-cambiar-el-precio-de-un-producto"],
@@ -146,6 +197,9 @@ export const venderDocs: DocArticle[] = [
     summary: "Sumá al carrito un importe libre, con una descripción, para vender algo sin producto cargado.",
     plan: null,
     where: "**Punto de Venta → botón +** (junto al buscador)",
+    intro: [
+      "El monto libre sirve para cobrar algo que no tenés cargado como producto: un servicio, un producto suelto o un precio que no querés crear. Suma al total como cualquier otro ítem, pero no tiene stock ni costo.",
+    ],
     steps: [
       { text: "En **Punto de Venta**, tocá el botón **+** que está al lado del buscador (**Agregar monto manual**)." },
       { text: "Escribí una **Descripción** (opcional) y el **Monto**." },
@@ -153,6 +207,11 @@ export const venderDocs: DocArticle[] = [
       { text: "Cobrá como siempre." },
     ],
     tips: ["Un monto libre no descuenta stock ni suma al costo: en reportes cuenta entero como ganancia."],
+    faq: [
+      { q: "¿Un monto libre descuenta stock?", a: "No, porque no es un producto. Tampoco tiene costo, así que en los reportes cuenta entero como ganancia." },
+      { q: "¿Conviene cargar todo como monto libre?", a: "No. Si vendés algo seguido, cargalo como producto: así controlás el stock, ves cuánto ganás y podés escanearlo. El monto libre es para excepciones." },
+      { q: "¿Puedo borrar un monto libre del carrito?", a: "Sí, igual que un producto: tocá el tachito rojo de su fila." },
+    ],
     keywords: ["monto libre", "importe", "sin codigo", "producto no cargado", "varios", "manual", "agregar monto"],
     related: ["como-hacer-una-venta"],
     updatedAt: UPDATED,
@@ -175,6 +234,11 @@ export const venderDocs: DocArticle[] = [
       "Si escaneás o escribís el SKU o código de barras exacto de una variante, se agrega directo, sin desplegar nada.",
       "Después de agregar una variante, la búsqueda se limpia: para sumar otro talle, buscá de nuevo.",
     ],
+    faq: [
+      { q: "¿Cómo sé qué talles quedan?", a: "Al desplegar el producto ves la grilla con el stock de cada talle y color. Los que no tienen stock aparecen tachados y no se pueden tocar." },
+      { q: "¿Puedo escanear una variante directamente?", a: "Sí. Si escaneás o escribís el SKU o el código de barras exacto de esa variante, se agrega directo al carrito, sin desplegar la grilla." },
+      { q: "¿Por qué se limpia la búsqueda después de agregar una variante?", a: "Para dejarte listo para la próxima. Si el cliente se lleva otro talle del mismo producto, buscalo de nuevo y elegí el otro talle." },
+    ],
     keywords: ["talle", "talles", "color", "variantes", "ropa", "indumentaria", "calzado", "prenda"],
     related: ["como-cargar-un-producto-con-talles-y-colores", "como-hacer-una-venta"],
     connections: [
@@ -190,6 +254,9 @@ export const venderDocs: DocArticle[] = [
     summary: "Encontrá rápido los combos en el Punto de Venta y cobralos: se descuenta el stock de cada producto que llevan.",
     plan: "basico",
     where: "**Punto de Venta → Combos**",
+    intro: [
+      "Un combo se vende como un solo producto con un solo precio, pero al cobrarlo Pesito descuenta del stock cada uno de los productos que lleva. Cuántos combos podés armar depende del producto que se te acaba primero.",
+    ],
     steps: [
       { text: "En **Punto de Venta**, tocá el chip **Combos** debajo del buscador (o apretá **Alt + C**). Aparecen solo los combos." },
       { text: "También podés escribir **combo** o **kit** en el buscador para listarlos." },
@@ -200,6 +267,11 @@ export const venderDocs: DocArticle[] = [
       "Si falta stock de alguno de los productos del combo, no te deja agregarlo.",
       "Al cobrar, se descuenta el stock de cada producto del combo, no del combo. Si anulás la venta, el stock vuelve.",
       "El chip **Combos** solo aparece si tu negocio tiene combos creados.",
+    ],
+    faq: [
+      { q: "¿El combo tiene stock propio?", a: "No. Su stock se calcula con el de los productos que lo componen: ves **Podés armar** con la cantidad posible. Si falta stock de alguno, no te deja agregarlo." },
+      { q: "¿Qué pasa en el ticket y en los reportes?", a: "El combo se imprime en una sola línea y su costo es la suma de los costos de los productos que lleva, así que la ganancia sale bien en los reportes." },
+      { q: "¿Por qué no veo el chip Combos?", a: "Sólo aparece si tu negocio tiene al menos un combo creado. Podés crearlos en **Productos**, con **Nuevo producto** y el tipo **Combo o kit**." },
     ],
     keywords: ["combo", "combos", "kit", "pack", "promo", "buscar combos", "alt c"],
     related: ["como-crear-un-combo-o-kit", "como-hacer-una-venta"],
@@ -216,6 +288,9 @@ export const venderDocs: DocArticle[] = [
     summary: "Imprimí el comprobante de una venta recién cobrada, o reimprimilo después desde el historial.",
     plan: null,
     where: "**Punto de Venta → ¡Venta cobrada!** o **Reportes → Ventas**",
+    intro: [
+      "El ticket es un comprobante interno de la venta, para darle al cliente. No es una factura: dice que no es válido como factura.",
+    ],
     steps: [
       { text: "Al cobrar, aparece **¡Venta cobrada!**. Tocá **Imprimir ticket (no fiscal)** (o apretá **P**)." },
       { text: "Se abre el diálogo de impresión del navegador. Elegí tu impresora y confirmá." },
@@ -224,6 +299,12 @@ export const venderDocs: DocArticle[] = [
     tips: [
       "El ticket interno dice \"Comprobante no válido como factura\". Para una factura electrónica mirá la guía de facturación.",
       "Si conectaste una impresora térmica, el ticket sale directo, sin diálogo.",
+    ],
+    faq: [
+      { q: "¿El ticket es una factura?", a: "No. Es un comprobante interno no fiscal. Pesito todavía no emite factura electrónica al cobrar." },
+      { q: "¿Puedo reimprimir un ticket más tarde?", a: "Sí. Buscá la venta en **Reportes → Ventas**, abrila con **Ver detalle** y tocá **Reimprimir ticket (no fiscal)**. Sale marcado como copia." },
+      { q: "¿Qué datos muestra el ticket y cómo lo cambio?", a: "Muestra el nombre del negocio (si lo dejás activado), el número de comprobante, los productos, el subtotal, el descuento o recargo y el total. Lo configurás en **Ajustes → Negocio**." },
+      { q: "¿Puedo imprimir sin impresora térmica?", a: "Sí: se abre el diálogo de impresión del navegador y elegís cualquier impresora. Con una impresora térmica conectada (función en prueba), el ticket sale directo." },
     ],
     keywords: ["ticket", "imprimir", "reimprimir", "comprobante", "recibo", "impresora", "comprobante x"],
     related: ["como-ver-el-historial-de-ventas"],
@@ -241,6 +322,9 @@ export const venderDocs: DocArticle[] = [
     plan: null,
     where: "**Reportes → Ventas**",
     before: ["Ser dueño o administrador (los vendedores no pueden anular)."],
+    intro: [
+      "Anular una venta sirve para deshacer una venta cargada por error o devuelta. La venta no se borra: queda registrada como anulada, con quién la anuló y el motivo, para que todo se pueda controlar.",
+    ],
     steps: [
       { text: "Entrá a **Reportes** y abrí la solapa **Ventas**." },
       { text: "Buscá la venta (podés filtrar por fecha, cliente o medio de pago) y tocá **Ver detalle**." },
@@ -251,6 +335,13 @@ export const venderDocs: DocArticle[] = [
       "Las ventas nunca se borran: quedan registradas con quién las anuló, cuándo y por qué.",
       "Al anular, el stock de lo vendido vuelve y, si era fiado, se descuenta de la deuda del cliente.",
       "Si la venta tiene factura electrónica, no se anula a secas: usá **Anular con nota de crédito**.",
+    ],
+    faq: [
+      { q: "¿Se puede deshacer una anulación?", a: "No. Una venta anulada no se reactiva. Si fue un error, cargá la venta de nuevo en el Punto de Venta." },
+      { q: "¿Qué pasa con el stock?", a: "Vuelve al stock del producto (o de cada producto del combo). En **Movimientos** queda el registro como **Anulación de venta**." },
+      { q: "¿Qué pasa con la plata?", a: "Pesito corrige sus registros, pero no mueve dinero físico: la devolución al cliente la hacés vos. Si la venta era fiada, el importe se descuenta de la deuda del cliente." },
+      { q: "¿Por qué me pide un motivo?", a: "Para dejar constancia de por qué se anuló. En el control por usuario (Plan Pro) se ven las anulaciones de cada persona." },
+      { q: "¿Puedo anular una venta de días anteriores?", a: "Sí, desde **Reportes → Ventas**, buscándola por fecha, cliente o importe." },
     ],
     keywords: ["anular", "cancelar venta", "borrar venta", "devolucion", "devolver", "error", "equivoque", "deshacer venta", "nota de credito"],
     related: ["como-ver-el-historial-de-ventas"],
@@ -268,12 +359,20 @@ export const venderDocs: DocArticle[] = [
     summary: "Mirá todas las ventas con filtros, abrí el detalle, reimprimí el ticket y exportá el período a CSV.",
     plan: null,
     where: "**Reportes → Ventas**",
+    intro: [
+      "El historial reúne todas las ventas, incluso las anuladas, para consultarlas, reimprimirlas o llevártelas a una planilla.",
+    ],
     steps: [
       { text: "Entrá a **Reportes** y abrí la solapa **Ventas**." },
       { text: "Filtrá por fechas, **Medio de pago**, **Estado** (Completadas o Anuladas), tipo de comprobante, **Sucursal** o buscá por cliente, número de comprobante o importe." },
       { text: "Tocá **Filtrar** para aplicar los filtros y **Limpiar** para empezar de nuevo." },
       { text: "Abrí una venta con **Ver detalle** para ver sus productos y medios de pago." },
       { text: "Para llevarte el período a una planilla, tocá **Exportar el período (CSV)**." },
+    ],
+    faq: [
+      { q: "¿Cómo encuentro una venta puntual?", a: "Usá el buscador por cliente, número de comprobante o importe, y combinalo con las fechas, el **Medio de pago** o el **Estado**." },
+      { q: "¿Las ventas anuladas se ven?", a: "Sí, con la etiqueta **Anulada**. Filtrá por **Estado** para ver sólo las completadas o sólo las anuladas." },
+      { q: "¿Puedo llevarme las ventas a Excel?", a: "Sí, con **Exportar el período (CSV)**; el archivo abre con Excel o Google Sheets." },
     ],
     keywords: ["historial", "ventas", "listado de ventas", "buscar venta", "filtrar ventas", "exportar", "csv", "reporte de ventas"],
     related: ["como-anular-una-venta", "como-imprimir-el-ticket-de-una-venta"],
@@ -299,6 +398,10 @@ export const venderDocs: DocArticle[] = [
       { text: "**Esc**: cierra la ventana abierta." },
     ],
     tips: ["En **Ayuda → Atajos del teclado** podés mostrar u ocultar las teclas dentro de los botones."],
+    faq: [
+      { q: "¿Por qué no me funciona Alt + número?", a: "En Mac se usa la tecla Option en lugar de Alt. Si igual no responde, usá **Ctrl + K** para buscar la pantalla y saltar a ella." },
+      { q: "¿Puedo cobrar sin tocar el mouse?", a: "Sí: escaneá o escribí y elegí con ↑ ↓ y Enter, apretá Enter dos veces para cobrar, elegí el medio de pago con 1, 2, 3…, confirmá con Enter y empezá otra venta con Enter." },
+    ],
     keywords: ["atajos", "teclado", "teclas", "rapido", "alt", "enter", "shortcuts", "sin mouse"],
     related: ["como-hacer-una-venta"],
     updatedAt: UPDATED,
@@ -325,6 +428,10 @@ export const venderDocs: DocArticle[] = [
       "Si un producto no tiene stock, aparece el aviso **Sin stock** y no se agrega.",
       "Para un producto que no está cargado, usá **Monto libre**.",
     ],
+    faq: [
+      { q: "¿Qué busca el buscador?", a: "Nombre, marca, SKU y código de barras. Con el lector, escaneás y se agrega solo; sin lector, escribís y elegís con las flechas." },
+      { q: "¿Qué pasa si escaneo un código que no existe?", a: "El producto no se agrega. Cargalo en **Productos** (podés generarle un código propio) o cobralo como **Monto libre**." },
+    ],
     keywords: ["buscar producto", "escanear", "lector de codigos", "agregar al carrito", "catalogo", "buscador", "codigo de barras", "pos"],
     related: ["como-hacer-una-venta", "como-corregir-o-vaciar-el-carrito", "atajos-de-teclado-del-punto-de-venta"],
     updatedAt: UPDATED,
@@ -344,6 +451,10 @@ export const venderDocs: DocArticle[] = [
     tips: [
       "No podés agregar más unidades que el stock que tenés. En un combo, el límite sale del producto que se acaba primero.",
       "Si el cliente se arrepiente después de cobrar, no se vacía el carrito: se anula la venta.",
+    ],
+    faq: [
+      { q: "¿Cuánto puedo agregar de un producto?", a: "Hasta el stock disponible. En un combo, el límite lo marca el producto que se acaba primero." },
+      { q: "¿Puedo cambiar la cantidad escribiéndola?", a: "Se cambia con los botones **−** y **+** de cada producto." },
     ],
     keywords: ["cantidad", "quitar producto", "sacar del carrito", "vaciar carrito", "corregir venta", "error al agregar", "me equivoque"],
     related: ["como-buscar-y-agregar-productos-al-carrito", "como-anular-una-venta"],
@@ -368,6 +479,10 @@ export const venderDocs: DocArticle[] = [
     tips: [
       "Sólo es obligatorio elegir un cliente para **Vender fiado**.",
       "Si combinás medios de pago y una parte queda fiada, te pide el **Cliente para la parte fiado**.",
+    ],
+    faq: [
+      { q: "¿El cliente nuevo queda guardado?", a: "Sí. Se crea en **Clientes** con el nombre que pusiste y podés completar el resto de los datos después." },
+      { q: "¿Puedo cambiar el cliente después de cobrar?", a: "No: elegilo antes de cobrar. Si te equivocaste, anulá la venta y volvé a cargarla." },
     ],
     keywords: ["cliente", "elegir cliente", "consumidor final", "crear cliente rapido", "cliente en la venta", "buscar cliente", "asociar venta"],
     related: ["como-vender-fiado", "como-cargar-un-cliente"],
@@ -411,6 +526,9 @@ export const venderDocs: DocArticle[] = [
     tips: [
       "Si sigue fallando, escribinos desde **Ayuda** contando qué mensaje te aparece.",
       "Pesito necesita internet para cobrar: el cobro sin conexión todavía no existe.",
+    ],
+    faq: [
+      { q: "¿Cuándo escribirles a soporte?", a: "Si el mensaje no coincide con ninguno de la lista o se repite aunque lo corrijas. Contanos qué mensaje te aparece y qué estabas haciendo." },
     ],
     keywords: ["no puedo vender", "no deja cobrar", "error", "caja cerrada", "sin stock", "no carga", "problema", "no funciona", "fiado sin cliente"],
     related: ["como-abrir-la-caja", "como-ajustar-el-stock-de-un-producto", "como-hacer-una-venta"],

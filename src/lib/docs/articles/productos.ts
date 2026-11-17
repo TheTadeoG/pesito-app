@@ -11,6 +11,9 @@ export const productosDocs: DocArticle[] = [
     plan: null,
     where: "**Productos → Nuevo producto**",
     before: ["Tener a mano el nombre, el precio de venta y, si lo tenés, el costo y el código de barras."],
+    intro: [
+      "Cada cosa que vendés tiene que estar cargada como producto: es lo que aparece en el Punto de Venta, lo que se controla en el stock y lo que alimenta los reportes de ganancia. Cargarlo bien una vez te ahorra errores después.",
+    ],
     steps: [
       { text: "Entrá a **Productos** y tocá **Nuevo producto**." },
       { text: "En **¿Qué tipo de producto es?** dejá **Simple** (la opción de siempre) y completá el **Nombre**. Si querés, subí una imagen y elegí la **Marca**." },
@@ -31,6 +34,14 @@ export const productosDocs: DocArticle[] = [
       "Cada plan tiene un máximo de productos activos: 1.000 en el Gratis, 4.000 en el Básico, 12.000 en el Pro y 20.000 en el Max. Los productos desactivados no cuentan.",
       "Para cargar muchos de una vez, usá **Cargar desde Excel**.",
     ],
+    faq: [
+      { q: "¿Qué es el SKU y qué pongo?", a: "Es el código propio con el que identificás al producto. Es obligatorio y no se puede repetir en tu negocio. Podés escribir el que ya usás o tocar **Generar** para que Pesito te dé el próximo libre (P-00001, P-00002…)." },
+      { q: "¿Y el código de barras?", a: "Es opcional y sirve para escanear el producto al vender. Si viene de fábrica, escanealo en el campo; si no tiene, desde el Plan Básico podés generar un código propio e imprimir la etiqueta." },
+      { q: "¿Qué diferencia hay entre precio y costo?", a: "El **Precio de venta** es lo que cobrás. El **Costo** es lo que te cuesta a vos: no se muestra al cliente y sirve para calcular tu ganancia en los reportes (Plan Pro). Si no lo cargás, el producto figura sin costo y su ganancia no se puede calcular." },
+      { q: "¿Para qué sirve el stock mínimo?", a: "Es el número a partir del cual querés que Pesito te avise que hay que reponer. Cuando el stock llega a ese valor o baja de él, el producto aparece en los avisos de stock bajo." },
+      { q: "¿Cuántos productos puedo cargar?", a: "Productos activos: Gratis 1.000, Básico 4.000, Pro 12.000 y Max 20.000. Un producto con talles y colores cuenta como uno solo, y los desactivados no cuentan." },
+      { q: "¿Qué hago si tengo muchos productos?", a: "No los cargues uno por uno: usá **Acciones → Cargar desde Excel** (Plan Básico), que además calcula precios desde el costo si querés." },
+    ],
     keywords: ["cargar producto", "nuevo producto", "agregar producto", "alta de producto", "crear producto", "sku", "codigo de barras", "precio", "catalogo"],
     related: ["como-cargar-productos-desde-excel", "como-cambiar-el-precio-de-un-producto", "como-ajustar-el-stock-de-un-producto"],
     connections: [
@@ -48,6 +59,9 @@ export const productosDocs: DocArticle[] = [
     plan: "basico",
     where: "**Productos → Acciones → Cargar desde Excel**",
     before: ["Ser dueño o administrador.", "Tener tus productos en una planilla (Excel .xlsx o CSV)."],
+    intro: [
+      "La carga desde Excel te permite pasar todo tu catálogo de una vez: bajás la planilla modelo, la completás y Pesito te muestra una vista previa antes de guardar nada, para que puedas corregir errores.",
+    ],
     steps: [
       { text: "Entrá a **Productos**, tocá **Acciones** y elegí **Cargar desde Excel**." },
       { text: "Tocá **Descargar planilla modelo** y completala con tus productos. Hay una hoja con instrucciones (**Cómo completarla**)." },
@@ -65,6 +79,14 @@ export const productosDocs: DocArticle[] = [
       "El stock de los productos que ya existen nunca se modifica con la planilla.",
       "Si la marca o el proveedor no existen, se crean.",
       "Funciona con **.xlsx** y CSV. Los .xls viejos hay que guardarlos como .xlsx.",
+    ],
+    faq: [
+      { q: "¿Qué columnas son obligatorias?", a: "Nombre, SKU y precio de venta (están marcadas con asterisco rojo en la planilla). En lugar del precio podés poner el **Costo** y la **Ganancia sobre el costo (%)** y el precio se calcula solo." },
+      { q: "¿Qué pasa con los productos que ya existen?", a: "No se duplican. Pesito los detecta por SKU o código de barras y, según lo que elijas en **Qué datos actualizar**, los omite o actualiza sólo los campos que marques. El stock de un producto existente nunca se modifica." },
+      { q: "¿Qué pasa si hay filas con errores?", a: "La vista previa te los muestra antes de cargar. Las filas con errores no se cargan; corregilas en la planilla y volvé a subirla: los que ya cargaste no se duplican." },
+      { q: "¿Se cargan también las marcas y los proveedores?", a: "Si la marca o el proveedor de la planilla no existe, se crea." },
+      { q: "¿Qué formato de archivo sirve?", a: "Excel (.xlsx) o CSV. Si tenés un .xls viejo, abrilo y guardalo como .xlsx." },
+      { q: "¿Puedo bajar mis productos, editarlos y volver a subirlos?", a: "Sí. La planilla que descargás con **Descargar Excel** tiene el mismo formato que la de carga: la editás y la subís, eligiendo qué datos actualizar." },
     ],
     keywords: ["excel", "planilla", "importar", "carga masiva", "subir productos", "csv", "muchos productos", "catalogo", "migrar"],
     related: ["como-descargar-tus-productos-a-excel", "como-cargar-un-producto"],
@@ -101,6 +123,9 @@ export const productosDocs: DocArticle[] = [
     summary: "Cargá la prenda una sola vez y elegí sus talles y colores: cada combinación queda con su propio SKU, stock y precio.",
     plan: "basico",
     where: "**Productos → Nuevo producto → Con talles o colores**",
+    intro: [
+      "Para ropa y calzado, en vez de cargar una remera por cada talle y color, la cargás una vez y elegís sus talles y colores. Pesito crea una variante por cada combinación, cada una con su SKU, su stock y, si querés, su precio.",
+    ],
     steps: [
       { text: "Entrá a **Productos**, tocá **Nuevo producto** y completá el **Nombre**." },
       { text: "En **¿Qué tipo de producto es?** elegí **Con talles o colores**." },
@@ -117,6 +142,13 @@ export const productosDocs: DocArticle[] = [
       "Cada variante es un producto con su SKU, stock y precio, pero cuenta como **un solo producto** para el máximo de tu plan.",
       "Cada color tiene un puntito de color de referencia: tocá el puntito de un color elegido para cambiarlo.",
       "En la lista de **Productos** el producto aparece en una fila con la etiqueta **Tiene talles y colores**; al tocarla se despliegan las variantes.",
+    ],
+    faq: [
+      { q: "¿Cada talle y color tiene su propio stock?", a: "Sí. Cada variante lleva su stock, y se descuenta por separado al vender. Por eso en el Punto de Venta ves la grilla con lo que queda de cada una." },
+      { q: "¿Puedo poner un precio distinto por variante?", a: "Sí: elegís entre un único precio para todas o uno distinto por variante, en **2 · Precio y stock**." },
+      { q: "¿Cuenta como un solo producto para el máximo del plan?", a: "Sí. Todas las variantes de un mismo producto cuentan como un producto activo." },
+      { q: "¿Y si un talle no viene en todos los colores?", a: "Tocá **¿Algún talle no viene en todos los colores?** y sacá las combinaciones que no existen." },
+      { q: "¿Puedo agregar talles o colores más adelante?", a: "Sí, desde la solapa **Variantes** del producto o con **Agregar talles o colores** en los tres puntitos." },
     ],
     keywords: ["talles", "colores", "variantes", "ropa", "indumentaria", "calzado", "remera", "prenda", "sku por talle"],
     related: ["como-agregar-talles-o-colores-a-un-producto", "como-vender-productos-con-talles-y-colores"],
@@ -147,6 +179,9 @@ export const productosDocs: DocArticle[] = [
       "Para cambiar el precio de todas a la vez, usá **Precio de venta de todas las variantes** y **Aplicar**.",
       "El stock no se edita ahí: usá **Ajustar** en cada variante.",
     ],
+    faq: [
+      { q: "¿Qué pasa con el stock que ya tenía el producto?", a: "Se mantiene: el producto actual pasa a ser una de las variantes (la que indicás) con su stock. Las nuevas variantes arrancan con el stock que cargues." },
+    ],
     keywords: ["agregar talle", "agregar color", "nueva variante", "sumar talles", "convertir en variantes", "editar variantes"],
     related: ["como-cargar-un-producto-con-talles-y-colores", "como-ajustar-el-stock-de-un-producto"],
     updatedAt: UPDATED,
@@ -159,6 +194,9 @@ export const productosDocs: DocArticle[] = [
     plan: "basico",
     where: "**Productos → Nuevo producto → Combo o kit**",
     before: ["Tener cargados los productos que van a formar el combo."],
+    intro: [
+      "Un combo es un producto que agrupa otros productos tuyos con un precio propio: por ejemplo, un pack de gaseosa más papas. No tiene stock propio: al venderlo, Pesito descuenta lo que lleva.",
+    ],
     steps: [
       { text: "Entrá a **Productos**, tocá **Nuevo producto** y completá el **Nombre** del combo." },
       { text: "En **¿Qué tipo de producto es?** elegí **Combo o kit**." },
@@ -175,6 +213,14 @@ export const productosDocs: DocArticle[] = [
       "Con **Suma con descuento**, el precio se actualiza solo cuando cambia el precio de alguno de los productos.",
       "Un combo no puede llevar otro combo adentro.",
       "En **Productos → Filtros → Tipo de producto** podés ver solo los combos. Tocá la etiqueta **Combo** de una fila para ver qué lleva.",
+    ],
+    faq: [
+      { q: "¿Cómo se calcula el precio?", a: "Hay dos formas: **Precio fijo**, que lo ponés vos, o **Suma con descuento**, que suma el precio de los productos y le resta el porcentaje que elijas. Con la segunda, el precio del combo se actualiza solo si cambia el de algún producto." },
+      { q: "¿Y el costo y la ganancia?", a: "El costo del combo es la suma de los costos de sus productos, así que la ganancia por combo sale bien. Mientras lo armás, el sistema te muestra el costo y tu ganancia." },
+      { q: "¿Cuántos combos puedo vender?", a: "Los que permita el stock: se calcula con el producto que se te acaba primero y lo ves como **Con el stock de hoy podés armar…**." },
+      { q: "¿Puedo meter un combo dentro de otro?", a: "No. Un combo sólo puede llevar productos comunes." },
+      { q: "¿Qué pasa si borro un producto que está en un combo?", a: "Primero hay que sacarlo del combo (o borrar el combo)." },
+      { q: "¿Cómo filtro sólo los combos?", a: "En **Productos → Filtros → Tipo de producto**, y en el Punto de Venta con el chip **Combos** o **Alt + C**." },
     ],
     keywords: ["combo", "kit", "pack", "promo", "armar combo", "crear combo", "varios productos juntos", "oferta"],
     related: ["como-vender-un-combo-o-kit", "como-cargar-un-producto"],
@@ -200,6 +246,12 @@ export const productosDocs: DocArticle[] = [
       "El **Costo** también se puede cambiar directo en la tabla: tocá el valor, escribilo y apretá **Enter**.",
       "Para ver cuándo cambió el precio o el costo, abrí los tres puntitos del producto y elegí **Historial de precios y costos**.",
       "Si querés subir los precios de muchos productos a la vez, usá **Acciones → Ajustar precios** (Plan Pro).",
+    ],
+    faq: [
+      { q: "¿Se actualizan las ventas ya hechas?", a: "No. Las ventas anteriores conservan el precio con el que se cobraron; el nuevo se usa desde la próxima." },
+      { q: "¿Puedo cambiar el costo sin abrir el producto?", a: "Sí: en la tabla tocá el valor del costo, escribilo y apretá **Enter**." },
+      { q: "¿Hay forma de saber cuándo cambió un precio?", a: "Sí, en **Historial de precios y costos** (tres puntitos del producto) ves cada cambio." },
+      { q: "¿Si el precio queda por debajo del costo?", a: "El producto aparece en **Vendiendo a pérdida** en los avisos de Productos, para que lo revises." },
     ],
     keywords: ["cambiar precio", "modificar precio", "editar precio", "actualizar precio", "remarcar", "precio de venta", "historial de precios"],
     related: ["como-poner-el-precio-con-un-porcentaje-sobre-el-costo", "como-hacer-aumentos-masivos-de-precios"],
@@ -240,6 +292,9 @@ export const productosDocs: DocArticle[] = [
     plan: "pro",
     where: "**Productos → Acciones → Ajustar precios / Ajustar costos**",
     before: ["Tener los productos con su marca o proveedor cargados."],
+    intro: [
+      "Cuando sube un proveedor o hay inflación, actualizar producto por producto lleva horas. Con el ajuste masivo elegís un proveedor o una marca y subís (o bajás) todos sus precios o costos juntos.",
+    ],
     steps: [
       { text: "En **Productos**, tocá **Acciones** y elegí **Ajustar precios** (o **Ajustar costos** si cambió lo que te cobra el proveedor)." },
       { text: "En **Agrupar por** elegí **Proveedor** o **Marca** y después cuál." },
@@ -254,6 +309,12 @@ export const productosDocs: DocArticle[] = [
       "Los ajustes quedan en **Ajustes anteriores**. Si te equivocaste, tocá **Deshacer** para volver al valor de antes.",
       "Para bajar con porcentaje, tiene que ser menor a 100.",
       "Con el Plan Pro, el aumento masivo es de proveedor o marca; los precios de cada producto se siguen pudiendo editar uno por uno.",
+    ],
+    faq: [
+      { q: "¿Puedo deshacerlo si me equivoco?", a: "Sí. Los ajustes quedan en **Ajustes anteriores** y con **Deshacer** los productos vuelven al valor de antes." },
+      { q: "¿Qué diferencia hay entre ajustar precios y ajustar costos?", a: "**Ajustar precios** cambia lo que cobrás. **Ajustar costos** cambia lo que te cuesta cada producto (para que la ganancia salga bien) y, si querés, sube el precio de venta en la misma proporción." },
+      { q: "¿Porcentaje o monto fijo?", a: "Las dos opciones están: **Porcentaje (%)** sube o baja proporcionalmente y **Monto fijo ($)** suma o resta la misma cantidad a todos." },
+      { q: "¿Afecta a las ventas ya hechas?", a: "No, sólo a los precios y costos desde ese momento." },
     ],
     keywords: ["aumento masivo", "aumentar precios", "subir precios", "inflacion", "ajuste de precios", "remarcar", "actualizar costos", "porcentaje", "proveedor aumento"],
     related: ["como-cambiar-el-precio-de-un-producto", "como-poner-el-precio-con-un-porcentaje-sobre-el-costo"],
@@ -271,6 +332,9 @@ export const productosDocs: DocArticle[] = [
     plan: "basico",
     where: "**Productos → Acciones → Etiquetas con código de barras**",
     before: ["Ser dueño o administrador."],
+    intro: [
+      "Si vendés productos sueltos o sin código de fábrica, podés generarles uno propio, imprimir la etiqueta y pegarla: así escaneás todo en el Punto de Venta en vez de buscar por nombre.",
+    ],
     steps: [
       { text: "En **Productos**, tocá **Acciones** y elegí **Etiquetas con código de barras**." },
       { text: "Buscá y elegí los productos. Podés filtrar por marca, por proveedor o por los que no tienen código (**Sin código**)." },
@@ -283,6 +347,11 @@ export const productosDocs: DocArticle[] = [
       "Los códigos propios empiezan con 200 y son del rango de uso interno: no se pisan con los de productos de fábrica, y no se repiten dentro de tu negocio.",
       "También podés tocar **Generar** al lado del código de barras cuando cargás o editás un producto.",
       "Solo se pueden imprimir códigos EAN-13 y UPC-A: los demás aparecen como **No es EAN-13**.",
+    ],
+    faq: [
+      { q: "¿Los códigos que genera Pesito sirven en otros comercios?", a: "No: son para uso interno de tu negocio. Empiezan con 200, un rango reservado para uso interno, así que no se confunden con los de los fabricantes." },
+      { q: "¿Puedo imprimir etiquetas de productos que ya traen código?", a: "Sí, siempre que sea EAN-13 o UPC-A; los demás aparecen como **No es EAN-13** y no se imprimen." },
+      { q: "¿Qué impresora necesito?", a: "Podés imprimir en una hoja A4 con varias etiquetas, o en un rollo de etiquetera, una por etiqueta." },
     ],
     keywords: ["codigo de barras", "etiquetas", "imprimir etiquetas", "generar codigo", "sin codigo", "ean", "rollo", "etiquetera"],
     related: ["como-cargar-un-producto"],
@@ -331,6 +400,11 @@ export const productosDocs: DocArticle[] = [
       "Un producto desactivado sigue en la lista con la etiqueta **Inactivo** y no cuenta para el máximo de productos de tu plan.",
       "Si el producto tiene ventas asociadas, puede que no se pueda borrar: desactivalo en su lugar.",
       "Si el producto forma parte de un combo, primero sacalo del combo (o borrá el combo).",
+    ],
+    faq: [
+      { q: "¿Cuál es la diferencia entre desactivar y borrar?", a: "Desactivar lo saca de la venta pero conserva todo su historial, y lo podés **Activar** de nuevo. Borrar lo elimina del todo." },
+      { q: "¿Un producto desactivado cuenta para el máximo del plan?", a: "No. Sólo cuentan para el máximo de tu plan los productos activos, así que desactivar libera lugar." },
+      { q: "¿Puedo borrar un producto que ya vendí?", a: "Las ventas quedan registradas, pero si el producto tiene movimientos asociados puede que no se deje borrar. En ese caso, o si querés conservar todo el historial, desactivalo en lugar de borrarlo." },
     ],
     keywords: ["desactivar producto", "borrar producto", "eliminar producto", "dar de baja", "producto inactivo", "ocultar producto", "discontinuado"],
     related: ["como-buscar-y-filtrar-productos"],
