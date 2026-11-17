@@ -7,6 +7,7 @@ import {
   Banknote,
   Check,
   ChevronsUpDown,
+  Gift,
   CircleDollarSign,
   CreditCard,
   ImageIcon,
@@ -295,8 +296,44 @@ export function PosClient({
   }, []);
   const customerPanelRef = useRef<HTMLDivElement>(null);
 
+  // Combos y kits: atajo para verlos todos (botón "Combos", Alt + C, o escribir "combo" / "kit").
+  const [comboOnly, setComboOnly] = useState(false);
+  const comboList = useMemo(
+    () =>
+      products
+        .filter((p) => bundles[p.id])
+        // Los que se pueden armar primero; los agotados al final.
+        .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0) || a.name.localeCompare(b.name, "es")),
+    [products, bundles]
+  );
+
+  // Alt + C: ver sólo los combos (no con una ventana abierta).
+  useEffect(() => {
+    if (comboList.length === 0) return;
+    function onKey(e: KeyboardEvent) {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.repeat || e.code !== "KeyC") return;
+      if (document.querySelector('[data-dialog="open"]')) return;
+      e.preventDefault();
+      setComboOnly((v) => !v);
+      setQuery("");
+      setHighlightedIndex(-1);
+      searchRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [comboList.length]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const comboWord = ["combo", "combos", "kit", "kits"].includes(q);
+    if (comboOnly || comboWord) {
+      if (!q || comboWord) {
+        // Escribir "combo" o "kit" lista todos los combos (y los productos que se llamen así).
+        const extra = comboWord ? products.filter((p) => !bundles[p.id] && p.name.toLowerCase().includes(q.replace(/s$/, ""))) : [];
+        return [...comboList, ...extra].slice(0, 50);
+      }
+      return comboList.filter((p) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase() === q || p.barcode?.toLowerCase() === q).slice(0, 50);
+    }
     if (!q) return browseProducts ? products.slice(0, 50) : [];
     return products
       .filter(
@@ -306,7 +343,7 @@ export function PosClient({
           p.sku?.toLowerCase() === q
       )
       .slice(0, 50);
-  }, [products, query, browseProducts]);
+  }, [products, query, browseProducts, comboOnly, comboList, bundles]);
 
   // Las variantes de un mismo producto salen en un solo resultado con la etiqueta "Tiene talles".
   const resultItems = useMemo(() => groupResults(results, variantInfo), [results, variantInfo]);
@@ -449,6 +486,7 @@ export function PosClient({
     }
     setQuery("");
     setBrowseProducts(false);
+    setComboOnly(false);
     setHighlightedIndex(-1);
   }
 
@@ -1017,7 +1055,7 @@ export function PosClient({
     if (e.key !== "Enter") return;
     e.preventDefault();
 
-    if (query.trim()) {
+    if (query.trim() || (comboOnly && highlightedIndex >= 0)) {
       // Un código o SKU exacto (por ejemplo, el de una variante) se agrega directo.
       const q = query.trim().toLowerCase();
       const exact = products.find((p) => (p.barcode && p.barcode.toLowerCase() === q) || (p.sku && p.sku.toLowerCase() === q));
@@ -1041,7 +1079,7 @@ export function PosClient({
     registerEnterForCheckout();
   }
 
-  const showResults = query.trim() || browseProducts;
+  const showResults = query.trim() || browseProducts || comboOnly;
 
   return (
     <div className="grid gap-6 xl:grid-cols-3">
@@ -1175,6 +1213,26 @@ export function PosClient({
               </div>
 
               <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                {comboList.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setComboOnly((v) => !v);
+                      setQuery("");
+                      setHighlightedIndex(-1);
+                      searchRef.current?.focus();
+                    }}
+                    aria-pressed={comboOnly}
+                    title="Ver sólo los combos y kits (Alt + C)"
+                    className={cn(
+                      "flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors",
+                      comboOnly ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20" : "text-foreground hover:bg-card"
+                    )}
+                  >
+                    <Gift className="h-4 w-4" />
+                    {`Combos · ${comboList.length}`}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowManualAmount((v) => !v)}
