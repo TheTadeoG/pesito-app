@@ -4,6 +4,7 @@ import { rubroPages } from "@/lib/pesito-para-data";
 import { blogPosts } from "@/lib/blog-data";
 import { comparisonBlocks } from "@/lib/comparacion-data";
 import { glossaryCategories } from "@/lib/diccionario-data";
+import { docArticles } from "@/lib/docs";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -37,6 +38,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     })),
     { url: `${siteUrl}/preguntas-frecuentes`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${siteUrl}/ayuda`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    ...docArticles.map((a) => ({
+      url: `${siteUrl}/ayuda/${a.slug}`,
+      lastModified: new Date(a.updatedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     { url: `${siteUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     ...blogPosts.map((p) => ({
       url: `${siteUrl}/blog/${p.slug}`,

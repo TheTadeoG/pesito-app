@@ -23,6 +23,7 @@ const columns: {
       { label: "Comparación", href: "/comparacion" },
       { label: "Diccionario", href: "/diccionario" },
       { label: "Por rubro", href: "/pesito-para" },
+      { label: "Ayuda paso a paso", href: "/ayuda" },
       { label: "Preguntas frecuentes", href: "/preguntas-frecuentes" },
     ],
   },

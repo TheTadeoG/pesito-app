@@ -24,6 +24,8 @@ const PUBLIC_PATHS = [
   "/diccionario",
   "/pesito-para",
   "/preguntas-frecuentes",
+  // Guías de ayuda paso a paso (con buscador): contenido público.
+  "/ayuda",
   "/privacidad",
   "/terminos",
   "/opengraph-image",

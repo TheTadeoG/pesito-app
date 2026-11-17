@@ -11,6 +11,12 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 - POS: una venta pasó de 42 consultas / ~710 KB a 6 consultas / ~1,5 KB. La sesión se valida con `getClaims`.
 - Errores de hidratación #418 arreglados: formato de fechas, cronómetro de caja y `<html>`.
 
+## Hecho: ayuda con buscador `/ayuda` (17/11/2026)
+- Guías paso a paso públicas (51 al inicio), sin capturas, con buscador en el navegador (sin acentos, sinónimos, prefijos; sin IA ni servidor). Datos en `src/lib/docs/` (`articles/*.ts` por categoría), páginas `src/app/ayuda/`, buscador `src/components/docs/docs-search.tsx`. Cada guía tiene HowTo + BreadcrumbList JSON-LD, entra al sitemap y a `llms.txt`. Accesos: footer, `/soporte` y menú de ayuda del panel.
+- Prueba: `bash src/lib/docs/run-test.sh` (datos y búsquedas esperadas).
+- Mantenimiento: ver la regla en CLAUDE.md. Las guías podrían alimentar el futuro bot de soporte (etapa 1: coincidencia por texto).
+- Pendiente: revisar a ojo `/ayuda` en el navegador; guías de facturación (ARCA todavía no emite) y de promociones/balanzas cuando existan.
+
 ## Hecho: Caja y cierre de caja
 
 - Migración 0038 (aplicada en producción): función `cash_register_summaries(uuid[])` que calcula efectivo y cobros por medio de pago de varias cajas en una sola consulta, más un índice en `sales (cash_register_id)`.

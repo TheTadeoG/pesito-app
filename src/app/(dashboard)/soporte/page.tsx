@@ -1,4 +1,5 @@
-import { LifeBuoy, Mail, MessageCircle } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, LifeBuoy, Mail, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { whatsappLink } from "@/lib/whatsapp";
 
@@ -16,6 +17,13 @@ export default function SoportePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <Link
+            href="/ayuda"
+            className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            <BookOpen className="h-4 w-4 text-primary" />
+            Guías paso a paso (con buscador)
+          </Link>
           <a
             href={whatsappLink("Hola! Tengo una consulta sobre Pesito.")}
             target="_blank"

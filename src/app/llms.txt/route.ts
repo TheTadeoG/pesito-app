@@ -4,6 +4,7 @@ import { rubroPages } from "@/lib/pesito-para-data";
 import { comparisonBlocks } from "@/lib/comparacion-data";
 import { blogPosts } from "@/lib/blog-data";
 import { faqCategories } from "@/lib/faq-data";
+import { docArticles, docCategories, docsInCategory } from "@/lib/docs";
 
 // /llms.txt (https://llmstxt.org): resumen en Markdown del sitio para los
 // modelos de lenguaje. Se arma con los mismos datos que el sitemap, así una
@@ -57,6 +58,13 @@ ${link("Cómo funciona", "/como-funciona")}
 ${link("Comparar planes", "/comparar-planes", "tabla con las funciones de cada plan, lado a lado")}
 ${link("Preguntas frecuentes", "/preguntas-frecuentes")}
 ${link("Crear una cuenta gratis", "/registro")}
+
+## Ayuda: guías paso a paso
+
+${link("Todas las guías de ayuda (con buscador)", "/ayuda")}
+${docCategories
+    .map((c) => `### ${c.title}\n\n${docsInCategory(c.id).map((a) => link(a.title, `/ayuda/${a.slug}`, a.summary)).join("\n")}`)
+    .join("\n\n")}
 
 ## Pesito por rubro
 

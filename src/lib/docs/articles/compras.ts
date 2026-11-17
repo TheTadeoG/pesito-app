@@ -1,0 +1,99 @@
+import type { DocArticle } from "@/lib/docs/types";
+
+const UPDATED = "2026-11-17";
+
+export const comprasDocs: DocArticle[] = [
+  {
+    slug: "como-registrar-una-compra",
+    title: "Cómo registrar una compra a un proveedor",
+    category: "compras",
+    summary: "Cargá lo que compraste: el stock sube solo, el costo se actualiza y elegís cómo lo pagás.",
+    plan: null,
+    where: "**Compras**",
+    before: ["Tener cargado el proveedor (podés crearlo desde la misma pantalla)."],
+    steps: [
+      { text: "Entrá a **Compras**." },
+      { text: "Elegí el proveedor en **Buscar proveedor…**. Si no existe, tocá **Cargar proveedor nuevo**." },
+      { text: "Buscá cada producto por nombre o escaneando el código y agregalo. Si no existe, tocá **Crear producto nuevo**." },
+      { text: "Completá la cantidad y el **Costo unit.** de cada uno." },
+      {
+        text: "Elegí cómo se paga: **Efectivo**, **Transferencia**, **Tarjeta**, **Dividir en varios medios** o **Cuenta corriente** (queda a deber).",
+        note: "Para pagar en efectivo tenés que tener la caja abierta. La cuenta corriente con proveedores es del Plan Básico.",
+      },
+      { text: "Si querés, anotá el número de remito o factura y, en cuenta corriente, la **Fecha de vencimiento**." },
+      { text: "Tocá **Registrar Compra** (también podés apretar Enter dos veces)." },
+    ],
+    tips: [
+      "El stock de cada producto sube con lo que compraste y el costo se actualiza.",
+      "Si el costo cambió, podés marcar que el precio de venta suba en la misma proporción.",
+      "Si te equivocás, podés anular la compra y el stock vuelve a como estaba.",
+    ],
+    keywords: ["compra", "registrar compra", "cargar compra", "mercaderia", "factura de compra", "remito", "reponer", "proveedor"],
+    related: ["como-anular-una-compra", "como-ver-lo-que-le-debes-a-un-proveedor"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-anular-una-compra",
+    title: "Cómo anular una compra",
+    category: "compras",
+    summary: "Deshacé una compra cargada por error: se revierte el stock que había sumado.",
+    plan: null,
+    where: "**Compras → Anular compra**",
+    steps: [
+      { text: "Entrá a **Compras** y buscá la compra en la lista." },
+      { text: "Tocá **Ver detalle** para revisar que sea la correcta." },
+      { text: "Tocá **Anular compra** y confirmá." },
+    ],
+    tips: [
+      "Al anularla se revierte el stock que había sumado y la compra queda marcada como **Anulada**.",
+      "Si la compra estaba a cuenta corriente, deja de contar como deuda con el proveedor.",
+    ],
+    keywords: ["anular compra", "cancelar compra", "borrar compra", "error de carga", "me equivoque", "revertir compra"],
+    related: ["como-registrar-una-compra"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-cargar-proveedores",
+    title: "Cómo cargar proveedores",
+    category: "compras",
+    summary: "Creá un proveedor con sus datos de contacto y plazos, o cargá todos juntos desde una planilla de Excel.",
+    plan: null,
+    where: "**Proveedores**",
+    steps: [
+      { text: "Entrá a **Proveedores** y tocá **Nuevo proveedor**." },
+      { text: "Escribí el nombre. Si querés, sumá **Teléfono**, **Email**, **Notas**, el **Plazo de pago**, los **Días de entrega** y el **Pedido mínimo en pesos**." },
+      { text: "Tocá **Crear proveedor**." },
+    ],
+    tips: [
+      "Para cargar muchos juntos, usá la carga desde Excel en **Proveedores** (**Cargar proveedores desde Excel**). Los que ya existen no se duplican.",
+      "Con **Descargar Excel** te llevás la lista de proveedores o la deuda compra por compra.",
+    ],
+    keywords: ["proveedor", "nuevo proveedor", "cargar proveedores", "excel proveedores", "alta de proveedor", "contacto"],
+    related: ["como-registrar-una-compra", "como-ver-lo-que-le-debes-a-un-proveedor"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-ver-lo-que-le-debes-a-un-proveedor",
+    title: "Cómo ver y pagar lo que le debés a un proveedor",
+    category: "compras",
+    summary: "Mirá la deuda con cada proveedor, sus vencimientos, y registrá un pago eligiendo qué facturas cubrís.",
+    plan: "basico",
+    where: "**Proveedores**",
+    steps: [
+      { text: "Entrá a **Proveedores**. Arriba ves **Le debés** en total y cuánto vence pronto." },
+      { text: "Filtrá con **Con deuda**, **Al día** o por día de vencimiento (**Vence hoy o ya venció**, **Mañana**…)." },
+      { text: "Para pagar, tocá **Registrar pago** (o elegí el proveedor en **¿A quién le pagás?**)." },
+      { text: "Elegí **Un monto** o **Elegir qué facturas pago**, y tildá las compras que cubrís." },
+      { text: "Elegí **Cómo pagar** (**Efectivo**, **Transferencia** o **Tarjeta**) y confirmá con **Registrar pago**." },
+    ],
+    tips: [
+      "Podés pagar menos y el resto queda pendiente.",
+      "Con **Asignar fecha** o **Cambiar fecha** definís cuándo vence cada compra a cuenta corriente.",
+      "Si el pago es en efectivo, tenés que tener la caja abierta.",
+      "Desde la fila del proveedor podés **Escribirle por WhatsApp**.",
+    ],
+    keywords: ["deuda proveedor", "cuenta corriente proveedor", "pagar proveedor", "vencimientos", "cuanto debo", "registrar pago", "calendario de pagos"],
+    related: ["como-registrar-una-compra", "como-cargar-proveedores"],
+    updatedAt: UPDATED,
+  },
+];

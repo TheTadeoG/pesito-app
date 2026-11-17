@@ -228,6 +228,10 @@ export function HelpMenu({ orgName, canOnboard }: { orgName: string; canOnboard:
           <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Ayuda
           </p>
+          <a role="menuitem" className={itemClass} href="/ayuda" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
+            <BookOpen className="h-4 w-4 text-primary" />
+            Guías paso a paso
+          </a>
           <button
             type="button"
             role="menuitem"

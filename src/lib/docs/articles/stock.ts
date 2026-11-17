@@ -1,0 +1,100 @@
+import type { DocArticle } from "@/lib/docs/types";
+
+const UPDATED = "2026-11-17";
+
+export const stockDocs: DocArticle[] = [
+  {
+    slug: "como-ajustar-el-stock-de-un-producto",
+    title: "Cómo ajustar el stock de un producto",
+    category: "stock",
+    summary: "Corregí cuántas unidades tenés de un producto: sumá, restá o dejá el número real. Queda registrado en Movimientos.",
+    plan: "basico",
+    where: "**Productos → tres puntitos del producto → Ajustar stock**",
+    steps: [
+      { text: "En **Productos**, buscá el producto y tocá los tres puntitos de su fila." },
+      { text: "Elegí **Ajustar stock**." },
+      {
+        text: "Elegí cómo ajustar: **Sumar**, **Restar** o **Ajustar a** (dejás el stock en el número real que contaste).",
+        note: "Con **Ajustar a** escribís la **Nueva cantidad en stock**; con Sumar o Restar, la **Cantidad**.",
+      },
+      { text: "Si querés, escribí un **Motivo** (rotura, conteo físico, etc.)." },
+      { text: "Tocá **Confirmar**." },
+    ],
+    tips: [
+      "Cada ajuste queda en la solapa **Movimientos**, con quién lo hizo y el motivo.",
+      "Las compras y las ventas ajustan el stock solas: usá esto sólo para correcciones.",
+      "Para contar muchos productos de una vez, mirá la guía de inventario físico (Plan Pro).",
+    ],
+    keywords: ["ajustar stock", "corregir stock", "stock", "sumar stock", "restar stock", "rotura", "merma", "conteo", "diferencia de stock"],
+    related: ["como-ver-los-movimientos-de-stock", "como-hacer-un-inventario-fisico"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-ver-los-movimientos-de-stock",
+    title: "Cómo ver los movimientos de stock",
+    category: "stock",
+    summary: "Mirá el historial de todo lo que entró y salió: ventas, compras, ajustes y transferencias, y quién lo hizo.",
+    plan: null,
+    where: "**Productos → solapa Movimientos**",
+    steps: [
+      { text: "Entrá a **Productos** y abrí la solapa **Movimientos**." },
+      { text: "Buscá un producto por nombre, SKU o código de barras (**Buscar por producto, SKU o código de barras…**)." },
+      { text: "Filtrá por período (por ejemplo **Este mes**) o por persona con **Filtrar por persona**." },
+      { text: "Mirá el tipo de cada movimiento: **Venta**, **Compra**, **Ajuste**, **Transferencia**, **Anulación de venta** o **Stock inicial**, con la cantidad que entró o salió." },
+    ],
+    tips: [
+      "Arriba ves los totales: unidades que entraron, unidades que salieron y productos distintos.",
+      "Con **Nuevo movimiento manual** podés sumar, restar o ajustar el stock de un producto desde acá.",
+    ],
+    keywords: ["movimientos", "historial de stock", "kardex", "entradas", "salidas", "quien toco el stock", "trazabilidad"],
+    related: ["como-ajustar-el-stock-de-un-producto"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-ver-los-productos-con-stock-bajo",
+    title: "Cómo ver los productos con stock bajo",
+    category: "stock",
+    summary: "Encontrá qué te falta reponer: filtrá por sin stock o por agotarse y cargá el stock mínimo de cada producto.",
+    plan: "basico",
+    where: "**Productos → Filtros → Estado del stock**",
+    steps: [
+      { text: "Entrá a **Productos** y tocá **Filtros**." },
+      { text: "En **Estado del stock** elegí **Sin stock** o **Por agotarse** (los que están en el mínimo o por debajo)." },
+      { text: "Para que un producto avise a tiempo, abrilo con el lápiz y cargá su **Stock mínimo**." },
+    ],
+    tips: [
+      "En el panel de **Alertas** de Productos también ves los productos con stock bajo.",
+      "El filtro **Sin mínimo** te muestra los productos a los que todavía no les cargaste un stock mínimo.",
+    ],
+    keywords: ["stock bajo", "sin stock", "por agotarse", "reponer", "minimo", "alertas", "faltantes", "que comprar"],
+    related: ["como-ajustar-el-stock-de-un-producto", "como-registrar-una-compra"],
+    updatedAt: UPDATED,
+  },
+  {
+    slug: "como-hacer-un-inventario-fisico",
+    title: "Cómo hacer un inventario físico",
+    category: "stock",
+    summary: "Contá lo que tenés en el negocio, compará con el sistema y aplicá los ajustes de una sola vez.",
+    plan: "pro",
+    where: "**Inventario físico**",
+    steps: [
+      { text: "Entrá a **Inventario físico**." },
+      { text: "En **Qué querés contar** elegí **Todos los productos activos**, **Una marca** o **Los de un proveedor**. Si querés, ponele un **Nombre (opcional)**." },
+      { text: "Tocá **Empezar a contar**." },
+      {
+        text: "Buscá cada producto (o escaneá su código de barras) y escribí cuántas unidades contaste.",
+        note: "Escanear un código suma 1 al contado.",
+      },
+      { text: "Mirá las pestañas **Todos**, **Contados**, **Sin contar** y **Con diferencia** para revisar lo que falta." },
+      { text: "Cuando termines, tocá **Aplicar ajustes**. El stock queda igual a lo que contaste." },
+    ],
+    tips: [
+      "Antes de aplicar, la columna **Sistema** te muestra cuánto debería haber y **Diferencia** cuánto falta o sobra.",
+      "Los inventarios anteriores quedan en **Inventarios anteriores**, con **Ver detalle**.",
+      "Los ajustes quedan registrados en **Movimientos**.",
+    ],
+    keywords: ["inventario", "inventario fisico", "contar stock", "conteo", "recuento", "diferencias", "escanear", "balance de stock"],
+    related: ["como-ajustar-el-stock-de-un-producto", "como-ver-los-movimientos-de-stock"],
+    updatedAt: UPDATED,
+  },
+];
