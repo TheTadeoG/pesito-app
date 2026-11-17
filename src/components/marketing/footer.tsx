@@ -78,7 +78,7 @@ export function Footer() {
               <Wordmark className="text-xl" />
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-              Sistema POS para tu negocio: ventas, stock, caja y clientes. Hecho en Argentina para
+              Sistema de gestión y punto de venta para tu negocio: ventas, stock, caja y clientes. Hecho en Argentina para
               cualquier rubro.
             </p>
           </div>

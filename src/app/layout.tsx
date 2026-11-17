@@ -24,9 +24,9 @@ const fredoka = Fredoka({
   subsets: ["latin"],
 });
 
-const title = "Pesito | Sistema POS y punto de venta para tu negocio";
+const title = "Pesito | Sistema de gestión y punto de venta para tu negocio";
 const description =
-  "Pesito es el sistema POS para negocios de Argentina: cobrá con lector de códigos, controlá stock y caja, anotá el fiado y mirá tus reportes. Empezá gratis.";
+  "Sistema de gestión y punto de venta para negocios de Argentina: cobrá con lector, controlá stock y caja, llevá el fiado y mirá tus reportes. Empezá gratis.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -36,6 +36,9 @@ export const metadata: Metadata = {
   },
   description,
   keywords: [
+    "sistema de gestión para negocios",
+    "software de gestión para negocio",
+    "programa para negocio",
     "sistema de punto de venta para comercios",
     "sistema para kiosco",
     "software para almacén",

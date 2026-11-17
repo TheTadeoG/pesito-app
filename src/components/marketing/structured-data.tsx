@@ -13,7 +13,7 @@ export function StructuredData() {
       operatingSystem: "Web",
       url: siteUrl,
       description:
-        "Sistema POS y punto de venta para negocios de Argentina: ventas con lector de códigos, stock, caja, clientes con fiado, compras y reportes.",
+        "Sistema de gestión y punto de venta (POS) para negocios de Argentina: ventas con lector de códigos, stock, caja, clientes con fiado, compras y reportes.",
       offers: planOrder.map((plan) => ({
         "@type": "Offer",
         name: planDefinitions[plan].name,
@@ -32,7 +32,7 @@ export function StructuredData() {
       url: siteUrl,
       logo: `${siteUrl}/icon.png`,
       description:
-        "Pesito es un sistema de punto de venta en la nube para negocios de Argentina: ventas, stock, caja, clientes con fiado, compras y reportes.",
+        "Pesito es un sistema de gestión y punto de venta en la nube para negocios de Argentina: ventas, stock, caja, clientes con fiado, compras y reportes.",
       areaServed: "AR",
       knowledgeAbout: ["punto de venta", "control de stock", "caja", "fiado y cuenta corriente", "factura electrónica ARCA"],
       contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "soporte@pesito.com.ar", availableLanguage: "es-AR" },

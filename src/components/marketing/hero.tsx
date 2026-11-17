@@ -20,7 +20,7 @@ export function Hero() {
         <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pt-14 text-center sm:px-6 sm:pt-20">
           <p className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            Punto de venta para tu negocio
+            Sistema de gestión para tu negocio
           </p>
           <h1 className="max-w-4xl text-4xl font-extrabold leading-[1.02] tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.4rem]">
             El sistema para manejar tu negocio <span className="text-primary">sin dolores de cabeza</span>
