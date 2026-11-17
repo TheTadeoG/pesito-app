@@ -1,4 +1,3 @@
-import { saveProtectedXlsx } from "@/lib/excel-protect";
 import { optionalHeader, requiredHeader } from "@/lib/excel-headers";
 import { supplierCode } from "@/lib/codes";
 import { getSuppliersForExport } from "@/app/(dashboard)/proveedores/import-actions";
@@ -13,6 +12,7 @@ export async function downloadSuppliersExcel(): Promise<string | null> {
   const res = await getSuppliersForExport();
   if (res.error || !res.rows) return res.error ?? "No pudimos cargar los proveedores.";
   if (res.rows.length === 0) return "Todavía no cargaste proveedores.";
+  const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const head = [
     optionalHeader("Código", "#e5e7eb"),
     requiredHeader("Nombre"),
@@ -31,12 +31,9 @@ export async function downloadSuppliersExcel(): Promise<string | null> {
     num(r.minOrderAmount),
     { value: r.deliveryDays.map((d) => DAYS[d]).filter(Boolean).join(", ") },
   ]);
-  // Los proveedores que ya están no se actualizan desde la planilla: sus datos quedan bloqueados. Las filas nuevas se
-  // pueden completar (Nombre a Plazo de entrega, las columnas que usa la carga).
-  await saveProtectedXlsx(
-    [{ data: [head, ...body], columns: [{ width: 12 }, { width: 30 }, { width: 18 }, { width: 28 }, { width: 34 }, { width: 22 }, { width: 20 }, { width: 18 }, { width: 24 }], stickyRowsCount: 1 }],
-    "pesito-proveedores.xlsx",
-    [{ keys: [1, 2, 3, 4, 5] }]
-  );
+  await writeXlsxFile([head, ...body], {
+    columns: [{ width: 12 }, { width: 30 }, { width: 18 }, { width: 28 }, { width: 34 }, { width: 22 }, { width: 20 }, { width: 18 }, { width: 24 }],
+    stickyRowsCount: 1,
+  }).toFile("pesito-proveedores.xlsx");
   return null;
 }

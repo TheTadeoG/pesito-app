@@ -5,7 +5,6 @@ import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/toast/toast-provider";
-import { LOCKED_SHEET, allColumnsEditable, saveProtectedXlsx } from "@/lib/excel-protect";
 import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
 import { cn } from "@/lib/utils";
 import { importProductsChunk } from "@/app/(dashboard)/productos/import-actions";
@@ -46,6 +45,7 @@ interface Summary {
 const REQUIRED_TITLES = new Set(["Nombre", "SKU", "Precio de venta"]);
 
 async function downloadTemplate() {
+  const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const header = TEMPLATE_COLUMNS.map((c) =>
     REQUIRED_TITLES.has(c.title)
       ? { value: `${c.title} *`, fontWeight: "bold" as const, textColor: "#b91c1c", backgroundColor: "#fee2e2" }
@@ -62,15 +62,10 @@ async function downloadTemplate() {
     [{ value: "Unidad: u, kg, g, l, ml, pack o caja. La marca y el proveedor que no existan se crean." }],
     [{ value: "La primera fila de la hoja “Productos” es un ejemplo: borrala o reemplazala." }],
   ];
-  // Los títulos y la hoja de ayuda quedan bloqueados (cambiar un título rompe la carga); el resto se completa libremente.
-  await saveProtectedXlsx(
-    [
-      { data: [header, example], sheet: "Productos", columns: TEMPLATE_COLUMNS.map((c) => ({ width: Math.max(16, c.title.length + 6) })), stickyRowsCount: 1 },
-      { data: help, sheet: "Cómo completarla", columns: [{ width: 120 }] },
-    ],
-    "pesito-productos.xlsx",
-    [allColumnsEditable(TEMPLATE_COLUMNS.length), LOCKED_SHEET]
-  );
+  await writeXlsxFile([
+    { data: [header, example], sheet: "Productos", columns: TEMPLATE_COLUMNS.map((c) => ({ width: Math.max(16, c.title.length + 6) })), stickyRowsCount: 1 },
+    { data: help, sheet: "Cómo completarla", columns: [{ width: 120 }] },
+  ]).toFile("pesito-productos.xlsx");
 }
 
 async function readFile(file: File): Promise<unknown[][]> {

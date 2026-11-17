@@ -6,14 +6,13 @@ import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/toast/toast-provider";
-import { LOCKED_SHEET, allColumnsEditable, saveProtectedXlsx } from "@/lib/excel-protect";
 import { parseCsv } from "@/lib/product-import";
 import { BRAND_IMPORT_MAX_ROWS, parseBrandSheet, type ParsedBrandImport } from "@/lib/brand-import";
 import { importBrands, type BrandImportResult } from "@/app/(dashboard)/productos/brand-import-actions";
 
 async function downloadTemplate() {
-  await saveProtectedXlsx(
-    [
+  const { default: writeXlsxFile } = await import("write-excel-file/browser");
+  await writeXlsxFile([
     {
       data: [[{ value: "Nombre *", fontWeight: "bold" as const, textColor: "#b91c1c", backgroundColor: "#fee2e2" }]],
       sheet: "Marcas",
@@ -30,10 +29,7 @@ async function downloadTemplate() {
       sheet: "Cómo completarla",
       columns: [{ width: 90 }],
     },
-    ],
-    "pesito-marcas.xlsx",
-    [allColumnsEditable(1), LOCKED_SHEET]
-  );
+  ]).toFile("pesito-marcas.xlsx");
 }
 
 async function readFile(file: File): Promise<unknown[][]> {
