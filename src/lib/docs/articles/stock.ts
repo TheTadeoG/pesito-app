@@ -134,4 +134,29 @@ export const stockDocs: DocArticle[] = [
     ],
     updatedAt: UPDATED,
   },
+  {
+    slug: "como-corregir-un-producto-con-stock-negativo",
+    title: "Cómo corregir un producto con stock negativo",
+    category: "stock",
+    summary: "Si un producto figura con menos de cero, llevalo al número real con Ajustar stock.",
+    plan: null,
+    where: "**Productos → Avisos de Productos → Números para revisar**",
+    steps: [
+      { text: "En **Productos** abrí **Avisos de Productos** y tocá el grupo de **stock negativo** para listarlos." },
+      { text: "Contá cuántas unidades hay realmente." },
+      { text: "En los tres puntitos del producto elegí **Ajustar stock**, usá **Ajustar a** y poné la cantidad real." },
+      { text: "Confirmá. Queda registrado en **Movimientos**." },
+    ],
+    tips: [
+      "Suele pasar cuando se vendió sin cargar antes la compra: cargá siempre las compras para que el stock suba.",
+      "Revisá en **Movimientos** qué ventas lo dejaron en negativo.",
+    ],
+    keywords: ["stock negativo", "menos de cero", "stock en menos", "stock mal", "corregir stock", "me da negativo"],
+    connections: [
+      { slug: "como-registrar-una-compra", text: "Cargar las compras a tiempo evita el stock negativo." },
+      { slug: "como-hacer-una-venta", text: "El stock baja con cada venta en el **Punto de Venta**." },
+    ],
+    related: ["como-ajustar-el-stock-de-un-producto", "como-ver-los-movimientos-de-stock"],
+    updatedAt: UPDATED,
+  },
 ];

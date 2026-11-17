@@ -180,4 +180,30 @@ export const cuentaDocs: DocArticle[] = [
     related: ["como-descargar-tus-productos-a-excel"],
     updatedAt: UPDATED,
   },
+  {
+    slug: "como-cambiar-o-quitar-a-alguien-del-equipo",
+    title: "Cómo cambiar el usuario de alguien o quitarlo del equipo",
+    category: "cuenta",
+    summary: "Cambiá la contraseña de un empleado, cancelá una invitación o sacá a alguien de tu negocio.",
+    plan: null,
+    where: "**Mi equipo**",
+    before: ["Ser dueño o administrador."],
+    steps: [
+      { text: "Entrá a **Mi equipo** y buscá a la persona." },
+      { text: "Para cambiarle el usuario o la contraseña, tocá **Editar usuario y contraseña**. Dejá la contraseña vacía para no cambiarla." },
+      { text: "Para sacarla del negocio, tocá **Quitar del equipo** y confirmá." },
+      { text: "Si invitaste a alguien que no entró, en **Invitaciones pendientes** tocá **Cancelar invitación**." },
+    ],
+    tips: [
+      "Si tu plan incluye menos usuarios que los que tenés, los de más quedan **Pausados** hasta que subas de plan o quites a alguien.",
+      "Lo que la persona hizo (ventas, cajas) queda registrado aunque la quites.",
+    ],
+    keywords: ["quitar usuario", "eliminar empleado", "cambiar contrasena empleado", "editar usuario", "cancelar invitacion", "usuario pausado", "sacar del equipo"],
+    connections: [
+      { slug: "como-invitar-a-tu-equipo", text: "Así se suma a alguien nuevo." },
+      { slug: "como-elegir-o-cambiar-de-plan", text: "Cada plan incluye una cantidad de usuarios." },
+    ],
+    related: ["como-ver-lo-que-hizo-cada-persona-del-equipo"],
+    updatedAt: UPDATED,
+  },
 ];

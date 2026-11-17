@@ -74,4 +74,29 @@ export const empezarDocs: DocArticle[] = [
     related: ["como-cargar-un-producto", "como-abrir-la-caja", "como-hacer-una-venta"],
     updatedAt: UPDATED,
   },
+  {
+    slug: "como-crear-tu-cuenta-y-tu-negocio",
+    title: "Cómo crear tu cuenta y tu negocio en Pesito",
+    category: "empezar",
+    summary: "Registrate gratis con tu email o con Google y completá el nombre y el tipo de tu negocio.",
+    plan: null,
+    where: "**Pantalla de registro → Creá tu cuenta gratis**",
+    steps: [
+      { text: "Entrá a Pesito y tocá **Creá tu cuenta gratis**." },
+      { text: "Registrate con tu email y una contraseña de al menos 8 caracteres, o con tu cuenta de Google." },
+      { text: "Completá el **Nombre del negocio**, el **Tipo de negocio** y un teléfono de contacto. Si tu rubro no está, elegí “otro”." },
+      { text: "Se crea tu negocio y entrás al panel, listo para cargar productos." },
+    ],
+    tips: [
+      "La cuenta Gratis alcanza para empezar: después podés cambiar de plan.",
+      "Si ya tenés cuenta, ingresá con tu email y contraseña desde **Ingresar**.",
+    ],
+    keywords: ["crear cuenta", "registrarme", "registro", "darme de alta", "empezar gratis", "google", "nuevo negocio", "ingresar"],
+    connections: [
+      { slug: "primeros-pasos-en-pesito", text: "Después de crear tu cuenta, seguí con los primeros pasos." },
+      { slug: "como-recuperar-la-contrasena", text: "Si no recordás la contraseña, se recupera por email." },
+    ],
+    related: ["como-elegir-o-cambiar-de-plan"],
+    updatedAt: UPDATED,
+  },
 ];
