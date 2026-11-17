@@ -780,12 +780,55 @@ export async function deleteProduct(id: string): Promise<ActionState> {
   const supabase = await createClient();
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) {
+    // Un producto que forma parte de un combo no se puede borrar mientras esté ahí (0100).
+    if (error.code === "23503") {
+      const { data: inBundle } = await supabase.from("product_bundle_items").select("bundle_id").eq("component_id", id).limit(1);
+      if (inBundle && inBundle.length > 0) {
+        return { error: "Este producto forma parte de un combo. Sacalo del combo (o borrá el combo) y volvé a probar." };
+      }
+    }
     return {
       error:
         "No pudimos borrar el producto (puede tener ventas asociadas). Podés desactivarlo en su lugar.",
     };
   }
 
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  return {};
+}
+
+/** Activa o desactiva todas las variantes de un producto de una vez. */
+export async function toggleVariantGroupActive(groupId: string, active: boolean): Promise<ActionState> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+  if (active) {
+    // El grupo cuenta como un solo producto: sólo ocupa lugar nuevo si estaba todo desactivado.
+    const { data: activeNow } = await supabase.from("products").select("id").eq("org_id", organization.id).eq("variant_group_id", groupId).eq("active", true).limit(1);
+    if (!activeNow || activeNow.length === 0) {
+      const limitError = await checkProductLimit(supabase, organization.id);
+      if (limitError) return { error: limitError };
+    }
+  }
+  const { error } = await supabase.from("products").update({ active }).eq("org_id", organization.id).eq("variant_group_id", groupId);
+  if (error) return { error: "No pudimos actualizar el producto." };
+  revalidatePath("/productos");
+  revalidatePath("/pos");
+  return {};
+}
+
+/** Borra un producto con todas sus variantes. */
+export async function deleteVariantGroup(groupId: string): Promise<ActionState> {
+  const { organization } = await requireOrgContext();
+  const supabase = await createClient();
+  const { error } = await supabase.from("products").delete().eq("org_id", organization.id).eq("variant_group_id", groupId);
+  if (error) {
+    if (error.code === "23503") {
+      return { error: "Alguna de las variantes forma parte de un combo. Sacala del combo (o borrá el combo) y volvé a probar." };
+    }
+    return { error: "No pudimos borrar el producto (puede tener ventas asociadas). Podés desactivarlo en su lugar." };
+  }
+  await supabase.from("product_variant_groups").delete().eq("org_id", organization.id).eq("id", groupId);
   revalidatePath("/productos");
   revalidatePath("/pos");
   return {};

@@ -48,6 +48,8 @@ import type { Brand, Product, Supplier } from "@/lib/types";
 import { ProductForm } from "@/app/(dashboard)/productos/product-form";
 import {
   deleteProduct,
+  deleteVariantGroup,
+  toggleVariantGroupActive,
   setVariantGroupPrice,
   toggleProductActive,
   updateProductQuick,
@@ -70,7 +72,7 @@ import { featureMinPlan } from "@/lib/plan-access";
 import { PlanLockNote, PlanPill } from "@/components/dashboard/pro-locked-card";
 import { InlineNumber } from "@/components/dashboard/inline-number";
 import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/pagination-bar";
-import { VariantGroupRows } from "./variant-group-rows";
+import { VariantGroupRows, baseNameOf } from "./variant-group-rows";
 import { bundleCapacityOf } from "@/lib/bundles";
 import { loadIdleStock } from "@/app/(dashboard)/productos/idle-stock-action";
 import { ExcelExportDialog, type ExportScope } from "@/app/(dashboard)/productos/excel-export-dialog";
@@ -619,6 +621,35 @@ export function ProductosClient({
     }
   }
 
+  async function handleToggleGroup(members: Product[], nextActive: boolean) {
+    const groupId = members[0]?.variant_group_id;
+    if (!groupId) return;
+    setActiveOverrides((current) => ({ ...current, ...Object.fromEntries(members.map((m) => [m.id, nextActive])) }));
+    setBusyId(members[0].id);
+    const result = await toggleVariantGroupActive(groupId, nextActive);
+    if (!result.error) markCatalogDirty();
+    setBusyId(null);
+    if (result.error) {
+      alert(result.error);
+      setActiveOverrides((current) => {
+        const next = { ...current };
+        for (const m of members) delete next[m.id];
+        return next;
+      });
+    }
+  }
+
+  async function handleDeleteGroup(members: Product[]) {
+    const groupId = members[0]?.variant_group_id;
+    if (!groupId) return;
+    if (!confirm(`¿Borrar "${baseNameOf(members[0])}" con sus ${members.length} variantes? Esta acción no se puede deshacer.`)) return;
+    setBusyId(members[0].id);
+    const result = await deleteVariantGroup(groupId);
+    markCatalogDirty();
+    setBusyId(null);
+    if (result.error) alert(result.error);
+  }
+
   async function quickSave(id: string, field: "cost" | "min_stock", value: number): Promise<string | null> {
     const res = await updateProductQuick(id, field, value);
     if (res.error) return res.error;
@@ -1134,7 +1165,15 @@ export function ProductosClient({
                           supplierName={
                             (item.members[0].default_supplier_id && supplierNameById.get(item.members[0].default_supplier_id)) || undefined
                           }
+                          activeOf={(m) => activeOverrides[m.id] ?? m.active}
+                          busyId={busyId}
                           onAdjust={setAdjusting}
+                          onMovements={(m) => router.push(`/productos?tab=movimientos&producto=${m.id}`)}
+                          onHistory={setPriceHistoryProduct}
+                          onToggleActive={handleToggleActive}
+                          onDelete={handleDelete}
+                          onToggleGroup={handleToggleGroup}
+                          onDeleteGroup={handleDeleteGroup}
                           onEditGroup={(tab) => openGroupEdit(item.id, tab)}
                         />
                       );

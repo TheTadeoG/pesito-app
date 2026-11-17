@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronDown, ImageIcon, Pencil, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, History, ImageIcon, MoreVertical, Pencil, Plus, Receipt, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { sortSizes } from "@/lib/variants";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ColorDot } from "@/app/(dashboard)/productos/variants-section";
 import type { Product } from "@/lib/types";
 
@@ -57,14 +58,33 @@ export function VariantGroupRows({
   members,
   show,
   supplierName,
+  activeOf,
+  busyId,
   onAdjust,
+  onMovements,
+  onHistory,
+  onToggleActive,
+  onDelete,
+  onToggleGroup,
+  onDeleteGroup,
   onEditGroup,
 }: {
   members: Product[];
   /** Si la columna está visible en la tabla ("brand", "supplier", "sku", "barcode", "cost", "price", "stock", "minStock"). */
   show: (column: string) => boolean;
   supplierName?: string;
+  /** Si la variante está activa (con el cambio que todavía no volvió del servidor). */
+  activeOf: (p: Product) => boolean;
+  busyId: string | null;
   onAdjust: (p: Product) => void;
+  onMovements: (p: Product) => void;
+  onHistory: (p: Product) => void;
+  onToggleActive: (p: Product) => void;
+  onDelete: (p: Product) => void;
+  /** Activa o desactiva todas las variantes a la vez. */
+  onToggleGroup: (members: Product[], next: boolean) => void;
+  /** Borra el producto con todas sus variantes. */
+  onDeleteGroup: (members: Product[]) => void;
   /** Abre la ventana del producto, en la solapa que se pida. */
   onEditGroup: (tab: "datos" | "variantes") => void;
 }) {
@@ -78,12 +98,12 @@ export function VariantGroupRows({
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
   const priceText = minPrice === maxPrice ? formatCurrency(minPrice) : `${formatCurrency(minPrice)} – ${formatCurrency(maxPrice)}`;
-  const allInactive = members.every((m) => !m.active);
+  const allInactive = members.every((m) => !activeOf(m));
   const sameCost = members.every((m) => (m.cost ?? 0) === (first.cost ?? 0));
   const minStocks = members.map((m) => m.min_stock);
   const sameMin = minStocks.every((v) => v === minStocks[0]);
-  const outCount = members.filter((m) => m.active && m.stock <= 0).length;
-  const lowCount = members.filter((m) => m.active && m.stock > 0 && m.stock <= m.min_stock).length;
+  const outCount = members.filter((m) => activeOf(m) && m.stock <= 0).length;
+  const lowCount = members.filter((m) => activeOf(m) && m.stock > 0 && m.stock <= m.min_stock).length;
   const unit = first.unit ?? "";
   const image = members.find((m) => m.image_url)?.image_url ?? null;
   const dim = allInactive && "opacity-60";
@@ -141,20 +161,40 @@ export function VariantGroupRows({
             <Button variant="outline" size="icon" onClick={() => onEditGroup("datos")} aria-label="Editar" title="Editar">
               <Pencil className="h-4 w-4" />
             </Button>
+            <DropdownMenu
+              trigger={
+                <Button variant="outline" size="icon" aria-label="Más acciones" title="Más acciones">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              }
+            >
+              <DropdownMenuItem onClick={() => onEditGroup("variantes")}>
+                <Plus className="h-4 w-4" />
+                Agregar talles o colores
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onToggleGroup(members, allInactive)} disabled={members.some((m) => busyId === m.id)}>
+                {allInactive ? "Activar todas las variantes" : "Desactivar todas las variantes"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDeleteGroup(members)} disabled={members.some((m) => busyId === m.id)} danger>
+                <Trash2 className="h-4 w-4" />
+                Borrar con todas sus variantes
+              </DropdownMenuItem>
+            </DropdownMenu>
           </div>
         </td>
       </tr>
       {open &&
         shown.map((m) => {
-          const lowStock = m.active && m.stock <= m.min_stock;
-          const faded = !m.active && "opacity-60";
+          const isActive = activeOf(m);
+          const lowStock = isActive && m.stock <= m.min_stock;
+          const faded = !isActive && "opacity-60";
           return (
             <tr key={m.id} className="align-middle bg-muted/50 hover:bg-muted/70">
               <td className={cn("border-l-[3px] border-l-primary/60 py-2 pl-[3.75rem] pr-4", faded)}>
                 <div className="flex items-center gap-2 text-sm">
                   {m.variant_color && <ColorDot name={m.variant_color} chosen={m.variant_color_hex} />}
                   <span className="font-medium text-foreground">{[m.variant_size, m.variant_color].filter(Boolean).join(" · ") || m.name}</span>
-                  {!m.active && <Badge>Inactivo</Badge>}
+                  {!isActive && <Badge>Inactivo</Badge>}
                 </div>
               </td>
               {show("brand") && <td />}
@@ -171,14 +211,36 @@ export function VariantGroupRows({
               {show("minStock") && <td className={cn("px-3 py-2 text-right text-muted-foreground", faded)}>{`${m.min_stock}${m.unit ?? ""}`}</td>}
               <td className="px-4 py-2">
                 <div className="flex items-center justify-end gap-1.5">
-                  <Button variant="outline" size="sm" onClick={() => onAdjust(m)} title={`Ajustar el stock de ${m.name}`}>
-                    <SlidersHorizontal className="h-3.5 w-3.5" />
-                    Ajustar
+                  <Button variant="outline" size="icon" onClick={() => onEditGroup("variantes")} aria-label="Editar las variantes" title="Editar las variantes">
+                    <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => onEditGroup("variantes")} title="Editar las variantes">
-                    <Pencil className="h-3.5 w-3.5" />
-                    Editar
-                  </Button>
+                  <DropdownMenu
+                    trigger={
+                      <Button variant="outline" size="icon" aria-label={`Más acciones de ${m.name}`} title="Más acciones">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    }
+                  >
+                    <DropdownMenuItem onClick={() => onAdjust(m)}>
+                      <SlidersHorizontal className="h-4 w-4" />
+                      Ajustar stock
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onMovements(m)}>
+                      <History className="h-4 w-4" />
+                      Ver movimientos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHistory(m)}>
+                      <Receipt className="h-4 w-4" />
+                      Historial de precios y costos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onToggleActive(m)} disabled={busyId === m.id}>
+                      {isActive ? "Desactivar" : "Activar"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDelete(m)} disabled={busyId === m.id} danger>
+                      <Trash2 className="h-4 w-4" />
+                      Borrar
+                    </DropdownMenuItem>
+                  </DropdownMenu>
                 </div>
               </td>
             </tr>
