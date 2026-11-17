@@ -77,7 +77,7 @@ export const faqCategories: FaqCategory[] = [
       {
         question: "¿Puedo usar lector de código de barras?",
         answer:
-          "Sí. Escaneás el producto y se suma al carrito al instante. Si un producto no tiene código, lo buscás por nombre en el mismo buscador. Pronto, desde el Plan Básico, vas a poder generarle un código de barras e imprimir la etiqueta.",
+          "Sí. Escaneás el producto y se suma al carrito al instante. Si un producto no tiene código, lo buscás por nombre en el mismo buscador. Desde el Plan Básico también podés generarle un código de barras propio (que no se repite) e imprimir la etiqueta.",
       },
       {
         question: "¿Puedo vender por peso (fiambre, verdura, carne)?",
