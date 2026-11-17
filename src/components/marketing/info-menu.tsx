@@ -11,6 +11,7 @@ const infoLinks = [
   { href: "/comparacion", label: "Comparación con otros sistemas" },
   { href: "/diccionario", label: "Diccionario de términos" },
   { href: "/pesito-para", label: "Pesito por rubro" },
+  { href: "/ayuda", label: "Ayuda paso a paso" },
   { href: "/blog", label: "Blog" },
   { href: "/preguntas-frecuentes", label: "Preguntas frecuentes" },
 ];
