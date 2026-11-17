@@ -35,6 +35,7 @@ export const stockDocs: DocArticle[] = [
       { q: "¿Se puede deshacer un ajuste?", a: "No se borra, pero podés hacer otro ajuste en sentido contrario. Cada uno queda registrado con quién lo hizo." },
       { q: "¿Dónde hago el ajuste?", a: "En los tres puntitos de la fila del producto (**Ajustar stock**). También desde **Movimientos** con **Nuevo movimiento manual**." },
     ],
+    glossary: ["stock"],
     keywords: ["ajustar stock", "corregir stock", "stock", "sumar stock", "restar stock", "rotura", "merma", "conteo", "diferencia de stock"],
     related: ["como-ver-los-movimientos-de-stock", "como-hacer-un-inventario-fisico"],
     connections: [
@@ -68,6 +69,7 @@ export const stockDocs: DocArticle[] = [
       { q: "¿Puedo ver quién hizo cada movimiento?", a: "Sí, el dueño y los administradores ven la columna **Hecho por**, y pueden filtrar con **Filtrar por persona**." },
       { q: "¿Qué plan necesito?", a: "Los movimientos de stock están desde el Plan Básico. En el Plan Gratis ves el aviso con el plan que los desbloquea." },
     ],
+    glossary: ["stock"],
     keywords: ["movimientos", "historial de stock", "kardex", "entradas", "salidas", "quien toco el stock", "trazabilidad"],
     related: ["como-ajustar-el-stock-de-un-producto"],
     updatedAt: UPDATED,
@@ -96,6 +98,7 @@ export const stockDocs: DocArticle[] = [
       { q: "¿Dónde veo el aviso?", a: "En **Avisos de Productos**, en la campana y en el menú lateral." },
       { q: "¿Qué hago cuando falta?", a: "Cargá la compra al proveedor (**Compras**). Con el Plan Max, **Qué comprar** te arma el pedido." },
     ],
+    glossary: ["quiebre-de-stock", "stock"],
     keywords: ["stock bajo", "sin stock", "por agotarse", "reponer", "minimo", "alertas", "faltantes", "que comprar"],
     related: ["como-ajustar-el-stock-de-un-producto", "como-registrar-una-compra"],
     connections: [
@@ -136,6 +139,7 @@ export const stockDocs: DocArticle[] = [
       { q: "¿Se puede deshacer?", a: "Los ajustes ya aplicados no se borran, pero quedan registrados en **Movimientos** y el inventario queda guardado en **Inventarios anteriores**, con su detalle." },
       { q: "¿Cómo uso el lector de códigos?", a: "Con el cursor en el buscador, escaneá el código: suma 1 al contado de ese producto." },
     ],
+    glossary: ["stock"],
     keywords: ["inventario", "inventario fisico", "contar stock", "conteo", "recuento", "diferencias", "escanear", "balance de stock"],
     related: ["como-ajustar-el-stock-de-un-producto", "como-ver-los-movimientos-de-stock"],
     connections: [
@@ -193,6 +197,7 @@ export const stockDocs: DocArticle[] = [
     faq: [
       { q: "¿Cómo puede quedar el stock en negativo?", a: "Suele pasar cuando la mercadería llegó pero no cargaste la compra, y se vendió igual. Corregilo con **Ajustar stock** y cargá las compras a tiempo para que no se repita." },
     ],
+    glossary: ["stock"],
     keywords: ["stock negativo", "menos de cero", "stock en menos", "stock mal", "corregir stock", "me da negativo"],
     connections: [
       { slug: "como-registrar-una-compra", text: "Cargar las compras a tiempo evita el stock negativo." },

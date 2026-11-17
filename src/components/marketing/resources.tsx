@@ -90,6 +90,22 @@ export function Resources() {
           </Link>
         </div>
       </div>
+
+      <p className="mt-10 text-center text-sm text-muted-foreground">
+        ¿Una palabra que no conocés? Mirá el{" "}
+        <Link href="/diccionario" className="font-medium text-primary hover:underline">
+          diccionario de términos
+        </Link>
+        . ¿Comparando sistemas? Mirá la{" "}
+        <Link href="/comparacion" className="font-medium text-primary hover:underline">
+          comparación con otros sistemas
+        </Link>{" "}
+        o los{" "}
+        <Link href="/comparar-planes" className="font-medium text-primary hover:underline">
+          planes lado a lado
+        </Link>
+        .
+      </p>
     </section>
   );
 }

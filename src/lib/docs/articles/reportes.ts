@@ -30,6 +30,7 @@ export const reportesDocs: DocArticle[] = [
       { q: "¿Qué son los productos vendidos a pérdida?", a: "Los que se vendieron por debajo de su costo. Es una sección del Plan Pro para detectar precios mal puestos." },
       { q: "¿Puedo ocultar secciones?", a: "Sí, con **Personalizar Reportes** elegís cuáles ver. La elección se guarda en este dispositivo." },
     ],
+    glossary: ["margen", "costo"],
     keywords: ["reportes", "ventas del mes", "ganancia", "ingresos", "mas vendidos", "estadisticas", "balance", "cuanto gane", "stock valorizado"],
     related: ["como-ver-las-ventas-de-cada-vendedor", "como-ver-el-historial-de-ventas"],
     connections: [
@@ -266,6 +267,7 @@ export const reportesDocs: DocArticle[] = [
     faq: [
       { q: "¿Qué diferencia hay entre al costo y a precio de venta?", a: "**Al costo** es lo que te costó la mercadería que tenés. **A precio de venta** es lo que cobrarías si la vendés toda a los precios actuales. La diferencia es tu ganancia potencial." },
     ],
+    glossary: ["costo", "stock"],
     keywords: ["stock valorizado", "valor del stock", "mercaderia", "inventario valorizado", "cuanto vale mi stock", "plata parada", "capital"],
     connections: [
       { slug: "como-cargar-un-producto", text: "El valor al costo usa el **Costo** que cargaste en cada producto." },

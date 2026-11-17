@@ -8,6 +8,7 @@ import { Footer } from "@/components/marketing/footer";
 import { WhatsappFloatButton } from "@/components/marketing/whatsapp-float-button";
 import { docArticles, docCategories, getDocBySlug } from "@/lib/docs";
 import { docImagesOf } from "@/lib/docs/images";
+import { findGlossaryTerm } from "@/lib/diccionario-data";
 import { inlineParts, plainText } from "@/lib/docs/format";
 import { planDefinitions } from "@/lib/plan-features";
 import { pageMetadata } from "@/lib/seo";
@@ -57,6 +58,10 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
     return target ? [{ ...c, target }] : [];
   });
   const related = (article.related ?? []).map((s) => getDocBySlug(s)).filter((a): a is NonNullable<typeof a> => Boolean(a));
+  const terms = (article.glossary ?? []).flatMap((slug) => {
+    const found = findGlossaryTerm(slug);
+    return found ? [found.term] : [];
+  });
   const [y, m, d] = article.updatedAt.split("-");
   const url = `${siteUrl}/ayuda/${article.slug}`;
   const images = docImagesOf(article);
@@ -258,6 +263,22 @@ export default async function AyudaArticlePage({ params }: { params: Promise<{ s
                     <Inline text={c.text} />{" "}
                     <Link href={`/ayuda/${c.slug}`} className="font-medium text-primary hover:underline">
                       {`Ver: ${c.target.title}`}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {terms.length > 0 && (
+            <section className="mt-8">
+              <h2 className="text-base font-semibold text-foreground">Términos de esta guía</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Si alguna palabra no te suena, acá está explicada.</p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {terms.map((t) => (
+                  <li key={t.slug}>
+                    <Link href={`/diccionario/${t.slug}`} className="inline-flex rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-primary hover:bg-muted">
+                      {t.term}
                     </Link>
                   </li>
                 ))}

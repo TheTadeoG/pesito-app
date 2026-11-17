@@ -69,6 +69,7 @@ export const clientesDocs: DocArticle[] = [
       { q: "¿Cómo veo quién me debe más tiempo?", a: "En **Clientes**, con los filtros por antigüedad (**Hasta 7 días**, **De 8 a 30 días**, **Más de 30 días**) y el orden **Los que deben hace más, primero**." },
       { q: "¿Puedo recordarle la deuda?", a: "Sí: en la lista, **Recordarle la deuda por WhatsApp** abre el mensaje listo para enviar si el cliente tiene teléfono cargado." },
     ],
+    glossary: ["fiado"],
     keywords: ["cobrar deuda", "fiado", "pago de cliente", "cuenta corriente", "saldo", "registrar pago", "deudores", "cobrar fiado", "recordar deuda"],
     related: ["como-vender-fiado", "como-descargar-el-estado-de-cuenta-de-un-cliente"],
     connections: [
@@ -154,6 +155,7 @@ export const clientesDocs: DocArticle[] = [
       { q: "¿Qué muestra la ficha de un cliente?", a: "Muestra **Total comprado**, **Ticket promedio**, **Última compra**, su **Cuenta corriente** (ventas fiadas y pagos) y el **Historial de compras**." },
       { q: "¿Cómo registro un pago desde la ficha?", a: "Con **Registrar pago**: funciona igual que desde la lista de clientes." },
     ],
+    glossary: ["fiado"],
     keywords: ["ficha del cliente", "historial del cliente", "cuenta corriente del cliente", "cuanto me compro", "saldo del cliente", "datos del cliente", "ticket promedio"],
     connections: [
       { slug: "como-cobrar-la-deuda-de-un-cliente", text: "Desde la ficha registrás los pagos de su deuda." },

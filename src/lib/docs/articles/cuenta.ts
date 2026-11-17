@@ -148,6 +148,7 @@ export const cuentaDocs: DocArticle[] = [
       { q: "¿Qué pasa si borro un medio de pago?", a: "Las ventas y compras que ya lo usaron lo siguen mostrando. Sólo deja de aparecer para nuevas ventas." },
       { q: "¿Dónde aparecen?", a: "En el Punto de Venta, en el pago **Mixto** y en **Compras**." },
     ],
+    glossary: ["medio-de-pago"],
     keywords: ["medio de pago", "mercado pago", "uala", "talo", "qr", "billetera virtual", "forma de pago", "agregar medio"],
     related: ["como-cobrar-con-varios-medios-de-pago", "como-cerrar-la-caja"],
     connections: [
@@ -175,6 +176,7 @@ export const cuentaDocs: DocArticle[] = [
       { q: "¿Se guarda solo?", a: "Sí, al activar o desactivar cada opción se guarda al instante." },
       { q: "¿Qué pasa con el número si lo oculto?", a: "El ticket dice sólo «Comprobante X», pero el número igual queda guardado y se ve en el historial de ventas." },
     ],
+    glossary: ["ticket-de-venta"],
     keywords: ["ticket", "personalizar ticket", "nombre en el ticket", "comprobante", "recibo", "logo", "imprimir"],
     related: ["como-imprimir-el-ticket-de-una-venta", "como-conectar-una-impresora-termica"],
     updatedAt: UPDATED,

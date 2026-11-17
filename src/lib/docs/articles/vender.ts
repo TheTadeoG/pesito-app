@@ -43,6 +43,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿Puedo corregir una venta que ya cobré?", a: "Una venta cobrada no se edita: se anula y se carga de nuevo con los datos correctos. Al anularla, el stock vuelve y, si era fiado, se descuenta de la deuda del cliente." },
       { q: "¿Necesito internet para vender?", a: "Sí. Pesito guarda cada venta en el momento de cobrar, así que necesita conexión. Si se cae el internet, la venta no se confirma hasta que vuelva: todavía no existe el modo sin conexión." },
     ],
+    glossary: ["punto-de-venta", "ticket-de-venta", "consumidor-final", "medio-de-pago"],
     keywords: ["vender", "cobrar", "carrito", "punto de venta", "pos", "caja registradora", "escanear", "lector", "mostrador", "nueva venta"],
     related: ["como-buscar-y-agregar-productos-al-carrito", "como-cobrar-en-efectivo-y-dar-vuelto", "como-cobrar-con-varios-medios-de-pago", "atajos-de-teclado-del-punto-de-venta"],
     connections: [
@@ -81,6 +82,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿Cómo sé cuánto efectivo debería tener en el cajón?", a: "En **Caja** ves **En caja**, que suma lo que abriste más las ventas en efectivo y los ingresos, y resta retiros, pagos a proveedores y compras pagadas en efectivo. Es el número con el que se compara lo que contás al cerrar." },
       { q: "¿Y si el cliente paga una parte en efectivo y otra con tarjeta?", a: "Usá **Mixto** y asigná cuánto va a cada medio: sólo la parte en efectivo suma al cajón." },
     ],
+    glossary: ["vuelto", "arqueo-de-caja"],
     keywords: ["efectivo", "vuelto", "cambio", "billetes", "con cuanto paga", "plata", "cobrar efectivo"],
     related: ["como-hacer-una-venta", "como-cerrar-la-caja"],
     connections: [
@@ -112,6 +114,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿Qué parte cuenta para el arqueo de la caja?", a: "Sólo la de **Efectivo**. Tarjeta, transferencia, QR y los medios propios no entran al cajón, así que no se esperan en el efectivo al cerrar." },
       { q: "¿Puedo dejar una parte fiada en un pago mixto?", a: "Sí: asignale esa parte a **Fiado** y elegí el cliente en **Cliente para la parte fiado**. Esa parte suma a lo que el cliente te debe." },
     ],
+    glossary: ["medio-de-pago"],
     keywords: ["mixto", "combinar", "dividir pago", "pago combinado", "parte efectivo parte tarjeta", "varios medios"],
     related: ["como-hacer-una-venta", "como-vender-fiado"],
     connections: [
@@ -148,6 +151,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿Qué pasa si anulo una venta fiada?", a: "El stock vuelve y el importe se descuenta de la deuda del cliente." },
       { q: "¿Cómo le recuerdo la deuda a un cliente?", a: "En la lista de **Clientes** tenés **Recordarle la deuda por WhatsApp**, que abre el mensaje listo para enviar si el cliente tiene teléfono cargado." },
     ],
+    glossary: ["fiado"],
     keywords: ["fiado", "fiar", "cuenta corriente", "deuda", "a cuenta", "debe", "libreta"],
     related: ["como-cobrar-la-deuda-de-un-cliente", "como-cobrar-con-varios-medios-de-pago"],
     connections: [
@@ -239,6 +243,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿Puedo escanear una variante directamente?", a: "Sí. Si escaneás o escribís el SKU o el código de barras exacto de esa variante, se agrega directo al carrito, sin desplegar la grilla." },
       { q: "¿Por qué se limpia la búsqueda después de agregar una variante?", a: "Para dejarte listo para la próxima. Si el cliente se lleva otro talle del mismo producto, buscalo de nuevo y elegí el otro talle." },
     ],
+    glossary: ["variante-de-producto"],
     keywords: ["talle", "talles", "color", "variantes", "ropa", "indumentaria", "calzado", "prenda"],
     related: ["como-cargar-un-producto-con-talles-y-colores", "como-hacer-una-venta"],
     connections: [
@@ -306,6 +311,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿Qué datos muestra el ticket y cómo lo cambio?", a: "Muestra el nombre del negocio (si lo dejás activado), el número de comprobante, los productos, el subtotal, el descuento o recargo y el total. Lo configurás en **Ajustes → Negocio**." },
       { q: "¿Puedo imprimir sin impresora térmica?", a: "Sí: se abre el diálogo de impresión del navegador y elegís cualquier impresora. Con una impresora térmica conectada (función en prueba), el ticket sale directo." },
     ],
+    glossary: ["ticket-de-venta"],
     keywords: ["ticket", "imprimir", "reimprimir", "comprobante", "recibo", "impresora", "comprobante x"],
     related: ["como-ver-el-historial-de-ventas", "como-facturar-una-venta"],
     connections: [
@@ -344,6 +350,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿Puedo anular una venta de días anteriores?", a: "Sí, desde **Reportes → Ventas**, buscándola por fecha, cliente o importe." },
       { q: "¿Cómo anulo una venta que tiene factura electrónica?", a: "Se anula con una nota de crédito: en **Ver detalle** de la venta, tocá **Anular con nota de crédito**. La factura original queda registrada y la nota de crédito la compensa." },
     ],
+    glossary: ["nota-de-credito"],
     keywords: ["anular", "cancelar venta", "borrar venta", "devolucion", "devolver", "error", "equivoque", "deshacer venta", "nota de credito"],
     related: ["como-ver-el-historial-de-ventas"],
     connections: [
@@ -485,6 +492,7 @@ export const venderDocs: DocArticle[] = [
       { q: "¿El cliente nuevo queda guardado?", a: "Sí. Se crea en **Clientes** con el nombre que pusiste y podés completar el resto de los datos después." },
       { q: "¿Puedo cambiar el cliente después de cobrar?", a: "No: elegilo antes de cobrar. Si te equivocaste, anulá la venta y volvé a cargarla." },
     ],
+    glossary: ["consumidor-final"],
     keywords: ["cliente", "elegir cliente", "consumidor final", "crear cliente rapido", "cliente en la venta", "buscar cliente", "asociar venta"],
     related: ["como-vender-fiado", "como-cargar-un-cliente"],
     updatedAt: UPDATED,

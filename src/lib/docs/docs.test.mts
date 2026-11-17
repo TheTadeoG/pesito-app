@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 const manifest = JSON.parse(readFileSync(`${process.env.DOCS_PUBLIC}/manifest.json`, "utf8"));
 import { docArticles } from "./index.ts";
+import { glossaryCategories } from "../diccionario-data.ts";
 import { docCategories } from "./categories.ts";
 import { buildIndex, normalize, searchDocs, tokens } from "./search.ts";
 import { plainText, inlineParts } from "./format.ts";
@@ -53,6 +54,10 @@ for (const a of docArticles)
     assert.ok((a.related?.length ?? 0) + (a.connections?.length ?? 0) > 0, `${a.slug}: sin enlaces a otras guías`);
     assert.ok((a.faq?.length ?? 0) > 0 || (a.intro?.length ?? 0) > 0, `${a.slug}: sin introducción ni dudas frecuentes`);
   }
+}
+{
+  const terms = new Set(glossaryCategories.flatMap((c) => c.terms.map((t) => t.slug)));
+  for (const a of docArticles) for (const t of a.glossary ?? []) assert.ok(terms.has(t), `${a.slug}: el término "${t}" no existe en el diccionario`);
 }
 for (const a of docArticles) for (const r of a.related ?? []) assert.ok(slugs.has(r), `${a.slug}: la guía relacionada "${r}" no existe`);
 

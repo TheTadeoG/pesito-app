@@ -6,5 +6,6 @@ cd "$(dirname "$0")/../../.."
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 cp -r src/lib/docs "$tmp/docs"
+cp src/lib/diccionario-data.ts "$tmp/diccionario-data.ts"
 sed -i -E 's#"@/lib/docs/(articles/[a-z]+|categories|types)"#"./\1.ts"#' "$tmp/docs/index.ts"
 DOCS_PUBLIC="$(pwd)/public/ayuda" node --experimental-strip-types --no-warnings "$tmp/docs/docs.test.mts"

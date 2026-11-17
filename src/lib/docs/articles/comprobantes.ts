@@ -83,6 +83,7 @@ export const comprobantesDocs: DocArticle[] = [
       { q: "¿Puedo emitir Factura A o B?", a: "Todavía no: hoy se emite Factura C para monotributistas y exentos. Factura A y B (responsables inscriptos) llegan más adelante." },
       { q: "¿Qué hago si el asistente me marca un error en ARCA?", a: "Revisá que el CUIT sea el mismo en los tres lugares, que el punto de venta esté habilitado para factura electrónica por web services y que hayas autorizado el alias al servicio **wsfe**. Si sigue fallando, escribinos desde **Ayuda** con el mensaje que te muestra." },
     ],
+    glossary: ["factura-c", "cae"],
     keywords: ["factura electronica", "arca", "afip", "factura c", "monotributo", "certificado", "punto de venta", "cuit", "wsfe", "facturar", "configurar facturacion"],
     connections: [
       { slug: "como-facturar-una-venta", text: "Una vez prendida la facturación, así se factura cada venta." },
@@ -120,6 +121,7 @@ export const comprobantesDocs: DocArticle[] = [
       { q: "¿Cómo anulo una venta facturada?", a: "No se anula a secas: abrí la venta y tocá **Anular con nota de crédito**. La nota de crédito cuenta como una factura de tu paquete mensual." },
       { q: "¿Qué pasa si no me quedan facturas en el mes?", a: "La venta se cobra igual y sale como comprobante X (no fiscal). Verás **Sin facturas disponibles este mes**: podés facturarla después, cuando tengas cupo." },
     ],
+    glossary: ["cae", "factura-c", "factura-a", "factura-b", "nota-de-credito"],
     keywords: ["facturar", "factura electronica", "factura c", "cae", "qr", "ticket 80 mm", "factura a4", "comprobante", "nota de credito", "arca"],
     connections: [
       { slug: "como-configurar-la-facturacion-electronica-con-arca", text: "Antes hay que conectar tu CUIT y tu punto de venta con ARCA." },

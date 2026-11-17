@@ -42,6 +42,7 @@ export const productosDocs: DocArticle[] = [
       { q: "¿Cuántos productos puedo cargar?", a: "Productos activos: Gratis 1.000, Básico 4.000, Pro 12.000 y Max 20.000. Un producto con talles y colores cuenta como uno solo, y los desactivados no cuentan." },
       { q: "¿Qué hago si tengo muchos productos?", a: "No los cargues uno por uno: usá **Acciones → Cargar desde Excel** (Plan Básico), que además calcula precios desde el costo si querés." },
     ],
+    glossary: ["sku", "codigo-de-barras", "costo", "stock"],
     keywords: ["cargar producto", "nuevo producto", "agregar producto", "alta de producto", "crear producto", "sku", "codigo de barras", "precio", "catalogo"],
     related: ["como-cargar-productos-desde-excel", "como-cambiar-el-precio-de-un-producto", "como-ajustar-el-stock-de-un-producto"],
     connections: [
@@ -154,6 +155,7 @@ export const productosDocs: DocArticle[] = [
       { q: "¿Y si un talle no viene en todos los colores?", a: "Tocá **¿Algún talle no viene en todos los colores?** y sacá las combinaciones que no existen." },
       { q: "¿Puedo agregar talles o colores más adelante?", a: "Sí, desde la solapa **Variantes** del producto o con **Agregar talles o colores** en los tres puntitos." },
     ],
+    glossary: ["variante-de-producto", "sku"],
     keywords: ["talles", "colores", "variantes", "ropa", "indumentaria", "calzado", "remera", "prenda", "sku por talle"],
     related: ["como-agregar-talles-o-colores-a-un-producto", "como-vender-productos-con-talles-y-colores"],
     connections: [
@@ -186,6 +188,7 @@ export const productosDocs: DocArticle[] = [
     faq: [
       { q: "¿Qué pasa con el stock que ya tenía el producto?", a: "Se mantiene: el producto actual pasa a ser una de las variantes (la que indicás) con su stock. Las nuevas variantes arrancan con el stock que cargues." },
     ],
+    glossary: ["variante-de-producto"],
     keywords: ["agregar talle", "agregar color", "nueva variante", "sumar talles", "convertir en variantes", "editar variantes"],
     related: ["como-cargar-un-producto-con-talles-y-colores", "como-ajustar-el-stock-de-un-producto"],
     updatedAt: UPDATED,
@@ -257,6 +260,7 @@ export const productosDocs: DocArticle[] = [
       { q: "¿Hay forma de saber cuándo cambió un precio?", a: "Sí, en **Historial de precios y costos** (tres puntitos del producto) ves cada cambio." },
       { q: "¿Si el precio queda por debajo del costo?", a: "El producto aparece en **Vendiendo a pérdida** en los avisos de Productos, para que lo revises." },
     ],
+    glossary: ["margen", "costo"],
     keywords: ["cambiar precio", "modificar precio", "editar precio", "actualizar precio", "remarcar", "precio de venta", "historial de precios"],
     related: ["como-poner-el-precio-con-un-porcentaje-sobre-el-costo", "como-hacer-aumentos-masivos-de-precios"],
     connections: [
@@ -288,6 +292,7 @@ export const productosDocs: DocArticle[] = [
       { q: "¿Cómo calcula el precio?", a: "Toma el **Costo** y le suma el porcentaje que escribís en **Ganancia sobre el costo (%)**. Te muestra en cuánto queda el precio y cuánto ganás por unidad; recién se carga cuando tocás **Usar este precio**." },
       { q: "¿Qué pasa si el precio queda por debajo del costo?", a: "El producto aparece en **Vendiendo a pérdida** en los avisos de Productos, para que lo revises." },
     ],
+    glossary: ["margen", "costo"],
     keywords: ["margen", "ganancia", "porcentaje", "markup", "precio segun costo", "calcular precio", "cuanto cobrar", "rentabilidad"],
     related: ["como-cambiar-el-precio-de-un-producto", "como-hacer-aumentos-masivos-de-precios"],
     updatedAt: UPDATED,
@@ -361,6 +366,7 @@ export const productosDocs: DocArticle[] = [
       { q: "¿Puedo imprimir etiquetas de productos que ya traen código?", a: "Sí, siempre que sea EAN-13 o UPC-A; los demás aparecen como **No es EAN-13** y no se imprimen." },
       { q: "¿Qué impresora necesito?", a: "Podés imprimir en una hoja A4 con varias etiquetas, o en un rollo de etiquetera, una por etiqueta." },
     ],
+    glossary: ["codigo-de-barras", "sku"],
     keywords: ["codigo de barras", "etiquetas", "imprimir etiquetas", "generar codigo", "sin codigo", "ean", "rollo", "etiquetera"],
     related: ["como-cargar-un-producto"],
     connections: [

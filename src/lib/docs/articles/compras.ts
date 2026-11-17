@@ -40,6 +40,7 @@ export const comprasDocs: DocArticle[] = [
       { q: "¿Qué pasa si el producto que compré no está cargado?", a: "Tocá **Producto nuevo** y lo creás sin salir de la compra." },
       { q: "¿Puedo corregir una compra ya registrada?", a: "No se edita: se anula y se vuelve a cargar. Al anularla, el stock que había sumado se revierte." },
     ],
+    glossary: ["remito", "costo", "medio-de-pago"],
     keywords: ["compra", "registrar compra", "cargar compra", "mercaderia", "factura de compra", "remito", "reponer", "proveedor"],
     related: ["como-anular-una-compra", "como-ver-lo-que-le-debes-a-un-proveedor"],
     connections: [

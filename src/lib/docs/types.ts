@@ -84,6 +84,8 @@ export interface DocArticle {
   faq?: DocFaq[];
   /** Palabras y frases con las que la gente busca esto (sinónimos, formas de decirlo). */
   keywords: string[];
+  /** Términos del diccionario (/diccionario/<slug>) que aparecen en la guía: se enlazan abajo para quien no los conoce. */
+  glossary?: string[];
   /** Otras guías relacionadas (slugs). */
   related?: string[];
   /** Cómo se conecta con otros módulos: qué pasa en otra parte del sistema por lo que se hace acá (con la guía de esa parte). */

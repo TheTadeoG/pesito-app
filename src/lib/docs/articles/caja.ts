@@ -30,6 +30,7 @@ export const cajaDocs: DocArticle[] = [
       { q: "¿Qué pasa si me olvido de cerrar la caja?", a: "Sigue abierta y el equipo la ve como **Abierta desde otro día** o **Pasó la hora de cierre**. Conviene cerrarla apenas termina el turno, para que el efectivo del día quede cuadrado en un solo cierre." },
       { q: "¿Cada empleado abre su propia caja?", a: "Sí. Cada persona tiene su caja independiente: lo que vende cada uno suma a su caja." },
     ],
+    glossary: ["arqueo-de-caja"],
     keywords: ["abrir caja", "empezar el dia", "monto inicial", "apertura", "caja cerrada", "no puedo vender", "iniciar turno"],
     related: ["como-cerrar-la-caja", "como-hacer-una-venta", "como-usar-mas-de-una-caja"],
     connections: [
@@ -104,6 +105,7 @@ export const cajaDocs: DocArticle[] = [
       { q: "¿Qué hago si me da diferencia?", a: "Primero volvé a contar, después revisá los movimientos del turno por si falta un ingreso o retiro. Mirá la guía de faltantes y sobrantes." },
       { q: "¿Quién ve las diferencias?", a: "El dueño y los administradores las ven en el historial de caja, con el detalle de cada turno." },
     ],
+    glossary: ["arqueo-de-caja"],
     keywords: ["cerrar caja", "arqueo", "cierre", "faltante", "sobrante", "diferencia", "contar plata", "fin del dia", "cierre de turno"],
     related: ["como-ver-el-historial-de-cierres-de-caja", "como-ingresar-o-retirar-efectivo-de-la-caja"],
     connections: [
@@ -192,6 +194,7 @@ export const cajaDocs: DocArticle[] = [
       { q: "¿Por qué lo vendido es más que el efectivo en caja?", a: "Porque **Vendido en este turno** suma todos los medios de pago (efectivo, tarjeta, transferencia, QR y lo fiado), mientras que **En caja** cuenta sólo el efectivo que tendría que haber en el cajón." },
       { q: "¿Qué es Ver todos en Movimientos del turno?", a: "La lista muestra los últimos movimientos y, si hay más, un aviso como “Y 3 más en Ver todos”. Con **Ver todos** abrís el **Detalle de caja** completo del turno." },
     ],
+    glossary: ["arqueo-de-caja"],
     keywords: ["resumen de caja", "cuanto hay en caja", "efectivo esperado", "extracto", "movimientos del turno", "cuanto vendi hoy", "caja actual", "en caja"],
     connections: [
       { slug: "como-cerrar-la-caja", text: "El monto **En caja** es el esperado que se compara al cerrar." },
@@ -253,6 +256,7 @@ export const cajaDocs: DocArticle[] = [
       { q: "¿Puedo cerrar la caja aunque haya diferencia?", a: "Sí. Pesito no lo impide: cerrás y la diferencia queda registrada como **Faltante de efectivo** o **Sobrante de efectivo**, para que el dueño la vea en el historial." },
       { q: "¿Se puede corregir la diferencia después de cerrar?", a: "No. Una caja cerrada no se modifica. Por eso conviene revisar los movimientos del turno antes de confirmar el cierre." },
     ],
+    glossary: ["arqueo-de-caja"],
     keywords: ["faltante", "sobrante", "diferencia de caja", "arqueo", "me falta plata", "me sobra plata", "cuadrar la caja"],
     connections: [
       { slug: "como-ingresar-o-retirar-efectivo-de-la-caja", text: "Los retiros e ingresos sin registrar son la causa más común de diferencia." },
