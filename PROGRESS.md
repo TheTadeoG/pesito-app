@@ -12,7 +12,7 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 - Errores de hidratación #418 arreglados: formato de fechas, cronómetro de caja y `<html>`.
 
 ## Hecho: Reportes más útiles (18/11/2026)
-- **Ventas:** totales de todo el filtro (Vendido, Facturado, Sin facturar, Anuladas, En fiado; tocar uno filtra), filtros nuevos (Vendedor, Importe, Facturación) y columna Facturación (Facturada / Sin facturar / Anulada). Los totales traen las ventas del filtro con `fetchAll`: si pesa en períodos largos, pasarlo a una función SQL que devuelva sólo las sumas (migración manual).
+- **Ventas:** totales de todo el filtro (Vendido, Facturado, Sin facturar, Anuladas, En fiado; tocar uno filtra), filtros nuevos (Vendedor, Importe, Facturación) y columna Facturación (Facturada / Sin facturar / Anulada). Los totales se suman en la base con `sales_filter_totals` (migración 0101, **falta aplicar en producción**): la pantalla sólo carga la página que se ve; sin la función, los totales no se muestran y lo demás anda.
 - **Por usuario:** los movimientos pasaron de texto a tabla (Fecha y hora, Persona, Acción, Producto / referencia, Cantidad, Monto, Motivo, Sucursal), ordenable y filtrable por acción; el Excel trae las mismas columnas.
 - **Caja:** el historial de cierres trae todos los del período (antes tope de 20), con totales (cierres, con faltante, faltante total, diferencia neta), filtro por persona y "sólo con diferencia", columnas ordenables y paginación.
 - **Resumen:** tarjeta "Qué hacer ahora" (`lib/report-actions.ts`, con test): hasta 3 acciones para sumar y 3 para revisar o sacar, con los avisos del negocio. Es para todos los planes; el stock parado necesita Plan Max (se muestra con aviso de plan).

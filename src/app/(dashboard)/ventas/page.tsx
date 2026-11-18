@@ -10,7 +10,6 @@ import { argDateString } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { getInvoicingConfig } from "@/lib/actions/invoicing";
 import { parseSalesSearch } from "@/lib/sales-search";
-import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
 import { getMemberLabelsById } from "@/lib/member-labels";
 import { VentasHistorial, type HistorialRow, type VentasSummary } from "./ventas-historial";
 
@@ -66,6 +65,11 @@ export default async function VentasPage({
   // condiciones (ventas de esos clientes, ventas de esos comprobantes, ventas de ese importe); con algo
   // escrito que no coincide con nada, no hay resultados.
   const orParts: string[] = [];
+  // Lo mismo que se busca, para que los totales usen exactamente el mismo filtro.
+  let searchCustomerIds: string[] = [];
+  let searchSaleIds: string[] = [];
+  let searchInternal: number | null = null;
+  let searchAmount: number | null = null;
   if (q) {
     const parsed = parseSalesSearch(q);
     const [customersFound, vouchersFound] = await Promise.all([
@@ -89,6 +93,10 @@ export default async function VentasPage({
     ]);
     const customerIds = (customersFound.data ?? []).map((c) => c.id);
     const saleIds = (vouchersFound.data ?? []).map((v) => v.sale_id).filter((id): id is string => Boolean(id));
+    searchCustomerIds = customerIds;
+    searchSaleIds = saleIds;
+    searchInternal = parsed.voucherNumber;
+    searchAmount = parsed.amount;
     if (customerIds.length > 0) orParts.push(`customer_id.in.(${customerIds.join(",")})`);
     if (saleIds.length > 0) orParts.push(`id.in.(${saleIds.join(",")})`);
     // El número a secas también busca el comprobante interno X.
@@ -162,50 +170,34 @@ export default async function VentasPage({
       sellerName: s.user_id ? (memberLabels?.get(s.user_id) ?? "Usuario eliminado") : null,
     }));
 
-    // Totales de TODO el filtro (no sólo de la página): vendido, facturado y sin facturar.
+    // Totales de TODO el filtro, sumados en la base (no se traen las ventas): la pantalla sólo carga la página que se ve.
+    // Si la función todavía no está en la base, los totales no se muestran y lo demás anda igual.
     if (!e) {
-      try {
-        const all = await fetchAll((from, to) =>
-          filtered("id, total, status, payment_method", false).order("id").range(from, to)
-        );
-        const authorized = await fetchAllIn(
-          all.map((r) => (r as unknown as { id: string }).id),
-          (ids, from, to) =>
-            supabase
-              .from("arca_vouchers")
-              .select("sale_id, kind")
-              .in("sale_id", ids)
-              .eq("status", "authorized")
-              .eq("kind", "invoice")
-              .order("id")
-              .range(from, to)
-        );
-        const invoiced = new Set(authorized.map((v) => v.sale_id));
-        const sum: VentasSummary = {
-          count: 0, vendido: 0, facturadoCount: 0, facturado: 0, sinFacturarCount: 0, sinFacturar: 0,
-          anuladasCount: 0, anuladas: 0, fiado: 0,
+      const { data: totalsRaw } = await supabase.rpc("sales_filter_totals" as never, {
+        p_org_id: organization.id,
+        p_start: `${desde}T00:00:00-03:00`,
+        p_end: new Date(new Date(`${hasta}T00:00:00-03:00`).getTime() + 24 * 3600 * 1000).toISOString(),
+        p_medio: medio || null,
+        p_estado: estado || null,
+        p_branch: sucursal || null,
+        p_seller: vendedor || null,
+        p_min: minAmount,
+        p_max: maxAmount,
+        p_comprobante: comprobante || null,
+        p_search: q !== "",
+        p_customer_ids: searchCustomerIds.length > 0 ? searchCustomerIds : null,
+        p_sale_ids: searchSaleIds.length > 0 ? searchSaleIds : null,
+        p_internal_number: searchInternal,
+        p_amount: searchAmount,
+      } as never);
+      const t = totalsRaw as Record<string, number | string> | null;
+      if (t && typeof t === "object") {
+        const n = (k: string) => Number(t[k] ?? 0);
+        summary = {
+          count: n("count"), vendido: n("vendido"), facturadoCount: n("facturadoCount"), facturado: n("facturado"),
+          sinFacturarCount: n("sinFacturarCount"), sinFacturar: n("sinFacturar"),
+          anuladasCount: n("anuladasCount"), anuladas: n("anuladas"), fiado: n("fiado"),
         };
-        for (const r of all as unknown as { id: string; total: number; status: string; payment_method: string }[]) {
-          const t = Number(r.total);
-          if (r.status === "anulada") {
-            sum.anuladasCount += 1;
-            sum.anuladas += t;
-            continue;
-          }
-          sum.count += 1;
-          sum.vendido += t;
-          if (r.payment_method === "fiado") sum.fiado += t;
-          if (invoiced.has(r.id)) {
-            sum.facturadoCount += 1;
-            sum.facturado += t;
-          } else {
-            sum.sinFacturarCount += 1;
-            sum.sinFacturar += t;
-          }
-        }
-        summary = sum;
-      } catch {
-        summary = null;
       }
     }
   }
