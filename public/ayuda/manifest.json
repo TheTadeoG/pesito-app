@@ -225,27 +225,27 @@
   },
   "usuarios-invitar": {
     "w": 896,
-    "h": 810
+    "h": 836
   },
   "usuarios-crear": {
     "w": 896,
-    "h": 810
+    "h": 836
   },
   "usuarios-roles": {
     "w": 896,
-    "h": 810
+    "h": 836
   },
   "usuarios-editar": {
     "w": 896,
-    "h": 810
+    "h": 836
   },
   "usuarios-cancelar-invitacion": {
     "w": 896,
-    "h": 810
+    "h": 836
   },
   "usuarios-quitar": {
     "w": 896,
-    "h": 810
+    "h": 836
   },
   "impresora-conectar": {
     "w": 672,
@@ -257,11 +257,11 @@
   },
   "movimientos-lista": {
     "w": 990,
-    "h": 741
+    "h": 648
   },
   "movimientos-buscar": {
     "w": 990,
-    "h": 741
+    "h": 648
   },
   "inventario-inicio": {
     "w": 768,
@@ -281,6 +281,6 @@
   },
   "movimientos-manual": {
     "w": 990,
-    "h": 741
+    "h": 648
   }
 }

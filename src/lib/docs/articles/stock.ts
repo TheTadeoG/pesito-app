@@ -58,6 +58,7 @@ export const stockDocs: DocArticle[] = [
       { text: "Entrá a **Productos** y abrí la solapa **Movimientos**.", images: [{ name: "movimientos-lista", alt: "Pestaña Movimientos de Productos con los filtros por período y tipo, los totales y la lista de movimientos de stock" }] },
       { text: "Buscá un producto por nombre, SKU o código de barras (**Buscar por producto, SKU o código de barras…**).", images: [{ name: "movimientos-buscar", alt: "Pestaña Movimientos con el buscador por producto, SKU o código de barras resaltado" }] },
       { text: "Filtrá por período (por ejemplo **Este mes**) o por persona con **Filtrar por persona**." },
+      { text: "Leé la tabla: **Fecha y hora**, **Tipo**, **Producto**, **Motivo / referencia**, **Persona** y **Cantidad**. Tocá el título de **Fecha y hora**, **Producto** o **Cantidad** para ordenar." },
       { text: "Mirá el tipo de cada movimiento: **Venta**, **Compra**, **Ajuste**, **Transferencia**, **Anulación de venta** o **Stock inicial**, con la cantidad que entró o salió." },
     ],
     tips: [
@@ -66,7 +67,7 @@ export const stockDocs: DocArticle[] = [
     ],
     faq: [
       { q: "¿Qué tipos de movimiento hay?", a: "**Venta** (salió por una venta), **Compra** (entró por una compra), **Ajuste** (ajuste manual o inventario), **Transferencia** (pasó entre sucursales), **Anulación de venta** y **Stock inicial**." },
-      { q: "¿Puedo ver quién hizo cada movimiento?", a: "Sí, el dueño y los administradores ven la columna **Hecho por**, y pueden filtrar con **Filtrar por persona**." },
+      { q: "¿Puedo ver quién hizo cada movimiento?", a: "Sí, el dueño y los administradores ven la columna **Persona**, y pueden filtrar con **Filtrar por persona**." },
       { q: "¿Qué plan necesito?", a: "Los movimientos de stock están desde el Plan Básico. En el Plan Gratis ves el aviso con el plan que los desbloquea." },
     ],
     glossary: ["stock"],
