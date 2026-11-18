@@ -41,7 +41,7 @@ export function StructuredData() {
       knowledgeAbout: ["punto de venta", "control de stock", "caja", "fiado y cuenta corriente", "factura electrónica ARCA"],
       contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "soporte@pesito.com.ar", availableLanguage: "es-AR" },
       // Perfiles oficiales. Sumar acá la ficha de G2, LinkedIn, YouTube y Google Business Profile cuando existan (misma imagen de logo en todos).
-      sameAs: ["https://www.instagram.com/pesito.arg"],
+      sameAs: ["https://www.instagram.com/pesito.arg", "https://www.g2.com/products/pesito/reviews"],
     },
     {
       "@context": "https://schema.org",
