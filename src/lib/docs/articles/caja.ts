@@ -1,6 +1,6 @@
 import type { DocArticle } from "@/lib/docs/types";
 
-const UPDATED = "2026-11-17";
+const UPDATED = "2026-11-18";
 
 export const cajaDocs: DocArticle[] = [
   {
@@ -126,13 +126,15 @@ export const cajaDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Entrá a **Reportes** y abrí la solapa **Caja**." },
-      { text: "Bajá hasta **Historial de caja**: cada fila muestra fecha, quién, horario, **Esperado**, **Contado** y **Diferencia**." },
+      { text: "Elegí el período arriba. Bajá hasta **Historial de caja**: los cuadros de arriba suman todos los cierres del período (**Cierres**, **Con faltante**, **Faltante total** y **Diferencia neta**)." },
+      { text: "Cada fila muestra fecha, quién, horario, **Esperado**, **Contado** y **Diferencia**. Tocá el título de una columna para ordenar, por ejemplo por **Diferencia** para ver primero los faltantes más grandes." },
+      { text: "Para ver solo un empleado elegí su nombre; para ver solo los cierres que no coincidieron, tocá **Sólo con diferencia**." },
       { text: "Tocá un cierre para ver el detalle de ese turno." },
     ],
     tips: [
       "Cuando todo coincide, la diferencia dice **Sin diferencia**.",
       "Con el Plan Básico ves las diferencias de cada empleado: quién cierra con faltantes seguido y cuánto suma.",
-      "Con el Plan Pro tenés el historial completo de cierres.",
+      "Con el Plan Pro tenés el historial completo de cierres, con todas las páginas del período.",
     ],
     faq: [
       { q: "¿Puedo ver el detalle de un cierre?", a: "Sí. Tocá el cierre y se abre **Detalle de caja**, con las ventas, ingresos y retiros de ese turno." },

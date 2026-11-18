@@ -22,6 +22,7 @@ import { BranchFilter } from "@/app/(dashboard)/caja/branch-filter";
 import { countOverdueSuppliers } from "@/lib/supplier-overview";
 import { getBranchContext } from "@/lib/branches";
 import { recurringShortages } from "@/lib/caja-alerts";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 
 // Sin historial completo de caja (Plan Pro) se ven sólo los últimos cierres.
 const LIMITED_HISTORY = 5;
@@ -84,16 +85,24 @@ export default async function CajaPage({
       .eq("user_id", userId)
       .eq("status", "abierta")
       .maybeSingle(),
-    supabase
-      .from("cash_registers")
-      .select("id, user_id, opened_at, closed_at, opening_amount, expected_amount, closing_amount, branch_id")
-      .eq("org_id", organization.id)
-      .eq("status", "cerrada")
-      .match(branchMatch)
-      .gte("closed_at", range.start.toISOString())
-      .lt("closed_at", range.end.toISOString())
-      .order("closed_at", { ascending: false })
-      .limit(fullHistory ? 20 : LIMITED_HISTORY),
+    // Con historial completo se traen todos los cierres del período (la lista se pagina en pantalla);
+    // sin él, sólo los últimos.
+    (async () => {
+      const closedQuery = (from: number, to: number) =>
+        supabase
+          .from("cash_registers")
+          .select("id, user_id, opened_at, closed_at, opening_amount, expected_amount, closing_amount, branch_id")
+          .eq("org_id", organization.id)
+          .eq("status", "cerrada")
+          .match(branchMatch)
+          .gte("closed_at", range.start.toISOString())
+          .lt("closed_at", range.end.toISOString())
+          .order("closed_at", { ascending: false })
+          .order("id")
+          .range(from, to);
+      if (fullHistory) return { data: await fetchAll(closedQuery) };
+      return closedQuery(0, LIMITED_HISTORY - 1);
+    })(),
     getMemberLabelsById(supabase, organization.id),
     isManager
       ? supabase
@@ -237,7 +246,7 @@ export default async function CajaPage({
         <ReportesTabs active="caja" />
         {periodBar}
         {teamOverview}
-        <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
+        <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} periodKey={`${periodQuery.period}|${periodQuery.from ?? ""}|${periodQuery.to ?? ""}|${filterBranchId ?? ""}`} />
       </div>
     );
   }
@@ -364,7 +373,7 @@ export default async function CajaPage({
         }
       />
       {teamOverview}
-      <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} />
+      <CajaHistorial rows={historialRows} limitedTo={fullHistory ? undefined : LIMITED_HISTORY} periodKey={`${periodQuery.period}|${periodQuery.from ?? ""}|${periodQuery.to ?? ""}|${filterBranchId ?? ""}`} />
     </div>
   );
 }
