@@ -366,36 +366,44 @@ export function LiveClient({
             {data.recent_sales.length === 0 ? (
               <p className="px-5 pb-5 text-sm text-muted-foreground">Todavía no hay ventas hoy.</p>
             ) : (
-              <div className="divide-y divide-border">
-                {data.recent_sales.map((s) => {
-                  const seller = data.members.find((m) => m.user_id === s.user_id);
-                  return (
-                    <div key={s.id} className="flex items-start justify-between gap-3 px-5 py-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
-                          {formatTime(s.created_at)} · {seller ? labelFor(seller) : "Usuario eliminado"}
-                          {multiBranch && s.branch_id && (
-                            <span className="font-normal text-muted-foreground">
-                              {" "}
-                              · {branchName.get(s.branch_id)}
-                            </span>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[36rem] text-sm">
+                  <thead>
+                    <tr className="border-y border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <th className="py-2.5 pl-5 pr-3">Hora</th>
+                      <th className="px-3 py-2.5">Vendedor</th>
+                      {multiBranch && <th className="px-3 py-2.5">Sucursal</th>}
+                      <th className="px-3 py-2.5">Detalle</th>
+                      <th className="px-3 py-2.5">Medio de pago</th>
+                      <th className="py-2.5 pl-3 pr-5 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.recent_sales.map((s) => {
+                      const seller = data.members.find((m) => m.user_id === s.user_id);
+                      return (
+                        <tr key={s.id} className="border-b border-border last:border-0">
+                          <td className="whitespace-nowrap py-2.5 pl-5 pr-3 text-muted-foreground">{formatTime(s.created_at)}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 font-medium text-foreground">
+                            {seller ? labelFor(seller) : "Usuario eliminado"}
+                          </td>
+                          {multiBranch && (
+                            <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
+                              {(s.branch_id && branchName.get(s.branch_id)) || "—"}
+                            </td>
                           )}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {s.items || "Sin detalle"}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-sm font-semibold text-foreground">
-                          {formatCurrency(s.total)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {paymentLabels[s.payment_method] ?? s.payment_method}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+                          <td className="max-w-[18rem] truncate px-3 py-2.5 text-muted-foreground">{s.items || "Sin detalle"}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
+                            {paymentLabels[s.payment_method] ?? s.payment_method}
+                          </td>
+                          <td className="whitespace-nowrap py-2.5 pl-3 pr-5 text-right font-semibold tabular-nums text-foreground">
+                            {formatCurrency(s.total)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>

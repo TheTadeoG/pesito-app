@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
+import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
+import { SortTh, compareBy, nextSort, type SortState } from "@/components/dashboard/sortable-th";
 import type { SupplierRow } from "@/lib/supplier-overview";
 import { addDays, daysBetween, type CalendarEvent, type DebtItem } from "@/lib/supplier-debt";
 import { SupplierPaymentDialog } from "@/app/(dashboard)/proveedores/supplier-payment-dialog";
@@ -461,6 +463,7 @@ function AllDebts({
   const [bulkPending, setBulkPending] = useState(false);
   const [bulkMessage, setBulkMessage] = useState<string | null>(null);
 
+  const [sort, setSort] = useState<SortState<"proveedor" | "compra" | "vence" | "monto">>({ key: "vence", dir: 1 });
   const list = useMemo(() => {
     const filtered = debts.filter((d) => {
       if (filter === "dated") return Boolean(d.dueDate);
@@ -468,16 +471,20 @@ function AllDebts({
       if (filter === "overdue") return d.status === "vencida";
       return true;
     });
-    // Con fecha primero (la que vence antes, primero); sin fecha, la más vieja primero.
+    // Por defecto: con fecha primero (la que vence antes, primero); sin fecha, la más vieja primero.
     return filtered.sort((a, b) => {
+      if (sort.key === "proveedor") return compareBy(a.supplierName.toLowerCase(), b.supplierName.toLowerCase(), sort.dir);
+      if (sort.key === "compra") return compareBy(a.purchaseDay, b.purchaseDay, sort.dir);
+      if (sort.key === "monto") return compareBy(a.amount, b.amount, sort.dir);
       const dated = Number(!a.dueDate) - Number(!b.dueDate);
       if (dated !== 0) return dated;
       return (
-        (a.dueDate ?? a.purchaseDay).localeCompare(b.dueDate ?? b.purchaseDay) ||
+        compareBy(a.dueDate ?? a.purchaseDay, b.dueDate ?? b.purchaseDay, sort.dir) ||
         a.supplierName.localeCompare(b.supplierName, "es")
       );
     });
-  }, [debts, filter]);
+  }, [debts, filter, sort]);
+  const pager = usePagination(list.length, `${filter}|${sort.key}${sort.dir}`, "pesito:calendario-deudas:pagesize");
 
   const filters: { key: DebtFilter; label: string }[] = [
     { key: "all", label: "Todas" },
@@ -582,12 +589,33 @@ function AllDebts({
             {debts.length === 0 ? "No les debés nada a tus proveedores." : "No hay compras con ese filtro."}
           </p>
         ) : (
-          <div className="divide-y divide-border">
-            {list.map((d, idx) => (
-              <DebtListRow key={d.purchaseId ?? `adj-${idx}`} debt={d} onPay={() => onPay(d.supplierId, d.purchaseId)} />
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[44rem] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <SortTh label="Proveedor" k="proveedor" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, 1))} className="pl-4" />
+                  <SortTh label="Compra" k="compra" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, -1))} />
+                  <SortTh label="Vencimiento" k="vence" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, 1))} />
+                  <SortTh label="Debés" k="monto" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, -1))} right />
+                  <th className="py-2.5 pl-3 pr-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.slice(pager.start, pager.end).map((d, idx) => (
+                  <DebtListRow key={d.purchaseId ?? `adj-${pager.start + idx}`} debt={d} onPay={() => onPay(d.supplierId, d.purchaseId)} />
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
+        <PaginationBar
+          total={list.length}
+          page={pager.page}
+          pageSize={pager.pageSize}
+          onPageChange={pager.setPage}
+          onPageSizeChange={pager.setPageSize}
+          noun="compras"
+        />
       </CardContent>
     </Card>
   );
@@ -617,65 +645,68 @@ function DebtListRow({ debt, onPay }: { debt: CalendarDebt; onPay: () => void })
   const termsDate = !debt.dueDate && debt.termsDays ? addDays(debt.purchaseDay, debt.termsDays) : null;
 
   return (
-    <div className="space-y-2 px-4 py-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="min-w-0 flex-1 basis-48">
-          <p className="truncate text-sm font-semibold text-foreground">{debt.supplierName}</p>
-          <p className="text-xs text-muted-foreground">
-            {debt.purchaseId ? `Compra del ${shortDate(debt.purchaseDay)}` : "Saldo sin compra asociada"}
-          </p>
-        </div>
-        <span className={cn("rounded-md px-2 py-0.5 text-xs font-semibold", STATUS_CHIP[debt.status])}>
-          {debtStatusText(debt)}
-        </span>
-        <p className="w-28 text-right text-base font-bold text-warning">{formatCurrency(debt.amount)}</p>
-        <div className="flex items-center gap-1.5">
-          {debt.purchaseId && !editing && (
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-              {debt.dueDate ? "Cambiar fecha" : "Asignar fecha"}
+    <>
+      <tr className="border-b border-border last:border-0">
+        <td className="py-3 pl-4 pr-3 font-semibold text-foreground">{debt.supplierName}</td>
+        <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">
+          {debt.purchaseId ? shortDate(debt.purchaseDay) : "Saldo sin compra"}
+        </td>
+        <td className="px-3 py-3">
+          <span className={cn("rounded-md px-2 py-0.5 text-xs font-semibold", STATUS_CHIP[debt.status])}>
+            {debtStatusText(debt)}
+          </span>
+        </td>
+        <td className="whitespace-nowrap px-3 py-3 text-right text-base font-bold tabular-nums text-warning">{formatCurrency(debt.amount)}</td>
+        <td className="py-3 pl-3 pr-4">
+          <div className="flex items-center justify-end gap-1.5">
+            {debt.purchaseId && !editing && (
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+                {debt.dueDate ? "Cambiar fecha" : "Asignar fecha"}
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={onPay} aria-label={`Registrar pago a ${debt.supplierName}`}>
+              <Wallet className="h-3.5 w-3.5" />
+              Pagar
             </Button>
-          )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onPay}
-            aria-label={`Registrar pago a ${debt.supplierName}`}
-          >
-            <Wallet className="h-3.5 w-3.5" />
-            Pagar
-          </Button>
-        </div>
-      </div>
-      {editing && (
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="w-44">
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              aria-label="Fecha de vencimiento"
-              className="h-9"
-            />
           </div>
-          <Button size="sm" disabled={!date || pending} onClick={() => save(date)}>
-            {pending ? "Guardando…" : "Guardar"}
-          </Button>
-          {termsDate && (
-            <Button size="sm" variant="outline" disabled={pending} onClick={() => save(termsDate)}>
-              {`Usar su plazo (${debt.termsDays} días → ${shortDate(termsDate)})`}
-            </Button>
-          )}
-          {debt.dueDate && (
-            <Button size="sm" variant="outline" disabled={pending} onClick={() => save(null)}>
-              Quitar fecha
-            </Button>
-          )}
-          <Button size="sm" variant="outline" disabled={pending} onClick={() => setEditing(false)}>
-            Cancelar
-          </Button>
-        </div>
+        </td>
+      </tr>
+      {(editing || error) && (
+        <tr className="border-b border-border bg-muted/30 last:border-0">
+          <td colSpan={5} className="space-y-2 px-4 py-3">
+            {editing && (
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="w-44">
+                  <Input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    aria-label="Fecha de vencimiento"
+                    className="h-9"
+                  />
+                </div>
+                <Button size="sm" disabled={!date || pending} onClick={() => save(date)}>
+                  {pending ? "Guardando…" : "Guardar"}
+                </Button>
+                {termsDate && (
+                  <Button size="sm" variant="outline" disabled={pending} onClick={() => save(termsDate)}>
+                    {`Usar su plazo (${debt.termsDays} días → ${shortDate(termsDate)})`}
+                  </Button>
+                )}
+                {debt.dueDate && (
+                  <Button size="sm" variant="outline" disabled={pending} onClick={() => save(null)}>
+                    Quitar fecha
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" disabled={pending} onClick={() => setEditing(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            )}
+            {error && <p className="text-xs text-danger">{error}</p>}
+          </td>
+        </tr>
       )}
-      {error && <p className="text-xs text-danger">{error}</p>}
-    </div>
+    </>
   );
 }

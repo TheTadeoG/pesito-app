@@ -43,39 +43,36 @@ function CountRow({ product, item, onCommit }: { product: CountProduct; item: Co
   const expected = item ? item.expected : product.stock;
   const diff = item ? item.counted - item.expected : null;
   return (
-    <li className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
-      <div className="min-w-0 flex-1 basis-56">
-        <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
-        <p className="truncate text-xs text-muted-foreground">{[product.sku, product.barcode].filter(Boolean).join(" · ") || "Sin código"}</p>
-      </div>
-      <div className="w-24 text-right text-sm">
-        <p className="text-[11px] text-muted-foreground">Sistema</p>
-        <p className="tabular-nums text-foreground">{`${fmt(expected)} ${product.unit}`}</p>
-      </div>
-      <div className="w-28">
-        <Input
-          data-count-input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step="any"
-          value={text}
-          placeholder="Contado"
-          aria-label={`Contado de ${product.name}`}
-          onChange={(e) => setText(e.target.value)}
-          onBlur={() => onCommit(text)}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return;
-            e.preventDefault();
-            const inputs = Array.from(document.querySelectorAll<HTMLInputElement>("[data-count-input]"));
-            const next = inputs[inputs.indexOf(e.currentTarget) + 1];
-            onCommit(text);
-            next?.focus();
-          }}
-          className="h-9 text-right"
-        />
-      </div>
-      <div className="w-24 text-right text-sm font-semibold tabular-nums">
+    <tr className="border-b border-border last:border-0">
+      <td className="py-2.5 pl-4 pr-3 font-medium text-foreground sm:pl-6">{product.name}</td>
+      <td className="px-3 py-2.5 text-muted-foreground">{[product.sku, product.barcode].filter(Boolean).join(" · ") || "Sin código"}</td>
+      <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-foreground">{`${fmt(expected)} ${product.unit}`}</td>
+      <td className="px-3 py-2.5">
+        <div className="ml-auto w-28">
+          <Input
+            data-count-input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="any"
+            value={text}
+            placeholder="Contado"
+            aria-label={`Contado de ${product.name}`}
+            onChange={(e) => setText(e.target.value)}
+            onBlur={() => onCommit(text)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              const inputs = Array.from(document.querySelectorAll<HTMLInputElement>("[data-count-input]"));
+              const next = inputs[inputs.indexOf(e.currentTarget) + 1];
+              onCommit(text);
+              next?.focus();
+            }}
+            className="h-9 text-right"
+          />
+        </div>
+      </td>
+      <td className="whitespace-nowrap py-2.5 pl-3 pr-4 text-right font-semibold tabular-nums sm:pr-6">
         {diff === null ? (
           <span className="font-normal text-muted-foreground">—</span>
         ) : diff === 0 ? (
@@ -83,8 +80,8 @@ function CountRow({ product, item, onCommit }: { product: CountProduct; item: Co
         ) : (
           <span className={diff > 0 ? "text-warning" : "text-danger"}>{`${diff > 0 ? "+" : "−"}${fmt(Math.abs(diff))}`}</span>
         )}
-      </div>
-    </li>
+      </td>
+    </tr>
   );
 }
 
@@ -308,12 +305,25 @@ export function CountClient({
         {shown.length === 0 ? (
           <p className="px-6 py-10 text-center text-sm text-muted-foreground">No hay productos con ese filtro.</p>
         ) : (
-          <ul className="divide-y divide-border">
-            {shown.slice(pg.start, pg.end).map((p) => {
-              const item = items.get(p.id);
-              return <CountRow key={`${p.id}:${item?.counted ?? ""}`} product={p} item={item} onCommit={(t) => commit(p, t)} />;
-            })}
-          </ul>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[40rem] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <th className="py-2.5 pl-4 pr-3 sm:pl-6">Producto</th>
+                  <th className="px-3 py-2.5">Código</th>
+                  <th className="px-3 py-2.5 text-right">Sistema</th>
+                  <th className="px-3 py-2.5 text-right">Contado</th>
+                  <th className="py-2.5 pl-3 pr-4 text-right sm:pr-6">Diferencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.slice(pg.start, pg.end).map((p) => {
+                  const item = items.get(p.id);
+                  return <CountRow key={`${p.id}:${item?.counted ?? ""}`} product={p} item={item} onCommit={(t) => commit(p, t)} />;
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
         <PaginationBar total={shown.length} page={pg.page} pageSize={pg.pageSize} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} noun="productos" />
       </Card>

@@ -64,48 +64,66 @@ export function VentasList({
 
   return (
     <div>
-      <div className="divide-y divide-border">
-        {sales.slice(pager.start, pager.end).map((sale) => (
-          <div
-            key={sale.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => openDetail(sale.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openDetail(sale.id);
-              }
-            }}
-            className="flex cursor-pointer flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="min-w-0 break-words text-sm font-medium text-foreground">{sale.customerName}</span>
-                <Badge>{paymentLabels[sale.payment_method] ?? sale.payment_method}</Badge>
-                {sale.payment_method === "mixto" && !!sale.fiadoAmount && sale.fiadoAmount > 0 && (
-                  <Badge tone="danger">Fiado {formatCurrency(sale.fiadoAmount)}</Badge>
-                )}
-                {sale.voucher && <Badge tone="accent">{sale.voucher}</Badge>}
-              </div>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                {formatDateTime(sale.created_at)} · {sale.itemsSummary}
-              </p>
-            </div>
-            <span className="shrink-0 whitespace-nowrap font-semibold text-foreground">{formatCurrency(sale.total)}</span>
-            <RowActions
-              primary={{ label: "Ver detalle", icon: Eye, onClick: () => void openDetail(sale.id) }}
-              items={[
-                {
-                  label: sale.voucher ? "Anular con nota de crédito" : "Anular venta",
-                  icon: Ban,
-                  danger: true,
-                  onClick: () => handleVoid(sale),
-                },
-              ]}
-            />
-          </div>
-        ))}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[34rem] text-sm">
+          <thead>
+            <tr className="border-y border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="py-2.5 pl-5 pr-3">Fecha</th>
+              <th className="px-3 py-2.5">Cliente</th>
+              <th className="px-3 py-2.5">Medio de pago</th>
+              <th className="px-3 py-2.5">Productos</th>
+              <th className="px-3 py-2.5 text-right">Total</th>
+              <th className="py-2.5 pl-3 pr-5 text-right">
+                <span className="sr-only">Acciones</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sales.slice(pager.start, pager.end).map((sale) => (
+              <tr
+                key={sale.id}
+                tabIndex={0}
+                onClick={() => openDetail(sale.id)}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {
+                    e.preventDefault();
+                    openDetail(sale.id);
+                  }
+                }}
+                className="cursor-pointer border-b border-border last:border-0 hover:bg-muted"
+              >
+                <td className="whitespace-nowrap py-2.5 pl-5 pr-3 text-muted-foreground">{formatDateTime(sale.created_at)}</td>
+                <td className="px-3 py-2.5 font-medium text-foreground">{sale.customerName}</td>
+                <td className="px-3 py-2.5">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <Badge>{paymentLabels[sale.payment_method] ?? sale.payment_method}</Badge>
+                    {sale.payment_method === "mixto" && !!sale.fiadoAmount && sale.fiadoAmount > 0 && (
+                      <Badge tone="danger">Fiado {formatCurrency(sale.fiadoAmount)}</Badge>
+                    )}
+                    {sale.voucher && <Badge tone="accent">{sale.voucher}</Badge>}
+                  </div>
+                </td>
+                <td className="max-w-[16rem] truncate px-3 py-2.5 text-muted-foreground">{sale.itemsSummary}</td>
+                <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums text-foreground">{formatCurrency(sale.total)}</td>
+                <td className="py-2.5 pl-3 pr-5" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex justify-end">
+                    <RowActions
+                      primary={{ label: "Ver detalle", icon: Eye, onClick: () => void openDetail(sale.id) }}
+                      items={[
+                        {
+                          label: sale.voucher ? "Anular con nota de crédito" : "Anular venta",
+                          icon: Ban,
+                          danger: true,
+                          onClick: () => handleVoid(sale),
+                        },
+                      ]}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       <PaginationBar
         total={sales.length}

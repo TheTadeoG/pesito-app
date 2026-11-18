@@ -1,10 +1,12 @@
 "use client";
 
 import { PaginationBar, usePagination } from "@/components/dashboard/pagination-bar";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Check, Tag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { SortTh, compareBy, nextSort, type SortState } from "@/components/dashboard/sortable-th";
 import { useToast } from "@/components/toast/toast-provider";
 import { formatCurrency } from "@/lib/utils";
 import { applyPriceSuggestions } from "@/app/(dashboard)/recomendaciones/actions";
@@ -38,7 +40,17 @@ export function PriceSuggestions({
   const { showSuccess, showWarning } = useToast();
   const [rows, setRows] = useState(items);
   const [pending, startTransition] = useTransition();
-  const pager = usePagination(rows.length, String(rows.length), "pesito-precios-page-size");
+  const [sort, setSort] = useState<SortState<"producto" | "motivo" | "costo" | "precio" | "cambio">>({ key: "cambio", dir: -1 });
+  const sorted = useMemo(() => {
+    const val = (r: PriceSuggestionItem): string | number =>
+      sort.key === "producto" ? r.name.toLowerCase()
+      : sort.key === "motivo" ? reasonLabel[r.reason]
+      : sort.key === "costo" ? r.cost
+      : sort.key === "precio" ? r.price
+      : r.price > 0 ? (r.suggestedPrice - r.price) / r.price : 0;
+    return [...rows].sort((a, b) => compareBy(val(a), val(b), sort.dir));
+  }, [rows, sort]);
+  const pager = usePagination(rows.length, `${rows.length}|${sort.key}${sort.dir}`, "pesito-precios-page-size");
 
   function apply(chosen: PriceSuggestionItem[]) {
     startTransition(async () => {
@@ -82,27 +94,49 @@ export function PriceSuggestions({
             </Button>
           )}
         </div>
-        <div className="divide-y divide-border">
-          {rows.slice(pager.start, pager.end).map((r) => (
-            <div key={r.productId} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{r.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {`${reasonLabel[r.reason]}. ${r.detail}`}
-                </p>
-              </div>
-              <div className="text-right text-sm">
-                <p className="text-muted-foreground line-through">{formatCurrency(r.price)}</p>
-                <p className="font-semibold text-foreground">{formatCurrency(r.suggestedPrice)}</p>
-              </div>
-              {canApply && (
-                <Button size="sm" variant="outline" disabled={pending} onClick={() => apply([r])}>
-                  <Tag className="mr-1 h-3.5 w-3.5" />
-                  Aplicar
-                </Button>
-              )}
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[48rem] text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <SortTh label="Producto" k="producto" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, 1))} className="pl-0" />
+                <SortTh label="Motivo" k="motivo" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, 1))} />
+                <SortTh label="Costo" k="costo" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, -1))} right />
+                <SortTh label="Precio hoy" k="precio" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, -1))} right />
+                <SortTh label="Sugerido" k="cambio" sort={sort} onSort={(k) => setSort((c) => nextSort(c, k, -1))} right />
+                <th className="px-3 py-2.5 text-right">Ganancia sobre costo</th>
+                {canApply && <th className="py-2.5 pl-3 text-right">Acción</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.slice(pager.start, pager.end).map((r) => (
+                <tr key={r.productId} className="border-b border-border last:border-0">
+                  <td className="py-3 pr-3">
+                    <p className="font-medium text-foreground">{r.name}</p>
+                    {r.brand && <p className="text-xs text-muted-foreground">{r.brand}</p>}
+                  </td>
+                  <td className="px-3 py-3">
+                    <Badge tone={r.reason === "perdida" ? "danger" : "warning"}>{reasonLabel[r.reason]}</Badge>
+                    <p className="mt-1 max-w-[16rem] text-xs text-muted-foreground">{r.detail}</p>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-muted-foreground">{formatCurrency(r.cost)}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-muted-foreground line-through">{formatCurrency(r.price)}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-right font-semibold tabular-nums text-foreground">{formatCurrency(r.suggestedPrice)}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-muted-foreground">
+                    {`${Math.round(r.currentMarkup)}% → `}
+                    <span className="font-semibold text-foreground">{`${Math.round(r.suggestedMarkup)}%`}</span>
+                  </td>
+                  {canApply && (
+                    <td className="py-3 pl-3 text-right">
+                      <Button size="sm" variant="outline" disabled={pending} onClick={() => apply([r])}>
+                        <Tag className="mr-1 h-3.5 w-3.5" />
+                        Aplicar
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </CardContent>
       <PaginationBar
