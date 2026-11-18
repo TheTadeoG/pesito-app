@@ -1,6 +1,6 @@
 import type { DocArticle } from "@/lib/docs/types";
 
-const UPDATED = "2026-11-17";
+const UPDATED = "2026-11-18";
 
 export const cuentaDocs: DocArticle[] = [
   {
