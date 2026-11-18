@@ -472,24 +472,33 @@ export function ReportesDashboard({
                     Nadie te debe fiado ahora mismo.
                   </p>
                 ) : (
-                  <div className="divide-y divide-border">
-                    {debtorsPager.pageItems.map((d) => (
-                      <div key={d.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
-                        <div className="min-w-0">
-                          <p className="truncate text-foreground">{d.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {d.daysSincePayment === null
-                              ? "Nunca registró un pago"
-                              : d.daysSincePayment === 0
-                                ? "Pagó hoy"
-                                : `Hace ${d.daysSincePayment} día${d.daysSincePayment !== 1 ? "s" : ""} que no paga`}
-                          </p>
-                        </div>
-                        <span className="shrink-0 font-semibold text-danger">
-                          {formatCurrency(d.amount)}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <th className="px-5 py-2">Cliente</th>
+                          <th className="px-3 py-2">Último pago</th>
+                          <th className="px-5 py-2 text-right">Debe</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {debtorsPager.pageItems.map((d) => (
+                          <tr key={d.name} className="border-b border-border last:border-0">
+                            <td className="max-w-[12rem] truncate px-5 py-2.5 font-medium text-foreground">{d.name}</td>
+                            <td className={`whitespace-nowrap px-3 py-2.5 ${d.daysSincePayment === null || d.daysSincePayment > 30 ? "font-medium text-danger" : "text-muted-foreground"}`}>
+                              {d.daysSincePayment === null
+                                ? "Nunca pagó"
+                                : d.daysSincePayment === 0
+                                  ? "Hoy"
+                                  : `Hace ${d.daysSincePayment} día${d.daysSincePayment !== 1 ? "s" : ""}`}
+                            </td>
+                            <td className="whitespace-nowrap px-5 py-2.5 text-right font-semibold tabular-nums text-danger">
+                              {formatCurrency(d.amount)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
                 <ListPager {...debtorsPager} />
@@ -516,6 +525,11 @@ export function ReportesDashboard({
                     {formatCurrency(data.stockValue.atPrice)}
                   </p>
                 </div>
+                {data.stockValue.atCost > 0 && data.stockValue.atPrice >= data.stockValue.atCost && (
+                  <div className="col-span-2 rounded-xl bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                    {`Si vendés todo al precio de lista, te quedarían ${formatCurrency(data.stockValue.atPrice - data.stockValue.atCost)} de ganancia (${Math.round(((data.stockValue.atPrice - data.stockValue.atCost) / data.stockValue.atCost) * 100)}% sobre el costo).`}
+                  </div>
+                )}
                 <StockBreakdownSection locked={data.stockBreakdownLocked} />
               </CardContent>
             </Card>

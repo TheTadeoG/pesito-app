@@ -11,6 +11,14 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 - POS: una venta pasó de 42 consultas / ~710 KB a 6 consultas / ~1,5 KB. La sesión se valida con `getClaims`.
 - Errores de hidratación #418 arreglados: formato de fechas, cronómetro de caja y `<html>`.
 
+## Hecho: Reportes más útiles (18/11/2026)
+- **Ventas:** totales de todo el filtro (Vendido, Facturado, Sin facturar, Anuladas, En fiado; tocar uno filtra), filtros nuevos (Vendedor, Importe, Facturación) y columna Facturación (Facturada / Sin facturar / Anulada). Los totales traen las ventas del filtro con `fetchAll`: si pesa en períodos largos, pasarlo a una función SQL que devuelva sólo las sumas (migración manual).
+- **Por usuario:** los movimientos pasaron de texto a tabla (Fecha y hora, Persona, Acción, Producto / referencia, Cantidad, Monto, Motivo, Sucursal), ordenable y filtrable por acción; el Excel trae las mismas columnas.
+- **Caja:** el historial de cierres trae todos los del período (antes tope de 20), con totales (cierres, con faltante, faltante total, diferencia neta), filtro por persona y "sólo con diferencia", columnas ordenables y paginación.
+- **Resumen:** tarjeta "Qué hacer ahora" (`lib/report-actions.ts`, con test): hasta 3 acciones para sumar y 3 para revisar o sacar, con los avisos del negocio. Es para todos los planes; el stock parado necesita Plan Max (se muestra con aviso de plan).
+- **Otros reportes:** Quién te debe en tabla (Cliente, Último pago, Debe) y margen potencial en Stock valorizado.
+- Pendiente: vistas ordenables y paginadas en el resto de las listas del sistema (principio de listas con columnas).
+
 ## Hecho: IndexNow para Bing (17/11/2026)
 - Archivo de clave `public/indexnow-<clave>.txt` (público a propósito, permitido en el middleware) y `node scripts/indexnow.mjs`, que avisa a Bing de todas las páginas del sitemap. Correrlo después de un despliegue con páginas nuevas. Search Console de Google no usa IndexNow: ahí se pide a mano (límite diario).
 
