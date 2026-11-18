@@ -17,7 +17,8 @@ Probamos la app simulando un cliente mediano: almacén con 1.600 productos, 381 
 - **Caja:** el historial de cierres trae todos los del período (antes tope de 20), con totales (cierres, con faltante, faltante total, diferencia neta), filtro por persona y "sólo con diferencia", columnas ordenables y paginación.
 - **Resumen:** tarjeta "Qué hacer ahora" (`lib/report-actions.ts`, con test): hasta 3 acciones para sumar y 3 para revisar o sacar, con los avisos del negocio. Es para todos los planes; el stock parado necesita Plan Max (se muestra con aviso de plan).
 - **Otros reportes:** Quién te debe en tabla (Cliente, Último pago, Debe) y margen potencial en Stock valorizado.
-- Pendiente: vistas ordenables y paginadas en el resto de las listas del sistema (principio de listas con columnas).
+- **Listas con columnas** (principio: una lista de datos es una tabla con columnas, ordenable y paginada): ya son tabla Reportes (Ventas, Por usuario, Caja, Quién te debe), Movimientos de stock, Tu equipo e invitaciones, Recomendaciones de precios, Conteo de inventario, Calendario de pagos (todas las compras, ahora paginada), En vivo (últimas ventas) y ventas del cliente/caja (`VentasList`). Proveedores ya tenía columnas. Encabezado ordenable compartido: `components/dashboard/sortable-th.tsx`. Quedan como lista a propósito: sucursales y avisos (son ajustes, no datos) y las tarjetas de vendedores de En vivo.
+- Pendiente: pasar al `SortTh` compartido los encabezados propios de Por usuario, Caja y Movimientos (hoy cada uno trae el suyo).
 
 ## Hecho: IndexNow para Bing (17/11/2026)
 - Archivo de clave `public/indexnow-<clave>.txt` (público a propósito, permitido en el middleware) y `node scripts/indexnow.mjs`, que avisa a Bing de todas las páginas del sitemap. Correrlo después de un despliegue con páginas nuevas. Search Console de Google no usa IndexNow: ahí se pide a mano (límite diario).

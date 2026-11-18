@@ -272,12 +272,12 @@
     "h": 536
   },
   "inventario-conteo": {
-    "w": 666,
-    "h": 640
+    "w": 736,
+    "h": 661
   },
   "inventario-aplicar": {
-    "w": 666,
-    "h": 640
+    "w": 736,
+    "h": 661
   },
   "movimientos-manual": {
     "w": 990,
