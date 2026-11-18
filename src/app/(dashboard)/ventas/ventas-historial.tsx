@@ -156,10 +156,34 @@ export function VentasHistorial({
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Tipo de comprobante">
+        {([
+          ["", "Todas"],
+          ["factura", "Facturadas (ARCA)"],
+          ["x", "Comprobante X (sin factura)"],
+          ["nc", "Con nota de crédito"],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value || "todas"}
+            type="button"
+            role="tab"
+            aria-selected={f.comprobante === value}
+            onClick={() => go({ comprobante: value, pagina: 0 })}
+            className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${filters.comprobante === value ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-muted"}`}
+          >
+            {label}
+          </button>
+        ))}
+        {!canInvoice && (
+          <a href="/configuracion/facturacion" className="text-sm font-medium text-primary hover:underline">
+            Todavía no facturás con ARCA: configurá la facturación electrónica
+          </a>
+        )}
+      </div>
       {summary && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Kpi label="Vendido" value={formatCurrency(summary.vendido)} hint={`${summary.count.toLocaleString("es-AR")} ${summary.count === 1 ? "venta" : "ventas"} sin anuladas`} />
-          {canInvoice ? (
+          {(
             <>
               <Kpi
                 label="Facturado"
@@ -178,8 +202,6 @@ export function VentasHistorial({
                 onClick={() => go({ comprobante: f.comprobante === "x" ? "" : "x", estado: "completada", pagina: 0 })}
               />
             </>
-          ) : (
-            <Kpi label="Ticket promedio" value={formatCurrency(summary.count > 0 ? summary.vendido / summary.count : 0)} hint="por venta" />
           )}
           <Kpi
             label="Anuladas"
@@ -227,7 +249,7 @@ export function VentasHistorial({
                 <option value="anulada">Anuladas</option>
               </Select>
             </div>
-            {canInvoice && (
+            {(
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Facturación</label>
                 <Select value={f.comprobante} onChange={(e) => setF({ ...f, comprobante: e.target.value })}>
