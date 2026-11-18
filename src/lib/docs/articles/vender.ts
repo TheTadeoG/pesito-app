@@ -372,7 +372,8 @@ export const venderDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Entrá a **Reportes** y abrí la solapa **Ventas**." },
-      { text: "Arriba ves los totales de todo lo filtrado: **Vendido**, **Facturado**, **Sin facturar**, **Anuladas** y **En fiado**. Tocá uno para filtrar la lista por ese dato." },
+      { text: "Con las pestañas de arriba separás **Facturadas (ARCA)** de **Comprobante X (sin factura)**, o ves las **Con nota de crédito**." },
+      { text: "Debajo ves los totales de todo lo filtrado: **Vendido**, **Facturado**, **Sin facturar**, **Anuladas** y **En fiado**. Tocá uno para filtrar la lista por ese dato." },
       { text: "Filtrá por fechas, **Medio de pago**, **Estado** (Completadas o Anuladas), **Facturación** (facturadas, sin facturar o con nota de crédito), **Vendedor**, **Importe**, **Sucursal** o buscá por cliente, número de comprobante o importe." },
       { text: "Tocá **Filtrar** para aplicar los filtros y **Limpiar** para empezar de nuevo." },
       { text: "En la lista, la columna **Facturación** dice si cada venta está **Facturada**, **Sin facturar** o **Anulada**." },

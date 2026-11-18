@@ -175,7 +175,7 @@ export function VentasHistorial({
           </button>
         ))}
         {!canInvoice && (
-          <a href="/configuracion/facturacion" className="text-sm font-medium text-primary hover:underline">
+          <a href="/configuracion?tab=facturacion" className="text-sm font-medium text-primary hover:underline">
             Todavía no facturás con ARCA: configurá la facturación electrónica
           </a>
         )}
