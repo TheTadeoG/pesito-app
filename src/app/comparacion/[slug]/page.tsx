@@ -22,8 +22,10 @@ export async function generateMetadata({
   const block = comparisonBlocks.find((b) => b.slug === slug);
   if (!block) return {};
 
+  // El layout agrega " | Pesito": si con "vs. otros" se pasa de 60 caracteres, queda sólo el nombre de la función.
+  const withVs = `${block.feature} · Pesito vs. otros`;
   return pageMetadata({
-    title: `${block.feature}: Pesito vs. otros sistemas`,
+    title: withVs.length + " | Pesito".length > 60 ? block.feature : withVs,
     description: block.pesito,
     path: `/comparacion/${block.slug}`,
   });

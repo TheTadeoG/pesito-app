@@ -19,7 +19,7 @@ export default async function LoginPage({
   return (
     <Card className="mx-auto w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Ingresá a tu kiosco</CardTitle>
+        <CardTitle as="h1">Ingresá a tu kiosco</CardTitle>
         <CardDescription>Accedé con el email y la contraseña de tu cuenta.</CardDescription>
       </CardHeader>
       <CardContent>

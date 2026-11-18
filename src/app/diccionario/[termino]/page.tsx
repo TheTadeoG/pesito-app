@@ -23,7 +23,8 @@ export async function generateMetadata({
   if (!found) return {};
 
   return pageMetadata({
-    title: `¿Qué es ${found.term.term}? — Diccionario Pesito`,
+    // Sin el paréntesis aclaratorio y sin repetir "Pesito" (el layout ya lo agrega): títulos de ≤60 caracteres.
+    title: `¿Qué es ${found.term.term.replace(/\s*\(.*\)\s*$/, "")}? Definición`,
     description: found.term.definition,
     path: `/diccionario/${found.term.slug}`,
   });

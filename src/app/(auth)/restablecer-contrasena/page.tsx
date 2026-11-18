@@ -18,7 +18,7 @@ export default async function ResetPasswordPage() {
     return (
       <Card className="mx-auto w-full max-w-sm">
         <CardHeader>
-          <CardTitle>El link venció</CardTitle>
+          <CardTitle as="h1">El link venció</CardTitle>
           <CardDescription>Los links para cambiar la contraseña duran 1 hora y sirven una sola vez.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -33,7 +33,7 @@ export default async function ResetPasswordPage() {
   return (
     <Card className="mx-auto w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Elegí tu contraseña nueva</CardTitle>
+        <CardTitle as="h1">Elegí tu contraseña nueva</CardTitle>
         <CardDescription>Usá al menos 8 caracteres.</CardDescription>
       </CardHeader>
       <CardContent>

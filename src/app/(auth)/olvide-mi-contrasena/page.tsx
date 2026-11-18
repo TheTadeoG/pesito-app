@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
   return (
     <Card className="mx-auto w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Recuperá tu contraseña</CardTitle>
+        <CardTitle as="h1">Recuperá tu contraseña</CardTitle>
         <CardDescription>
           Escribí el email de tu cuenta y te mandamos un link para elegir una nueva.
         </CardDescription>

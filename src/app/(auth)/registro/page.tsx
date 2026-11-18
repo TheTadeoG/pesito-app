@@ -36,7 +36,7 @@ export default async function RegistroPage({
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Creá tu cuenta</CardTitle>
+            <CardTitle as="h1">Creá tu cuenta</CardTitle>
             <CardDescription>{`Creá tu cuenta y después pagás el ${planName} con Mercado Pago.`}</CardDescription>
           </CardHeader>
           <CardContent>
@@ -55,7 +55,7 @@ export default async function RegistroPage({
   return (
     <Card className="mx-auto w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Creá tu cuenta gratis</CardTitle>
+        <CardTitle as="h1">Creá tu cuenta gratis</CardTitle>
         <CardDescription>Empezá a usar Pesito en tu kiosco en minutos.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -27,7 +27,7 @@ export default async function LinkedAccountPage({
   return (
     <Card className="mx-auto w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Vinculamos tu cuenta de Google</CardTitle>
+        <CardTitle as="h1">Vinculamos tu cuenta de Google</CardTitle>
         <CardDescription>
           {`Ya tenías una cuenta de Pesito con el email ${user.email ?? "de tu Google"}. Ahora esa misma cuenta también entra con Google: tus datos son los mismos y podés usar cualquiera de las dos formas.`}
         </CardDescription>
