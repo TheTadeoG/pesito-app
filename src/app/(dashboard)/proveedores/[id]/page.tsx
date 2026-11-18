@@ -218,6 +218,7 @@ export default async function ProveedorDetailPage({
             movements={movements}
             oldestFirst
             finalBalanceLabel={supplier.balance > 0 ? "Le debés" : supplier.balance < 0 ? "A tu favor" : undefined}
+            zeroBalanceLabel="No le debés nada"
             emptyLabel="Todavía no hay compras a cuenta corriente ni pagos con este proveedor."
           />
         </CardContent>

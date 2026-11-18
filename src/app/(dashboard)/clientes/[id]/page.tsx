@@ -163,6 +163,10 @@ export default async function ClienteDetailPage({
         <CardContent className="p-0">
           <CuentaCorriente
             movements={movements}
+            oldestFirst
+            finalBalanceLabel="Te debe"
+            creditBalanceLabel="A su favor"
+            zeroBalanceLabel="Sin deuda"
             emptyLabel="Todavía no hay ventas fiado ni pagos de este cliente."
           />
         </CardContent>

@@ -1,6 +1,6 @@
 import type { DocArticle } from "@/lib/docs/types";
 
-const UPDATED = "2026-11-17";
+const UPDATED = "2026-11-18";
 
 export const clientesDocs: DocArticle[] = [
   {
@@ -145,7 +145,7 @@ export const clientesDocs: DocArticle[] = [
       { text: "Entrá a **Clientes** y buscá al cliente (**Buscar por nombre, teléfono o documento…**)." },
       { text: "Tocalo (**Ver ficha del cliente**) para abrir su ficha." },
       { text: "Arriba ves **Total comprado**, **Ticket promedio**, **Última compra** y lo que te debe, si tiene deuda." },
-      { text: "En **Cuenta corriente** ves las ventas fiadas y sus pagos; en **Historial de compras**, todo lo que compró." },
+      { text: "En **Cuenta corriente** ves arriba el **Saldo a la fecha** (cuánto te debe hoy) y, de arriba hacia abajo, cada venta fiada y cada pago con el saldo que va quedando, hasta la fila **Saldo actual**. Si hay muchos movimientos, se pagina y cada página arranca con el saldo de la anterior; en **Historial de compras**, todo lo que compró." },
     ],
     tips: [
       "Desde la ficha registrás los pagos de su deuda con **Registrar pago**.",
