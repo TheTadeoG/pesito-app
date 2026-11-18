@@ -24,6 +24,9 @@ import { getSubscription } from "@/lib/subscription";
 import { RATE_LIMITED_MESSAGE, isRateLimitError } from "@/lib/rate-limit";
 import { canUse, featureMinPlan } from "@/lib/plan-access";
 import { buildReportInsights } from "@/lib/report-insights";
+import { buildReportActions } from "@/lib/report-actions";
+import { getBusinessAlerts } from "@/app/(dashboard)/alertas/actions";
+import { ReportActionsCard } from "@/components/dashboard/report-actions-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanLockNote } from "@/components/dashboard/pro-locked-card";
 import { ReportesTabs } from "@/components/dashboard/reportes-tabs";
@@ -305,6 +308,7 @@ export default async function ReportesPage({
   }));
 
   let cashDiffByUser: CashDiffRow[] | null = null;
+  let cashShortageCount = 0;
   if (memberLabelsById) {
     const closedRegisters = await fetchAll((from, to) => {
       let query = supabase
@@ -331,7 +335,10 @@ export default async function ReportesPage({
         sobrante: 0,
       };
       current.cajasCerradas += 1;
-      if (diff < 0) current.faltante += -diff;
+      if (diff < 0) {
+        current.faltante += -diff;
+        cashShortageCount += 1;
+      }
       if (diff > 0) current.sobrante += diff;
       totalsByUser.set(r.user_id, current);
     }
@@ -574,6 +581,42 @@ export default async function ReportesPage({
       </Card>
     ) : null;
 
+  // "Qué hacer": acciones concretas (sumar / revisar o sacar) con los avisos del negocio y los
+  // números del período. Es de todo el negocio: no se muestra filtrando por vendedor o sucursal.
+  const onResumen = query.tab === undefined || query.tab === "resumen";
+  const businessAlerts = isManager && onResumen && !sellerId && !branchId ? await getBusinessAlerts() : null;
+  const fiadoPaid = paymentBreakdown.reduce((n, p) => n + p.value, 0);
+  const fiadoPart = paymentBreakdown.find((p) => p.label === paymentLabels.fiado)?.value ?? 0;
+  const actions = businessAlerts
+    ? buildReportActions({
+        lowStock: businessAlerts.products.low,
+        negativeStock: businessAlerts.products.negative,
+        debtorCount: businessAlerts.debtorCount,
+        debtTotal: businessAlerts.debtTotal,
+        lossProducts: businessAlerts.products.loss,
+        lowMargin: businessAlerts.products.lowMargin,
+        marginPercent: businessAlerts.products.thresholds.marginPercent,
+        idleCount: businessAlerts.products.idleCount,
+        idleCapital: businessAlerts.products.idleCapital,
+        idleDays: businessAlerts.products.thresholds.idleDays,
+        salesCount: totalVentas,
+        ingresos,
+        ganancia: canProfit ? gananciaEstimada : null,
+        deltaPct: periodComparison?.deltaPct ?? null,
+        topMargin: topByMargin[0] ? { name: topByMargin[0].name, margin: topByMargin[0].margin } : null,
+        topQuantity: topByQuantity[0] ? { name: topByQuantity[0].name } : null,
+        soldAtLoss: lossProducts && lossProducts.length > 0 ? { count: lossProducts.length, loss: lossProducts.reduce((n, p) => n + p.loss, 0) } : null,
+        fiadoShare: fiadoPaid > 0 ? fiadoPart / fiadoPaid : 0,
+        cashShortages: cashShortageCount > 0 ? { count: cashShortageCount, total: (cashDiffByUser ?? []).reduce((n, r) => n + r.faltante, 0) } : null,
+      })
+    : null;
+  const actionsBlock = actions ? (
+    <ReportActionsCard
+      actions={actions}
+      lockedIdle={businessAlerts !== null && !canUse(subscription, "lowRotation") ? featureMinPlan.lowRotation : null}
+    />
+  ) : null;
+
   const summaryBlock = (
     aiSummary ? (
       <Card>
@@ -666,6 +709,7 @@ export default async function ReportesPage({
           query.tab === undefined || query.tab === "resumen" ? (
             <>
               {branchTable}
+              {actionsBlock}
               {summaryBlock}
             </>
           ) : null

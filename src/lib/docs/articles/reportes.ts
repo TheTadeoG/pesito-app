@@ -16,7 +16,8 @@ export const reportesDocs: DocArticle[] = [
     steps: [
       { text: "Entrá a **Reportes**." },
       { text: "Elegí el período arriba: **Hoy**, **7 días**, **30 días** o **Este mes** (en el menú de más períodos están **Ayer**, **Mes pasado**, **Últimos 90 días** y **Este año**)." },
-      { text: "Mirá los **Indicadores principales** y los **Ingresos por período**." },
+      { text: "Mirá los **Indicadores principales** y, justo abajo, **Qué hacer ahora** (sólo dueño y administradores): hasta tres cosas para **Sumá** (reponer, cobrar fiado, empujar lo que más deja) y tres para **Revisá o sacá** (vender a pérdida, margen flaco, stock parado, cierres con faltante). Cada una trae un botón que te lleva a la pantalla para resolverla." },
+      { text: "Mirá los **Ingresos por período**." },
       { text: "Más abajo ves **Productos más vendidos**, **Métodos de pago**, **Mejores clientes** y **Quién te debe**." },
       { text: "Con **Personalizar Reportes** elegís qué secciones ver (se guarda en este dispositivo)." },
     ],
@@ -28,6 +29,7 @@ export const reportesDocs: DocArticle[] = [
     faq: [
       { q: "¿Por qué no veo la ganancia?", a: "La **Ganancia est.** y los reportes de ganancia por producto son del Plan Pro. Se calculan con el **Costo** que cargaste en cada producto: si un producto no tiene costo, su ganancia no se puede calcular." },
       { q: "¿Qué son los productos vendidos a pérdida?", a: "Los que se vendieron por debajo de su costo. Es una sección del Plan Pro para detectar precios mal puestos." },
+      { q: "¿Qué es **Qué hacer ahora**?", a: "Una lista corta de acciones que Pesito arma sola con tus números: qué sumar (reponer lo que se acaba, cobrar el fiado) y qué revisar o sacar (productos que vendés a pérdida, con margen flaco o parados). No usa inteligencia artificial: son reglas fijas, y si todo está en orden dice que no hay nada urgente. Desde el Plan Max también te marca el stock parado." },
       { q: "¿Puedo ocultar secciones?", a: "Sí, con **Personalizar Reportes** elegís cuáles ver. La elección se guarda en este dispositivo." },
     ],
     glossary: ["margen", "costo"],
