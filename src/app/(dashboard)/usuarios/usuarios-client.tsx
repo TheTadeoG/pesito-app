@@ -327,92 +327,98 @@ export function UsuariosClient({
           <CardTitle className="text-base">Tu equipo</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y divide-border">
-            <div className="hidden items-center justify-between gap-3 px-5 py-2 text-xs font-medium text-muted-foreground sm:flex">
-              <span>Persona y cómo ingresa</span>
-              <span className="flex gap-2">
-                {hasBranches && <span className="w-40">Sucursal asignada</span>}
-                <span className="w-40">Rol</span>
-                <span className="w-[5.5rem]" />
-              </span>
-            </div>
-            {members.map((member) => {
-              const isSelf = member.user_id === currentUserId;
-              const isOwner = member.role === "owner";
-              return (
-                <div
-                  key={member.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {member.username ?? member.email ?? "Sin email"}
-                      {isSelf && (
-                        <span className="ml-1.5 text-xs text-muted-foreground">(vos)</span>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[44rem] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <th className="px-5 py-2.5">Persona</th>
+                  <th className="px-3 py-2.5">Cómo ingresa</th>
+                  {hasBranches && <th className="px-3 py-2.5">Sucursal</th>}
+                  <th className="px-3 py-2.5">Rol</th>
+                  <th className="px-5 py-2.5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((member) => {
+                  const isSelf = member.user_id === currentUserId;
+                  const isOwner = member.role === "owner";
+                  return (
+                    <tr key={member.id} className="border-b border-border last:border-0">
+                      <td className="px-5 py-3">
+                        <p className="truncate font-medium text-foreground">
+                          {member.username ?? member.email ?? "Sin email"}
+                          {isSelf && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(vos)</span>}
+                        </p>
+                        {(pausedIds.includes(member.id) || pausingSoon?.ids.includes(member.id)) && (
+                          <p className="mt-0.5">
+                            {pausedIds.includes(member.id) && (
+                              <span className="mr-2 rounded-full bg-warning-bg px-2 py-0.5 text-[11px] font-semibold text-warning">Pausado</span>
+                            )}
+                            {pausingSoon?.ids.includes(member.id) && (
+                              <span className="rounded-full bg-warning-bg px-2 py-0.5 text-[11px] font-semibold text-warning">{`Se pausa el ${pausingSoon.date}`}</span>
+                            )}
+                          </p>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">
+                        {member.username ? "Usuario y contraseña" : "Su email"}
+                      </td>
+                      {hasBranches && (
+                        <td className="px-3 py-3">
+                          {branches.length > 1 && !isOwner ? (
+                            <div className="w-40">
+                              <Select
+                                value={member.branch_id ?? mainBranchId}
+                                onChange={(e) => handleBranchChange(member.id, e.target.value)}
+                                disabled={busyId === member.id}
+                                className="h-9 w-40"
+                                aria-label="Sucursal"
+                              >
+                                {branches.map((b) => (
+                                  <option key={b.id} value={b.id}>
+                                    {b.name}
+                                  </option>
+                                ))}
+                              </Select>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">{isOwner ? "Todas" : "—"}</span>
+                          )}
+                        </td>
                       )}
-                      {pausedIds.includes(member.id) && (
-                        <span className="ml-2 rounded-full bg-warning-bg px-2 py-0.5 text-[11px] font-semibold text-warning">
-                          Pausado
-                        </span>
-                      )}
-                      {pausingSoon?.ids.includes(member.id) && (
-                        <span className="ml-2 rounded-full bg-warning-bg px-2 py-0.5 text-[11px] font-semibold text-warning">
-                          {`Se pausa el ${pausingSoon.date}`}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {member.username
-                        ? "Ingresa con usuario y contraseña"
-                        : "Ingresa con su email"}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    {branches.length > 1 && !isOwner && (
-                      <div className="w-40">
-                      <Select
-                        value={member.branch_id ?? mainBranchId}
-                        onChange={(e) => handleBranchChange(member.id, e.target.value)}
-                        disabled={busyId === member.id}
-                        className="h-9 w-40"
-                        aria-label="Sucursal"
-                      >
-                        {branches.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.name}
-                          </option>
-                        ))}
-                      </Select>
-                      </div>
-                    )}
-                    {isOwner ? (
-                      <Badge tone="accent">{roleLabels.owner}</Badge>
-                    ) : (
-                      <div className="w-40">
-                      <Select
-                        value={member.role}
-                        onChange={(e) =>
-                          handleRoleChange(member.id, e.target.value as "admin" | "vendedor")
-                        }
-                        disabled={busyId === member.id || isSelf}
-                        className="h-9 w-40"
-                      >
-                        <option value="admin">{roleLabels.admin}</option>
-                        <option value="vendedor">{roleLabels.vendedor}</option>
-                      </Select>
-                      </div>
-                    )}
-                    {!isOwner && (member.username || !isSelf) && (
+                      <td className="px-3 py-3">
+                        {isOwner ? (
+                          <Badge tone="accent">{roleLabels.owner}</Badge>
+                        ) : (
+                          <div className="w-40">
+                            <Select
+                              value={member.role}
+                              onChange={(e) => handleRoleChange(member.id, e.target.value as "admin" | "vendedor")}
+                              disabled={busyId === member.id || isSelf}
+                              className="h-9 w-40"
+                              aria-label="Rol"
+                            >
+                              <option value="admin">{roleLabels.admin}</option>
+                              <option value="vendedor">{roleLabels.vendedor}</option>
+                            </Select>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex justify-end">
+                          {!isOwner && (member.username || !isSelf) && (
                       <RowActions
                         primary={member.username ? { label: "Editar usuario y contraseña", icon: Pencil, onClick: () => openEdit(member) } : undefined}
                         items={[{ label: "Quitar del equipo", icon: Trash2, danger: true, hidden: isSelf, disabled: busyId === member.id, onClick: () => handleRemove(member) }]}
                       />
                     )}
-                  </div>
-                </div>
-              );
-            })}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
@@ -423,43 +429,47 @@ export function UsuariosClient({
             <CardTitle className="text-base">Invitaciones pendientes</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-border">
-              {invitations.map((inv) => (
-                <div
-                  key={inv.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">
-                      Invitación como {roleLabels[inv.role]}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Expira el {new Date(inv.expires_at).toLocaleDateString("es-AR")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyText(`${siteUrl}/invitacion/${inv.code}`, "¡Link copiado!")}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      Copiar link
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleRevoke(inv.id)}
-                      disabled={busyId === inv.id}
-                      aria-label="Cancelar invitación"
-                      title="Cancelar invitación"
-                    >
-                      <X className="h-4 w-4 text-danger" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[28rem] text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th className="px-5 py-2.5">Rol</th>
+                    <th className="px-3 py-2.5">Vence</th>
+                    <th className="px-5 py-2.5 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invitations.map((inv) => (
+                    <tr key={inv.id} className="border-b border-border last:border-0">
+                      <td className="px-5 py-3 font-medium text-foreground">{roleLabels[inv.role]}</td>
+                      <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">{new Date(inv.expires_at).toLocaleDateString("es-AR")}</td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyText(`${siteUrl}/invitacion/${inv.code}`, "¡Link copiado!")}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Copiar link
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleRevoke(inv.id)}
+                            disabled={busyId === inv.id}
+                            aria-label="Cancelar invitación"
+                            title="Cancelar invitación"
+                          >
+                            <X className="h-4 w-4 text-danger" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>

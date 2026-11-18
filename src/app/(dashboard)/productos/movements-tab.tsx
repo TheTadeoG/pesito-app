@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { cn, formatDate, formatDateTime, formatTime } from "@/lib/utils";
-import { dayKey } from "@/lib/supplier-debt";
+import { cn, formatDateTime } from "@/lib/utils";
 import { getPeriodRange, type ReportPeriod } from "@/lib/report-periods";
 import type { Product } from "@/lib/types";
 import { PaginationBar, pageBounds, usePageSize } from "@/components/dashboard/pagination-bar";
@@ -111,6 +110,9 @@ export function MovementsTab({
   const [detail, setDetail] = useState<MovementRow | null>(null);
   const [moveSize, setMoveSize] = usePageSize("pesito-moves-page-size", MOVEMENTS_PAGE_SIZE);
   const [movePage, setMovePage] = useState(0);
+  const [sort, setSort] = useState<{ key: "fecha" | "producto" | "cantidad"; dir: 1 | -1 }>({ key: "fecha", dir: -1 });
+  const toggleSort = (key: "fecha" | "producto" | "cantidad") =>
+    setSort((cur) => (cur.key === key ? { key, dir: (cur.dir * -1) as 1 | -1 } : { key, dir: key === "producto" ? 1 : -1 }));
 
   const pickerResults = useMemo(() => {
     const q = pickerQuery.trim().toLowerCase();
@@ -148,7 +150,7 @@ export function MovementsTab({
     });
   }, [movements, focusedProduct, period, typeFilter, movementQuery, userFilter]);
 
-  const moveKey = `${period}|${typeFilter ?? ""}|${movementQuery}|${userFilter}|${focusedProduct?.id ?? ""}`;
+  const moveKey = `${period}|${typeFilter ?? ""}|${movementQuery}|${userFilter}|${focusedProduct?.id ?? ""}|${sort.key}${sort.dir}`;
   // Al cambiar el período, el tipo o la búsqueda se vuelve a la primera página.
   const [moveListKey, setMoveListKey] = useState(moveKey);
   if (moveListKey !== moveKey) {
@@ -167,23 +169,17 @@ export function MovementsTab({
     }
     return { inUnits, outUnits, products: new Set(filteredMovements.map((m) => m.product_id)).size };
   }, [filteredMovements]);
-  // La página actual, agrupada por día (con lo que entró y salió ese día en la página).
-  const pageRows = filteredMovements.slice(moveBounds.start, moveBounds.end);
-  const days = useMemo(() => {
-    const groups: { key: string; label: string; rows: MovementRow[]; plus: number; minus: number }[] = [];
-    for (const m of pageRows) {
-      const key = dayKey(m.created_at);
-      let g = groups[groups.length - 1];
-      if (!g || g.key !== key) {
-        g = { key, label: formatDate(m.created_at), rows: [], plus: 0, minus: 0 };
-        groups.push(g);
-      }
-      g.rows.push(m);
-      if (m.quantity > 0) g.plus += m.quantity;
-      else g.minus += -m.quantity;
-    }
-    return groups;
-  }, [pageRows]);
+  // Orden elegido en los títulos de las columnas (por defecto, lo más nuevo primero).
+  const sortedMovements = useMemo(() => {
+    const val = (m: MovementRow): string | number =>
+      sort.key === "fecha" ? m.created_at : sort.key === "producto" ? m.product_name.toLowerCase() : m.quantity;
+    return [...filteredMovements].sort((a, b) => {
+      const x = val(a);
+      const y = val(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * sort.dir;
+    });
+  }, [filteredMovements, sort]);
+  const pageRows = sortedMovements.slice(moveBounds.start, moveBounds.end);
 
   return (
     <div className="space-y-4">
@@ -320,53 +316,59 @@ export function MovementsTab({
                   : "No encontramos movimientos con esos filtros."}
               </p>
             ) : (
-              <div>
-                {days.map((g) => (
-                  <section key={g.key}>
-                    <div className="sticky top-0 z-[1] flex items-center justify-between gap-3 border-y border-border bg-muted/60 px-5 py-1.5 text-xs backdrop-blur">
-                      <span className="font-semibold text-foreground">{g.label}</span>
-                      <span className="text-muted-foreground">
-                        <span className="font-semibold text-success">{`+${fmtQty(g.plus)}`}</span>
-                        {" / "}
-                        <span className="font-semibold text-danger">{`−${fmtQty(g.minus)}`}</span>
-                        {" unidades"}
-                      </span>
-                    </div>
-                    <div className="divide-y divide-border">
-                      {g.rows.map((m) => {
-                        const meta = TYPE_META[m.type] ?? TYPE_META.ajuste;
-                        const ref = cleanReference(m.reference);
-                        return (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => setDetail(m)}
-                            className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-muted/50"
-                          >
-                            <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", meta.tone)}>
-                              <meta.icon className="h-4 w-4" />
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[52rem] text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <MoveTh label="Fecha y hora" k="fecha" sort={sort} onSort={toggleSort} className="pl-5" />
+                      <th className="px-3 py-2.5">Tipo</th>
+                      <MoveTh label="Producto" k="producto" sort={sort} onSort={toggleSort} />
+                      <th className="px-3 py-2.5">Motivo / referencia</th>
+                      <th className="px-3 py-2.5">Persona</th>
+                      <MoveTh label="Cantidad" k="cantidad" sort={sort} onSort={toggleSort} right className="pr-5" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageRows.map((m) => {
+                      const meta = TYPE_META[m.type] ?? TYPE_META.ajuste;
+                      const ref = cleanReference(m.reference);
+                      return (
+                        <tr
+                          key={m.id}
+                          tabIndex={0}
+                          onClick={() => setDetail(m)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setDetail(m);
+                            }
+                          }}
+                          className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/50"
+                        >
+                          <td className="whitespace-nowrap py-2.5 pl-5 pr-3 text-muted-foreground">{formatDateTime(m.created_at)}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5">
+                            <span className="inline-flex items-center gap-2">
+                              <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", meta.tone)}>
+                                <meta.icon className="h-3.5 w-3.5" />
+                              </span>
+                              {movementTypeLabels[m.type] ?? m.type}
                             </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium text-foreground">{m.product_name}</p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {`${movementTypeLabels[m.type] ?? m.type}${ref ? ` · ${ref}` : ""}`}
-                              </p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {`${formatTime(m.created_at)}${m.product_sku ? ` · SKU ${m.product_sku}` : ""}${m.user_label ? ` · ${m.user_label}` : ""}`}
-                              </p>
-                            </div>
-                            <div className="shrink-0 text-right">
-                              <p className={cn("text-base font-bold tabular-nums", m.quantity < 0 ? "text-danger" : "text-success")}>
-                                {`${m.quantity > 0 ? "+" : "−"}${fmtQty(Math.abs(m.quantity))}`}
-                                <span className="ml-0.5 text-xs font-medium text-muted-foreground">{m.unit ?? ""}</span>
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <p className="font-medium text-foreground">{m.product_name}</p>
+                            {m.product_sku && <p className="text-xs text-muted-foreground">{`SKU ${m.product_sku}`}</p>}
+                          </td>
+                          <td className="px-3 py-2.5 text-muted-foreground">{ref || "—"}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{m.user_label ?? "—"}</td>
+                          <td className={cn("whitespace-nowrap py-2.5 pl-3 pr-5 text-right font-bold tabular-nums", m.quantity < 0 ? "text-danger" : "text-success")}>
+                            {`${m.quantity > 0 ? "+" : "−"}${fmtQty(Math.abs(m.quantity))}`}
+                            <span className="ml-0.5 text-xs font-medium text-muted-foreground">{m.unit ?? ""}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>
@@ -491,5 +493,31 @@ export function MovementsTab({
         </div>
       </Dialog>
     </div>
+  );
+}
+
+function MoveTh({
+  label,
+  k,
+  sort,
+  onSort,
+  right,
+  className = "",
+}: {
+  label: string;
+  k: "fecha" | "producto" | "cantidad";
+  sort: { key: "fecha" | "producto" | "cantidad"; dir: 1 | -1 };
+  onSort: (k: "fecha" | "producto" | "cantidad") => void;
+  right?: boolean;
+  className?: string;
+}) {
+  const active = sort.key === k;
+  return (
+    <th className={cn("px-3 py-2.5", right && "text-right", className)} aria-sort={active ? (sort.dir === 1 ? "ascending" : "descending") : "none"}>
+      <button type="button" onClick={() => onSort(k)} className={cn("inline-flex items-center gap-1 uppercase tracking-wide hover:text-foreground", active && "text-foreground")}>
+        {label}
+        <span aria-hidden className="text-[10px]">{active ? (sort.dir === 1 ? "▲" : "▼") : ""}</span>
+      </button>
+    </th>
   );
 }
