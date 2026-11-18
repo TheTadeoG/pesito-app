@@ -9,6 +9,8 @@ export function StructuredData() {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       name: "Pesito",
+      image: `${siteUrl}/icon.png`,
+      publisher: { "@id": `${siteUrl}/#organization` },
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       url: siteUrl,
@@ -27,16 +29,18 @@ export function StructuredData() {
     {
       "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
       name: "Pesito",
       alternateName: ["Pesito POS"],
       url: siteUrl,
-      logo: `${siteUrl}/icon.png`,
+      logo: { "@type": "ImageObject", url: `${siteUrl}/icon.png`, width: 512, height: 512 },
+      image: `${siteUrl}/icon.png`,
       description:
         "Pesito es un sistema de gestión y punto de venta en la nube para negocios de Argentina: ventas, stock, caja, clientes con fiado, compras y reportes.",
       areaServed: "AR",
       knowledgeAbout: ["punto de venta", "control de stock", "caja", "fiado y cuenta corriente", "factura electrónica ARCA"],
       contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "soporte@pesito.com.ar", availableLanguage: "es-AR" },
-      // Perfiles oficiales. Sumar acá LinkedIn, YouTube y Google Business Profile cuando existan.
+      // Perfiles oficiales. Sumar acá la ficha de G2, LinkedIn, YouTube y Google Business Profile cuando existan (misma imagen de logo en todos).
       sameAs: ["https://www.instagram.com/pesito.arg"],
     },
     {
