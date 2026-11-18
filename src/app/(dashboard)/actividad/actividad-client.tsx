@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,15 @@ export interface ActivityEvent {
   kind: "stock" | "caja" | "anulacion";
   title: string;
   detail: string | null;
+  /** Qué hizo, corto: «Ajuste de stock», «Retiro de caja», «Anulación de venta»… */
+  action: string;
+  /** Sobre qué: el producto, «Venta n.º 12», «Caja»… */
+  subject: string;
+  /** Cantidad de unidades (sólo movimientos de stock; con signo). */
+  quantity: number | null;
+  /** Monto en pesos (con signo: retiros y diferencias negativas restan). */
+  amount: number | null;
+  reason: string | null;
   tone: "neutral" | "success" | "warning" | "danger";
   /** Sucursal (sólo si el negocio tiene más de una). */
   branch: string | null;
@@ -59,6 +68,8 @@ function Diff({ value }: { value: number }) {
   );
 }
 
+type SortKey = "at" | "user" | "action" | "subject" | "quantity" | "amount";
+
 const KIND_LABEL: Record<ActivityEvent["kind"], string> = { stock: "Stock", caja: "Caja", anulacion: "Anulación" };
 
 type XlsCell = { value: string | number | Date; fontWeight?: "bold"; backgroundColor?: string; format?: string };
@@ -69,13 +80,16 @@ async function downloadExcel(users: UserSummary[], rows: ActivityEvent[], rangeL
   const head = (labels: string[]): XlsCell[] => labels.map((value) => ({ value, fontWeight: "bold", backgroundColor: "#e5e7eb" }));
   const label = (id: string) => users.find((u) => u.userId === id)?.label ?? "Usuario";
   const detail: XlsCell[][] = [
-    head(["Fecha", "Persona", "Tipo", "Movimiento", "Detalle", "Sucursal"]),
+    head(["Fecha", "Persona", "Tipo", "Acción", "Producto / referencia", "Cantidad", "Monto", "Motivo", "Sucursal"]),
     ...rows.map((e): XlsCell[] => [
       { value: new Date(e.at), format: "dd/mm/yyyy hh:mm" },
       { value: label(e.userId) },
       { value: KIND_LABEL[e.kind] },
-      { value: e.title },
-      { value: e.detail ?? "" },
+      { value: e.action },
+      { value: e.subject },
+      { value: e.quantity ?? "" },
+      e.amount === null ? { value: "" } : { value: e.amount, format: "#,##0.00" },
+      { value: e.reason ?? "" },
       { value: e.branch ?? "" },
     ]),
   ];
@@ -96,7 +110,7 @@ async function downloadExcel(users: UserSummary[], rows: ActivityEvent[], rangeL
   ];
   await writeXlsxFile(
     [
-      { data: detail, sheet: "Movimientos", columns: [{ width: 18 }, { width: 22 }, { width: 12 }, { width: 60 }, { width: 40 }, { width: 18 }], stickyRowsCount: 1 },
+      { data: detail, sheet: "Movimientos", columns: [{ width: 18 }, { width: 22 }, { width: 12 }, { width: 22 }, { width: 36 }, { width: 10 }, { width: 14 }, { width: 36 }, { width: 18 }], stickyRowsCount: 1 },
       { data: summary, sheet: "Por persona", columns: [{ width: 24 }, { width: 10 }, { width: 18 }, { width: 14 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 36 }], stickyRowsCount: 1 },
     ]
   ).toFile(`pesito-por-usuario-${rangeLabel.replace(/ a /g, "_al_")}.xlsx`);
@@ -106,20 +120,40 @@ export function ActividadClient({ users, events, periodKey, rangeLabel }: { user
   const [userId, setUserId] = useState<string | null>(null);
   const [kind, setKind] = useState<(typeof KINDS)[number]["id"]>("todo");
   const [search, setSearch] = useState("");
+  const [action, setAction] = useState("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "at", dir: -1 });
+
+  const actions = useMemo(() => Array.from(new Set(events.map((e) => e.action))).sort((a, b) => a.localeCompare(b)), [events]);
+  const labelOf = useCallback((id: string) => users.find((u) => u.userId === id)?.label ?? "Usuario", [users]);
 
   const filtered = useMemo(
     () => {
       const q = search.trim().toLowerCase();
-      return events.filter(
+      const rows = events.filter(
         (e) =>
           (userId === null || e.userId === userId) &&
           (kind === "todo" || e.kind === kind) &&
-          (q === "" || `${e.title} ${e.detail ?? ""}`.toLowerCase().includes(q))
+          (action === "" || e.action === action) &&
+          (q === "" || `${e.action} ${e.subject} ${e.reason ?? ""} ${e.branch ?? ""}`.toLowerCase().includes(q))
       );
+      const val = (e: ActivityEvent): string | number =>
+        sort.key === "at" ? e.at
+        : sort.key === "user" ? labelOf(e.userId).toLowerCase()
+        : sort.key === "action" ? e.action.toLowerCase()
+        : sort.key === "subject" ? e.subject.toLowerCase()
+        : sort.key === "quantity" ? (e.quantity ?? -Infinity)
+        : (e.amount ?? -Infinity);
+      return [...rows].sort((a, b) => {
+        const x = val(a);
+        const y = val(b);
+        return (x < y ? -1 : x > y ? 1 : 0) * sort.dir;
+      });
     },
-    [events, userId, kind, search]
+    [events, userId, kind, action, search, sort, labelOf]
   );
-  const pg = usePagination(filtered.length, `${periodKey}|${userId}|${kind}|${search}`, "pesito:actividad:pagesize");
+  const pg = usePagination(filtered.length, `${periodKey}|${userId}|${kind}|${action}|${search}|${sort.key}${sort.dir}`, "pesito:actividad:pagesize");
+  const toggleSort = (key: SortKey) => setSort((cur) => (cur.key === key ? { key, dir: (cur.dir * -1) as 1 | -1 } : { key, dir: key === "at" || key === "quantity" || key === "amount" ? -1 : 1 }));
+  const hasBranch = events.some((e) => e.branch);
   const selected = users.find((u) => u.userId === userId) ?? null;
 
   return (
@@ -198,6 +232,16 @@ export function ActividadClient({ users, events, periodKey, rangeLabel }: { user
                 ))}
               </Select>
             </div>
+            <div className="w-48">
+              <Select value={action} onChange={(e) => setAction(e.target.value)} aria-label="Acción" className="h-9 px-2.5">
+                <option value="">Todas las acciones</option>
+                {actions.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </Select>
+            </div>
             <div className="w-56">
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar: producto, motivo…" className="h-9" aria-label="Buscar" />
             </div>
@@ -236,20 +280,45 @@ export function ActividadClient({ users, events, periodKey, rangeLabel }: { user
           {filtered.length === 0 ? (
             <p className="px-6 py-10 text-center text-sm text-muted-foreground">No hay movimientos con ese filtro.</p>
           ) : (
-            <ul className="divide-y divide-border">
-              {filtered.slice(pg.start, pg.end).map((e) => (
-                <li key={e.id} className="flex items-start gap-3 px-6 py-3">
-                  <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", DOT[e.tone])} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">{e.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {`${users.find((u) => u.userId === e.userId)?.label ?? "Usuario"} · ${formatDateTime(e.at)}${e.branch ? ` · ${e.branch}` : ""}`}
-                    </p>
-                    {e.detail && <p className="mt-0.5 text-xs text-foreground/80">{e.detail}</p>}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[56rem] text-sm">
+                <thead>
+                  <tr className="border-y border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <SortTh label="Fecha y hora" k="at" sort={sort} onSort={toggleSort} className="pl-6" />
+                    <SortTh label="Persona" k="user" sort={sort} onSort={toggleSort} />
+                    <SortTh label="Acción" k="action" sort={sort} onSort={toggleSort} />
+                    <SortTh label="Producto / referencia" k="subject" sort={sort} onSort={toggleSort} />
+                    <SortTh label="Cantidad" k="quantity" sort={sort} onSort={toggleSort} right />
+                    <SortTh label="Monto" k="amount" sort={sort} onSort={toggleSort} right />
+                    <th className="px-3 py-2.5">Motivo</th>
+                    {hasBranch && <th className="px-3 py-2.5 pr-6">Sucursal</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.slice(pg.start, pg.end).map((e) => (
+                    <tr key={e.id} className="border-b border-border last:border-0 hover:bg-muted/50">
+                      <td className="whitespace-nowrap py-2.5 pl-6 pr-3 text-muted-foreground">{formatDateTime(e.at)}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 font-medium text-foreground">{labelOf(e.userId)}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5">
+                        <span className="inline-flex items-center gap-2">
+                          <span className={cn("h-2 w-2 shrink-0 rounded-full", DOT[e.tone])} />
+                          {e.action}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-foreground">{e.subject}</td>
+                      <td className={cn("whitespace-nowrap px-3 py-2.5 text-right tabular-nums", e.quantity !== null && e.quantity < 0 && "text-danger")}>
+                        {e.quantity === null ? "—" : `${e.quantity > 0 ? "+" : ""}${e.quantity.toLocaleString("es-AR")}`}
+                      </td>
+                      <td className={cn("whitespace-nowrap px-3 py-2.5 text-right tabular-nums", e.amount !== null && e.amount < 0 && "text-danger")}>
+                        {e.amount === null ? "—" : `${e.amount < 0 ? "− " : ""}${formatCurrency(Math.abs(e.amount))}`}
+                      </td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{e.reason ?? "—"}</td>
+                      {hasBranch && <td className="whitespace-nowrap px-3 py-2.5 pr-6 text-muted-foreground">{e.branch ?? "—"}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
           <PaginationBar
             total={filtered.length}
@@ -262,5 +331,31 @@ export function ActividadClient({ users, events, periodKey, rangeLabel }: { user
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function SortTh({
+  label,
+  k,
+  sort,
+  onSort,
+  right,
+  className,
+}: {
+  label: string;
+  k: SortKey;
+  sort: { key: SortKey; dir: 1 | -1 };
+  onSort: (k: SortKey) => void;
+  right?: boolean;
+  className?: string;
+}) {
+  const active = sort.key === k;
+  return (
+    <th className={cn("px-3 py-2.5", right && "text-right", className)} aria-sort={active ? (sort.dir === 1 ? "ascending" : "descending") : "none"}>
+      <button type="button" onClick={() => onSort(k)} className={cn("inline-flex items-center gap-1 uppercase tracking-wide hover:text-foreground", active && "text-foreground")}>
+        {label}
+        <span aria-hidden className="text-[10px]">{active ? (sort.dir === 1 ? "▲" : "▼") : ""}</span>
+      </button>
+    </th>
   );
 }

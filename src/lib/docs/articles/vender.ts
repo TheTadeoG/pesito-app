@@ -1,6 +1,6 @@
 import type { DocArticle } from "@/lib/docs/types";
 
-const UPDATED = "2026-11-17";
+const UPDATED = "2026-11-18";
 
 export const venderDocs: DocArticle[] = [
   {
@@ -372,13 +372,16 @@ export const venderDocs: DocArticle[] = [
     ],
     steps: [
       { text: "Entrá a **Reportes** y abrí la solapa **Ventas**." },
-      { text: "Filtrá por fechas, **Medio de pago**, **Estado** (Completadas o Anuladas), tipo de comprobante, **Sucursal** o buscá por cliente, número de comprobante o importe." },
+      { text: "Arriba ves los totales de todo lo filtrado: **Vendido**, **Facturado**, **Sin facturar**, **Anuladas** y **En fiado**. Tocá uno para filtrar la lista por ese dato." },
+      { text: "Filtrá por fechas, **Medio de pago**, **Estado** (Completadas o Anuladas), **Facturación** (facturadas, sin facturar o con nota de crédito), **Vendedor**, **Importe**, **Sucursal** o buscá por cliente, número de comprobante o importe." },
       { text: "Tocá **Filtrar** para aplicar los filtros y **Limpiar** para empezar de nuevo." },
+      { text: "En la lista, la columna **Facturación** dice si cada venta está **Facturada**, **Sin facturar** o **Anulada**." },
       { text: "Abrí una venta con **Ver detalle** para ver sus productos y medios de pago." },
       { text: "Para llevarte el período a una planilla, tocá **Exportar el período (CSV)**." },
     ],
     faq: [
       { q: "¿Cómo encuentro una venta puntual?", a: "Usá el buscador por cliente, número de comprobante o importe, y combinalo con las fechas, el **Medio de pago** o el **Estado**." },
+      { q: "¿Cómo sé cuánto facturé y cuánto no?", a: "En la parte de arriba de **Ventas**: **Facturado** suma las ventas con factura electrónica y **Sin facturar** las que sólo tienen comprobante X. Los totales respetan el período y los filtros elegidos. Se muestran si tenés la facturación electrónica configurada." },
       { q: "¿Las ventas anuladas se ven?", a: "Sí, con la etiqueta **Anulada**. Filtrá por **Estado** para ver sólo las completadas o sólo las anuladas." },
       { q: "¿Puedo llevarme las ventas a Excel?", a: "Sí, con **Exportar el período (CSV)**; el archivo abre con Excel o Google Sheets." },
     ],

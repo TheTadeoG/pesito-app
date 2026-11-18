@@ -10,7 +10,9 @@ import { argDateString } from "@/lib/timezone";
 import { PeriodSelector } from "@/app/(dashboard)/reportes/period-selector";
 import { getInvoicingConfig } from "@/lib/actions/invoicing";
 import { parseSalesSearch } from "@/lib/sales-search";
-import { VentasHistorial, type HistorialRow } from "./ventas-historial";
+import { fetchAll, fetchAllIn } from "@/lib/supabase/fetch-all";
+import { getMemberLabelsById } from "@/lib/member-labels";
+import { VentasHistorial, type HistorialRow, type VentasSummary } from "./ventas-historial";
 
 const paymentLabels: Record<string, string> = {
   efectivo: "Efectivo",
@@ -25,7 +27,7 @@ const PAGE_SIZES = [25, 50, 100, 200];
 export default async function VentasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; medio?: string; estado?: string; comprobante?: string; q?: string; pagina?: string; tam?: string; sucursal?: string }>;
+  searchParams: Promise<{ period?: string; desde?: string; hasta?: string; medio?: string; estado?: string; comprobante?: string; vendedor?: string; min?: string; max?: string; q?: string; pagina?: string; tam?: string; sucursal?: string }>;
 }) {
   const sp = await searchParams;
   const { organization, membership } = await requireOrgContext();
@@ -44,10 +46,20 @@ export default async function VentasPage({
   // Tipo de comprobante: facturas, notas de crédito o comprobante X (ventas sin factura electrónica).
   const comprobante = sp.comprobante === "factura" || sp.comprobante === "nc" || sp.comprobante === "x" ? sp.comprobante : "";
   const q = (sp.q ?? "").trim().slice(0, 60);
+  // Rango de importe (opcional): sólo números positivos.
+  const parseAmount = (v: string | undefined) => {
+    const n = Number((v ?? "").replace(",", "."));
+    return v && Number.isFinite(n) && n >= 0 ? n : null;
+  };
+  const minAmount = parseAmount(sp.min);
+  const maxAmount = parseAmount(sp.max);
   const pageSize = PAGE_SIZES.includes(Number(sp.tam)) ? Number(sp.tam) : 25;
   const page = Math.max(0, Math.floor(Number(sp.pagina) || 0));
   const branchContext = await getBranchContext();
   const hasBranches = admin && branchContext.branches.length > 1;
+  // Vendedor: sólo dueños/administradores (ven las ventas de todo el equipo).
+  const memberLabels = admin ? await getMemberLabelsById(supabase, organization.id) : null;
+  const vendedor = admin && sp.vendedor && memberLabels?.has(sp.vendedor) ? sp.vendedor : "";
   const sucursal = hasBranches && branchContext.branches.some((b) => b.id === sp.sucursal) ? (sp.sucursal as string) : "";
 
   // Buscador: cliente (nombre, CUIT o DNI), número de comprobante, CAE o importe. Se arma una lista de
@@ -88,25 +100,34 @@ export default async function VentasPage({
   let rows: HistorialRow[] = [];
   let total = 0;
   let error: string | null = null;
+  let summary: VentasSummary | null = null;
   if (!nothingMatches) {
-    const cols = "id, created_at, total, payment_method, invoice_type, status, customer_id, internal_number";
-    // Por tipo de comprobante: se cruza con los comprobantes autorizados de cada venta.
-    const selectCols = (comprobante === "factura" || comprobante === "nc" ? `${cols}, arca_vouchers!inner(id)` : comprobante === "x" ? `${cols}, arca_vouchers(id)` : cols) as typeof cols;
-    let query = supabase
-      .from("sales")
-      .select(selectCols, { count: "exact" })
-      .eq("org_id", organization.id)
-      .gte("created_at", `${desde}T00:00:00-03:00`)
-      .lte("created_at", `${hasta}T23:59:59.999-03:00`)
+    const cols = "id, created_at, total, payment_method, invoice_type, status, customer_id, internal_number, user_id";
+    // Los mismos filtros para la lista y para los totales de todo el filtro.
+    const filtered = (select: string, count: boolean) => {
+      // Por tipo de comprobante: se cruza con los comprobantes autorizados de cada venta.
+      const selectCols = (comprobante === "factura" || comprobante === "nc" ? `${select}, arca_vouchers!inner(id)` : comprobante === "x" ? `${select}, arca_vouchers(id)` : select) as typeof cols;
+      let q2 = supabase
+        .from("sales")
+        .select(selectCols, count ? { count: "exact" } : undefined)
+        .eq("org_id", organization.id)
+        .gte("created_at", `${desde}T00:00:00-03:00`)
+        .lte("created_at", `${hasta}T23:59:59.999-03:00`);
+      if (medio) q2 = q2.eq("payment_method", medio as "efectivo");
+      if (estado) q2 = q2.eq("status", estado);
+      if (sucursal) q2 = q2.eq("branch_id", sucursal);
+      if (vendedor) q2 = q2.eq("user_id", vendedor);
+      if (minAmount !== null) q2 = q2.gte("total", minAmount);
+      if (maxAmount !== null) q2 = q2.lte("total", maxAmount);
+      if (orParts.length > 0) q2 = q2.or(orParts.join(","));
+      if (comprobante !== "") q2 = q2.eq("arca_vouchers.kind", comprobante === "nc" ? "credit_note" : "invoice").eq("arca_vouchers.status", "authorized");
+      if (comprobante === "x") q2 = q2.is("arca_vouchers", null);
+      return q2;
+    };
+    const query = filtered(cols, true)
       .order("created_at", { ascending: false })
       .order("id")
       .range(page * pageSize, page * pageSize + pageSize - 1);
-    if (medio) query = query.eq("payment_method", medio as "efectivo");
-    if (estado) query = query.eq("status", estado);
-    if (sucursal) query = query.eq("branch_id", sucursal);
-    if (orParts.length > 0) query = query.or(orParts.join(","));
-    if (comprobante !== "") query = query.eq("arca_vouchers.kind", comprobante === "nc" ? "credit_note" : "invoice").eq("arca_vouchers.status", "authorized");
-    if (comprobante === "x") query = query.is("arca_vouchers", null);
     const { data, count, error: e } = await query;
     if (e) error = "No pudimos cargar las ventas. Probá de nuevo.";
     total = count ?? 0;
@@ -138,7 +159,55 @@ export default async function VentasPage({
       internalNumber: s.internal_number,
       voucher: voucherBySale.get(s.id) ?? null,
       creditNote: creditNoteBySale.get(s.id) ?? null,
+      sellerName: s.user_id ? (memberLabels?.get(s.user_id) ?? "Usuario eliminado") : null,
     }));
+
+    // Totales de TODO el filtro (no sólo de la página): vendido, facturado y sin facturar.
+    if (!e) {
+      try {
+        const all = await fetchAll((from, to) =>
+          filtered("id, total, status, payment_method", false).order("id").range(from, to)
+        );
+        const authorized = await fetchAllIn(
+          all.map((r) => (r as unknown as { id: string }).id),
+          (ids, from, to) =>
+            supabase
+              .from("arca_vouchers")
+              .select("sale_id, kind")
+              .in("sale_id", ids)
+              .eq("status", "authorized")
+              .eq("kind", "invoice")
+              .order("id")
+              .range(from, to)
+        );
+        const invoiced = new Set(authorized.map((v) => v.sale_id));
+        const sum: VentasSummary = {
+          count: 0, vendido: 0, facturadoCount: 0, facturado: 0, sinFacturarCount: 0, sinFacturar: 0,
+          anuladasCount: 0, anuladas: 0, fiado: 0,
+        };
+        for (const r of all as unknown as { id: string; total: number; status: string; payment_method: string }[]) {
+          const t = Number(r.total);
+          if (r.status === "anulada") {
+            sum.anuladasCount += 1;
+            sum.anuladas += t;
+            continue;
+          }
+          sum.count += 1;
+          sum.vendido += t;
+          if (r.payment_method === "fiado") sum.fiado += t;
+          if (invoiced.has(r.id)) {
+            sum.facturadoCount += 1;
+            sum.facturado += t;
+          } else {
+            sum.sinFacturarCount += 1;
+            sum.sinFacturar += t;
+          }
+        }
+        summary = sum;
+      } catch {
+        summary = null;
+      }
+    }
   }
 
   const invoicing = await getInvoicingConfig(organization.id).catch(() => ({ enabled: false, autoMethods: [] as string[] }));
@@ -155,14 +224,16 @@ export default async function VentasPage({
         canCompare={false}
         showCompare={false}
         basePath="/ventas"
-        extraParams={{ medio, estado, comprobante, q, sucursal, ...(pageSize !== 25 ? { tam: String(pageSize) } : {}) }}
+        extraParams={{ medio, estado, comprobante, vendedor, min: minAmount !== null ? String(minAmount) : "", max: maxAmount !== null ? String(maxAmount) : "", q, sucursal, ...(pageSize !== 25 ? { tam: String(pageSize) } : {}) }}
       />
       <VentasHistorial
         rows={rows}
         total={total}
         page={page}
         pageSize={pageSize}
-        filters={{ desde, hasta, medio, estado, comprobante, q, sucursal }}
+        filters={{ desde, hasta, medio, estado, comprobante, vendedor, min: minAmount !== null ? String(minAmount) : "", max: maxAmount !== null ? String(maxAmount) : "", q, sucursal }}
+        summary={summary}
+        sellers={memberLabels ? Array.from(memberLabels, ([id, name]) => ({ id, name })) : []}
         periodQuery={periodParams(periodQuery).toString()}
         paymentLabels={paymentLabels}
         branches={hasBranches ? branchContext.branches.map((b) => ({ id: b.id, name: b.name })) : []}

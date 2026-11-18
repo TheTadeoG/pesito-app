@@ -1,6 +1,6 @@
 import type { DocArticle } from "@/lib/docs/types";
 
-const UPDATED = "2026-11-17";
+const UPDATED = "2026-11-18";
 
 export const reportesDocs: DocArticle[] = [
   {
@@ -74,17 +74,18 @@ export const reportesDocs: DocArticle[] = [
     category: "reportes",
     summary: "Controlá ventas, anulaciones, ajustes de stock, retiros y cierres de caja de cada usuario.",
     plan: "pro",
-    where: "**Reportes → Control por usuario**",
+    where: "**Reportes → Por usuario**",
     intro: [
       "El control por usuario junta, por persona, lo que hizo en Pesito: ventas, anulaciones, ajustes de stock, ingresos y retiros de caja y cierres. Sirve para detectar movimientos raros y saber quién los hizo.",
     ],
     steps: [
-      { text: "Entrá a **Reportes** y abrí **Control por usuario**." },
+      { text: "Entrá a **Reportes** y abrí la solapa **Por usuario**." },
       { text: "Elegí una persona en **Por persona** (“Tocá a alguien para ver sólo lo que hizo”) o dejá **Todas las personas**." },
-      { text: "Filtrá por tipo: **Ventas**, **Anulaciones**, **Ajustes de stock**, **Ingresos**, **Retiros** o **Cierres de caja**." },
-      { text: "Mirá cada movimiento con su fecha, su detalle y la diferencia de caja en los cierres." },
+      { text: "Filtrá por **Acción** (anulación de venta, ajuste de stock, retiro de caja, cierre de caja…), por tipo (**Caja**, **Stock**, **Anulaciones**) o buscá por producto o motivo." },
+      { text: "Leé cada movimiento en su fila: **Fecha y hora**, **Persona**, **Acción**, **Producto / referencia**, **Cantidad**, **Monto** y **Motivo**. Tocá el título de una columna para ordenar." },
+      { text: "Para llevártelo a una planilla, tocá **Exportar a Excel**: baja lo que estás viendo, con las mismas columnas." },
     ],
-    tips: ["Sirve para detectar anulaciones o ajustes de stock raros y quién los hizo."],
+    tips: ["Sirve para detectar anulaciones o ajustes de stock raros y quién los hizo. Ordená por **Monto** para ver primero lo más grande."],
     faq: [
       { q: "¿Quién puede verlo?", a: "Sólo el dueño y los administradores, y es una función del Plan Pro." },
       { q: "¿Qué movimientos registra?", a: "Ventas, anulaciones, ajustes de stock, ingresos, retiros y cierres de caja, con la diferencia de caja de cada cierre." },
@@ -98,13 +99,14 @@ export const reportesDocs: DocArticle[] = [
     slug: "como-buscar-una-venta-en-el-historial",
     title: "Cómo buscar una venta en el historial",
     category: "reportes",
-    summary: "Encontrá una venta por cliente, número de comprobante o importe, y filtrá por sucursal.",
+    summary: "Encontrá una venta por cliente, número de comprobante o importe, y filtrá por vendedor, facturación o importe.",
     plan: null,
-    where: "**Reportes → Historial de ventas**",
+    where: "**Reportes → Ventas**",
     steps: [
-      { text: "Entrá a **Reportes** y abrí **Historial de ventas**." },
+      { text: "Entrá a **Reportes** y abrí la solapa **Ventas**." },
       { text: "En **Buscar** escribí el cliente, el número de comprobante o el importe." },
-      { text: "Si tenés sucursales, elegí una en **Sucursal**." },
+      { text: "Si tenés sucursales, elegí una en **Sucursal**; si tenés equipo, elegí un **Vendedor**." },
+      { text: "Para acotar por monto, completá **Importe (desde – hasta)**." },
       { text: "Tocá **Filtrar**." },
       { text: "Tocá **Ver detalle** en la venta que buscás." },
     ],

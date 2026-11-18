@@ -33,6 +33,22 @@ export interface HistorialRow {
   voucher: string | null;
   /** Nota de crédito electrónica de la venta (si se anuló una venta facturada). */
   creditNote: string | null;
+  /** Quién vendió (sólo lo ven dueños/administradores). */
+  sellerName: string | null;
+}
+
+/** Totales de todo el filtro elegido (no sólo de la página). */
+export interface VentasSummary {
+  count: number;
+  vendido: number;
+  facturadoCount: number;
+  facturado: number;
+  sinFacturarCount: number;
+  sinFacturar: number;
+  anuladasCount: number;
+  anuladas: number;
+  /** Parte de lo vendido que quedó en cuenta corriente (fiado). */
+  fiado: number;
 }
 
 interface Filters {
@@ -42,6 +58,9 @@ interface Filters {
   estado: string;
   /** "factura", "nc" (nota de crédito), "x" (sin factura electrónica) o "" todos. */
   comprobante: string;
+  vendedor: string;
+  min: string;
+  max: string;
   q: string;
   sucursal: string;
 }
@@ -52,6 +71,8 @@ export function VentasHistorial({
   page,
   pageSize,
   filters,
+  summary,
+  sellers,
   periodQuery,
   paymentLabels,
   branches,
@@ -67,6 +88,8 @@ export function VentasHistorial({
   page: number;
   pageSize: number;
   filters: Filters;
+  summary: VentasSummary | null;
+  sellers: { id: string; name: string }[];
   /** El período elegido arriba, ya como parámetros de URL (period, desde, hasta). */
   periodQuery: string;
   paymentLabels: Record<string, string>;
@@ -94,6 +117,9 @@ export function VentasHistorial({
       if (merged.medio) p.set("medio", merged.medio);
       if (merged.estado) p.set("estado", merged.estado);
       if (merged.comprobante) p.set("comprobante", merged.comprobante);
+      if (merged.vendedor) p.set("vendedor", merged.vendedor);
+      if (merged.min) p.set("min", merged.min);
+      if (merged.max) p.set("max", merged.max);
       if (merged.q) p.set("q", merged.q);
       if (merged.sucursal) p.set("sucursal", merged.sucursal);
       const size = next.tam ?? pageSize;
@@ -130,6 +156,49 @@ export function VentasHistorial({
 
   return (
     <div className="space-y-4">
+      {summary && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Kpi label="Vendido" value={formatCurrency(summary.vendido)} hint={`${summary.count.toLocaleString("es-AR")} ${summary.count === 1 ? "venta" : "ventas"} sin anuladas`} />
+          {canInvoice ? (
+            <>
+              <Kpi
+                label="Facturado"
+                value={formatCurrency(summary.facturado)}
+                hint={`${summary.facturadoCount.toLocaleString("es-AR")} con factura electrónica`}
+                tone="success"
+                active={f.comprobante === "factura"}
+                onClick={() => go({ comprobante: f.comprobante === "factura" ? "" : "factura", estado: "completada", pagina: 0 })}
+              />
+              <Kpi
+                label="Sin facturar"
+                value={formatCurrency(summary.sinFacturar)}
+                hint={`${summary.sinFacturarCount.toLocaleString("es-AR")} con comprobante X`}
+                tone="warning"
+                active={f.comprobante === "x"}
+                onClick={() => go({ comprobante: f.comprobante === "x" ? "" : "x", estado: "completada", pagina: 0 })}
+              />
+            </>
+          ) : (
+            <Kpi label="Ticket promedio" value={formatCurrency(summary.count > 0 ? summary.vendido / summary.count : 0)} hint="por venta" />
+          )}
+          <Kpi
+            label="Anuladas"
+            value={formatCurrency(summary.anuladas)}
+            hint={`${summary.anuladasCount.toLocaleString("es-AR")} ${summary.anuladasCount === 1 ? "venta" : "ventas"}`}
+            tone={summary.anuladasCount > 0 ? "danger" : undefined}
+            active={f.estado === "anulada"}
+            onClick={() => go({ estado: f.estado === "anulada" ? "" : "anulada", pagina: 0 })}
+          />
+          <Kpi
+            label="En fiado"
+            value={formatCurrency(summary.fiado)}
+            hint="vendido a cuenta, por cobrar"
+            active={f.medio === "fiado"}
+            onClick={() => go({ medio: f.medio === "fiado" ? "" : "fiado", pagina: 0 })}
+          />
+        </div>
+      )}
+
       <Card>
         <CardContent>
           <form
@@ -160,12 +229,12 @@ export function VentasHistorial({
             </div>
             {canInvoice && (
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Tipo de comprobante</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Facturación</label>
                 <Select value={f.comprobante} onChange={(e) => setF({ ...f, comprobante: e.target.value })}>
-                  <option value="">Todos</option>
-                  <option value="factura">Facturas electrónicas</option>
-                  <option value="nc">Notas de crédito</option>
-                  <option value="x">Comprobante X (no fiscal)</option>
+                  <option value="">Todas</option>
+                  <option value="factura">Facturadas (factura electrónica)</option>
+                  <option value="x">Sin facturar (comprobante X)</option>
+                  <option value="nc">Con nota de crédito</option>
                 </Select>
               </div>
             )}
@@ -182,6 +251,27 @@ export function VentasHistorial({
                 </Select>
               </div>
             )}
+            {sellers.length > 0 && (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Vendedor</label>
+                <Select value={f.vendedor} onChange={(e) => setF({ ...f, vendedor: e.target.value })}>
+                  <option value="">Todos</option>
+                  {sellers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Importe (desde – hasta)</label>
+              <div className="flex items-center gap-1.5">
+                <Input inputMode="decimal" value={f.min} onChange={(e) => setF({ ...f, min: e.target.value })} placeholder="Mín." />
+                <span className="text-muted-foreground">–</span>
+                <Input inputMode="decimal" value={f.max} onChange={(e) => setF({ ...f, max: e.target.value })} placeholder="Máx." />
+              </div>
+            </div>
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Buscar</label>
               <div className="relative">
@@ -209,7 +299,7 @@ export function VentasHistorial({
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <p className="text-muted-foreground">
-              {`${total.toLocaleString("es-AR")} ${total === 1 ? "venta" : "ventas"} en el período · en esta página, sin contar anuladas: `}
+              {`${total.toLocaleString("es-AR")} ${total === 1 ? "venta" : "ventas"} con estos filtros · en esta página, sin anuladas: `}
               <span className="font-semibold text-foreground">{formatCurrency(pageTotal)}</span>
             </p>
             {canExport && (
@@ -224,12 +314,14 @@ export function VentasHistorial({
             <p className="py-10 text-center text-sm text-muted-foreground">No hay ventas con esos filtros.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[40rem] text-sm">
+              <table className="w-full min-w-[48rem] text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     <th className="px-3 py-2.5">Fecha</th>
                     <th className="px-3 py-2.5">Cliente</th>
                     <th className="px-3 py-2.5">Medio de pago</th>
+                    {sellers.length > 0 && <th className="px-3 py-2.5">Vendedor</th>}
+                    <th className="px-3 py-2.5">Facturación</th>
                     <th className="px-3 py-2.5">Comprobante</th>
                     <th className="px-3 py-2.5 text-right">Total</th>
                     <th className="px-3 py-2.5 text-right">Acciones</th>
@@ -243,8 +335,17 @@ export function VentasHistorial({
                       <td className="px-3 py-3">
                         <Badge>{paymentLabels[r.paymentMethod] ?? r.paymentMethod}</Badge>
                       </td>
+                      {sellers.length > 0 && <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">{r.sellerName ?? "—"}</td>}
+                      <td className="px-3 py-3">
+                        {r.voided ? (
+                          <Badge tone="danger">Anulada</Badge>
+                        ) : r.voucher ? (
+                          <Badge tone="success">Facturada</Badge>
+                        ) : (
+                          <Badge tone="warning">Sin facturar</Badge>
+                        )}
+                      </td>
                       <td className="px-3 py-3 text-xs text-muted-foreground">
-                        {r.voided && <Badge tone="danger">Anulada</Badge>}
                         {r.voucher ? <p>{r.voucher}</p> : !r.voided && <p>{internalNumberLabel(r.internalNumber)}</p>}
                         {r.creditNote && <p className="font-medium text-foreground">{r.creditNote}</p>}
                       </td>
@@ -331,5 +432,43 @@ export function VentasHistorial({
 
       <TicketPrint receipt={printing} onDone={() => setPrinting(null)} />
     </div>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  hint,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone?: "success" | "warning" | "danger";
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  const color = tone === "success" ? "text-success" : tone === "warning" ? "text-warning" : tone === "danger" ? "text-danger" : "text-foreground";
+  const body = (
+    <>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className={`block truncate text-xl font-bold tabular-nums ${color}`}>{value}</span>
+      <span className="block truncate text-xs text-muted-foreground">{hint}</span>
+    </>
+  );
+  const base = "rounded-2xl border bg-card p-4 text-left";
+  if (!onClick) return <div className={`${base} border-border`}>{body}</div>;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      title={active ? "Tocá para quitar el filtro" : "Tocá para filtrar la lista"}
+      className={`${base} transition-colors hover:bg-muted ${active ? "border-primary ring-1 ring-primary" : "border-border"}`}
+    >
+      {body}
+    </button>
   );
 }
